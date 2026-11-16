@@ -72,6 +72,7 @@ GRAPH = {
     "convention": LEAF, "graph": LEAF, "title": LEAF, "description": LEAF, "header": HEADER,
     "inputs": MAP(IO), "outputs": MAP(IO), "steps": LIST(STEP),
 }
+# The schema accepts a bare name here; load_parts() below refuses any entry with no effort (JP-138).
 TIER_ENTRY = EITHER({"model": LEAF, "effort": LEAF})
 TIERS_FILE = {"convention": LEAF, "tiers": {t: LIST(TIER_ENTRY) for t in TIERS}}
 ROLE_FILE = {"title": LEAF, "may_change": LEAF, "tier": LEAF, "reviewer": LEAF}

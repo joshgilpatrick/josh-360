@@ -1,4 +1,5 @@
-$ python3 graphs/tools/check_graph.py --root graphs/tests/fixtures/parts  (fixture root, mid tier = bare name)
+Each bad fixture is copied into a temp copy of graphs/tests/fixtures/parts as tiers.yaml (/tmp/jp138), then:
+$ python3 graphs/tools/check_graph.py --root /tmp/jp138
 
 --- fixture bad-tiers/bare-model-name.yaml
 /tmp/jp138/tiers.yaml: tiers.mid[0] is missing an effort (one of low, medium, high); every entry is {model: <name>, effort: <level>}
