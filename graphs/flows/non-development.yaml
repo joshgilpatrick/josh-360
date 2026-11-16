@@ -6,8 +6,9 @@ title: Non-development pipeline
 description: >
   Takes a Ready non-development ticket in JP (an answer, a document, a reply to draft, a file to find)
   and ends with its deliverable saved outside any working folder, the sources behind it in an evidence
-  file, Josh's sign-off, and a resolution comment that the next run's lookup can find. Nothing is sent
-  to anyone but Josh, and a shared write runs only on his yes.
+  file, Josh's sign-off (or, for an emailed ask, the answer emailed to him, reopened only by his reply),
+  and a resolution comment that the next run's lookup can find. Nothing is sent to anyone but Josh, and a
+  shared write runs only on his yes.
 
 header:
   jira:
@@ -16,8 +17,8 @@ header:
     - status: In Progress
       steps: [start_run, find_precedent, judge_precedent, check_gaps, ping_before, do_work, ping_during,
               check_deliverable, pick_path, review_work, check_review, decide_stuck]
-    - { status: Validation, steps: [to_validation, deliver, sign_off, share_out] }
-    - { status: Done, steps: [close] }
+    - { status: Validation, steps: [to_validation, deliver, pick_sign_off, sign_off, share_out] }
+    - { status: Done, steps: [close_emailed, close] }
   entry_gate: ready
   exit_gate: no-loose-ends
   asks_josh: [ping_before, ping_during, sign_off, decide_stuck]
@@ -40,6 +41,8 @@ header:
     decide_stuck: read
     to_validation: josh
     deliver: josh
+    pick_sign_off: read
+    close_emailed: josh
     sign_off: read
     share_out: shared
     close: josh
@@ -212,8 +215,25 @@ steps:
     inputs: [ticket_key, origin, desk_row, phi, deliverable_path, evidence_path]
     outcomes: [delivered]
 
-  - id: sign_off
+  - id: pick_sign_off
+    gate: sign-off-rule
     needs: [deliver]
+    inputs: [origin]
+    outcomes: [ask_josh, emailed]
+
+  # An emailed ask closes once the answer is in Josh's inbox; his reply to that email reopens the ticket.
+  - id: close_emailed
+    gate: close-ticket
+    effects: [move_ticket]
+    needs: [pick_sign_off]
+    when: { step: pick_sign_off, outcome: emailed }
+    inputs: [ticket_key, phi, evidence_path]
+    outcomes: [closed]
+    on:
+      closed: end
+
+  - id: sign_off
+    needs: [close_emailed]
     ask:
       question: "The deliverable for {{ inputs.ticket_key }} is ready (path and summary in the ticket). Sign it off?"
       choices: [accept, accept_and_share, revise]
