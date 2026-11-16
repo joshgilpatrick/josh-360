@@ -207,6 +207,73 @@ class Decisions(LedgerTest):
                       VALUES (3, 'overruled', ?, 'josh', 'test')""", (T,))
         self.assertEqual([r[0] for r in db.execute("SELECT answer FROM current_decisions")], ["second"])
 
+    def retract(self, db, table, row_id):
+        db.execute("""INSERT INTO corrections (table_name, row_id, reason, corrected_at, corrected_by, recorded_by)
+                      VALUES (?, ?, 'wrong', ?, 'josh', 'test')""", (table, row_id, T))
+
+    def test_retracting_a_replacement_brings_the_original_back(self):
+        db = self.ledger()
+        self.add(db, "old")
+        self.add(db, "new", supersedes=1)
+        self.retract(db, "decisions", 2)
+        self.assertEqual([r[0] for r in db.execute("SELECT answer FROM current_decisions")], ["old"])
+
+    def test_retracting_an_overrule_brings_the_decision_back(self):
+        db = self.ledger()
+        self.add(db, "kept")
+        db.execute("""INSERT INTO decision_events (decision_id, kind, at, event_by, recorded_by)
+                      VALUES (1, 'overruled', ?, 'josh', 'test')""", (T,))
+        self.retract(db, "decision_events", 1)
+        self.assertEqual([r[0] for r in db.execute("SELECT answer FROM current_decisions")], ["kept"])
+
+
+class RetractedRowsNeverCount(LedgerTest):
+    """A correction withdraws a row from every view, not just the view of its own table (audit of PR #18)."""
+
+    def retract(self, db, table, row_id):
+        db.execute("""INSERT INTO corrections (table_name, row_id, reason, corrected_at, corrected_by, recorded_by)
+                      VALUES (?, ?, 'wrong', ?, 'josh', 'test')""", (table, row_id, T))
+
+    def test_retracted_step_rows_leave_the_step_ledger(self):
+        db = self.ledger()
+        seed(db)
+        self.retract(db, "step_results", 1)
+        self.assertIsNone(db.execute("SELECT outcome FROM step_ledger WHERE step = 'sign_off'").fetchone()[0])
+        self.retract(db, "step_runs", 2)
+        self.assertEqual([r[0] for r in db.execute("SELECT step FROM step_ledger")], ["sign_off"])
+
+    def test_retracting_an_answer_reopens_its_ask(self):
+        db = self.ledger()
+        seed(db)
+        db.execute("""INSERT INTO asks (ask_id, session_uid, category, question_key, system, work_type, question, stage,
+                      channel, asked_at, recorded_by) VALUES ('ask-1', ?, 'triage/ask_josh', 'triage/ask_josh', 'josh-360',
+                      'code', 'Which one?', 1, 'needs-you', ?, 'test')""", (S1, T))
+        db.execute("""INSERT INTO decisions (ask_id, category, question_key, system, work_type, answer, how, decided_by,
+                      decided_at, recorded_by) VALUES ('ask-1', 'triage/ask_josh', 'triage/ask_josh', 'josh-360', 'code',
+                      'this one', 'answered', 'josh', ?, 'test')""", (T,))
+        self.assertEqual(db.execute("SELECT COUNT(*) FROM open_asks").fetchone()[0], 0)
+        self.retract(db, "decisions", 1)
+        self.assertEqual([r[0] for r in db.execute("SELECT ask_id FROM open_asks")], ["ask-1"])
+
+    def test_retracting_a_stage_change_falls_back_to_the_earlier_stage(self):
+        db = self.ledger()
+        add = """INSERT INTO category_stages (category, stage, set_by, reason, set_at, recorded_by)
+                 VALUES ('triage/ask_josh', ?, 'josh', 'test', ?, 'test')"""
+        db.execute(add, (1, "2026-11-16T10:00:00Z"))
+        db.execute(add, (2, "2026-11-16T11:00:00Z"))
+        self.retract(db, "category_stages", 2)
+        self.assertEqual(db.execute("SELECT stage FROM current_category_stages").fetchall(), [(1,)])
+
+    def test_retracting_a_branch_mark_falls_back_to_the_earlier_mark(self):
+        db = self.ledger()
+        add = """INSERT INTO branch_marks (git_root, branch, mark, marked_by, marked_at, recorded_by)
+                 VALUES ('/tmp/made-up/repo', 'JP-900/sample', ?, 'josh', ?, 'test')"""
+        db.execute(add, ("kept", "2026-11-16T10:00:00Z"))
+        db.execute(add, ("not-kept", "2026-11-16T11:00:00Z"))
+        self.assertEqual(db.execute("SELECT COUNT(*) FROM kept_branches").fetchone()[0], 0)
+        self.retract(db, "branch_marks", 2)
+        self.assertEqual([r[0] for r in db.execute("SELECT branch FROM kept_branches")], ["JP-900/sample"])
+
 
 if __name__ == "__main__":
     unittest.main()
