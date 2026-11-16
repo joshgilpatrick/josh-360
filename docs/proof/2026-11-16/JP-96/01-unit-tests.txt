@@ -36,6 +36,7 @@ test_guard_refuses_text (test_laptop_inventory.LaptopInventoryTest.test_guard_re
 test_lists_jobs_hooks_plugins_and_stores (test_laptop_inventory.LaptopInventoryTest.test_lists_jobs_hooks_plugins_and_stores) ... ok
 test_loose_ends (test_laptop_inventory.LaptopInventoryTest.test_loose_ends) ... ok
 test_non_utf8_branch_name_does_not_stop_git (test_laptop_inventory.LaptopInventoryTest.test_non_utf8_branch_name_does_not_stop_git) ... ok
+test_non_utf8_command_output_does_not_stop_the_run (test_laptop_inventory.LaptopInventoryTest.test_non_utf8_command_output_does_not_stop_the_run) ... ok
 test_only_read_only_commands (test_laptop_inventory.LaptopInventoryTest.test_only_read_only_commands) ... ok
 test_output_holds_no_file_contents (test_laptop_inventory.LaptopInventoryTest.test_output_holds_no_file_contents) ... ok
 test_paths_through_a_symlink_stay_home_relative (test_laptop_inventory.LaptopInventoryTest.test_paths_through_a_symlink_stay_home_relative) ... ok
@@ -52,12 +53,12 @@ test_use_is_dated_by_the_call_not_the_session_start (test_laptop_inventory.Lapto
 test_writes_nothing_but_its_output_file (test_laptop_inventory.LaptopInventoryTest.test_writes_nothing_but_its_output_file) ... ok
 
 ----------------------------------------------------------------------
-Ran 48 tests in 0.433s
+Ran 49 tests in 0.529s
 
 OK
 
 $ uv run --python 3.9 --no-project --with pyyaml python -m unittest discover -s tests   (Python 3.9, as on macOS)
 ----------------------------------------------------------------------
-Ran 48 tests in 0.551s
+Ran 49 tests in 0.557s
 
 OK
