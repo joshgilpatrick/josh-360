@@ -1,0 +1,24 @@
+$ grep -n "JP-105 Connect the laptop" docs/WORKFLOW.md
+21:6. Branch `JP-<n>-<slug>` or the session's branch. Every session and thread title (a thread, a cloud session, a laptop session) and every PR title starts with the Jira ticket key it covers, then a 
+
+$ grep -n -o "Every session and thread title[^.]*\." docs/WORKFLOW.md
+21:Every session and thread title (a thread, a cloud session, a laptop session) and every PR title starts with the Jira ticket key it covers, then a short name: "JP-105 Connect the laptop"; for several tickets, "JP-12 + JP-14 Sign-in page".
+
+$ grep -n -o "Threads with no single ticket[^.]*\." docs/WORKFLOW.md
+21:Threads with no single ticket, such as Ticket Master, the watchers and the coordinator, keep their role names.
+
+$ grep -n "title starts with its ticket key" .claude/skills/workflow-roles/SKILL.md
+38:A new thread's title starts with its ticket key
+
+$ grep -n "Title: " .claude/skills/workflow-roles/SKILL.md
+11:Title: 'JP-n <title>'
+14:Title: 'JP-n <title>'
+17:Title: 'JP-n <title>'
+20:Title: 'JP-n Review PR #n'
+
+$ grep -n -o "rename the thread or session[^,]*" .claude/skills/ticket-lifecycle/SKILL.md
+15:rename the thread or session so its title starts with the ticket key ("JP-105 Connect the laptop") if it does not already
+
+$ python3 scripts/check.py
+check.py: ok (0 problem(s))
+exit=0
