@@ -1,0 +1,78 @@
+Made-up home folder: transcripts holding a canary sentence, a settings file with a secret-looking
+hook argument, skills, agents, an Atlas db, a claude-mem db, a launchd plist and a git repository.
+
+$ python3 scripts/laptop_inventory.py --out <tmp>/out/inventory.json --home <tmp>/home --since 2026-11-02 --until 2026-11-15
+wrote /tmp/tmpxqiupkpy/out/inventory.json: 1 launchd plists, 2 sessions, 1 repos, 0.0 s
+exit code: 0
+files added: ['out/inventory.json']
+files changed: []
+files removed: []
+output contains 'CANARY': False
+output contains 'Jane': False
+output contains 'SECRETVALUE': False
+output contains 'second message': False
+output guard problems: []
+
+Figures from the output (counts only):
+{
+ "date_range": {
+  "from": "2026-11-02",
+  "to": "2026-11-15"
+ },
+ "sessions": 2,
+ "sessions_per_week": [
+  {
+   "sessions": 1,
+   "week_of": "2026-11-02"
+  },
+  {
+   "sessions": 1,
+   "week_of": "2026-11-09"
+  }
+ ],
+ "josh_messages_per_session": {
+  "max": 2,
+  "mean": 1.5,
+  "median": 1.5,
+  "p90": 2,
+  "sessions": 2
+ },
+ "tied_to_ticket": {
+  "by_branch": 1,
+  "by_branch_or_message": 2,
+  "share_by_branch_or_message": 1.0,
+  "ticket_keys": [
+   "JP",
+   "AD",
+   "CI",
+   "GIL"
+  ]
+ },
+ "skill_use": {
+  "focus": {
+   "last_used": "2026-11-03",
+   "uses": 1
+  },
+  "pdf": {
+   "last_used": "2026-11-03",
+   "uses": 1
+  },
+  "superpowers:brainstorming": {
+   "last_used": "2026-11-03",
+   "uses": 1
+  }
+ },
+ "agent_use": {
+  "Explore": {
+   "last_used": "2026-11-03",
+   "uses": 1
+  }
+ }
+}
+
+Loose ends: {"branches_ahead_of_remote": 0, "branches_whose_remote_is_gone": 0, "branches_without_remote": 3, "extra_worktrees": 1, "stashes": 0} local_loose_ends = 4
+Hooks: [{"event": "Stop", "matcher": "", "scripts": ["~/.claude/hooks/stage.py"], "type": "command"}]
+Launchd: {"label": "com.example.job", "program": "/usr/bin/python3", "scripts": ["~/jobs/run.py"], "start_interval_seconds": 3600}
+
+Second run onto the same file:
+exit code: 2

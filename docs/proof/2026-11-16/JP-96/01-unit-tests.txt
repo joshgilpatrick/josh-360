@@ -1,0 +1,33 @@
+$ python3 -m unittest discover -s tests -v   (Python 3.13)
+test_figure_needs_range_and_command (test_check_inventory.InventoryCheckTest.test_figure_needs_range_and_command) ... ok
+test_good_row_passes (test_check_inventory.InventoryCheckTest.test_good_row_passes) ... ok
+test_missing_reason_fails (test_check_inventory.InventoryCheckTest.test_missing_reason_fails) ... ok
+test_repo_inventory_passes (test_check_inventory.InventoryCheckTest.test_repo_inventory_passes) ... ok
+test_two_verdicts_fail (test_check_inventory.InventoryCheckTest.test_two_verdicts_fail) ... ok
+test_unknown_verdict_fails (test_check_inventory.InventoryCheckTest.test_unknown_verdict_fails) ... ok
+test_default_range_is_twelve_whole_weeks (test_laptop_inventory.LaptopInventoryTest.test_default_range_is_twelve_whole_weeks) ... ok
+test_guard_refuses_text (test_laptop_inventory.LaptopInventoryTest.test_guard_refuses_text) ... ok
+test_lists_jobs_hooks_plugins_and_stores (test_laptop_inventory.LaptopInventoryTest.test_lists_jobs_hooks_plugins_and_stores) ... ok
+test_loose_ends (test_laptop_inventory.LaptopInventoryTest.test_loose_ends) ... ok
+test_only_read_only_commands (test_laptop_inventory.LaptopInventoryTest.test_only_read_only_commands) ... ok
+test_output_holds_no_file_contents (test_laptop_inventory.LaptopInventoryTest.test_output_holds_no_file_contents) ... ok
+test_refuses_to_overwrite (test_laptop_inventory.LaptopInventoryTest.test_refuses_to_overwrite) ... refusing to overwrite /tmp/tmp50rzl_i9/out/inventory.json
+ok
+test_runs_on_python_39_syntax (test_laptop_inventory.LaptopInventoryTest.test_runs_on_python_39_syntax) ... ok
+test_session_figures (test_laptop_inventory.LaptopInventoryTest.test_session_figures) ... ok
+test_writes_nothing_but_its_output_file (test_laptop_inventory.LaptopInventoryTest.test_writes_nothing_but_its_output_file) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 0.133s
+
+OK
+
+$ uv run --python 3.9 python -m unittest discover -s tests   (macOS system Python version)
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+......wrote /tmp/tmp1ee62w47/out/inventory.json: 1 launchd plists, 2 sessions, 1 repos, 0.0 s
+......refusing to overwrite /tmp/tmp1ee62w47/out/inventory.json
+....
+----------------------------------------------------------------------
+Ran 16 tests in 0.193s
+
+OK
