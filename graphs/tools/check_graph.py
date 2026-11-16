@@ -59,8 +59,9 @@ GOTO = {"goto": LEAF, "max_loops": LEAF, "at_limit": LEAF}
 STEP = {
     "id": LEAF, "role": LEAF, "agent": EITHER({"by": LEAF, "map": MAP(LEAF), "default": LEAF}),
     "tier": LEAF, "brief": LEAF, "gate": LEAF, "effects": LEAF,
-    "ask": {"question": LEAF, "choices": LEAF, "approves": LEAF, "on_limit_only": LEAF},
-    "needs": LEAF, "when": {"step": LEAF, "outcome": LEAF}, "inputs": LEAF, "outputs": MAP(OUTPUT),
+    "ask": {"question": LEAF, "choices": LEAF, "approves": LEAF, "approves_on": LEAF, "on_limit_only": LEAF},
+    # inputs is a list of names; a mapping is wrong, and every key in it is reported (EITHER of no keys).
+    "needs": LEAF, "when": {"step": LEAF, "outcome": LEAF}, "inputs": EITHER({}), "outputs": MAP(OUTPUT),
     "outcomes": LEAF, "on": MAP(EITHER(GOTO)),
 }
 HEADER = {
@@ -141,6 +142,8 @@ def load_yaml(path: Path):
         return yaml.load(path.read_text(encoding="utf-8"), Loader=_Loader)
     except yaml.YAMLError as exc:
         raise GraphYamlError(f"not valid YAML: {exc}".replace("\n", " ")) from exc
+    except TypeError as exc:  # a list or mapping used as a key cannot be held in a mapping
+        raise GraphYamlError(f"a key must be a plain word, not a list or mapping ({exc})") from exc
 
 
 def _is_text(value) -> bool:
@@ -149,6 +152,9 @@ def _is_text(value) -> bool:
 
 def _str_list(value) -> bool:
     return isinstance(value, list) and all(isinstance(v, str) for v in value)
+
+
+TEMPLATE = __import__("re").compile(r"\{\{\s*inputs\.([A-Za-z0-9_]+)\s*\}\}")
 
 
 def _names(value) -> list[str]:
@@ -445,6 +451,25 @@ def check_graph_data(data, name: str, parts: Parts) -> list[str]:
                 out.append(f"ask step '{sid}': on_limit_only must be true or false")
             if ask.get("on_limit_only") is True and ("needs" in s or "when" in s):
                 out.append(f"ask step '{sid}' is on_limit_only, so it takes no needs or when")
+            if _names(approves):
+                choices = _names(ask.get("choices"))
+                yes = ask.get("approves_on")
+                if "approves_on" not in ask:
+                    out.append(f"ask step '{sid}' approves steps, so it needs approves_on")
+                elif not _str_list(yes) or not yes:
+                    out.append(f"ask step '{sid}': approves_on must be a list of its choices")
+                else:
+                    out += [f"ask step '{sid}': approves_on choice '{c}' is not one of its choices"
+                            for c in yes if c not in choices]
+                    if choices and set(choices) <= set(yes):
+                        out.append(f"ask step '{sid}': approves_on must name some of its choices, not all of them")
+                if "when" in s:
+                    out.append(f"ask step '{sid}' approves a shared write, so it takes no when "
+                               "(a skipped approval is not a yes)")
+                if ask.get("on_limit_only") is True:
+                    out.append(f"ask step '{sid}' approves steps, so it cannot be on_limit_only")
+            elif "approves_on" in ask:
+                out.append(f"ask step '{sid}': approves_on only goes with approves")
 
         needs = s.get("needs", [])
         if not _str_list(needs):
@@ -465,7 +490,18 @@ def check_graph_data(data, name: str, parts: Parts) -> list[str]:
                 out += [f"step '{sid}': when names outcome '{o}', which step '{target}' does not have"
                         for o in wanted if o not in outcomes.get(target, [])]
 
+        for field, text in (("brief", s.get("brief")), ("question", s["ask"].get("question")
+                                                         if isinstance(s.get("ask"), dict) else None)):
+            for name in TEMPLATE.findall(text) if isinstance(text, str) else []:
+                if name not in graph_inputs:
+                    out.append(f"step '{sid}': {field} names '{{{{ inputs.{name} }}}}', which is not a graph input")
+
+        if "inputs" in s and not _str_list(s["inputs"]):
+            out.append(f"step '{sid}': inputs must be a list of names")
+
         for key, output in (s.get("outputs") or {}).items() if isinstance(s.get("outputs"), dict) else []:
+            if not isinstance(output, dict) or output.get("type") not in TYPES:
+                out.append(f"step '{sid}' output '{key}': type must be one of {', '.join(TYPES)}")
             contract = output.get("contract") if isinstance(output, dict) else None
             if contract is not None and (not isinstance(contract, str) or contract not in parts.contracts):
                 out.append(f"step '{sid}' output '{key}' names unknown contract '{contract}'")
@@ -518,11 +554,28 @@ def check_graph_data(data, name: str, parts: Parts) -> list[str]:
             if not cited:
                 out.append(f"step '{sid}' uses reviewer role '{s['role']}' but no gate step needs it to drop defects "
                            "that do not cite the plan")
+        if kind.get(sid) == "gate" and _names(s.get("effects")) and access.get(sid) == "read":
+            out.append(f"step '{sid}' has effects, so its access cannot be read")
+        if above is not None and _str_list(s.get("inputs")):
+            available = set(graph_inputs)
+            for a in above[sid]:
+                if isinstance(steps[a].get("outputs"), dict):
+                    available |= set(steps[a]["outputs"])
+            out += [f"step '{sid}' reads unknown input '{n}'" for n in s["inputs"] if n not in available]
         if access.get(sid) == "shared" and above is not None:
-            approved = any(kind.get(a) == "ask" and isinstance(steps[a]["ask"], dict)
-                           and sid in _names(steps[a]["ask"].get("approves")) for a in above[sid])
-            if not approved:
+            approvers = [a for a in sorted(above[sid]) if kind.get(a) == "ask" and isinstance(steps[a]["ask"], dict)
+                         and sid in _names(steps[a]["ask"].get("approves"))]
+            when = s.get("when") if isinstance(s.get("when"), dict) else {}
+            if not approvers:
                 out.append(f"step '{sid}' writes something shared and no approval step comes before it")
+            elif when.get("step") not in approvers:
+                out.append(f"step '{sid}' writes something shared but does not run only when '{approvers[0]}' "
+                           "is answered with an approving choice")
+            else:
+                yes = _names(steps[when["step"]]["ask"].get("approves_on"))
+                wanted = [when.get("outcome")] if isinstance(when.get("outcome"), str) else _names(when.get("outcome"))
+                out += [f"step '{sid}' runs on '{o}', which is not one of {when['step']}'s approves_on choices"
+                        for o in wanted if o not in yes]
     return out
 
 
