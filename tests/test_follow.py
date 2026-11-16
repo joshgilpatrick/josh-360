@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import unittest
 
-from helpers import LaptopCase
+from helpers import PY, LaptopCase, run
 
 STATUS_KEYS = {"schema", "commit", "main", "time", "result", "reason", "counts"}
 
@@ -100,6 +100,26 @@ class FollowTest(LaptopCase):
         self.assertEqual(self.status_on_branch()["result"], "passed")
         second = self.laptop("run_jobs.py", check=True)
         self.assertNotIn("sample-report", second.stdout)
+
+    def test_refuses_to_run_from_any_other_clone(self):
+        """A clone Josh works in is never moved, recorded as installed, or reported."""
+        other = self.tmp / "josh-dev-clone"
+        run(["git", "-c", "core.hooksPath=/dev/null", "clone", "--quiet", "--branch", "main", str(self.origin),
+             str(other)], self.tmp, self.env)
+        run(["git", "-c", "core.hooksPath=/dev/null", "checkout", "--quiet", "-b", "my-work"], other, self.env)
+        self.merge("docs/new-note.md", "# A note\n")
+        head = run(["git", "rev-parse", "HEAD"], other, self.env).stdout
+        for script in ("follow.py", "run_jobs.py", "install.py"):
+            result = run([PY, str(other / "laptop" / script)], other, self.env, check=False)
+            self.assertNotEqual(result.returncode, 0, script)
+            self.assertIn("runs only from the laptop's copy", result.stdout, script)
+        self.assertEqual(run(["git", "rev-parse", "HEAD"], other, self.env).stdout, head)
+        self.assertEqual(run(["git", "branch", "--show-current"], other, self.env).stdout.strip(), "my-work")
+        self.assertFalse((self.j360 / "state" / "installed.json").exists())
+        self.assertEqual(self.status_commits(), 0)
+        # A preview still works from anywhere.
+        self.assertEqual(run([PY, str(other / "laptop" / "install.py"), "--dry-run"], other, self.env,
+                             check=False).returncode, 0)
 
 
 if __name__ == "__main__":
