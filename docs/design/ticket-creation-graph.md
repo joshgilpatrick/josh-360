@@ -28,6 +28,14 @@ Ticket JP-102. Builds in JP-121. Sources: Josh's notes (`docs/source-notes/jira-
 
 One loose input goes in: a forwarded email, a to-do, a session that has become ticket-sized work, or a ticket asked for by hand (and, a little later, a Notion action item). One complete ticket comes out, or a parent with its children, written in Josh's format and good enough for another agent to work without guessing.
 
+```mermaid
+flowchart LR
+  E[Forwarded email, to-do, session, by hand, Notion item] --> C[This graph]
+  C --> T[Triage and sign-off JP-103]
+  T -->|development| D[Development graph]
+  T -->|non-development| N[Non-development graph JP-104]
+```
+
 On the way, a script picks the Jira space and the parent from the registry, an agent looks for a ticket that already covers the request, and Josh sees a one-tap card before anything is written. A small ask takes a short path: one ticket, three model calls. Tickets end in Not Started. A separate graph (triage and sign-off, JP-103) decides whether they are Ready.
 
 ## What is already decided
