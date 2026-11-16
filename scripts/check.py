@@ -9,12 +9,15 @@ Checks:
      and subagent has a description; a frontmatter value holding ": " is quoted.
   4. Every "](#anchor)" link in a Markdown file under docs/ or the repo root resolves to a heading in that
      file, using GitHub's anchor rule (lower case, spaces to hyphens, punctuation dropped, underscores kept).
+  5. The repository layout from JP-95: the starting folders each have a README, README.md and the docs it
+     names exist, nothing in the vision is still marked Proposed, and git ignores a file inside a .phi folder.
 
 Tickets that add code add their own checks here or beside it. Exit 0 when everything passes, 1 otherwise.
 """
 from __future__ import annotations
 
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -34,6 +37,28 @@ REQUIRED = [
 )] + [f".claude/commands/{c}.md" for c in (
     "design", "build", "fix", "review-pr", "ship", "session-end",
 )]
+
+# JP-95: the home layout every later ticket builds into.
+LAYOUT = [
+    "README.md",
+    "docs/decisions.md",
+    "docs/vision-and-roadmap.md",
+    "docs/source-notes/README.md",
+    ".gitignore",
+] + [f"{d}/README.md" for d in (
+    "apps", "ledger", "graphs", "conventions", "docs/design", "docs/inventory", "docs/proof",
+)]
+
+# A status marker, not the ordinary verb: "Proposed:", "(Proposed)", "**Proposed**", "| Proposed |".
+PROPOSED_MARKER = re.compile(r"(\*\*Proposed\*\*|\(Proposed\)|\bProposed:|\|\s*Proposed\s*\|)")
+
+
+def phi_is_ignored() -> bool:
+    """git check-ignore exits 0 when the path is ignored. --no-index also covers a file that is tracked."""
+    probe = "ledger/.phi/sample.json"
+    result = subprocess.run(["git", "check-ignore", "--no-index", "-q", probe], cwd=ROOT)
+    return result.returncode == 0
+
 
 PLACEHOLDER = re.compile(r"(?<!\$)\{\{\s*[A-Z_]+\s*\}\}")
 
@@ -119,6 +144,17 @@ def main() -> int:
         for anchor in re.findall(r"\]\(#([^)\s]+)\)", text):
             if anchor not in known:
                 problems.append(f"broken anchor: {doc.relative_to(ROOT)}: #{anchor}")
+
+    for rel in LAYOUT:
+        if not (ROOT / rel).is_file():
+            problems.append(f"missing: {rel}")
+    vision = ROOT / "docs/vision-and-roadmap.md"
+    if vision.is_file():
+        for n, line in enumerate(vision.read_text(encoding="utf-8").splitlines(), 1):
+            if PROPOSED_MARKER.search(line):
+                problems.append(f"still marked Proposed: docs/vision-and-roadmap.md:{n}: {line.strip()}")
+    if (ROOT / ".git").exists() and not phi_is_ignored():
+        problems.append("not ignored: a file inside a .phi folder (.gitignore needs *[Pp][Hh][Ii])")
 
     for p in problems:
         print(p)
