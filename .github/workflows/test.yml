@@ -1,14 +1,13 @@
 # CI runs once per PR, when the PR is ready for Josh (label review:ready-for-human), and on every push to
-# main. Pushes to a PR branch run nothing: run the suite locally first.
+# main. Pushes to a PR branch run nothing: run the suite locally first. There is no paths-ignore: the suite
+# checks Markdown and docs too, and the label gate already limits a PR to one run.
 name: test
 
 on:
   push:
     branches: [main]
-    paths-ignore: ['docs/**', '**/*.md']
   pull_request:
     types: [labeled]
-    paths-ignore: ['docs/**', '**/*.md']
   workflow_dispatch:
 
 permissions:
