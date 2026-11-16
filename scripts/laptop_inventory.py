@@ -128,7 +128,14 @@ def scrub(value):
 
 def tilde(path: Path, home: Path) -> str:
     """~/-relative when the path is under home, as written or with symlinks resolved (on macOS /var is a
-    link to /private/var, so a path written through the link would otherwise print in full)."""
+    link to /private/var, so a path written through the link would otherwise print in full). A path that
+    leads into a prompting folder is shown as written, because resolving it would look inside that folder."""
+    if leads_into_prompting(path):
+        written = os.path.abspath(str(path))
+        for h in [str(home)] + list(GUARD["homes"] or []):
+            if written == h or written.startswith(h + os.sep):
+                return "~" + written[len(h):]
+        return written
     return laptop_figures.tilde(path, home)
 
 
@@ -209,9 +216,51 @@ def cron_entries() -> dict:
 
 # ---------- files ----------
 
+# Set by build() for the run (the laptop job): every path the run is about to open is first checked,
+# symlink by symlink, for whether it leads into a folder that may raise a privacy prompt.
+GUARD: dict = {"homes": None}
+
+
+def leads_into_prompting(path: Path) -> bool:
+    """True when path, or any symlink met on the way to it, points into a PROMPTING_FOLDERS folder of the
+    home. Symlinks are followed by reading the link only (os.readlink, lstat); nothing inside a prompting
+    folder is ever touched. Unreadable links and loops count as True: unknown is not safe."""
+    homes = GUARD["homes"]
+    if not homes:
+        return False
+    roots = [os.path.join(h, f) for h in homes for f in PROMPTING_FOLDERS]
+
+    def under(p: str) -> bool:
+        return any(p == r or p.startswith(r + os.sep) for r in roots)
+
+    queue = list(Path(os.path.abspath(str(path))).parts[1:])
+    current, hops = os.sep, 0
+    try:
+        while queue:
+            nxt = os.path.normpath(os.path.join(current, queue.pop(0)))
+            if under(nxt):
+                return True
+            if os.path.islink(nxt):
+                hops += 1
+                if hops > 40:
+                    return True
+                target = os.path.normpath(os.path.join(current, os.readlink(nxt)))
+                if under(target):
+                    return True
+                queue = list(Path(target).parts[1:]) + queue
+                current = os.sep
+            else:
+                current = nxt
+    except (OSError, ValueError):
+        return True
+    return False
+
+
 def walk_stats(path: Path) -> dict:
     """Size, file count and newest change for a file or folder, without reading any file. A folder the
     run may not open (no Full Disk Access, a cloud-storage prompt) is reported, not fatal."""
+    if leads_into_prompting(path):
+        return {"skipped": "may prompt"}
     try:
         if not path.exists():
             return {"exists": False}
@@ -401,7 +450,7 @@ def definitions(home: Path) -> dict:
             folder = home / rel
             if folder.is_dir():
                 out[rel] = {d.name: day_of(_newest(d)) for d in sorted(folder.iterdir())
-                            if d.is_dir() or d.is_symlink()}
+                            if d.is_symlink() or d.is_dir()}  # is_symlink first: it does not follow the link
         except OSError:
             out[rel] = {"error": "unreadable"}
     for rel in (".claude/agents", ".claude/commands"):
@@ -429,6 +478,8 @@ def _mtime(path: Path) -> float | None:
 
 
 def _newest(path: Path) -> float | None:
+    if leads_into_prompting(path):
+        return None
     try:
         target = path.resolve()
         times = [t for t in (_mtime(p) for p in target.rglob("*")) if t]
@@ -468,7 +519,7 @@ def stores(home: Path, skip_prompting: bool = False) -> dict:
 def _find_sqlite(base: Path, max_depth: int = 4) -> list[Path]:
     """SQLite files up to max_depth below base, skipping transcripts. os.walk skips unreadable folders."""
     found = []
-    if not _is_dir(base):
+    if leads_into_prompting(base) or not _is_dir(base):
         return found
     base_depth = len(base.parts)
     for root, dirs, names in os.walk(base, followlinks=False):
@@ -496,31 +547,37 @@ def default_range(today: date) -> tuple[date, date]:
 
 
 def build(home: Path, since: date, until: date, keys: list[str], repo_roots: list[Path],
-          usage_days: int, today: date, skip_prompting: bool = False) -> dict:
+          usage_days: int, today: date, skip_prompting: bool = False, no_brew: bool = False) -> dict:
     started = time.time()
     sections = {
         "launchd_plists": lambda: launch_agent_plists(home),
         "launchctl": launchctl_jobs,
-        "brew_services": brew_services,
+        "brew_services": (lambda: {"available": False, "skipped": "brew writes its own cache"}) if no_brew
+        else brew_services,
         "listening_ports": listening_ports,
         "running_programs": running_programs,
         "cron": cron_entries,
         "claude_settings": lambda: claude_settings(home),
         "definitions": lambda: definitions(home),
         "stores": lambda: stores(home, skip_prompting),
-        "figures": lambda: laptop_figures.session_figures(home / ".claude/projects", since, until, keys,
+        "figures": lambda: {"skipped": "may prompt"} if leads_into_prompting(home / ".claude/projects")
+        else laptop_figures.session_figures(home / ".claude/projects", since, until, keys,
                                                           today - timedelta(days=usage_days)),
         "loose_ends": lambda: laptop_figures.loose_end_figures(
-            [r for r in repo_roots if not (skip_prompting and _prompting(tilde(r, home)[2:]))], home),
+            [r for r in repo_roots if not leads_into_prompting(r)], home),
     }
     report = {"schema": SCHEMA, "run_on": today.isoformat(), "home": "~"}
-    for name, run in sections.items():
-        # One failing section is recorded by its error type only (never its message, which can hold
-        # a path or file text) and the rest of the run carries on.
-        try:
-            report[name] = run()
-        except Exception as exc:  # noqa: BLE001
-            report[name] = {"error": type(exc).__name__}
+    GUARD["homes"] = sorted({str(home), os.path.realpath(str(home))}) if skip_prompting else None
+    try:
+        for name, run in sections.items():
+            # One failing section is recorded by its error type only (never its message, which can hold
+            # a path or file text) and the rest of the run carries on.
+            try:
+                report[name] = run()
+            except Exception as exc:  # noqa: BLE001
+                report[name] = {"error": type(exc).__name__}
+    finally:
+        GUARD["homes"] = None
     report["seconds"] = round(time.time() - started, 1)
     return report
 
@@ -565,6 +622,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--usage-days", type=int, default=90, help="window for skill and agent use")
     p.add_argument("--skip-prompting-folders", action="store_true",
                    help="leave out folders macOS may guard with a privacy prompt (the laptop job sets this)")
+    p.add_argument("--no-brew", action="store_true",
+                   help="do not run brew, which writes its own cache under ~/Library/Caches/Homebrew "
+                        "(the laptop job sets this; Homebrew services still show as homebrew.mxcl.* plists)")
     args = p.parse_args(argv)
 
     home = Path(args.home).expanduser().resolve()
@@ -577,7 +637,7 @@ def main(argv: list[str] | None = None) -> int:
                                                                                  home / ".claude"]
     keys = [k.strip() for k in args.ticket_keys.split(",") if k.strip()]
     report = build(home, args.since, args.until, keys, roots, args.usage_days, today,
-                   skip_prompting=args.skip_prompting_folders)
+                   skip_prompting=args.skip_prompting_folders, no_brew=args.no_brew)
     report = scrub(report)
     problems = check_output(report)
     if problems:
