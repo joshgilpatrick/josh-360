@@ -109,7 +109,7 @@ flowchart TD
 | `read_ticket` | gate | `read-ticket` | none | read | Checks the ticket is in JP and routed here, and that its Question, Sources and Deliverable format are filled. Outputs search terms, and whether Josh gave the deliverable format or it was inferred. |
 | `return_early` | gate | `return-to-triage` | none | josh | When the ticket is not workable here: back to Not Started, with the reason as an open question and the flag set. Ends the run. |
 | `start_run` | gate | `move-ticket` | none | josh | Moves the ticket to In Progress. |
-| `find_precedent` | role | `jira-searcher` | cheap | read | Finds up to five tickets that may already answer this one, closed ones with a resolution first. |
+| `find_precedent` | role | `jira-searcher` | cheap | read | Finds tickets that may already answer this one (at most ten, the shared role's list from JP-102), closed ones with a resolution first. |
 | `judge_precedent` | role | `precedent-judge` | mid | read | Runs only when candidates exist. Decides whether one of them really answers this ticket today, or is only related. |
 | `check_gaps` | gate | `gap-check` | none | read | Fires a ping only on observable signals (see [When it asks Josh](#when-it-asks-josh)). |
 | `ping_before` | ask | Josh | none | read | One sentence to confirm the deliverable before work starts. |
