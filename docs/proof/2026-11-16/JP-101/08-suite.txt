@@ -1,3 +1,4 @@
 $ python3 scripts/check.py
+OK
 check.py: ok (0 problem(s))
 [exit 0]
