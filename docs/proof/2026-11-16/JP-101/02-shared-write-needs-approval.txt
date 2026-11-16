@@ -1,0 +1,4 @@
+$ python3 graphs/tools/check_graph.py --root graphs/tests/fixtures/parts graphs/tests/fixtures/bad/shared-write-no-approval.yaml
+graphs/tests/fixtures/bad/shared-write-no-approval.yaml: step 'post_note' writes something shared and no approval step comes before it
+check_graph: FAILED (1 problem(s) in 1 graph(s))
+[exit 1]
