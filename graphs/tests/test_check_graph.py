@@ -66,6 +66,41 @@ class Scenarios(unittest.TestCase):
         self.assertIn("steps.build.mode: key 'mode' belongs to one orchestrator", result.stdout)
 
 
+class RunCapScenarios(unittest.TestCase):
+    """The scenarios on JP-139, by name, run through the command line as an agent would."""
+
+    def test_the_tiers_carry_their_caps(self):
+        data = check_graph.load_yaml(GRAPHS / "tiers.yaml")
+        self.assertEqual(data["max_runs"], {"cheap": 5, "mid": 3, "gate": 2})
+        result = run_cli()
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_a_loop_that_would_pass_the_cap_is_refused(self):
+        result = run_cli("--root", str(PARTS), str(BAD / "gate-loop-over-cap.yaml"))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("loop check_review -> build (outcome 'rework') would run step 'review' 3 times "
+                      "(max_loops 2 + 1) against a gate cap of 2", result.stdout)
+
+    def test_a_loop_inside_the_cap_passes(self):
+        # lint_spec -> design has max_loops 2 and reruns the mid-tier design step: 3 runs, cap 3.
+        data = valid_data()
+        self.assertEqual(step(data, "lint_spec")["on"]["incomplete"]["max_loops"], 2)
+        result = run_cli("--root", str(PARTS), str(VALID))
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertNotIn("lint_spec -> design", result.stdout)
+
+    def test_a_tier_with_no_cap_is_refused(self):
+        root = Path(tempfile.mkdtemp())
+        try:
+            shutil.copytree(PARTS, root / "parts")
+            shutil.copyfile(BAD_TIERS / "no-max-runs-for-mid.yaml", root / "parts" / "tiers.yaml")
+            result = run_cli("--root", str(root / "parts"))
+        finally:
+            shutil.rmtree(root)
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("tiers.yaml: tier 'mid' has no max_runs", result.stdout)
+
+
 class CommandLine(unittest.TestCase):
     def test_unknown_role_is_named(self):
         result = run_cli("--root", str(PARTS), str(BAD / "unknown-role.yaml"))
@@ -413,6 +448,49 @@ class Rules(unittest.TestCase):
         self.assertProblem(data, "step 'review' uses reviewer role 'code-reviewer' but no gate step needs it "
                                  "to drop defects that do not cite the plan")
 
+    # Run cap by tier (JP-139)
+    def test_a_loop_counts_its_own_reruns_only(self):
+        # The design loop has a gate-tier reviewer further down the graph, but the reviewer waits for the
+        # loop's source step, so the loop never reruns it and its cap is not touched.
+        data = valid_data()
+        self.assertEqual(self.problems(data), [])
+
+    def test_a_tier_on_a_non_role_step_is_not_counted_against_a_cap(self):
+        # A tier only goes on a role step; the checker says so once and adds no cap problem for that step.
+        data = valid_data()
+        step(data, "lint_spec")["tier"] = "gate"
+        found = self.problems(data)
+        self.assertIn("step 'lint_spec': tier only goes on a role step", found)
+        self.assertEqual([p for p in found if "cap of" in p], [])
+
+    def test_a_loop_one_over_a_mid_cap_is_refused(self):
+        data = valid_data()
+        step(data, "lint_spec")["on"]["incomplete"]["max_loops"] = 3
+        self.assertProblem(data, "loop lint_spec -> design (outcome 'incomplete') would run step 'design' "
+                                 "4 times (max_loops 3 + 1) against a mid cap of 3")
+
+    def test_a_step_tier_chooses_the_cap(self):
+        # build is a mid role used at tier cheap, so its cap is 5: max_loops 4 passes, 5 does not.
+        data = valid_data()
+        step(data, "decide_review")["on"]["retry"]["max_loops"] = 4
+        for text in self.problems(data):
+            self.assertNotIn("step 'build'", text)
+        step(data, "decide_review")["on"]["retry"]["max_loops"] = 5
+        self.assertProblem(data, "would run step 'build' 6 times (max_loops 5 + 1) against a cheap cap of 5")
+
+    def test_every_role_step_the_loop_reruns_is_named(self):
+        data = valid_data()
+        step(data, "decide_review")["on"]["retry"]["max_loops"] = 2
+        found = [p for p in self.problems(data) if p.startswith("loop decide_review -> build")]
+        self.assertEqual(len(found), 1, found)  # review (gate, cap 2) is over; build (cheap, cap 5) is not
+        self.assertIn("step 'review' 3 times", found[0])
+
+    def test_a_loop_through_a_gate_script_still_counts_the_role_steps(self):
+        data = valid_data()
+        step(data, "check_review")["on"]["rework"]["max_loops"] = 2
+        self.assertProblem(data, "loop check_review -> build (outcome 'rework') would run step 'review' "
+                                 "3 times (max_loops 2 + 1) against a gate cap of 2")
+
 
 class WrongTypes(unittest.TestCase):
     """A value of the wrong type is reported, never a crash."""
@@ -548,6 +626,38 @@ class Parts(unittest.TestCase):
         (self.root / "tiers.yaml").write_text(
             "convention: 1\ntiers:\n  cheap: [a]\n  mid: [b]\n  gate: [{model: c, speed: 9}]\n")
         self.assertProblem("tiers.yaml: tiers.gate[0].speed: key 'speed' is not in the convention's schema")
+
+    def test_max_runs_is_required_for_every_tier(self):
+        (self.root / "tiers.yaml").write_text(
+            "convention: 1\ntiers:\n  cheap: [{model: a, effort: low}]\n  mid: [{model: b, effort: low}]\n"
+            "  gate: [{model: c, effort: low}]\n")
+        for tier in ("cheap", "mid", "gate"):
+            self.assertProblem(f"tiers.yaml: tier '{tier}' has no max_runs")
+
+    def test_max_runs_must_be_a_whole_number_of_one_or_more(self):
+        for bad in ("0", "-1", "2.5", "true", "three"):
+            with self.subTest(bad):
+                shutil.copyfile(PARTS / "tiers.yaml", self.root / "tiers.yaml")
+                text = (self.root / "tiers.yaml").read_text().replace("mid: 3", f"mid: {bad}")
+                (self.root / "tiers.yaml").write_text(text)
+                self.assertProblem("tiers.yaml: max_runs.mid must be a whole number of 1 or more")
+
+    def test_max_runs_names_only_tiers(self):
+        text = (PARTS / "tiers.yaml").read_text() + "  huge: 9\n"
+        (self.root / "tiers.yaml").write_text(text)
+        self.assertProblem("tiers.yaml: max_runs.huge is not a tier (one of cheap, mid, gate)")
+
+    def test_max_runs_must_be_a_mapping(self):
+        text = (PARTS / "tiers.yaml").read_text().split("max_runs:")[0] + "max_runs: 3\n"
+        (self.root / "tiers.yaml").write_text(text)
+        self.assertProblem("tiers.yaml: max_runs must map each tier to a number of runs")
+
+    def test_a_graph_is_not_checked_against_a_cap_that_is_not_set(self):
+        # With no usable caps the tiers file reports the problem; the graph adds no second complaint per loop.
+        (self.root / "tiers.yaml").write_text((PARTS / "tiers.yaml").read_text().split("max_runs:")[0])
+        data = check_graph.load_yaml(BAD / "gate-loop-over-cap.yaml")
+        found = check_graph.check_graph_data(data, "gate-loop-over-cap", check_graph.load_parts(self.root))
+        self.assertEqual([p for p in found if "cap of" in p], [])
 
     def test_role_needs_instructions(self):
         (self.root / "roles/designer/instructions.md").unlink()
