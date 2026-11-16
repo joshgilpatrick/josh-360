@@ -38,7 +38,8 @@ class DispatchTest(unittest.TestCase):
         return path.read_text() if path.exists() else ""
 
     def test_no_hooks_is_a_quiet_no_op(self):
-        result = self.dispatch("PreToolUse")
+        big = '{"x": "' + "a" * 200000 + '"}'  # more than a pipe buffer: stdin is read, not left unread
+        result = self.dispatch("PreToolUse", big)
         self.assertEqual((result.returncode, result.stdout, result.stderr), (0, "", ""))
 
     def test_a_new_hook_file_is_picked_up(self):
