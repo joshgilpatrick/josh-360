@@ -11,6 +11,9 @@ Checks:
      file, using GitHub's anchor rule (lower case, spaces to hyphens, punctuation dropped, underscores kept).
   5. The repository layout from JP-95: the starting folders each have a README, README.md and the docs it
      names exist, nothing in the vision is still marked Proposed, and git ignores a file inside a .phi folder.
+  6. JP-96 inventory: every row of a table with Verdict and Reason columns in docs/inventory/ has exactly one
+     verdict of keep, migrate, build new or dismantle, and a reason; every row of a table with Date range and
+     Produced by columns states both.
 
 Tickets that add code add their own checks here or beside it. Exit 0 when everything passes, 1 otherwise.
 """
@@ -108,6 +111,43 @@ def anchors_in(text: str) -> set[str]:
     return result
 
 
+VERDICTS = {"keep", "migrate", "build new", "dismantle"}
+
+
+def table_rows(text: str):
+    """Yields (header, cells, line number) for every Markdown table body row."""
+    header = None
+    for n, line in enumerate(text.splitlines(), 1):
+        stripped = line.strip()
+        if not (stripped.startswith("|") and stripped.endswith("|")):
+            header = None
+            continue
+        cells = [c.strip() for c in stripped.strip("|").split("|")]
+        if header is None:
+            header = cells
+        elif not all(re.fullmatch(r":?-+:?", c) for c in cells):
+            yield header, cells, n
+
+
+def inventory_problems(path: Path) -> list[str]:
+    problems = []
+    rel = path.relative_to(ROOT) if path.is_relative_to(ROOT) else path
+    for header, cells, n in table_rows(path.read_text(encoding="utf-8")):
+        row = dict(zip(header, cells))
+        if len(cells) != len(header):
+            problems.append(f"inventory row has {len(cells)} cells, header has {len(header)}: {rel}:{n}")
+            continue
+        if "Verdict" in row and "Reason" in row:
+            if row["Verdict"] not in VERDICTS:
+                problems.append(f"inventory row without exactly one verdict: {rel}:{n}: {row['Verdict']!r}")
+            if len(row["Reason"]) < 10:
+                problems.append(f"inventory row without a reason: {rel}:{n}")
+        if "Date range" in row and "Produced by" in row:
+            if not row["Date range"] or not row["Produced by"]:
+                problems.append(f"figure without a date range or command: {rel}:{n}")
+    return problems
+
+
 def main() -> int:
     problems: list[str] = []
 
@@ -155,6 +195,9 @@ def main() -> int:
                 problems.append(f"still marked Proposed: docs/vision-and-roadmap.md:{n}: {line.strip()}")
     if (ROOT / ".git").exists() and not phi_is_ignored():
         problems.append("not ignored: a file inside a .phi folder (.gitignore needs *[Pp][Hh][Ii])")
+
+    for doc in sorted((ROOT / "docs/inventory").glob("*.md")):
+        problems += inventory_problems(doc)
 
     for p in problems:
         print(p)
