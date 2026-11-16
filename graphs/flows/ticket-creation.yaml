@@ -120,10 +120,11 @@ steps:
 
   - id: stuck
     ask:
-      question: "The ticket from {{ inputs.source_ref }} still has gaps after two rounds. Show it for approval as it is, or drop it?"
-      choices: [show_it, drop]
+      question: "The ticket from {{ inputs.source_ref }} reached its drafting limit. Try one more round, show it for approval as it is, or drop it?"
+      choices: [one_more, show_it, drop]
       on_limit_only: true
     on:
+      one_more: { goto: draft, max_loops: 1, at_limit: stuck }   # each yes buys one more draft run
       drop: end
 
   - id: approve
