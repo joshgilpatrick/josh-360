@@ -175,7 +175,7 @@
 - Consumes: `Failure` (Task 4), kept defects (Task 6).
 - Produces: `decide(author_kind: str, failures: list[dict], route: str | None, kept: list[dict] | None, returns: int) -> tuple[str, list[dict]]` returning an outcome of `ready`, `revise`, `comment` or `escalate` and the numbered gaps (failures first, then defects, each with `n`); `RETURN_BUDGET = 2`.
 
-- [ ] **Step 1: Write the failing tests:** `test_ready_needs_everything` (no failures, a route, kept empty), `test_route_conflict_is_a_gap`, `test_own_with_gaps_revises`, `test_other_with_gaps_comments`, `test_third_return_escalates` (`returns == 3`, own ticket → `escalate`), `test_other_never_escalates`, `test_numbering_failures_first`.
+- [ ] **Step 1: Write the failing tests:** `test_ready_needs_everything` (no failures, a route, kept empty), `test_route_conflict_is_a_gap`, `test_own_with_gaps_revises`, `test_other_with_gaps_comments`, `test_third_return_escalates` (`returns == 3`, own ticket → `escalate`), `test_other_never_escalates` (`returns == 3`, someone else's ticket → `comment`), `test_numbering_failures_first`.
 - [ ] **Step 2: Run** — FAIL. **Step 3: Implement.** **Step 4: Run** — PASS. **Step 5: Commit.**
 
 ### Task 8: Read-only gate scripts
@@ -208,7 +208,7 @@
 ### Task 10: The graph and its parts, final
 
 **Files:**
-- Modify: `graphs/flows/triage.yaml` (remove the DRAFT comment; add JP-140's end-state field: `ready` success, `sent_back` neutral, `parked` and any ask needs-Josh; add `graph_version` and `model` to `ledger`), `graphs/flows/README.md` (state: built), `graphs/roles/ticket-drafter/` and `graphs/contracts/ticket-proposal.md` (take JP-102's versions from `main`; delete the placeholders), `scripts/check.py` (parse `graphs/gates/**/*.py` as Python 3.9), the spec (add "As built" listing anything that differs)
+- Modify: `graphs/flows/triage.yaml` (remove the DRAFT comment; `end_states` and the `graph_version` and `model` ledger fields are already there, so check they still match the steps), `graphs/flows/README.md` (state: built), `graphs/roles/ticket-drafter/` and `graphs/contracts/ticket-proposal.md` (take JP-102's versions from `main`; delete the placeholders), `scripts/check.py` (parse `graphs/gates/**/*.py` as Python 3.9), the spec (add "As built" listing anything that differs)
 - Test: `python3 graphs/tools/check_graph.py`, `python3 scripts/check.py`
 
 - [ ] **Step 1:** Make the edits.
