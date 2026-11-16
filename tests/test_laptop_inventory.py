@@ -15,6 +15,7 @@ import tempfile
 import unittest
 from datetime import date
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -100,6 +101,11 @@ def make_home(base: Path) -> Path:
                        "StartInterval": 3600, "RunAtLoad": True,
                        "StandardOutPath": str(base / "job.log")}, fh)
     (base / "job.log").write_text(CANARY)
+    # A job whose whole command is one shell string: only the path words may come out, never the string.
+    with (agents_dir / "com.example.shell.plist").open("wb") as fh:
+        plistlib.dump({"Label": "com.example.shell", "ProgramArguments": [
+            "/bin/sh", "-c", f"cd ~/jobs && TOKEN=SECRETVALUE curl -H 'Authorization: Bearer x/SECRETVALUE' "
+                             f"https://example.com/hook?key=SECRETVALUE; python3 ~/jobs/two.py '{CANARY}'"]}, fh)
 
     repo = home / "Development/sample-repo"
     repo.mkdir(parents=True)
@@ -174,9 +180,79 @@ class LaptopInventoryTest(unittest.TestCase):
         allowed = {("launchctl", "list"), ("brew", "services", "list"), ("ps", "-axo", "comm="),
                    ("crontab", "-l"), ("lsof", "-nP", "-iTCP", "-sTCP:LISTEN", "-F", "cn")}
         self.assertEqual({tuple(v) for v in laptop_inventory.READ_ONLY_COMMANDS.values()}, allowed)
-        self.assertEqual(laptop_figures.READ_ONLY_GIT, ("for-each-ref", "worktree", "symbolic-ref", "rev-list"))
-        with self.assertRaises(ValueError):
-            laptop_figures._git(self.home, "checkout", "main")
+        # Whole argument lists are pinned, so "worktree" cannot become "worktree remove".
+        self.assertEqual({v[:2] for v in laptop_figures.READ_ONLY_GIT.values()}, {
+            ("for-each-ref", "--format=%(refname:short)\t%(upstream)\t%(upstream:track)"),
+            ("worktree", "list"), ("symbolic-ref", "--quiet"), ("rev-list", "--walk-reflogs")})
+        with self.assertRaises(KeyError):
+            laptop_figures._git(self.home, "checkout")
+        self.assertEqual(laptop_inventory.COMMAND_ENV["brew"]["HOMEBREW_NO_AUTO_UPDATE"], "1")
+
+    # Review of PR #7, fix 1 and 2: whole words that are paths, never a shell string or a fragment.
+    def test_shell_string_job_keeps_only_path_words(self):
+        shell = next(p for p in self.report["launchd_plists"] if p.get("label") == "com.example.shell")
+        self.assertEqual(shell["program"], "/bin/sh")
+        self.assertEqual(shell["scripts"], ["~/jobs", "~/jobs/two.py"])
+        self.assertEqual(laptop_inventory._path_words(
+            ["--key=/tmp/x", "https://h/a/b", "Bearer abc/def", "./run.sh", "deploy.py", "a/b"]),
+            ["./run.sh", "deploy.py"])
+
+    # Review of PR #7, fix 4: an unreadable folder, a failing section and odd bytes do not stop the run.
+    def test_unreadable_store_is_reported_not_fatal(self):
+        with mock.patch.object(Path, "is_file", side_effect=PermissionError("denied")):
+            self.assertEqual(laptop_inventory.walk_stats(self.home / ".claude/atlas"),
+                             {"exists": None, "error": "unreadable"})
+
+    def test_failing_section_is_recorded_and_the_rest_runs(self):
+        with mock.patch.object(laptop_inventory, "stores", side_effect=RuntimeError(CANARY)):
+            report = laptop_inventory.build(self.home, date(2026, 11, 2), date(2026, 11, 15), ["JP"],
+                                            [self.home / "Development"], 36500, date(2026, 11, 16))
+        self.assertEqual(report["stores"], {"error": "RuntimeError"})
+        self.assertNotIn("CANARY", json.dumps(report))
+        self.assertEqual(report["loose_ends"]["repos_found"], 1)
+
+    def test_non_utf8_branch_name_does_not_stop_git(self):
+        repo = self.tmp / "bytes-repo"
+        repo.mkdir()
+        git(repo, "init", "-q", "-b", "main")
+        git(repo, "commit", "-q", "--allow-empty", "-m", "one")
+        subprocess.run([b"git", b"-C", os.fsencode(repo), b"branch", b"JP-9-caf\xe9"], check=True,
+                       capture_output=True)
+        self.assertEqual(laptop_figures.repo_loose_ends(repo)["branches_without_remote"], 1)  # main is not counted
+        shutil.rmtree(repo)
+
+    # Review of PR #7, fix 3: importing the sibling module writes no __pycache__ beside the script.
+    def test_script_run_writes_no_bytecode(self):
+        copy = self.tmp / "script-copy"
+        shutil.copytree(ROOT / "scripts", copy, ignore=shutil.ignore_patterns("__pycache__"))
+        out = self.tmp / "out/subprocess.json"
+        env = {k: v for k, v in os.environ.items() if k != "PYTHONDONTWRITEBYTECODE"}
+        try:
+            run = subprocess.run([sys.executable, str(copy / "laptop_inventory.py"), "--out", str(out),
+                                  "--home", str(self.home), "--since", "2026-11-02", "--until", "2026-11-15"],
+                                 capture_output=True, text=True, env=env, timeout=120)
+            self.assertEqual(run.returncode, 0, run.stderr)
+            self.assertFalse((copy / "__pycache__").exists())
+        finally:
+            shutil.rmtree(copy)
+            out.unlink(missing_ok=True)
+
+    # Review of PR #7, fix 5: a call is dated by its own entry, not by the day its session started.
+    def test_use_is_dated_by_the_call_not_the_session_start(self):
+        projects = self.tmp / "use-window/projects"
+        jl(projects / "p/long.jsonl", [
+            user("2026-10-01T09:00:00Z", "start", gitBranch="main"),
+            assistant("2026-10-01T09:01:00Z", [{"type": "tool_use", "name": "Skill", "input": {"skill": "early"}}]),
+            assistant("2026-11-10T09:00:00Z", [{"type": "tool_use", "name": "Skill", "input": {"skill": "late"}},
+                                               {"type": "tool_use", "name": "Skill", "input": {"skill": CANARY}}]),
+        ])
+        f = laptop_figures.session_figures(projects, date(2026, 11, 2), date(2026, 11, 15), ["JP"],
+                                           date(2026, 11, 1))
+        self.assertEqual(f["skill_use"]["late"], {"uses": 1, "last_used": "2026-11-10"})
+        self.assertNotIn("early", f["skill_use"])
+        self.assertIn("(other)", f["skill_use"])
+        self.assertEqual(f["sessions"], 0)  # the session started before the range
+        shutil.rmtree(projects.parent)
 
     # Scenario: Starting figures can be reproduced (the numbers the figures file quotes)
     def test_session_figures(self):
@@ -227,6 +303,30 @@ class LaptopInventoryTest(unittest.TestCase):
             src = (ROOT / "scripts" / name).read_text(encoding="utf-8")
             self.assertIn("from __future__ import annotations", src)
             self.assertNotRegex(src, r"^\s*match .*:$")
+
+    def test_paths_through_a_symlink_stay_home_relative(self):
+        # macOS: $TMPDIR is under /var, a link to /private/var, and main() resolves --home. A path written
+        # through the link must still print as ~/... (found by the PR #7 audit on the laptop).
+        alias = self.tmp / "alias-home"
+        alias.symlink_to(self.home, target_is_directory=True)
+        resolved = self.home.resolve()
+        self.assertEqual(laptop_inventory.tilde(alias / "jobs/run.py", resolved), "~/jobs/run.py")
+        self.assertEqual(laptop_inventory.tilde(resolved / "jobs/run.py", alias), "~/jobs/run.py")
+        self.assertEqual(laptop_inventory.tilde(Path("/opt/elsewhere/x.py"), resolved), "/opt/elsewhere/x.py")
+        alias.unlink()
+
+    def test_symlinked_home_run_keeps_home_relative_paths(self):
+        alias = self.tmp / "alias-home-2"
+        alias.symlink_to(self.home, target_is_directory=True)
+        out = self.tmp / "out/via-alias.json"
+        try:
+            self.assertEqual(laptop_inventory.main(["--out", str(out), "--home", str(alias),
+                                                    "--since", "2026-11-02", "--until", "2026-11-15"]), 0)
+            report = json.loads(out.read_text(encoding="utf-8"))
+            self.assertEqual(report["launchd_plists"][0]["scripts"], ["~/jobs/run.py"])
+        finally:
+            alias.unlink()
+            out.unlink(missing_ok=True)
 
     def test_default_range_is_twelve_whole_weeks(self):
         since, until = laptop_inventory.default_range(date(2026, 11, 18))
