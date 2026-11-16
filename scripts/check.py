@@ -13,7 +13,8 @@ Checks:
      names exist, nothing in the vision is still marked Proposed, and git ignores a file inside a .phi folder.
   6. JP-96 inventory: every row of a table with Verdict and Reason columns in docs/inventory/ has exactly one
      verdict of keep, migrate, build new or dismantle, and a reason; every row of a table with Date range and
-     Produced by columns states both.
+     Produced by columns states both; a table of items (a "What it is" column) must have Verdict and
+     Reason columns; and laptop.md and starting-figures.md must exist.
 
 Tickets that add code add their own checks here or beside it. Exit 0 when everything passes, 1 otherwise.
 """
@@ -137,6 +138,9 @@ def inventory_problems(path: Path) -> list[str]:
         if len(cells) != len(header):
             problems.append(f"inventory row has {len(cells)} cells, header has {len(header)}: {rel}:{n}")
             continue
+        if "What it is" in row and not ("Verdict" in row and "Reason" in row):
+            problems.append(f"inventory table of items (a 'What it is' column) without Verdict and Reason columns: {rel}:{n}")
+            continue
         if "Verdict" in row and "Reason" in row:
             if row["Verdict"] not in VERDICTS:
                 problems.append(f"inventory row without exactly one verdict: {rel}:{n}: {row['Verdict']!r}")
@@ -196,6 +200,9 @@ def main() -> int:
     if (ROOT / ".git").exists() and not phi_is_ignored():
         problems.append("not ignored: a file inside a .phi folder (.gitignore needs *[Pp][Hh][Ii])")
 
+    for name in ("laptop.md", "starting-figures.md"):
+        if not (ROOT / "docs/inventory" / name).is_file():
+            problems.append(f"JP-96 deliverable missing: docs/inventory/{name}")
     for doc in sorted((ROOT / "docs/inventory").glob("*.md")):
         problems += inventory_problems(doc)
 
