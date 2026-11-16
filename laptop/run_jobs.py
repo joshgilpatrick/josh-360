@@ -31,7 +31,7 @@ sys.dont_write_bytecode = True  # keep the laptop's copy clean
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import status as status_branch  # noqa: E402
 from common import (REPO_ROOT, Lane, Unexpected, dump_json, load_jobs, logs_dir, now_utc,  # noqa: E402
-                    read_json, state_dir)
+                    read_json, require_laptop_copy, state_dir)
 
 ONCE_RETRY_SECONDS = 3600
 REPORT_LIMIT = 1_000_000
@@ -114,6 +114,7 @@ def main(argv: List[str]) -> int:
     try:
         if argv == ["--list"]:
             return list_jobs()
+        require_laptop_copy()
         lane = Lane()
         lane.mkdir(state_dir())
         lane.mkdir(logs_dir())
