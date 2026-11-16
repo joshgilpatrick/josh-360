@@ -1,0 +1,14 @@
+$ grep -n "ledger\|end_states" -A4 graphs/tests/fixtures/parts/flows/valid.yaml | sed -n 1,16p
+18:  ledger: [run, step, outcome, loop_count, session, tier, graph_version, model]
+19-  access:
+20-    design: josh
+21-    lint_spec: read
+--
+31:  end_states:
+32-    finished: success
+33-    approve_spec.drop: neutral
+34-    decide_review.stop: needs-josh
+
+$ python3 graphs/tools/check_graph.py --root graphs/tests/fixtures/parts graphs/tests/fixtures/parts/flows/valid.yaml
+check_graph: ok (1 graph(s))
+exit 0

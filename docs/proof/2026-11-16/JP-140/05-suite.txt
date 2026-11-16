@@ -1,0 +1,20 @@
+$ python3 scripts/check.py
+OK
+check.py: ok (0 problem(s))
+exit 0
+
+$ python3 -m unittest discover -s graphs/tests -v | tail -n 40
+test_every_bad_sample_fails (test_check_graph.CommandLine.test_every_bad_sample_fails) ... ok
+test_every_bad_tiers_sample_fails (test_check_graph.Parts.test_every_bad_tiers_sample_fails) ... ok
+test_a_loop_is_not_an_end (test_check_graph.Rules.test_a_loop_is_not_an_end) ... ok
+test_an_outcome_that_only_moves_on_is_not_an_end (test_check_graph.Rules.test_an_outcome_that_only_moves_on_is_not_an_end) ... ok
+test_end_states_is_a_required_header_field (test_check_graph.Rules.test_end_states_is_a_required_header_field) ... ok
+test_end_states_must_be_a_mapping (test_check_graph.Rules.test_end_states_must_be_a_mapping) ... ok
+test_ledger_vocabulary (test_check_graph.Rules.test_ledger_vocabulary) ... ok
+test_an_unclassified_end_is_refused (test_check_graph.ScoringScenarios.test_an_unclassified_end_is_refused) ... ok
+test_an_unknown_classification_is_refused (test_check_graph.ScoringScenarios.test_an_unknown_classification_is_refused) ... ok
+test_every_end_is_classified (test_check_graph.ScoringScenarios.test_every_end_is_classified) ... ok
+test_the_new_ledger_fields_are_allowed (test_check_graph.ScoringScenarios.test_the_new_ledger_fields_are_allowed) ... ok
+test_the_suite_still_passes (test_check_graph.ScoringScenarios.test_the_suite_still_passes) ... ok
+Ran 116 tests in 3.845s
+OK

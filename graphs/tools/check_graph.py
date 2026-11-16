@@ -23,11 +23,14 @@ except ImportError:  # reported in main(), so the tests and the suite say what t
 CONVENTION = 1
 TIERS = ("cheap", "mid", "gate")
 ACCESS = ("read", "josh", "shared")
-LEDGER = ("run", "step", "outcome", "loop_count", "session", "tier", "ticket", "started_at", "ended_at")
+LEDGER = ("run", "step", "outcome", "loop_count", "session", "tier", "ticket", "started_at", "ended_at",
+          "graph_version", "model")
 EFFECTS = ("move_ticket", "set_label")
 TYPES = ("string", "number", "boolean", "list")
 EFFORTS = ("low", "medium", "high")
-HEADER_FIELDS = ("jira", "entry_gate", "exit_gate", "asks_josh", "ledger", "access")
+HEADER_FIELDS = ("jira", "entry_gate", "exit_gate", "asks_josh", "ledger", "access", "end_states")
+END_CLASSES = ("success", "neutral", "needs-josh")  # how a run's end is scored (JP-140)
+FINISHED = "finished"  # the end of a run that runs out of steps and passes the exit gate
 
 # Keys that belong to one runner. They are refused by name, so the message says where they go instead.
 ORCHESTRATOR_KEYS = {
@@ -66,7 +69,7 @@ STEP = {
 }
 HEADER = {
     "jira": LIST({"status": LEAF, "steps": LEAF}), "entry_gate": LEAF, "exit_gate": LEAF,
-    "asks_josh": LEAF, "ledger": LEAF, "access": MAP(LEAF),
+    "asks_josh": LEAF, "ledger": LEAF, "access": MAP(LEAF), "end_states": MAP(LEAF),
 }
 GRAPH = {
     "convention": LEAF, "graph": LEAF, "title": LEAF, "description": LEAF, "header": HEADER,
@@ -322,7 +325,7 @@ def _reruns(steps: dict[str, dict], source: str, target: str) -> set[str]:
     return ({target} | below(target)) - below(source)
 
 
-def _check_header(header, steps, kind, parts) -> list[str]:
+def _check_header(header, steps, kind, outcomes, parts) -> list[str]:
     out: list[str] = []
     if not isinstance(header, dict):
         return ["header: missing or not a mapping"]
@@ -379,6 +382,30 @@ def _check_header(header, steps, kind, parts) -> list[str]:
             elif value not in ACCESS:
                 out.append(f"header.access.{sid}: '{value}' is not one of {', '.join(ACCESS)}")
         out += [f"header.access: step '{sid}' has no access" for sid in steps if isinstance(header["access"], dict) and sid not in access]
+
+    if "end_states" in header:
+        out += _check_end_states(header["end_states"], steps, outcomes)
+    return out
+
+
+def graph_ends(steps: dict[str, dict], outcomes: dict[str, list]) -> list[str]:
+    """Every way a run of this graph can end: `finished`, then `<step>.<outcome>` for each outcome whose on is end."""
+    ends = [FINISHED]
+    for sid, s in steps.items():
+        on = s.get("on") if isinstance(s.get("on"), dict) else {}
+        ends += [f"{sid}.{o}" for o, then in on.items() if then == "end" and o in outcomes.get(sid, [])]
+    return ends
+
+
+def _check_end_states(end_states, steps, outcomes) -> list[str]:
+    if not isinstance(end_states, dict):
+        return [f"header.end_states: needs a mapping of each end to {', '.join(END_CLASSES)}"]
+    ends = graph_ends(steps, outcomes)
+    out = [f"header.end_states: end '{e}' is unclassified" for e in ends if e not in end_states]
+    out += [f"header.end_states: '{e}' is not an end of this graph (its ends are {', '.join(ends)})"
+            for e in end_states if e not in ends]
+    out += [f"header.end_states.{e}: '{v}' must be one of {', '.join(END_CLASSES)}"
+            for e, v in end_states.items() if e in ends and v not in END_CLASSES]
     return out
 
 
@@ -595,7 +622,7 @@ def check_graph_data(data, name: str, parts: Parts) -> list[str]:
                 and sid not in limit_targets:
             out.append(f"ask step '{sid}' is on_limit_only but no loop ends at it")
 
-    out += _check_header(data.get("header"), steps, kind, parts)
+    out += _check_header(data.get("header"), steps, kind, outcomes, parts)
 
     # The habits that need the whole graph.
     access = data.get("header", {}).get("access") if isinstance(data.get("header"), dict) else None
