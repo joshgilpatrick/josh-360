@@ -1,0 +1,110 @@
+# Josh's drafted Paseo pipeline (docs/source-notes/jira-ticket-pipeline.yaml), copied to a scratch folder and
+# run through the checker as-is. It is refused line by line, with no crash: what converting it will take.
+$ python3 graphs/tools/check_graph.py <scratch>/jira-ticket-pipeline.yaml
+jira-ticket-pipeline.yaml: manager: key 'manager' belongs to one orchestrator; put it in graphs/bindings/<tool>/
+jira-ticket-pipeline.yaml: steps.design.on.needs_input.ask: key 'ask' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.lint_spec.script: key 'script' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.pick_phase.script: key 'script' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.route.branch: key 'branch' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.build_cheap.when.steps.route.outcome: key 'steps.route.outcome' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.build_cheap.on.needs_judgment.ask: key 'ask' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.build_cheap.on.needs_judgment.decider: key 'decider' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.build_cheap.on.needs_judgment.choices: key 'choices' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.build_mid.when.steps.route.outcome: key 'steps.route.outcome' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.build_mid.on.needs_judgment.ask: key 'ask' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.build_mid.on.needs_judgment.decider: key 'decider' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.build_mid.on.needs_judgment.choices: key 'choices' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.verify.when.steps.route.outcome: key 'steps.route.outcome' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.verify.script: key 'script' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.evidence.script: key 'script' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.check_review.when.steps.completion_review.outcome: key 'steps.completion_review.outcome' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.check_review.script: key 'script' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.queue_audit.script: key 'script' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.begin_audit.script: key 'script' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.audit_passed.when.steps.code_review.outcome: key 'steps.code_review.outcome' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.audit_passed.script: key 'script' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.audit_changes.when.steps.code_review.outcome: key 'steps.code_review.outcome' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.audit_changes.script: key 'script' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.audit_blocked.when.steps.code_review.outcome: key 'steps.code_review.outcome' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.audit_blocked.script: key 'script' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.unblock.when.steps.code_review.outcome: key 'steps.code_review.outcome' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.fix_review.when.steps.code_review.outcome: key 'steps.code_review.outcome' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.fix_review.on.needs_input.ask: key 'ask' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.after_fix.when.steps.code_review.outcome: key 'steps.code_review.outcome' is not in the convention's schema
+jira-ticket-pipeline.yaml: steps.after_fix.script: key 'script' is not in the convention's schema
+jira-ticket-pipeline.yaml: missing field 'convention'
+jira-ticket-pipeline.yaml: missing field 'graph'
+jira-ticket-pipeline.yaml: missing field 'header'
+jira-ticket-pipeline.yaml: step 'lint_spec' must have exactly one of role, gate or ask
+jira-ticket-pipeline.yaml: step 'approve_spec' needs a list of outcomes
+jira-ticket-pipeline.yaml: step 'pick_phase' must have exactly one of role, gate or ask
+jira-ticket-pipeline.yaml: step 'route' must have exactly one of role, gate or ask
+jira-ticket-pipeline.yaml: step 'verify' must have exactly one of role, gate or ask
+jira-ticket-pipeline.yaml: step 'evidence' must have exactly one of role, gate or ask
+jira-ticket-pipeline.yaml: step 'check_review' must have exactly one of role, gate or ask
+jira-ticket-pipeline.yaml: step 'open_pr' needs a list of outcomes
+jira-ticket-pipeline.yaml: step 'queue_audit' must have exactly one of role, gate or ask
+jira-ticket-pipeline.yaml: step 'begin_audit' must have exactly one of role, gate or ask
+jira-ticket-pipeline.yaml: step 'audit_passed' must have exactly one of role, gate or ask
+jira-ticket-pipeline.yaml: step 'audit_changes' must have exactly one of role, gate or ask
+jira-ticket-pipeline.yaml: step 'audit_blocked' must have exactly one of role, gate or ask
+jira-ticket-pipeline.yaml: step 'unblock' needs a list of outcomes
+jira-ticket-pipeline.yaml: step 'after_fix' must have exactly one of role, gate or ask
+jira-ticket-pipeline.yaml: step 'design': role must be a name
+jira-ticket-pipeline.yaml: step 'design': on 'needs_input' must be end or a goto
+jira-ticket-pipeline.yaml: step 'lint_spec': on 'incomplete' is not one of its outcomes
+jira-ticket-pipeline.yaml: loop lint_spec -> design (outcome 'incomplete') has no at_limit, so it does not end at a human
+jira-ticket-pipeline.yaml: step 'harden': role must be a name
+jira-ticket-pipeline.yaml: loop harden -> design (outcome 'defects') has no at_limit, so it does not end at a human
+jira-ticket-pipeline.yaml: step 'approve_spec': gate must be a name
+jira-ticket-pipeline.yaml: step 'approve_spec': on 'revise' is not one of its outcomes
+jira-ticket-pipeline.yaml: loop approve_spec -> design (outcome 'revise') has no max_loops
+jira-ticket-pipeline.yaml: loop approve_spec -> design (outcome 'revise') has no at_limit, so it does not end at a human
+jira-ticket-pipeline.yaml: step 'build_cheap': role must be a name
+jira-ticket-pipeline.yaml: step 'build_cheap': when names unknown step 'None'
+jira-ticket-pipeline.yaml: step 'build_cheap': on 'needs_judgment' must be end or a goto
+jira-ticket-pipeline.yaml: step 'build_mid': role must be a name
+jira-ticket-pipeline.yaml: step 'build_mid': when names unknown step 'None'
+jira-ticket-pipeline.yaml: step 'build_mid': on 'needs_judgment' must be end or a goto
+jira-ticket-pipeline.yaml: step 'verify': when names unknown step 'None'
+jira-ticket-pipeline.yaml: step 'verify': on 'phase_passed' is not one of its outcomes
+jira-ticket-pipeline.yaml: loop verify -> pick_phase (outcome 'phase_passed') has no at_limit, so it does not end at a human
+jira-ticket-pipeline.yaml: step 'verify': on 'retry_cheap' is not one of its outcomes
+jira-ticket-pipeline.yaml: loop verify -> build_cheap (outcome 'retry_cheap') has no at_limit, so it does not end at a human
+jira-ticket-pipeline.yaml: step 'verify': on 'retry_mid' is not one of its outcomes
+jira-ticket-pipeline.yaml: loop verify -> build_mid (outcome 'retry_mid') has no at_limit, so it does not end at a human
+jira-ticket-pipeline.yaml: step 'verify': on 'phase_stuck' is not one of its outcomes
+jira-ticket-pipeline.yaml: loop verify -> design (outcome 'phase_stuck') has no at_limit, so it does not end at a human
+jira-ticket-pipeline.yaml: step 'evidence': on 'regressed' is not one of its outcomes
+jira-ticket-pipeline.yaml: loop evidence -> pick_phase (outcome 'regressed') has no at_limit, so it does not end at a human
+jira-ticket-pipeline.yaml: step 'completion_review': role must be a name
+jira-ticket-pipeline.yaml: step 'completion_review': on 'defects' must be end or a goto
+jira-ticket-pipeline.yaml: loop completion_review -> design (outcome 'plan_gap') has no at_limit, so it does not end at a human
+jira-ticket-pipeline.yaml: step 'check_review': when names unknown step 'None'
+jira-ticket-pipeline.yaml: step 'check_review': on 'rework' is not one of its outcomes
+jira-ticket-pipeline.yaml: loop check_review -> pick_phase (outcome 'rework') has no at_limit, so it does not end at a human
+jira-ticket-pipeline.yaml: step 'check_review': on 'withdrawn' is not one of its outcomes
+jira-ticket-pipeline.yaml: step 'check_review': on 'withdrawn' must be end or a goto
+jira-ticket-pipeline.yaml: step 'open_pr': role must be a name
+jira-ticket-pipeline.yaml: step 'code_review': role must be a name
+jira-ticket-pipeline.yaml: step 'code_review': on 'changes' must be end or a goto
+jira-ticket-pipeline.yaml: step 'code_review': on 'blocked' must be end or a goto
+jira-ticket-pipeline.yaml: step 'audit_passed': when names unknown step 'None'
+jira-ticket-pipeline.yaml: step 'audit_changes': when names unknown step 'None'
+jira-ticket-pipeline.yaml: step 'audit_blocked': when names unknown step 'None'
+jira-ticket-pipeline.yaml: step 'unblock': gate must be a name
+jira-ticket-pipeline.yaml: step 'unblock': when names unknown step 'None'
+jira-ticket-pipeline.yaml: step 'unblock': on 'answered' is not one of its outcomes
+jira-ticket-pipeline.yaml: loop unblock -> code_review (outcome 'answered') has no at_limit, so it does not end at a human
+jira-ticket-pipeline.yaml: step 'unblock': on 'stop' is not one of its outcomes
+jira-ticket-pipeline.yaml: step 'fix_review': role must be a name
+jira-ticket-pipeline.yaml: step 'fix_review': when names unknown step 'None'
+jira-ticket-pipeline.yaml: step 'fix_review': on 'needs_input' must be end or a goto
+jira-ticket-pipeline.yaml: step 'after_fix': when names unknown step 'None'
+jira-ticket-pipeline.yaml: step 'after_fix': on 'requeue' is not one of its outcomes
+jira-ticket-pipeline.yaml: loop after_fix -> begin_audit (outcome 'requeue') has no at_limit, so it does not end at a human
+jira-ticket-pipeline.yaml: step 'after_fix': on 'checks_failed' is not one of its outcomes
+jira-ticket-pipeline.yaml: loop after_fix -> fix_review (outcome 'checks_failed') has no at_limit, so it does not end at a human
+jira-ticket-pipeline.yaml: header: missing or not a mapping
+check_graph: FAILED (105 problem(s) in 1 graph(s))
+[exit 1]
