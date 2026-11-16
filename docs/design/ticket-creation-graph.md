@@ -16,6 +16,7 @@
 - [Keeping tickets from piling up](#keeping-tickets-from-piling-up)
 - [What the graph hands to triage](#what-the-graph-hands-to-triage)
 - [Patient data](#patient-data)
+- [How every loop ends](#how-every-loop-ends)
 - [Rules](#rules)
 - [Acceptance criteria](#acceptance-criteria)
 - [Out of scope](#out-of-scope)
@@ -297,6 +298,39 @@ Agreed with the JP-103 and JP-104 design threads.
 
 The intake record and the proposal refer to the source by pointer, never by quoting it. When the input holds patient data, the reader sets `contains_patient_data` and writes only "see source". `ticket-complete` runs the patient-data scan on every ticket's text: the structural check (no quoted source text, the same verbatim-chunk rule action-triage's PHI guard uses on issue bodies today) plus the flag. A ticket that fails goes back to the drafter; it never reaches the card.
 
+## How every loop ends
+
+Josh wants no loop that runs forever, and no model step that runs more often than it needs to. Three places can hide a loop. The rules for all three are shared with the other graphs and set out in the triage design (`docs/superpowers/specs/2026-11-16-triage-graph-design.md`, "How every loop ends", JP-103). This section applies them to this graph.
+
+**1. Loops inside one run.** Every loop has a limit that ends at Josh. Each loop's counter belongs to its arrow and never resets during a run.
+
+| Loop | Limit | At the limit |
+| --- | --- | --- |
+| The check finds a section the drafter can fill: `check_draft` back to `draft` | 2 | `stuck` |
+| Josh answered a gap: `ask_gap` back to `draft` | 2 | `stuck` |
+| Josh asked for a change on the card: `approve` back to `draft` | 2 | `approve` again |
+| Josh chose one more round: `stuck` back to `draft` | 1 | `stuck` again, so Josh decides every extra round |
+| Jira did not confirm every ticket: `write` back to `write` | 1 | `write_failed` |
+
+**A cap for each model tier (Josh, 16 November).** No role step runs more times in one run than its tier allows: `cheap` (Haiku) 5, `mid` (Sonnet) 3, `gate` (Opus) 2. The count goes by tier, not by the model that answered, and the walker counts every run of a step, whichever loop caused it. When the next run would pass the cap, the run goes to that loop's `at_limit` ask, and each yes from Josh allows one more run. The caps live in `graphs/tiers.yaml` as `max_runs` (JP-139).
+
+| Role step | Tier and cap | Runs in this graph |
+| --- | --- | --- |
+| `read_intake` | mid, 3 | Once. No loop goes back to it. |
+| `find_duplicates` | cheap, 5 | Once. |
+| `decompose` | gate, 2 | Once, on the full path only. When Josh changes the shape on the card, the drafter applies his words; the decomposer does not run again. |
+| `draft` | mid, 3 | Once, plus at most two more from all three loops together. Every loop back to `draft` has a limit of 2, so each one fits the cap on its own (2 + 1 = 3), as the checker will require. Together, the walker stops the fourth run and asks Josh. |
+
+So a run that never reaches Josh makes at most six model calls: read once, search once, decompose once, draft three times. The light path makes at most five. The two scripts that can repeat, `ticket-complete` and `create-tickets`, use no model.
+
+**2. Loops between runs.** Each run starts with fresh counters, so these need rules of their own:
+
+- **One run per item.** The entry gate refuses an item that already carries a ticket key, or that has a run still open.
+- **The graph never starts itself.** Its inputs are intake items (an email, a to-do, a session's request, a Notion item), never a Jira edit or comment. The comment on an open match and the tickets it creates carry `josh360.authors`, so no other graph mistakes them for a person's input either.
+- **A dropped item is not picked up again.** Each source hands an item to the graph once. Drop leaves the item where it was, and only Josh starting it again by hand runs it a second time.
+
+**3. Loops inside a step.** The binding gives every role step a turn cap and a time cap and treats hitting either as a stop that goes to Josh (JP-117). A gate script that crashes or prints no outcome stops the run, and the walker does not retry it. `partial` from `create-tickets` is not a crash. It is a declared outcome with one safe retry, because the script searches for each ticket before it creates one.
+
 ## Rules
 
 1. Every new piece of work with a deliverable enters Jira through this graph.
@@ -309,9 +343,8 @@ The intake record and the proposal refer to the source by pointer, never by quot
 8. Values in [What the agent may infer](#what-the-agent-may-infer) marked "copied only" or "ask" are never guessed. Every inferred value is shown on the card.
 9. The graph never sets points, assignees, dates, Jira priority or Agent Status, and never marks a ticket Ready.
 10. No patient data in the record, the proposal or any ticket. Sources are named by pointer.
-11. Every loop has a limit: two rounds at the drafter from the checker, from Josh's answers and from his changes; one retry of the write. Each limit ends at Josh.
+11. Every loop has a limit that ends at Josh, and no role step runs more than its tier's cap in one run (cheap 5, mid 3, gate 2). See [How every loop ends](#how-every-loop-ends).
 12. Every created ticket is read back, and the key is written back to the source item.
-13. The cross-graph loop rules in the triage design (`docs/design/triage-graph.md`, "How every loop ends", JP-103) apply here too. The comment this graph posts on an open match, and the tickets it creates, never start a run of this graph: its inputs are intake items, never Jira events, and the comment carries `josh360.authors` and its fixed opening words. Each loop counter belongs to its arrow and never resets during a run. A gate script that fails (crashes or prints no outcome) stops the run. `partial` from `create-tickets` is not a failure. It is a declared outcome with one safe retry, because the script searches before it creates.
 
 ## Acceptance criteria
 
