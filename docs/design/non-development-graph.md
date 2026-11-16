@@ -22,7 +22,7 @@
 - [Questions for Josh](#questions-for-josh)
 - [Josh's open questions, answered](#joshs-open-questions-answered)
 
-Ticket JP-104. Status: draft for Josh's approval. This file is the spec for the non-development graph. The build ticket JP-123 reads it. There are no boards, because the graph has no screen. The draft graph file is `graphs/flows/non-development.yaml`, and it passes the checker (`python3 graphs/tools/check_graph.py`).
+Ticket JP-104. Status: draft for Josh's approval. Josh answered both questions on 16 November 2026 (see [Questions for Josh](#questions-for-josh)). This file is the spec for the non-development graph. The build ticket JP-123 reads it. There are no boards, because the graph has no screen. The draft graph file is `graphs/flows/non-development.yaml`, and it passes the checker (`python3 graphs/tools/check_graph.py`).
 
 Sources: Josh's notes (`docs/source-notes/research-action-item-pipeline.md`), the vision (`docs/vision-and-roadmap.md`, "Agent graphs"), the graph convention (`graphs/CONVENTION.md`), the ticket rules (`conventions/tickets.md`), the inventory (`docs/inventory/features.md`, A27 Email Research Desk and S11/S12), and the desk worker skill that runs today (claude-harness `skills/desk-worker`).
 
@@ -32,7 +32,7 @@ The graph takes one Ready ticket from JP whose deliverable is not code: an answe
 
 - the deliverable, saved outside any working folder;
 - an evidence file that lists the sources behind it;
-- Josh's sign-off;
+- Josh's sign-off, except for an emailed ask: that closes once the answer is in his inbox, and his reply to the email reopens it;
 - a resolution comment on the ticket that the next run's lookup can find.
 
 Process depth matches the weight of the task. A small ask, or one that an earlier ticket already answered, takes a short path with no second reviewer. Nothing goes to anyone but Josh unless he says yes at sign-off.
@@ -52,7 +52,7 @@ flowchart LR
 - **Upstream does intake.** Ticket creation (JP-102) turns the raw input into a complete ticket with a Question, Sources and a Deliverable format, plus the work kind in the `action-triage.spec` property. Triage (JP-103) signs it off as Ready and records the route `non-development`. So this graph does no intake, no classification and no duplicate check of its own. It reads the ticket.
 - **Triage's route rule** (JP-103): Bug and Story go to development. A Research or Task ticket goes to development when its Repository is a registry repository (for Research, only the design stretch, ending at an approved spec and plan), and to non-development when its Repository is `none`. A `spec.type` of `code` with Repository `none` is a conflict, and the ticket is sent back. So a design ticket like this one never reaches this graph, and a question whose answer lives in a repository is filed with Repository `none` by JP-102's drafter.
 - **Code found mid-run goes back to triage.** If the work turns out to need code, the graph sends the ticket back through `return-to-triage`, the same door the development designer uses. It never starts the development graph itself.
-- **The Email Research Desk** (action-triage `desk/`) keeps its watcher, which turns an email into a ticket, and its mailer, which replies on the thread to Josh only. This graph replaces the desk's worker session, the part that researches the question. Whether to do that is [question 1](#questions-for-josh). The design assumes yes.
+- **The Email Research Desk** (action-triage `desk/`) keeps its watcher, which turns an email into a ticket, and its mailer, which replies on the thread to Josh only. This graph replaces the desk's worker session, the part that researches the question (Josh's answer to [question 1](#questions-for-josh)). When Josh replies on the thread of a closed ticket, the desk's watcher moves the ticket back to Ready with his reply as a comment, and the graph runs it again on the full path. Building that reopen into the watcher belongs to JP-123.
 
 ## Kinds of work it takes first
 
@@ -93,7 +93,9 @@ flowchart TD
   PP -->|short| V
   CR -->|clean| V[to_validation: Validation]
   V --> DL[deliver to Josh]
-  DL --> SO{{sign_off: Josh}}
+  DL --> PS[pick_sign_off]
+  PS -->|emailed| CE[close_emailed: Done]
+  PS -->|ask_josh| SO{{sign_off: Josh}}
   SO -->|revise| W
   SO -->|accept_and_share| SH[share_out]
   SO -->|accept| CL
@@ -119,18 +121,20 @@ flowchart TD
 | `decide_stuck` | ask | Josh | none | read | Only when a loop hits its limit: try once more, or stop. |
 | `to_validation` | gate | `move-ticket` | none | josh | Moves the ticket to Validation. |
 | `deliver` | gate | `deliver` | none | josh | A ticket comment with the path and summary. For an emailed ask, also a reply on the email thread through the desk mailer, to Josh only. |
-| `sign_off` | ask | Josh | none | read | Accept, accept and share, or revise. |
+| `pick_sign_off` | gate | `sign-off-rule` | none | read | `emailed` when the ticket came through the desk, otherwise `ask_josh`. |
+| `close_emailed` | gate | `close-ticket` | none | josh | Emailed asks only: posts the resolution and moves the ticket to Done. Ends the run. |
+| `sign_off` | ask | Josh | none | read | Every other ticket: accept, accept and share, or revise. |
 | `share_out` | gate | `share` | none | shared | Only on "accept and share". Shares the signed-off deliverable with the one recipient named in the evidence. |
 | `close` | gate | `close-ticket` | none | josh | Posts the resolution comment and moves the ticket to Done. |
 
-Entry gate `ready` (owned by JP-103). Exit gate `no-loose-ends` (shared; JP-109). A run ends early in three places: it is sent back to triage (twice), or Josh says stop at a loop limit. Every other path reaches `close`.
+Entry gate `ready` (owned by JP-103). Exit gate `no-loose-ends` (shared; JP-109). A run ends early in three places: it is sent back to triage (twice), or Josh says stop at a loop limit. Every other path reaches `close_emailed` or `close`, both after `check_deliverable`.
 
 ## The short path and the full path
 
 `pick-path` decides with a script, not a model:
 
 - **Short:** the precedent answers the ticket, or the kind is `misc`. There is no second reviewer. The deliverable goes straight from `check_deliverable` to Josh.
-- **Full:** everything else, and always after Josh asks for a revision. `review_work` checks the deliverable against the ticket, and `check_review` keeps only the defects that quote it.
+- **Full:** everything else, and always after Josh asks for a revision or reopens an emailed ask by replying. `review_work` checks the deliverable against the ticket, and `check_review` keeps only the defects that quote it.
 
 Both paths go through `check_deliverable`, so even a short run cannot reach Josh without a saved deliverable and a source. `do_work` is on the mid tier for every kind. Splitting `misc` onto the cheap tier waits until the run costs in the ledger show it is worth a second work step.
 
@@ -140,7 +144,7 @@ A run asks Josh in four places, all through the one Needs you queue plus the Jir
 
 1. **`ping_before`, before any work.** `gap-check` fires only on signals a script can see, never on a model's confidence. Today that means no precedent was found and the ticket marks its Deliverable format as inferred rather than given by Josh. This is the "confident about the wrong deliverable" pitfall from Josh's notes: when an earlier answer exists or Josh named the deliverable, the run does not ask.
 2. **`ping_during`, mid-work.** Only when the answer depends on a fact no reachable source holds. Before asking, the researcher comments on the ticket with what it searched. An assumption is not a question: an ambiguous ask gets the likelier reading, stated in the evidence.
-3. **`sign_off`, at the end.** Every deliverable.
+3. **`sign_off`, at the end.** Every deliverable except an emailed ask's. An emailed ask closes once the answer is in Josh's inbox; it stays closed unless he replies to the email, and the reply reopens it. A reopen counts as "sent back" in the improvement figures.
 4. **`decide_stuck`, at a loop limit.** Only when `do_work` has gone round twice.
 
 Josh answers a ping in one sentence. His reply lands on the ticket as a comment, and `do_work` reads every comment, so no new channel is needed. He can always type his own answer, and stopping a ticket is cancelling it in Jira.
@@ -203,7 +207,7 @@ A non-development Research ticket moves to In Progress, not Design/Planning. `co
 | Gates | `ready` | JP-103 | Stub until the triage build (JP-122). |
 | Gates | `no-loose-ends`, `move-ticket` | Shared | Whoever merges first adds the stub; JP-109 builds `no-loose-ends`. |
 | Gates | `return-to-triage` | Shared with JP-103 | Moves to Not Started, writes the reason as an open question, sets the flag. |
-| Gates | `read-ticket`, `gap-check`, `check-deliverable`, `pick-path`, `check-review`, `deliver`, `share`, `close-ticket` | JP-104 | `check-review` is generic (drops findings that quote nothing) and the development graph can reuse it. |
+| Gates | `read-ticket`, `gap-check`, `check-deliverable`, `pick-path`, `check-review`, `deliver`, `sign-off-rule`, `share`, `close-ticket` | JP-104 | `check-review` is generic (drops findings that quote nothing) and the development graph can reuse it. |
 | Contracts | `evidence`, `feedback` | JP-104 | Both are written generically, so the development graph adds to them rather than writing its own. |
 | Contract | `intake-record` | JP-102 | Not read here. This graph reads the ticket's own sections. |
 | Tiers | `graphs/tiers.yaml` | JP-101 | Unchanged. |
@@ -221,7 +225,7 @@ Every gate script in the draft is a stub that refuses to run, so nothing can pas
 7. Every deliverable passes `check-deliverable`: saved outside any repository or worktree, with at least one source.
 8. The full path's reviewer can only cite the ticket's Question and Deliverable format. `check-review` drops anything else.
 9. Every loop goes round at most twice, then asks Josh.
-10. Every deliverable waits for Josh's sign-off.
+10. Every deliverable waits for Josh's sign-off, except an emailed ask's, which closes when the answer is emailed to him and reopens only on his reply.
 11. Nothing is sent to anyone but Josh. A share runs only on "accept and share", and an email to someone else is only ever a draft in Josh's mailbox.
 12. When `phi` is true, the ticket, email, ledger and resolution carry paths only, and `share` refuses.
 13. Work that needs code goes back to triage. This graph never starts another graph.
@@ -287,7 +291,7 @@ Feature: The non-development design
 
 | Scenario | Proof |
 | --- | --- |
-| Every run ends in a deliverable with sources | [The run, step by step](#the-run-step-by-step): `close` needs `to_validation`, which needs `check_deliverable`, which refuses a run with no saved deliverable or no source. Every other ending hands the ticket back or stops at Josh's word. |
+| Every run ends in a deliverable with sources | [The run, step by step](#the-run-step-by-step): `close` and `close_emailed` both come after `to_validation`, which needs `check_deliverable`, which refuses a run with no saved deliverable or no source. Every other ending hands the ticket back or stops at Josh's word. |
 | A shared write is approved first | The checker's rule 6 on `share_out` (approved by `sign_off`, runs only on `accept_and_share`). The checker run is saved under `docs/proof/`. |
 | Patient data stays out of tickets and the ledger | [Patient data from start to finish](#patient-data-from-start-to-finish), and the `phi` wording in [Exact copy](#exact-copy). |
 | The draft graph passes the checker | `python3 graphs/tools/check_graph.py` output, saved under `docs/proof/`. CI's `suite` runs it on every change. |
@@ -318,24 +322,12 @@ Each of these can be undone, so it takes the recommended option and is recorded 
 
 ## Questions for Josh
 
-These go to the phase 1 sitting (JP-106). The design runs on the recommendation until he answers.
+Both were put to Josh on 16 November 2026, ahead of the JP-106 sitting, and he answered both in the JP-104 thread. They are recorded in `docs/decisions.md`.
 
-**1. Should this graph replace the Email Research Desk's worker?**
-
-The desk works today. A watcher turns a forwarded email into a JP ticket, a worker session researches it, and the mailer replies to Josh on the thread. This graph does the same work from any ticket, not only emails.
-
-- **A. Yes, the graph becomes the desk's worker** (recommended). The desk keeps its watcher and its Josh-only mailer, and every ask, emailed or not, is worked one way, with the same evidence, sign-off and lookup. Risk: the desk's tested worker is retired for a new one, so the first weeks need a side-by-side check (JP-123).
-- **B. Keep the desk separate.** Emailed asks stay with the desk worker, and this graph takes only other tickets. Risk: two ways to do the same work, and only one of them feeds the precedent lookup and the metrics.
-- **C. Replace the whole desk**, including its watcher and mailer. Risk: rebuilds working parts for no gain.
-
-**2. Should every deliverable wait for your sign-off?**
-
-Today the desk emails its answer and closes the ticket. You reply only if it is wrong. The vision lists signing off deliverables as one of your jobs, and the improvement figures count "signed off without being sent back".
-
-- **A. Yes, every deliverable** (recommended). It is one tap in Needs you, or a reply to the email. Risk: one more action per ask, including tiny ones.
-- **B. Only full-path deliverables.** Short-path ones close when delivered, and you reopen by replying. Risk: no sign-off figure for the small asks, and a wrong small answer closes unseen.
-
-You can always answer in your own words instead.
+| Question | Options offered | Josh's answer |
+| --- | --- | --- |
+| 1. Should this graph replace the Email Research Desk's worker? | A. Yes, the graph becomes the desk's worker (recommended). B. Keep the desk separate. C. Replace the whole desk. | **A.** The desk keeps its watcher and its Josh-only mailer; the graph does the research. |
+| 2. Should every deliverable wait for Josh's sign-off? | A. Yes, every one (recommended). B. Only full-path deliverables. | **Neither, as offered.** An emailed ask runs to completion without sign-off and closes; a reply to the email reopens it, and otherwise it stays closed. Every other ticket waits for sign-off. |
 
 ## Josh's open questions, answered
 
