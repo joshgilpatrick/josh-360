@@ -11,6 +11,8 @@ Checks:
      file, using GitHub's anchor rule (lower case, spaces to hyphens, punctuation dropped, underscores kept).
   5. The repository layout from JP-95: the starting folders each have a README, README.md and the docs it
      names exist, nothing in the vision is still marked Proposed, and git ignores a file inside a .phi folder.
+  6. JP-101: every graph passes the graph checker (graphs/tools/check_graph.py), and the checker's own tests
+     pass. Both need PyYAML (pip install -r graphs/requirements.txt). Markdown under graphs/ is anchor-checked too.
 
 Tickets that add code add their own checks here or beside it. Exit 0 when everything passes, 1 otherwise.
 """
@@ -47,7 +49,14 @@ LAYOUT = [
     ".gitignore",
 ] + [f"{d}/README.md" for d in (
     "apps", "ledger", "graphs", "conventions", "docs/design", "docs/inventory", "docs/proof",
-)]
+)] + ["graphs/CONVENTION.md", "graphs/tiers.yaml", "graphs/requirements.txt", "graphs/tools/check_graph.py"] + [
+    f"graphs/{d}/README.md" for d in ("flows", "roles", "agents", "gates", "contracts", "bindings")
+]
+
+
+def run_quietly(argv: list[str]) -> tuple[int, str]:
+    result = subprocess.run([sys.executable, *argv], cwd=ROOT, capture_output=True, text=True)
+    return result.returncode, (result.stdout + result.stderr).strip()
 
 # A status marker, not the ordinary verb: "Proposed:", "(Proposed)", "**Proposed**", "| Proposed |".
 PROPOSED_MARKER = re.compile(r"(\*\*Proposed\*\*|\(Proposed\)|\bProposed:|\|\s*Proposed\s*\|)")
@@ -138,6 +147,7 @@ def main() -> int:
             problems += unquoted_colons(md, fm)
 
     docs = [p for p in ROOT.glob("*.md") if p.is_file()] + sorted((ROOT / "docs").rglob("*.md"))
+    docs += sorted((ROOT / "graphs").rglob("*.md"))
     for doc in docs:
         text = doc.read_text(encoding="utf-8")
         known = anchors_in(text)
@@ -155,6 +165,13 @@ def main() -> int:
                 problems.append(f"still marked Proposed: docs/vision-and-roadmap.md:{n}: {line.strip()}")
     if (ROOT / ".git").exists() and not phi_is_ignored():
         problems.append("not ignored: a file inside a .phi folder (.gitignore needs *[Pp][Hh][Ii])")
+
+    code, output = run_quietly(["graphs/tools/check_graph.py"])
+    if code != 0:
+        problems.append(f"graph checker failed:\n{output}")
+    code, output = run_quietly(["-m", "unittest", "discover", "-s", "graphs/tests"])
+    if code != 0:
+        problems.append(f"graph checker tests failed:\n{output}")
 
     for p in problems:
         print(p)
