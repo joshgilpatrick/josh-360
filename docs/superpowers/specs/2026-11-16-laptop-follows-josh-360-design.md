@@ -42,7 +42,7 @@ A cloud session can pause the laptop too: while a branch named `laptop-pause` ex
 | Runner | `laptop/run_jobs.py` | Called by launchd every 5 minutes. Takes a lock, reads `jobs.yaml`, runs each due job, records when it ran. A job with `report: true` must print JSON; the runner puts it on the status branch as `reports/<id>.json`. |
 | Follow job | `laptop/follow.py` | Checks the pause switch, fetches `main`, moves the copy forward (fast-forward only), runs the install script, publishes the status. |
 | Install script | `laptop/install.py` | Plans every step first, and changes nothing if any step meets something unexpected. Then applies the steps and prints what changed. Steps today: the home folders, a check of `jobs.yaml`, a check of `hooks/`, and the record of the installed commit. Later tickets add their own steps (for example the ledger database). |
-| Status | `laptop/status.py` | Builds the commit for `laptop-status` with git plumbing (no checkout, no working tree), and pushes it. It skips the push when only the time or the counts changed (a repeat run of the same install), unless the last push is a day old. |
+| Status | `laptop/status.py` | Builds the commit for `laptop-status` with git plumbing (no checkout, no working tree), and pushes it. It pushes only when the installed commit, `main` or the result changes, or once a day as a heartbeat. |
 | Pause | `laptop/pause.py` | `on`, `off` or `status` for the local switch. |
 | Hook dispatcher | `hooks/dispatch` | Bash, so an empty event costs a few milliseconds. |
 
