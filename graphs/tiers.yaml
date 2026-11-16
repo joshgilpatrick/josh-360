@@ -1,11 +1,12 @@
 # The three tiers, cheapest first, mapped to models. This is the only file that names a model.
-# The first model in a list is used; the rest are fallbacks, in order. See graphs/CONVENTION.md, "Tiers".
+# The first entry in a list is used; the rest are fallbacks, in order. Every entry names a model AND an effort
+# (low, medium or high); the checker refuses one without. See graphs/CONVENTION.md, "Tiers".
 convention: 1
 tiers:
   cheap:                                          # fully specified, mechanical work
     - { model: claude-haiku-5-5, effort: high }
-    - claude-sonnet-5-5                           # when Haiku is out of tokens
+    - { model: claude-sonnet-5-5, effort: medium }  # when Haiku is out of tokens
   mid:                                            # intake, design, moderate ambiguity
-    - claude-sonnet-5-5
+    - { model: claude-sonnet-5-5, effort: medium }
   gate:                                           # judgments that need the most foresight; never builds
     - { model: claude-opus-5-5, effort: high }
