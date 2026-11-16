@@ -96,7 +96,7 @@ systems:
   - name: athena_automations
     description: Automations for Athena build and EHR administration
     repositories: [athena_automations]
-    folders: [~/Development/active/josh_projects/athena_automations]
+    # No folder: josh_projects/athena_automations, named in older notes, is not on the laptop (PR #5 audit).
     area: EHR administration
     tracker: jira
     jira_space: CI
@@ -194,7 +194,7 @@ systems:
   - name: josh-360
     description: Josh 360, the home for Josh's agent workflow
     repositories: [josh-360]
-    folders: [~/Development/active/josh-360]
+    folders: [~/Development/active/josh_360]
     area: Automation and AI enablement
     tracker: jira
     jira_space: JP
