@@ -22,7 +22,13 @@ header:
   entry_gate: ready
   exit_gate: no-loose-ends
   asks_josh: [ping_before, ping_during, sign_off, decide_stuck]
-  ledger: [run, step, outcome, loop_count, session, tier, ticket, started_at, ended_at]
+  ledger: [run, step, outcome, loop_count, session, tier, ticket, started_at, ended_at, graph_version, model]
+  end_states:
+    finished: success
+    close_emailed.closed: success
+    return_early.returned: neutral
+    return_late.returned: neutral
+    decide_stuck.stop: needs-josh
   access:
     read_ticket: read
     return_early: josh
