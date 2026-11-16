@@ -24,6 +24,8 @@
 - [Questions for the JP-106 sitting](#questions-for-the-jp-106-sitting)
 - [Choices made by default](#choices-made-by-default)
 
+Status: approved by Josh in the JP-103 thread on 16 November 2026. His approval takes the recommended option for Q1 to Q4 below. Build plan: `docs/superpowers/plans/2026-11-16-triage-graph.md`.
+
 Ticket: JP-103 (Research). Builds in: JP-122. Draft graph: `graphs/flows/triage.yaml`, which passes `python3 graphs/tools/check_graph.py`. There is no screen, so there are no boards.
 
 ## Summary
