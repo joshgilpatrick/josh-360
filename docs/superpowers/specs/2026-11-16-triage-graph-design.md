@@ -15,6 +15,7 @@
 - [Tickets that come back from another graph](#tickets-that-come-back-from-another-graph)
 - [The three gaps, closed here](#the-three-gaps-closed-here)
 - [How every loop ends](#how-every-loop-ends)
+- [How to tell triage is working](#how-to-tell-triage-is-working)
 - [Exact copy](#exact-copy)
 - [Rules](#rules)
 - [Acceptance criteria](#acceptance-criteria)
@@ -278,6 +279,22 @@ Three rules close them:
 **3. Loops inside a step.** An agent session that keeps working without ending, or a gate script that keeps failing, is the binding's job. The convention keeps timeouts out of graph files. The Agent Manager binding (JP-117) gives every role step a turn cap and a time cap, and treats a step that hits either as a stop that goes to Josh, as action-triage's watchdog does today. A gate script that exits with an error is not retried by the walker. It stops the run with the error on the ticket.
 
 A safety net covers anything these rules miss. Starting with JP-107, the ledger records every run, so a script can flag any ticket with more than five runs of any graph in 24 hours. The weekly review (JP-127) turns a repeat into a ticket.
+
+## How to tell triage is working
+
+Every number comes from the ledger rows the walker writes for each step, joined to the session facts (cost, model) and to later runs on the same ticket. No model is needed to compute any of them.
+
+| Question | Measure | Good direction |
+| --- | --- | --- |
+| Does Ready mean ready? (effective) | Share of Ready tickets later returned by the development or non-development graph | Down |
+| Is the sign-off agent accurate? (effective) | Share of its defects that `check-sign-off` drops for quoting nothing | Down |
+| Does it spare Josh? (effective) | Share of runs that reach an ask step, and how long the ticket waits there | Down |
+| What does a Ready ticket cost? (efficient) | Model cost, and Sonnet step runs, per ticket made Ready | Down |
+| How long does it take? (efficient) | Time from Not Started to Ready, with the time waiting on Josh shown separately | Down |
+
+How each run ends: `ready` is success; `sent back` (someone else's ticket) is neutral; `parked`, or any run that reached an ask, counts as needing Josh.
+
+To compare a graph before and after a change, each run must record the version of the graph file it ran (the commit of `graphs/flows/triage.yaml`), and each step must record the model that actually answered. The convention's ledger field list does not have either yet. See the note to the coordinator of 16 November.
 
 ## Exact copy
 
