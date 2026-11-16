@@ -65,4 +65,4 @@ The owner is Josh. Values such as the tracker, statuses and models are in `.clau
 3. Models: design and planning on `claude-opus-5-5`; code, fixes, reviews and watchers on `claude-sonnet-5-5`. The coordinator passes the model when it starts a thread.
 4. Watchers are silent unless they act. Each keeps its rules, a handled list and a short run log in one memory file, pruned to stay small.
 5. Durable facts go to project memory in the turn they are learned: one file per subject, indexed in `MEMORY.md`. Rules go here, in this file, not only in memory.
-6. CI spend: PR CI runs only at `review:ready-for-human`; changes to `docs/` and Markdown start no run.
+6. CI spend: PR CI runs only at `review:ready-for-human` (once per PR) and on pushes to `main`. Docs and Markdown changes run it too, because the suite checks them.
