@@ -30,7 +30,7 @@ def head(repo: Path) -> str:
 
 def paused(repo: Path) -> str:
     if pause_file().exists():
-        return "paused by the local switch ({})".format(pause_file())
+        return "paused by the local switch (the PAUSED file in the Josh 360 folder)"
     listing = git(["ls-remote", "--heads", "origin", PAUSE_BRANCH], repo)
     if listing.stdout.strip():
         return "paused by the {} branch on GitHub".format(PAUSE_BRANCH)
@@ -83,7 +83,8 @@ def follow(repo: Path = REPO_ROOT) -> dict:
         return {"commit": before, "main": main, "result": "failed",
                 "reason": "the install script stopped; the laptop stays on the last good install", "counts": counts}
     return {"commit": head(repo), "main": main, "result": "passed",
-            "reason": "installed" if before != main else "already up to date", "counts": counts}
+            "reason": "installed" if before != main or counts["changed"] else "already up to date",
+            "counts": counts}
 
 
 def main() -> int:
