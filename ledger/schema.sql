@@ -17,7 +17,8 @@
 --   * There is no table of loose ends. They are computed from git and the tickets when asked.
 --
 -- SQLite 3.31 or later (the laptop's /usr/bin/python3 3.9 standard library). No STRICT tables, no RETURNING.
--- Open every connection with PRAGMA foreign_keys = ON.
+-- Open every connection with PRAGMA foreign_keys = ON and PRAGMA recursive_triggers = ON. Without the
+-- second, INSERT OR REPLACE deletes the old row without firing its no_delete trigger.
 
 PRAGMA user_version = 1;
 
