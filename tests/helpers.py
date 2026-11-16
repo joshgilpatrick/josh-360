@@ -51,7 +51,15 @@ class LaptopCase(unittest.TestCase):
         gitconfig.write_text("[commit]\n\tgpgsign = true\n[core]\n\thooksPath = {}\n"
                              "[init]\n\tdefaultBranch = main\n".format(bad_hooks))
 
+        # Jobs that call launchctl (JP-100's retire-focus-dashboard) must never reach the real launchd when
+        # the suite runs on a Mac. This stub logs each call and says "no such job" to everything.
+        self.launchctl_log = self.tmp / "launchctl-calls.log"
+        launchctl = self.tmp / "launchctl-stub"
+        launchctl.write_text('#!/bin/sh\necho "$@" >> "{}"\nexit 113\n'.format(self.launchctl_log))
+        launchctl.chmod(0o755)
+
         self.env = {
+            "JOSH360_LAUNCHCTL": str(launchctl),
             "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
             "HOME": str(self.home),
             "GIT_CONFIG_GLOBAL": str(gitconfig),
