@@ -30,9 +30,9 @@ jobs:
         with:
           python-version: '3.12'
       # Tickets that add code add their install and test steps here, and in .claude/workflow.config.md.
+      - name: Install
+        run: pip install -r requirements.txt
       - name: Fast checks
         run: python3 scripts/check.py
       - name: Full suite
-        run: python3 scripts/check.py
-      - name: Unit tests
         run: python3 -m unittest discover -s tests -v

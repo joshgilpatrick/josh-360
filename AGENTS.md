@@ -44,10 +44,11 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 
 ## Commands
 
-- Checks: `python3 scripts/check.py`
-- Unit tests (standard library only, made-up data): `python3 -m unittest discover -s tests -v`
-- Laptop inventory (JP-96, run on the laptop only, read-only): `python3 scripts/laptop_inventory.py --out ~/josh-360-inventory.json`
-- There is no app, build or install step yet. The ticket that adds one adds its command here and in `.claude/workflow.config.md`.
+- Install once: `pip install -r requirements.txt` (PyYAML).
+- Checks: `python3 scripts/check.py`. Full suite: `python3 scripts/check.py && python3 -m unittest discover -s tests`.
+- Conventions: `python3 scripts/conventions.py check`, and `python3 scripts/conventions.py lookup --folder <path>` or `--repo <name>` to find where work belongs.
+- Laptop inventory (JP-96, run on the laptop only, read-only, standard library only): `python3 scripts/laptop_inventory.py --out ~/josh-360-inventory.json`
+- There is no app or build step yet. The ticket that adds one adds its command here and in `.claude/workflow.config.md`.
 
 ## Layout
 
@@ -55,7 +56,8 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - `apps/`: runnable parts (moved in from Session Atlas and action-triage later).
 - `ledger/`: the ledger, the local record of every agent session.
 - `graphs/`: the agent graphs and the walker.
-- `conventions/`: ticket conventions, the system registry and the standing priorities.
+- `conventions/`: ticket conventions (`tickets.md`), the system registry (`registry.yaml`) and the standing priorities (`priorities.yaml`). Ticket rules for all of Josh's work start here.
+- `docs/surface-map.md`: every surface Josh works through, and where its configuration lives.
 - `docs/vision-and-roadmap.md`: the approved vision and roadmap (the requirements source).
 - `docs/decisions.md`: decisions from the question round, and default choices made while building.
 - `docs/source-notes/`: Josh's notes for the four graphs and the brainstorm, unchanged.
@@ -66,8 +68,9 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - `docs/proof/`: proof for each ticket, by date and key.
 - `.claude/`: workflow values, skills, commands and subagents.
 - `scripts/check.py`: the repo's checks, run by CI as the `suite` job.
+- `scripts/conventions.py`: checks and reads the registry and the priorities file.
 - `scripts/laptop_inventory.py`, `scripts/laptop_figures.py`: the read-only laptop inventory and starting figures (JP-96).
-- `tests/`: unit tests, run by CI as part of the `suite` job.
+- `tests/`: unit tests (`python3 -m unittest discover -s tests`).
 
 ## Product
 

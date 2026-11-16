@@ -1,0 +1,59 @@
+Scenario: A known folder resolves (@auto, tests/test_conventions.py, class AKnownFolderResolves)
+
+$ python3 scripts/conventions.py lookup --folder /Users/jgilpatrick/Development/active/keystone-platform/src --home /Users/jgilpatrick
+{
+  "system": "keystone-platform",
+  "area": "Clinical application platform",
+  "tracker": "jira",
+  "jira_space": "AD",
+  "linear_team": null,
+  "default_epic": null,
+  "priority": "clinician-tech-stack-ux",
+  "unassigned": false,
+  "matched": "/Users/jgilpatrick/Development/active/keystone-platform"
+}
+(exit 0)
+
+$ python3 scripts/conventions.py lookup --folder /Users/jgilpatrick/Development/active/josh_projects/action-triage --home /Users/jgilpatrick
+{
+  "system": "action-triage",
+  "area": "Automation and AI enablement",
+  "tracker": "jira",
+  "jira_space": "JP",
+  "linear_team": null,
+  "default_epic": null,
+  "priority": "devex",
+  "unassigned": false,
+  "matched": "/Users/jgilpatrick/Development/active/josh_projects/action-triage"
+}
+(exit 0)
+
+$ python3 scripts/conventions.py lookup --repo eventuswh-apps/athena-data-migration
+{
+  "system": "athena-data-migration",
+  "area": "Clinical data migration and integration",
+  "tracker": "jira",
+  "jira_space": "AD",
+  "linear_team": null,
+  "default_epic": null,
+  "priority": "athena",
+  "unassigned": false,
+  "matched": "athena-data-migration"
+}
+(exit 0)
+
+$ python3 -m unittest -v tests.test_conventions.AKnownFolderResolves
+test_a_known_folder_resolves (tests.test_conventions.AKnownFolderResolves.test_a_known_folder_resolves) ... ok
+test_a_known_repository_resolves (tests.test_conventions.AKnownFolderResolves.test_a_known_repository_resolves) ... ok
+test_a_linear_system_names_its_team_not_a_jira_space (tests.test_conventions.AKnownFolderResolves.test_a_linear_system_names_its_team_not_a_jira_space) ... ok
+test_a_subfolder_of_a_known_folder_resolves (tests.test_conventions.AKnownFolderResolves.test_a_subfolder_of_a_known_folder_resolves) ... ok
+test_every_real_registry_folder_resolves_to_its_own_system (tests.test_conventions.AKnownFolderResolves.test_every_real_registry_folder_resolves_to_its_own_system) ... ok
+test_the_cli_prints_the_answer_as_json (tests.test_conventions.AKnownFolderResolves.test_the_cli_prints_the_answer_as_json) ... ok
+test_the_most_specific_folder_wins (tests.test_conventions.AKnownFolderResolves.test_the_most_specific_folder_wins) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.034s
+
+OK
+(exit 0)
+

@@ -1,0 +1,44 @@
+Scenario: An unknown folder stays Unassigned (@auto, tests/test_conventions.py, class AnUnknownFolderStaysUnassigned)
+
+$ python3 scripts/conventions.py lookup --folder /Users/jgilpatrick/Downloads/scratch --home /Users/jgilpatrick
+{
+  "system": null,
+  "area": null,
+  "tracker": "jira",
+  "jira_space": "JP",
+  "linear_team": null,
+  "default_epic": null,
+  "priority": "unassigned",
+  "unassigned": true,
+  "matched": null
+}
+(exit 0)
+
+A name that starts like a known folder is not inside it, so it is not guessed:
+
+$ python3 scripts/conventions.py lookup --folder /Users/jgilpatrick/Development/active/keystone-platform-old --home /Users/jgilpatrick
+{
+  "system": null,
+  "area": null,
+  "tracker": "jira",
+  "jira_space": "JP",
+  "linear_team": null,
+  "default_epic": null,
+  "priority": "unassigned",
+  "unassigned": true,
+  "matched": null
+}
+(exit 0)
+
+$ python3 -m unittest -v tests.test_conventions.AnUnknownFolderStaysUnassigned
+test_an_unknown_folder_stays_unassigned (tests.test_conventions.AnUnknownFolderStaysUnassigned.test_an_unknown_folder_stays_unassigned) ... ok
+test_an_unknown_repository_stays_unassigned (tests.test_conventions.AnUnknownFolderStaysUnassigned.test_an_unknown_repository_stays_unassigned) ... ok
+test_nothing_is_guessed_from_a_similar_name (tests.test_conventions.AnUnknownFolderStaysUnassigned.test_nothing_is_guessed_from_a_similar_name) ... ok
+test_the_cli_says_unassigned_and_exits_zero (tests.test_conventions.AnUnknownFolderStaysUnassigned.test_the_cli_says_unassigned_and_exits_zero) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.013s
+
+OK
+(exit 0)
+

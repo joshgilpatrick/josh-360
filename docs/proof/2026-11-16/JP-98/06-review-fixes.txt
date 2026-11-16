@@ -1,0 +1,20 @@
+Review fixes on PR #5 (second review)
+
+Fix 2: lookup --folder . from inside a listed folder (sample home, made-up folders)
+$ cd ~/Development/active/josh_360/scripts && python3 scripts/conventions.py lookup --folder . --home <sample home>
+  "system": "josh-360",
+  "priority": "devex",
+  "unassigned": false,
+(exit 0)
+
+Fix 3: malformed files name the file or entry, no traceback
+$ python3 scripts/conventions.py --registry <broken registry.yaml> check
+registry.yaml: not valid YAML at line 3 (expected ',' or ']', but got '<stream end>')
+conventions: FAILED (1 problem(s))
+(exit 1)
+
+$ python3 scripts/conventions.py --registry <reg with folders as text> --priorities <pri with covers as a list> check
+registry system keystone-platform: folders must be a list of text
+priority athena: covers must be a mapping, not a list
+conventions: FAILED (2 problem(s))
+(exit 1)
