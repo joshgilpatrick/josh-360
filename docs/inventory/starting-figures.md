@@ -12,7 +12,7 @@
 
 The numbers later change is measured against (JP-96). Each figure states its date range and the command or query that produced it. Counts only: no message text, file contents or patient data.
 
-Two figures need the laptop, because the session history lives only there. They come from the one read-only laptop script, `scripts/laptop_inventory.py`, which runs in the laptop hookup sitting (JP-105) and returns its output on the hookup's status branch. Until then those rows say "waiting for the laptop run". The cloud figures are filled in now.
+Two figures need the laptop, because the session history lives only there. They come from the one read-only laptop script, `scripts/laptop_inventory.py`, which the laptop runs once on its own as the JP-105 job `inventory`; its report comes back on the `laptop-status` branch as `reports/inventory.json`. Until then those rows say "waiting for the laptop run". The cloud figures are filled in now.
 
 ## The figures
 
@@ -37,13 +37,13 @@ The total of open loose ends is the laptop's git count plus the two cloud counts
 
 ## How to reproduce them
 
-On the laptop, from a josh-360 checkout:
+The laptop's job runner does it once, with no one at the keyboard (`scripts/laptop_inventory_job.py`, job `inventory` in `jobs.yaml`). To run it again by hand, on the laptop, from a josh-360 checkout:
 
 ```bash
 python3 scripts/laptop_inventory.py --out ~/josh-360-inventory.json
 ```
 
-Options: `--since` and `--until` (dates) change the range, `--ticket-keys` the keys, `--repo-root` the folders searched for repositories, and `--usage-days` the window for skill and agent use. The script refuses to overwrite an existing file and writes nothing else. Its tests run on made-up data: `python3 -m unittest discover -s tests -v`.
+Options: `--out -` prints the report instead of writing a file, `--skip-prompting-folders` leaves out the folders macOS may guard with a privacy prompt, `--since` and `--until` (dates) change the range, `--ticket-keys` the keys, `--repo-root` the folders searched for repositories, and `--usage-days` the window for skill and agent use. The script refuses to overwrite an existing file and writes nothing else. Its tests run on made-up data: `python3 -m unittest discover -s tests -v`.
 
 ## Limits
 
