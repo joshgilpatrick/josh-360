@@ -231,6 +231,10 @@ Every gate script in the draft is a stub that refuses to run, so nothing can pas
 13. Work that needs code goes back to triage. This graph never starts another graph.
 14. Only gate scripts move the ticket.
 15. The closing resolution comment uses a fixed shape, so the next run's lookup can find it.
+16. The graph's own comments and edits never start a run. Only Josh's reply to an emailed ask (through the desk watcher) or a new Ready ticket does. This follows the triage spec (JP-103), "How every loop ends".
+17. A ticket sent back by `return-to-triage` is counted by triage, not here. Triage takes a ticket back at most twice, and the third return goes straight to Josh (JP-103).
+18. A loop counter belongs to its arrow and never resets during a run, so `max_loops` really bounds `do_work` (rule for the walker, JP-114).
+19. Each role step gets a turn and time cap in the runner's binding, and a gate script that fails stops the run rather than being retried (JP-103; bindings in JP-117).
 
 ## Exact copy
 
