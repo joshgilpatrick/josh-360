@@ -15,6 +15,7 @@
 - [Reads and writes](#reads-and-writes)
 - [Jira status by stretch](#jira-status-by-stretch)
 - [Parts and who owns them](#parts-and-who-owns-them)
+- [How to tell it's working](#how-to-tell-its-working)
 - [Rules](#rules)
 - [Exact copy](#exact-copy)
 - [Acceptance criteria](#acceptance-criteria)
@@ -246,6 +247,22 @@ A non-development Research ticket moves to In Progress, not Design/Planning. `co
 | Tiers | `graphs/tiers.yaml` | JP-101 | Unchanged. |
 
 Every gate script in the draft is a stub that refuses to run, so nothing can pass through a gate that does not exist yet. JP-123 builds them.
+
+## How to tell it's working
+
+Every number comes from the ledger rows the walker writes for each step (run, step, outcome, loop count, session, tier, ticket, start and end), joined to the session facts (cost, model) and to later runs on the same ticket. No model is needed to compute any of them.
+
+| Question | Measure | Good direction |
+| --- | --- | --- |
+| Is the deliverable right first time? (effective) | Share of runs whose first `sign_off` is `accept` or `accept_and_share`, and, for emailed asks, share not reopened by Josh's reply within 14 days | Up |
+| Does the earlier-answer lookup earn its keep? (effective) | Share of runs where `judge_precedent` says `answers`, and the share of those later revised or reopened | First up, second down |
+| Does it spare Josh? (effective) | Asks per run (`ping_before`, `ping_during`, `decide_stuck`), and how long the ticket waits at each | Down |
+| What does a deliverable cost? (efficient) | Model cost and `mid` step runs per closed ticket, split by short and full path and by kind | Down |
+| How long does it take? (efficient) | Time from Ready to delivered, with the time waiting on Josh shown separately | Down |
+
+How each run ends: `close` or `close_emailed` is success. `return_early` or `return_late` is a routing miss, which counts against triage's "Does Ready mean ready?". A stop at `decide_stuck` is a failure. A revise, or a reopen by reply, counts as sent back.
+
+To compare the graph before and after a change, each run must record the version of the graph file it ran, and each step the model that actually answered. The convention's ledger field list does not have either yet. JP-103 has raised the same need with the coordinator, so both graphs get it from one change.
 
 ## Rules
 
