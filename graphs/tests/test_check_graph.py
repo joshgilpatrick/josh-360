@@ -118,6 +118,10 @@ class Yaml(unittest.TestCase):
     def test_true_false_stay_booleans(self):
         self.assertEqual(self._load("a: true\nb: false\n"), {"a": True, "b": False})
 
+    def test_list_as_a_key_is_refused_not_a_crash(self):
+        with self.assertRaises(check_graph.GraphYamlError):
+            self._load("? [a, b]\n: 1\n")
+
     def test_duplicate_key_is_refused(self):
         with self.assertRaises(check_graph.GraphYamlError) as caught:
             self._load("steps: []\nsteps: []\n")
@@ -307,6 +311,79 @@ class Rules(unittest.TestCase):
         data = valid_data()
         step(data, "approve_note")["ask"]["approves"].append("ghost")
         self.assertProblem(data, "ask step 'approve_note' approves unknown step 'ghost'")
+
+    # Shared writes run only on Josh's yes (review of PR #6)
+    def test_shared_write_without_when_runs_after_a_no(self):
+        data = valid_data()
+        del step(data, "post_note")["when"]
+        self.assertProblem(data, "step 'post_note' writes something shared but does not run only when "
+                                 "'approve_note' is answered with an approving choice")
+
+    def test_approval_ask_that_can_be_skipped(self):
+        data = valid_data()
+        step(data, "approve_note")["when"] = {"step": "check_review", "outcome": "clean"}
+        self.assertProblem(data, "ask step 'approve_note' approves a shared write, so it takes no when "
+                                 "(a skipped approval is not a yes)")
+
+    def test_shared_write_on_a_declining_choice(self):
+        data = valid_data()
+        step(data, "post_note")["when"]["outcome"] = ["post", "skip"]
+        self.assertProblem(data, "step 'post_note' runs on 'skip', which is not one of approve_note's "
+                                 "approves_on choices")
+
+    def test_approves_needs_approves_on(self):
+        data = valid_data()
+        del step(data, "approve_note")["ask"]["approves_on"]
+        self.assertProblem(data, "ask step 'approve_note' approves steps, so it needs approves_on")
+
+    def test_approves_on_must_leave_a_no(self):
+        data = valid_data()
+        step(data, "approve_note")["ask"]["approves_on"] = ["post", "skip"]
+        self.assertProblem(data, "ask step 'approve_note': approves_on must name some of its choices, "
+                                 "not all of them")
+
+    def test_approves_on_names_real_choices(self):
+        data = valid_data()
+        step(data, "approve_note")["ask"]["approves_on"] = ["yes"]
+        self.assertProblem(data, "ask step 'approve_note': approves_on choice 'yes' is not one of its choices")
+
+    # Step inputs (review of PR #6)
+    def test_step_reads_unknown_input(self):
+        data = valid_data()
+        step(data, "build")["inputs"] = ["no_such_input"]
+        self.assertProblem(data, "step 'build' reads unknown input 'no_such_input'")
+
+    def test_step_reads_a_later_output(self):
+        data = valid_data()
+        step(data, "build")["inputs"] = ["defects"]
+        self.assertProblem(data, "step 'build' reads unknown input 'defects'")
+
+    def test_step_inputs_as_a_mapping_with_runner_keys(self):
+        data = valid_data()
+        step(data, "build")["inputs"] = {"model": "opus", "mode": "bypass"}
+        self.assertProblem(data, "step 'build': inputs must be a list of names")
+        self.assertProblem(data, "steps.build.inputs.model: key 'model' belongs to one orchestrator")
+        self.assertProblem(data, "steps.build.inputs.mode: key 'mode' belongs to one orchestrator")
+
+    def test_brief_names_unknown_input(self):
+        data = valid_data()
+        step(data, "design")["brief"] = "Ticket: {{ inputs.ticket_id }}."
+        self.assertProblem(data, "step 'design': brief names '{{ inputs.ticket_id }}', which is not a graph input")
+
+    def test_question_names_unknown_input(self):
+        data = valid_data()
+        step(data, "approve_spec")["ask"]["question"] = "Build {{ inputs.nope }}?"
+        self.assertProblem(data, "step 'approve_spec': question names '{{ inputs.nope }}', which is not a graph input")
+
+    def test_output_type(self):
+        data = valid_data()
+        step(data, "design")["outputs"]["spec_path"]["type"] = "path"
+        self.assertProblem(data, "step 'design' output 'spec_path': type must be one of string, number, boolean, list")
+
+    def test_effects_cannot_be_read_only(self):
+        data = valid_data()
+        data["header"]["access"]["to_validation"] = "read"
+        self.assertProblem(data, "step 'to_validation' has effects, so its access cannot be read")
 
     # Habits
     def test_only_scripts_set_labels_and_move_tickets(self):
