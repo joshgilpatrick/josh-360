@@ -44,7 +44,8 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 
 ## Commands
 
-- Checks (the whole suite for now): `python3 scripts/check.py`
+- Checks (the whole suite for now): `python3 scripts/check.py`. It needs PyYAML once: `pip install -r graphs/requirements.txt`.
+- Graph checker on its own: `python3 graphs/tools/check_graph.py` (rules in `graphs/CONVENTION.md`).
 - There is no app, build or install step yet. The ticket that adds one adds its command here and in `.claude/workflow.config.md`.
 
 ## Layout
@@ -52,7 +53,7 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - `README.md`: what the repository is and where things live.
 - `apps/`: runnable parts (moved in from Session Atlas and action-triage later).
 - `ledger/`: the ledger, the local record of every agent session.
-- `graphs/`: the agent graphs and the walker.
+- `graphs/`: the agent graphs and the walker. How a graph is stored, and the checker's rules: `graphs/CONVENTION.md`.
 - `conventions/`: ticket conventions, the system registry and the standing priorities.
 - `docs/vision-and-roadmap.md`: the approved vision and roadmap (the requirements source).
 - `docs/decisions.md`: decisions from the question round, and default choices made while building.
