@@ -20,7 +20,7 @@ header:
   entry_gate: intake-admitted
   exit_gate: intake-closed
   asks_josh: [ask_gap, stuck, approve, write_failed]
-  ledger: [run, step, outcome, loop_count, session, tier, ticket, started_at, ended_at]
+  ledger: [run, step, outcome, loop_count, session, tier, ticket, started_at, ended_at, graph_version, model]
   access:
     read_intake: read
     route: read
@@ -35,6 +35,12 @@ header:
     write: shared          # AD and CI are team spaces, so a write there is shared
     write_failed: read
     link_source: josh      # the action item, to-do, desk thread or ledger entry is Josh's
+  end_states:
+    finished: success            # tickets created and linked, or the open match commented on
+    route.personal: neutral      # personal work; Linear waits for phase 3
+    ask_gap.drop: neutral        # Josh dropped it at a gap question
+    approve.drop: neutral        # Josh dropped it at the card
+    stuck.drop: needs-josh       # dropped only after the drafting limit was reached
 
 inputs:
   source: { type: string, required: true, description: "email, todo, session, manual (notion in the second wave)" }
