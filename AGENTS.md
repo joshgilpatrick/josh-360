@@ -44,7 +44,9 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 
 ## Commands
 
-- Checks (the whole suite for now): `python3 scripts/check.py`
+- Checks: `python3 scripts/check.py`
+- Unit tests (standard library only, made-up data): `python3 -m unittest discover -s tests -v`
+- Laptop inventory (JP-96, run on the laptop only, read-only): `python3 scripts/laptop_inventory.py --out ~/josh-360-inventory.json`
 - There is no app, build or install step yet. The ticket that adds one adds its command here and in `.claude/workflow.config.md`.
 
 ## Layout
@@ -64,6 +66,8 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - `docs/proof/`: proof for each ticket, by date and key.
 - `.claude/`: workflow values, skills, commands and subagents.
 - `scripts/check.py`: the repo's checks, run by CI as the `suite` job.
+- `scripts/laptop_inventory.py`, `scripts/laptop_figures.py`: the read-only laptop inventory and starting figures (JP-96).
+- `tests/`: unit tests, run by CI as part of the `suite` job.
 
 ## Product
 
