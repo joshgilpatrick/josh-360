@@ -1,0 +1,5 @@
+$ grep -n -E "recommended option|docs/decisions.md|Only a permanent deletion|one sitting per phase" AGENTS.md
+37:- Design questions are collected, each with a recommendation, and put to Josh in one sitting per phase (JP-106 for phase 1). Builds that do not wait on an answer carry on.
+38:- When a question comes up during building and the choice can be undone, take the recommended option, record it in `docs/decisions.md`, and carry on.
+39:- Only a permanent deletion or a write to something shared stops the work to ask Josh.
+58:- `docs/decisions.md`: decisions from the question round, and default choices made while building.

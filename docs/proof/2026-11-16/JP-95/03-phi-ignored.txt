@@ -1,0 +1,6 @@
+$ mkdir -p ledger/.phi && touch ledger/.phi/sample.json && git check-ignore -v ledger/.phi/sample.json
+.gitignore:3:*[Pp][Hh][Ii]	ledger/.phi/sample.json
+exit 0
+$ git status --porcelain --ignored ledger/
+?? ledger/
+!! ledger/.phi/

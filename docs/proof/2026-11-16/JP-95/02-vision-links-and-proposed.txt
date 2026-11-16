@@ -1,0 +1,7 @@
+$ python3 scripts/check.py   # checks every Contents anchor in docs/ (incl. the vision) and the Proposed marker
+check.py: ok (0 problem(s))
+
+$ grep -c "](#" docs/vision-and-roadmap.md   # Contents links checked
+12
+$ grep -n "Proposed" docs/vision-and-roadmap.md || echo "no Proposed marker"
+no Proposed marker

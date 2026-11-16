@@ -1,0 +1,11 @@
+$ grep -n -E "Merge permission|Build rules|Data rule|Patient-data rule|separate agent|made-up sample data|named in the ticket in advance|proof page|one list per phase" AGENTS.md
+24:**Merge permission.** Agents may merge their own pull requests to josh-360 once the review ceremony is done and the `suite` check is green. The passphrase rule in Josh's global instructions does not apply to this repository. It still applies to every other repository, and pull requests to his other repositories wait for the close of the phase.
+26:**Build rules.**
+28:- A ticket is Ready before work starts: a separate agent signs it off, with no open questions.
+29:- Work in the cloud first, on made-up sample data, never real transcripts.
+30:- A step that must run on Josh's laptop is named in the ticket in advance.
+31:- A separate agent reviews each pull request before it merges.
+32:- Each part of phase 1 ends with a short proof page Josh can read in minutes.
+33:- Permanent deletions wait in one list per phase, which Josh approves in one sitting. Retiring something means switching it off and archiving it, which needs nobody.
+41:**Data rule.** Reading any data Josh can access is allowed. A write to anything shared (a shared database, or an app other people use) needs Josh's confirmation in the thread, and a write that affects other users goes through the SQL write safety ceremony.
+43:**Patient-data rule.** No patient data in the ledger, summaries, decision records, tickets, commits or logs. Refer to a file that holds it by path only. Folders that hold it are named `.phi`, which `.gitignore` ignores.
