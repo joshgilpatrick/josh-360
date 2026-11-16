@@ -76,6 +76,9 @@ KNOWN_STORES = [
     ".config/opencode", ".local/share/opencode", ".pi/agent/sessions", ".omnara", ".config/twg",
     "Library/CloudStorage/OneDrive-EventusWholeHealth/Development/active/claude_services/skills/task-manager",
 ]
+# Folders a background process (the JP-105 job runner) must not touch: macOS may show a privacy prompt
+# on Josh's screen for them. Skipped with --skip-prompting-folders, which the laptop job passes.
+PROMPTING_FOLDERS = ("Library/CloudStorage", "Desktop", "Documents", "Downloads", "Library/Mobile Documents")
 # Folders whose direct children are each listed with size and count.
 SWEEP_DIRS = [".claude", ".claude/atlas", ".claude/cost-ledger", "Library/Application Support/action-agent"]
 # Other top-level home folders worth a size: matched by name, case-insensitive.
@@ -441,15 +444,22 @@ def _children(folder: Path) -> list[Path]:
         return []
 
 
-def stores(home: Path) -> dict:
-    known = {tilde(home / rel, home): walk_stats(home / rel) for rel in KNOWN_STORES}
+def _prompting(rel: str) -> bool:
+    return any(rel == f or rel.startswith(f + "/") for f in PROMPTING_FOLDERS)
+
+
+def stores(home: Path, skip_prompting: bool = False) -> dict:
+    names = [rel for rel in KNOWN_STORES if not (skip_prompting and _prompting(rel))]
+    known = {tilde(home / rel, home): walk_stats(home / rel) for rel in names}
+    known.update({tilde(home / rel, home): {"skipped": "may prompt"} for rel in KNOWN_STORES if rel not in names})
     swept = {tilde(home / rel, home): {c.name: walk_stats(c) for c in _children(home / rel)}
              for rel in SWEEP_DIRS}
     hinted = {tilde(c, home): walk_stats(c) for c in _children(home)
-              if HOME_NAME_HINTS.search(c.name) and c.name != ".claude"}
+              if HOME_NAME_HINTS.search(c.name) and c.name != ".claude"
+              and not (skip_prompting and _prompting(c.name))}
     # Databases only inside the named stores, never across all of Application Support.
     sqlite = {}
-    for base in [home / ".claude"] + [home / rel for rel in KNOWN_STORES if rel != ".claude/projects"]:
+    for base in [home / ".claude"] + [home / rel for rel in names if rel != ".claude/projects"]:
         for db in _find_sqlite(base):
             sqlite[tilde(db, home)] = walk_stats(db)
     return {"known": known, "children": swept, "home_folders": hinted, "sqlite_files": sqlite}
@@ -486,7 +496,7 @@ def default_range(today: date) -> tuple[date, date]:
 
 
 def build(home: Path, since: date, until: date, keys: list[str], repo_roots: list[Path],
-          usage_days: int, today: date) -> dict:
+          usage_days: int, today: date, skip_prompting: bool = False) -> dict:
     started = time.time()
     sections = {
         "launchd_plists": lambda: launch_agent_plists(home),
@@ -497,10 +507,11 @@ def build(home: Path, since: date, until: date, keys: list[str], repo_roots: lis
         "cron": cron_entries,
         "claude_settings": lambda: claude_settings(home),
         "definitions": lambda: definitions(home),
-        "stores": lambda: stores(home),
+        "stores": lambda: stores(home, skip_prompting),
         "figures": lambda: laptop_figures.session_figures(home / ".claude/projects", since, until, keys,
                                                           today - timedelta(days=usage_days)),
-        "loose_ends": lambda: laptop_figures.loose_end_figures(repo_roots, home),
+        "loose_ends": lambda: laptop_figures.loose_end_figures(
+            [r for r in repo_roots if not (skip_prompting and _prompting(tilde(r, home)[2:]))], home),
     }
     report = {"schema": SCHEMA, "run_on": today.isoformat(), "home": "~"}
     for name, run in sections.items():
@@ -514,11 +525,37 @@ def build(home: Path, since: date, until: date, keys: list[str], repo_roots: lis
     return report
 
 
+# The JP-105 runner publishes a job's report only up to 1 MB. These go first, largest-and-least-needed first.
+REPORT_LIMIT = 950_000
+TRIM_ORDER = (("running_programs",), ("stores", "children"), ("stores", "sqlite_files"), ("stores", "home_folders"))
+
+
+def fit(report: dict, limit: int = REPORT_LIMIT) -> dict:
+    """Drops whole low-value sections until the compact JSON fits under limit, naming each one dropped."""
+    trimmed = []
+    for path in TRIM_ORDER:
+        if len(_compact(report).encode("utf-8")) <= limit:
+            break
+        parent = report
+        for key in path[:-1]:
+            parent = parent.get(key) if isinstance(parent, dict) else None
+        if isinstance(parent, dict) and path[-1] in parent:
+            parent[path[-1]] = {"trimmed": True}
+            trimmed.append(".".join(path))
+    if trimmed:
+        report["trimmed"] = trimmed
+    return report
+
+
+def _compact(report: dict) -> str:
+    return json.dumps(report, sort_keys=True, separators=(",", ":"))
+
+
 def main(argv: list[str] | None = None) -> int:
     today = date.today()
     since_default, until_default = default_range(today)
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    p.add_argument("--out", required=True, help="output JSON file (must not exist yet)")
+    p.add_argument("--out", required=True, help="output JSON file (must not exist yet), or - for standard output")
     p.add_argument("--home", default=str(Path.home()), help="home folder to inventory")
     p.add_argument("--since", type=date.fromisoformat, default=since_default)
     p.add_argument("--until", type=date.fromisoformat, default=until_default)
@@ -526,17 +563,21 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--repo-root", action="append", help="folder searched for git repos (repeatable); "
                                                          "default ~/Development and ~/.claude")
     p.add_argument("--usage-days", type=int, default=90, help="window for skill and agent use")
+    p.add_argument("--skip-prompting-folders", action="store_true",
+                   help="leave out folders macOS may guard with a privacy prompt (the laptop job sets this)")
     args = p.parse_args(argv)
 
     home = Path(args.home).expanduser().resolve()
-    out = Path(args.out).expanduser()
-    if out.exists():
+    to_stdout = args.out == "-"
+    out = None if to_stdout else Path(args.out).expanduser()
+    if out is not None and out.exists():
         print(f"refusing to overwrite {out}", file=sys.stderr)
         return 2
     roots = [Path(r).expanduser() for r in args.repo_root] if args.repo_root else [home / "Development",
                                                                                  home / ".claude"]
     keys = [k.strip() for k in args.ticket_keys.split(",") if k.strip()]
-    report = build(home, args.since, args.until, keys, roots, args.usage_days, today)
+    report = build(home, args.since, args.until, keys, roots, args.usage_days, today,
+                   skip_prompting=args.skip_prompting_folders)
     report = scrub(report)
     problems = check_output(report)
     if problems:
@@ -545,13 +586,20 @@ def main(argv: list[str] | None = None) -> int:
         for line in problems[:20]:
             print("  " + line, file=sys.stderr)
         return 3
-    with out.open("x", encoding="utf-8") as fh:  # "x": never replaces an existing file
-        json.dump(report, fh, indent=1, sort_keys=True)
-        fh.write("\n")
-    fig = report["figures"]
-    print(f"wrote {out}: {len(report['launchd_plists'])} launchd plists, "
-          f"{fig.get('sessions', 0)} sessions, {report['loose_ends']['repos_found']} repos, "
-          f"{report['seconds']} s")
+    if to_stdout:
+        # Only the JSON goes to standard output; the runner publishes it as the job's report.
+        sys.stdout.write(_compact(fit(report)) + "\n")
+    else:
+        with out.open("x", encoding="utf-8") as fh:  # "x": never replaces an existing file
+            json.dump(report, fh, indent=1, sort_keys=True)
+            fh.write("\n")
+    fig = report.get("figures") or {}
+    loose = report.get("loose_ends") or {}
+    plists = report.get("launchd_plists")
+    print(f"wrote {'standard output' if to_stdout else out}: "
+          f"{len(plists) if isinstance(plists, list) else 0} launchd plists, "
+          f"{fig.get('sessions', 0)} sessions, {loose.get('repos_found', 0)} repos, {report['seconds']} s",
+          file=sys.stderr if to_stdout else sys.stdout)
     return 0
 
 
