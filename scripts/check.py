@@ -102,7 +102,8 @@ def laptop_problems() -> list[str]:
             problems.append("not executable: hooks/dispatch")
         if subprocess.run(["bash", "-n", str(dispatch)]).returncode != 0:
             problems.append("does not parse as bash: hooks/dispatch")
-    jp96 = [ROOT / "scripts" / n for n in ("laptop_inventory.py", "laptop_figures.py", "laptop_inventory_job.py")]
+    jp96 = [ROOT / "scripts" / n for n in ("laptop_inventory.py", "laptop_figures.py", "laptop_inventory_job.py",
+                                           "retire_focus_dashboard.py")]
     for py in sorted((ROOT / "laptop").glob("*.py")) + sorted((ROOT / "hooks").rglob("*.py")) + jp96:
         try:
             ast.parse(py.read_text(encoding="utf-8"), filename=str(py), feature_version=(3, 9))
