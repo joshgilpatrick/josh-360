@@ -1,0 +1,4 @@
+$ python3 graphs/tools/check_graph.py --root <parts with no mid max_runs>
+/tmp/tmp.vlbzhHLnwR/p/tiers.yaml: tier 'mid' has no max_runs
+check_graph: FAILED (1 problem(s) in 1 graph(s))
+exit 1

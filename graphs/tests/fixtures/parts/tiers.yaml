@@ -1,5 +1,9 @@
 convention: 1
 tiers:
-  cheap: [sample-small-model]
-  mid: [sample-medium-model]
+  cheap: [{model: sample-small-model, effort: high}]
+  mid: [{model: sample-medium-model, effort: medium}]
   gate: [{model: sample-large-model, effort: high}]
+max_runs:
+  cheap: 5
+  mid: 3
+  gate: 2
