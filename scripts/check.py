@@ -179,8 +179,11 @@ def conventions_problems() -> list[str]:
         import conventions
     except ImportError as exc:
         return [f"cannot check conventions/: {exc} (pip install -r requirements.txt)"]
-    return [f"conventions: {p}" for p in conventions.validate(conventions.load(conventions.REGISTRY),
-                                                             conventions.load(conventions.PRIORITIES))]
+    try:
+        registry, priorities = conventions.load(conventions.REGISTRY), conventions.load(conventions.PRIORITIES)
+    except conventions.ConventionsFileError as exc:
+        return [f"conventions: {exc}"]
+    return [f"conventions: {p}" for p in conventions.validate(registry, priorities)]
 
 
 def main() -> int:
