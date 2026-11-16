@@ -287,7 +287,7 @@ Collected for JP-106, each with a recommendation. The verdicts above already tak
 
 ## What the laptop run adds
 
-The run (the JP-105 job `inventory`, which runs `scripts/laptop_inventory_job.py` once after the merge and puts its report on `laptop-status` as `reports/inventory.json`) returns, as names, paths, sizes and counts only. Run as a background job, it leaves out the folders macOS may guard with a privacy prompt (iCloud, OneDrive, Desktop, Documents, Downloads), so the one OneDrive store in the table above reads "skipped":
+The run (the JP-105 job `inventory`, which runs `scripts/laptop_inventory_job.py` once after the merge and puts its report on `laptop-status` as `reports/inventory.json`) returns, as names, paths, sizes and counts only. Run as a background job, it leaves out the folders macOS may guard with a privacy prompt (iCloud, OneDrive, Desktop, Documents, Downloads), including anything that reaches them through a symlink, so the one OneDrive store in the table above reads "skipped", and it does not run `brew`, which writes its own cache even to list services (Homebrew's services still show as `homebrew.mxcl.*` launchd plists):
 
 - every launchd plist and whether launchd has it loaded, with its log file's size and last change (the "last used" column for jobs);
 - the live hooks, plugins and MCP server names;
