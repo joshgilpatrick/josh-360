@@ -21,7 +21,8 @@ from pathlib import Path
 sys.dont_write_bytecode = True  # keep the laptop's copy clean
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import status as status_branch  # noqa: E402
-from common import MAIN_BRANCH, PAUSE_BRANCH, REPO_ROOT, Unexpected, git, now_utc, pause_file  # noqa: E402
+from common import (MAIN_BRANCH, PAUSE_BRANCH, REPO_ROOT, Unexpected, git, now_utc, pause_file,  # noqa: E402
+                    require_laptop_copy)
 
 
 def head(repo: Path) -> str:
@@ -89,6 +90,7 @@ def follow(repo: Path = REPO_ROOT) -> dict:
 
 def main() -> int:
     try:
+        require_laptop_copy()
         outcome = follow()
     except Unexpected as e:
         print("follow: could not run: {}".format(e))
