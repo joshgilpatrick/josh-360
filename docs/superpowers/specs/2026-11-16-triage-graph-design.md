@@ -262,6 +262,8 @@ A loop can hide in three places. The checker already closes the first. The other
 
 The walker (JP-114) must count these loops the way this table assumes. A loop's counter belongs to its arrow (from step, to step) and never resets during a run, even when an outer loop runs the same steps again. Without that rule, two nested loops could reset each other's counters and run forever. With it, a run that never reaches Josh has at most 2 + 2 + 1 trips back, so it always ends.
 
+**A cap for each model tier (Josh, 16 November).** On top of the loop limits, no role step runs more times in one run than its tier allows: `cheap` (Haiku) 5, `mid` (Sonnet) 3, `gate` (Opus) 2. The caps live in `graphs/tiers.yaml` as each tier's `max_runs`. The count goes by tier, not by the model that answered, so a Sonnet fallback under `cheap` still counts as `cheap`. The walker counts every run of the step, whichever loop caused it. When the next run would pass the cap, the run goes to that loop's `at_limit` ask, and each yes from Josh allows one more run. The checker refuses a loop whose own `max_loops` would pass the cap of a role step it runs again (`max_loops` + 1 > `max_runs`). In triage, `sign_off` and `revise` are both `mid`, so each runs at most 3 times per run, however the drafter rounds, mid-run edits and fresh sign-offs add up. This needs a change to the convention, the checker and the walker, tracked in its own ticket.
+
 **2. Loops between runs and graphs.** Each run starts with fresh counters, so in-run limits cannot stop these:
 
 - **Ping-pong.** The development designer returns a ticket, triage makes it Ready, and the designer returns it again with a new question. The same thing can happen with the non-development graph's "needs code".
