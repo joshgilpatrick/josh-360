@@ -12,7 +12,8 @@ What it does:
     the share of sessions tied to a ticket, local loose ends, and skill and agent use.
 
 What it never does:
-  * Write anything except the one output file, which it refuses to overwrite.
+  * Write anything except the one output file, which it refuses to overwrite. It sets
+    sys.dont_write_bytecode before importing laptop_figures, so not even a __pycache__ folder appears.
   * Put file contents in the output. Every value is a name, a path, a size, a count, a date or a fixed
     label, and check_output() refuses to write anything else.
   * Run any command outside READ_ONLY_COMMANDS, or reach the network.
@@ -26,6 +27,7 @@ import json
 import os
 import plistlib
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -34,6 +36,7 @@ from collections import Counter
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
+sys.dont_write_bytecode = True  # importing the sibling module must not write scripts/__pycache__/
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import laptop_figures  # noqa: E402
 
@@ -47,6 +50,9 @@ READ_ONLY_COMMANDS = {
     "ps": ["ps", "-axo", "comm="],
     "crontab": ["crontab", "-l"],
 }
+# Extra environment per command: stop Homebrew updating itself or sending analytics during a read.
+COMMAND_ENV = {"brew": {"HOMEBREW_NO_AUTO_UPDATE": "1", "HOMEBREW_NO_ANALYTICS": "1",
+                        "HOMEBREW_NO_INSTALL_CLEANUP": "1"}}
 
 # Data stores named in the four repositories (JP-96 inventory). Paths are relative to the home folder.
 # A glob (*) is expanded; anything missing is reported as missing, which is itself a finding.
@@ -118,10 +124,9 @@ def scrub(value):
 
 
 def tilde(path: Path, home: Path) -> str:
-    try:
-        return "~/" + str(path.relative_to(home))
-    except ValueError:
-        return str(path)
+    """~/-relative when the path is under home, as written or with symlinks resolved (on macOS /var is a
+    link to /private/var, so a path written through the link would otherwise print in full)."""
+    return laptop_figures.tilde(path, home)
 
 
 def day_of(ts: float | None) -> str | None:
@@ -136,8 +141,8 @@ def run_read_only(name: str) -> list[str] | None:
     if shutil.which(argv[0]) is None:
         return None
     try:
-        out = subprocess.run(argv, capture_output=True, text=True, timeout=60,
-                             stdin=subprocess.DEVNULL)
+        out = subprocess.run(argv, capture_output=True, text=True, errors="replace", timeout=60,
+                             stdin=subprocess.DEVNULL, env=dict(os.environ, **COMMAND_ENV.get(name, {})))
     except (OSError, subprocess.TimeoutExpired):
         return None
     return out.stdout.splitlines() if out.returncode == 0 else None
@@ -193,18 +198,25 @@ def cron_entries() -> dict:
     if lines is None:
         return {"available": False}
     active = [l for l in lines if l.strip() and not l.lstrip().startswith("#")]
-    return {"available": True, "entries": len(active), "scripts": sorted(set(_path_tokens(" ".join(active))))}
+    words = []
+    for line in active:
+        words += _split(line)
+    return {"available": True, "entries": len(active), "scripts": sorted(set(_path_words(words)))}
 
 
 # ---------- files ----------
 
 def walk_stats(path: Path) -> dict:
-    """Size, file count and newest change for a file or folder, without reading any file."""
-    if not path.exists():
-        return {"exists": False}
-    if path.is_file():
-        st = path.stat()
-        return {"exists": True, "bytes": st.st_size, "files": 1, "newest_change": day_of(st.st_mtime)}
+    """Size, file count and newest change for a file or folder, without reading any file. A folder the
+    run may not open (no Full Disk Access, a cloud-storage prompt) is reported, not fatal."""
+    try:
+        if not path.exists():
+            return {"exists": False}
+        if path.is_file():
+            st = path.stat()
+            return {"exists": True, "bytes": st.st_size, "files": 1, "newest_change": day_of(st.st_mtime)}
+    except OSError:
+        return {"exists": None, "error": "unreadable"}
     total = files = 0
     newest = 0.0
     capped = False
@@ -232,20 +244,32 @@ def launch_agent_plists(home: Path) -> list[dict]:
     for folder in folders:
         if not folder.is_dir():
             continue
-        for plist in sorted(folder.glob("*.plist")):
-            row = {"file": tilde(plist, home), "changed": day_of(plist.stat().st_mtime)}
+        try:
+            plists = sorted(folder.glob("*.plist"))
+        except OSError:
+            rows.append({"file": tilde(folder, home), "readable": False})
+            continue
+        for plist in plists:
+            row = {"file": tilde(plist, home)}
             try:
+                row["changed"] = day_of(plist.stat().st_mtime)
                 with plist.open("rb") as fh:
                     data = plistlib.load(fh)
             except Exception:
                 row["readable"] = False
                 rows.append(row)
                 continue
+            if not isinstance(data, dict):
+                row["readable"] = False
+                rows.append(row)
+                continue
             args = data.get("ProgramArguments") or ([data["Program"]] if data.get("Program") else [])
+            args = [a for a in args if isinstance(a, str)] if isinstance(args, list) else []
+            program = _path_words(args[:1])
             row.update({
                 "label": data.get("Label"),
-                "program": tilde(Path(args[0]), home) if args else None,
-                "scripts": [tilde(Path(a), home) for a in args[1:] if _looks_like_path(a)],
+                "program": tilde(Path(program[0]), home) if program else None,
+                "scripts": [tilde(Path(w), home) if w.startswith("/") else w for w in _path_words(args[1:])],
                 "run_at_load": bool(data.get("RunAtLoad")),
                 "keep_alive": bool(data.get("KeepAlive")),
                 "start_interval_seconds": data.get("StartInterval"),
@@ -254,7 +278,7 @@ def launch_agent_plists(home: Path) -> list[dict]:
                 "disabled": bool(data.get("Disabled")),
             })
             for key in ("StandardOutPath", "StandardErrorPath"):
-                if data.get(key):
+                if isinstance(data.get(key), str):
                     log = Path(data[key])
                     row[key] = {"path": tilde(log, home), **walk_stats(log)}
             rows.append(row)
@@ -268,16 +292,51 @@ def _calendar(value) -> list[str] | None:
     return [",".join(f"{k}={v}" for k, v in sorted(i.items())) for i in items if isinstance(i, dict)]
 
 
-def _looks_like_path(s: str) -> bool:
-    return isinstance(s, str) and ("/" in s or s.endswith((".sh", ".py", ".ts", ".js", ".mjs")))
+SCRIPT_NAME = re.compile(r"^[A-Za-z0-9_.-]+\.(?:sh|py|ts|js|mjs|cjs)$")
+PATH_START = ("/", "~/", "$HOME/", "./")
 
 
-PATH_TOKEN = re.compile(r"(?:~|\$HOME|/)[^\s'\"]*|[^\s'\"/]+\.(?:sh|py|ts|js|mjs|cjs)\b")
+def _split(command: str) -> list[str]:
+    try:
+        return shlex.split(command or "")
+    except ValueError:
+        return (command or "").split()
 
 
-def _path_tokens(command: str) -> list[str]:
-    """The file paths in a command line, and nothing else from it (arguments may hold anything)."""
-    return [t for t in PATH_TOKEN.findall(command or "") if SAFE_TEXT.match(t)]
+def _path_words(words: list, depth: int = 0) -> list[str]:
+    """The whole words that are file paths or script names, and nothing else (arguments may hold tokens,
+    names or URLs). A word is kept only if it starts like a path (/, ~/, $HOME/, ./) or is a bare script
+    file name, and holds no "=" or "://". A word with spaces in it is kept only when it is a path that
+    exists (such as ".../Application Support/..."); otherwise it is split and each part judged alone, so
+    a `sh -c "..."` command line never passes through whole."""
+    out: list[str] = []
+    for w in words:
+        if not isinstance(w, str) or not w.strip():
+            continue
+        w = w.strip()
+        if any(c.isspace() for c in w):
+            if w.startswith("/") and "=" not in w and "://" not in w and _exists(w):
+                out.append(w)
+            elif depth < 3:
+                out += _path_words(_split(w), depth + 1)
+            continue
+        if "=" in w or "://" in w:
+            continue
+        if w.startswith(PATH_START) or SCRIPT_NAME.match(w):
+            out.append(w)
+    return [w for w in out if SAFE_TEXT.match(w)]
+
+
+def _exists(path: str) -> bool:
+    try:
+        return os.path.exists(path)
+    except (OSError, ValueError):
+        return False
+
+
+def _command_paths(command, home: Path) -> list[str]:
+    words = _path_words(_split(command) if isinstance(command, str) else [])
+    return [tilde(Path(w), home) if w.startswith("/") else w for w in words]
 
 
 def load_json(path: Path):
@@ -302,7 +361,7 @@ def claude_settings(home: Path) -> dict:
                     if isinstance(h, dict):
                         hooks.append({"event": event, "matcher": _safe(group.get("matcher")),
                                       "type": _safe(h.get("type")),
-                                      "scripts": _path_tokens(h.get("command", ""))})
+                                      "scripts": _command_paths(h.get("command", ""), home)})
         result[rel] = {
             "readable": True,
             "hooks": hooks,
@@ -310,8 +369,8 @@ def claude_settings(home: Path) -> dict:
             "disabled_plugins": sorted(k for k, v in (data.get("enabledPlugins") or {}).items() if not v),
             "marketplaces": sorted((data.get("extraKnownMarketplaces") or {}).keys()),
             "mcp_servers": sorted((data.get("mcpServers") or {}).keys()),
-            "status_line": _path_tokens((data.get("statusLine") or {}).get("command", "")),
-            "api_key_helper": _path_tokens(data.get("apiKeyHelper") or ""),
+            "status_line": _command_paths((data.get("statusLine") or {}).get("command", ""), home),
+            "api_key_helper": _command_paths(data.get("apiKeyHelper") or "", home),
         }
     user = load_json(home / ".claude.json")
     if isinstance(user, dict):
@@ -335,56 +394,72 @@ def definitions(home: Path) -> dict:
     """Skill and agent definitions by name, with each one's last change."""
     out = {}
     for rel in (".claude/skills", ".claude/.agents/skills", ".agents/skills"):
-        folder = home / rel
-        if folder.is_dir():
-            out[rel] = {d.name: day_of(_newest(d)) for d in sorted(folder.iterdir())
-                        if d.is_dir() or d.is_symlink()}
+        try:
+            folder = home / rel
+            if folder.is_dir():
+                out[rel] = {d.name: day_of(_newest(d)) for d in sorted(folder.iterdir())
+                            if d.is_dir() or d.is_symlink()}
+        except OSError:
+            out[rel] = {"error": "unreadable"}
     for rel in (".claude/agents", ".claude/commands"):
-        folder = home / rel
-        if folder.is_dir():
-            out[rel] = {f.stem: day_of(f.stat().st_mtime) for f in sorted(folder.rglob("*"))
-                        if f.is_file() and f.suffix in (".md", ".toml")}
-    plugin_cache = home / ".claude/plugins/cache"
-    if plugin_cache.is_dir():
-        out["plugin_skills"] = sorted({p.parent.name for p in plugin_cache.glob("*/*/*/skills/*/SKILL.md")})
+        try:
+            folder = home / rel
+            if folder.is_dir():
+                out[rel] = {f.stem: day_of(_mtime(f)) for f in sorted(folder.rglob("*"))
+                            if f.suffix in (".md", ".toml") and f.is_file()}
+        except OSError:
+            out[rel] = {"error": "unreadable"}
+    try:
+        plugin_cache = home / ".claude/plugins/cache"
+        if plugin_cache.is_dir():
+            out["plugin_skills"] = sorted({p.parent.name for p in plugin_cache.glob("*/*/*/skills/*/SKILL.md")})
+    except OSError:
+        out["plugin_skills"] = ["(unreadable)"]
     return out
+
+
+def _mtime(path: Path) -> float | None:
+    try:
+        return path.stat().st_mtime
+    except OSError:
+        return None
 
 
 def _newest(path: Path) -> float | None:
     try:
         target = path.resolve()
-        times = [p.stat().st_mtime for p in target.rglob("*") if p.is_file()]
+        times = [t for t in (_mtime(p) for p in target.rglob("*")) if t]
         return max(times) if times else target.stat().st_mtime
     except OSError:
         return None
 
 
+def _children(folder: Path) -> list[Path]:
+    try:
+        return sorted(c for c in folder.iterdir() if not c.is_symlink()) if folder.is_dir() else []
+    except OSError:
+        return []
+
+
 def stores(home: Path) -> dict:
-    known = {}
-    for rel in KNOWN_STORES:
-        for path in (sorted(home.glob(rel)) if "*" in rel else [home / rel]):
-            known[tilde(path, home)] = walk_stats(path)
-    swept = {}
-    for rel in SWEEP_DIRS:
-        folder = home / rel
-        if folder.is_dir():
-            swept[tilde(folder, home)] = {c.name: walk_stats(c) for c in sorted(folder.iterdir())
-                                          if not c.is_symlink()}
-    hinted = {}
-    for child in sorted(home.iterdir()) if home.is_dir() else []:
-        if HOME_NAME_HINTS.search(child.name) and not child.is_symlink() and child.name != ".claude":
-            hinted[tilde(child, home)] = walk_stats(child)
+    known = {tilde(home / rel, home): walk_stats(home / rel) for rel in KNOWN_STORES}
+    swept = {tilde(home / rel, home): {c.name: walk_stats(c) for c in _children(home / rel)}
+             for rel in SWEEP_DIRS}
+    hinted = {tilde(c, home): walk_stats(c) for c in _children(home)
+              if HOME_NAME_HINTS.search(c.name) and c.name != ".claude"}
+    # Databases only inside the named stores, never across all of Application Support.
     sqlite = {}
-    for base in (home / ".claude", home / ".claude-mem",
-                 home / "Library/Application Support"):
-        if base.is_dir():
-            for db in _find_sqlite(base):
-                sqlite[tilde(db, home)] = walk_stats(db)
+    for base in [home / ".claude"] + [home / rel for rel in KNOWN_STORES if rel != ".claude/projects"]:
+        for db in _find_sqlite(base):
+            sqlite[tilde(db, home)] = walk_stats(db)
     return {"known": known, "children": swept, "home_folders": hinted, "sqlite_files": sqlite}
 
 
 def _find_sqlite(base: Path, max_depth: int = 4) -> list[Path]:
+    """SQLite files up to max_depth below base, skipping transcripts. os.walk skips unreadable folders."""
     found = []
+    if not _is_dir(base):
+        return found
     base_depth = len(base.parts)
     for root, dirs, names in os.walk(base, followlinks=False):
         if len(Path(root).parts) - base_depth >= max_depth or "projects" in Path(root).parts[-1:]:
@@ -393,6 +468,13 @@ def _find_sqlite(base: Path, max_depth: int = 4) -> list[Path]:
             if n.endswith((".db", ".sqlite", ".sqlite3")):
                 found.append(Path(root) / n)
     return sorted(found)
+
+
+def _is_dir(path: Path) -> bool:
+    try:
+        return path.is_dir()
+    except OSError:
+        return False
 
 
 # ---------- main ----------
@@ -406,23 +488,28 @@ def default_range(today: date) -> tuple[date, date]:
 def build(home: Path, since: date, until: date, keys: list[str], repo_roots: list[Path],
           usage_days: int, today: date) -> dict:
     started = time.time()
-    report = {
-        "schema": SCHEMA,
-        "run_on": today.isoformat(),
-        "home": "~",
-        "launchd_plists": launch_agent_plists(home),
-        "launchctl": launchctl_jobs(),
-        "brew_services": brew_services(),
-        "listening_ports": listening_ports(),
-        "running_programs": running_programs(),
-        "cron": cron_entries(),
-        "claude_settings": claude_settings(home),
-        "definitions": definitions(home),
-        "stores": stores(home),
-        "figures": laptop_figures.session_figures(home / ".claude/projects", since, until, keys,
-                                                  today - timedelta(days=usage_days)),
-        "loose_ends": laptop_figures.loose_end_figures(repo_roots, home),
+    sections = {
+        "launchd_plists": lambda: launch_agent_plists(home),
+        "launchctl": launchctl_jobs,
+        "brew_services": brew_services,
+        "listening_ports": listening_ports,
+        "running_programs": running_programs,
+        "cron": cron_entries,
+        "claude_settings": lambda: claude_settings(home),
+        "definitions": lambda: definitions(home),
+        "stores": lambda: stores(home),
+        "figures": lambda: laptop_figures.session_figures(home / ".claude/projects", since, until, keys,
+                                                          today - timedelta(days=usage_days)),
+        "loose_ends": lambda: laptop_figures.loose_end_figures(repo_roots, home),
     }
+    report = {"schema": SCHEMA, "run_on": today.isoformat(), "home": "~"}
+    for name, run in sections.items():
+        # One failing section is recorded by its error type only (never its message, which can hold
+        # a path or file text) and the rest of the run carries on.
+        try:
+            report[name] = run()
+        except Exception as exc:  # noqa: BLE001
+            report[name] = {"error": type(exc).__name__}
     report["seconds"] = round(time.time() - started, 1)
     return report
 
