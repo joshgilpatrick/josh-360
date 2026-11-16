@@ -103,7 +103,7 @@ steps:
   - id: check_draft
     gate: ticket-complete
     needs: [draft]
-    inputs: [proposal]
+    inputs: [proposal, source, source_ref]   # the patient-data scan compares against the source
     outcomes: [pass, fixable, needs_josh]
     on:
       fixable: { goto: draft, max_loops: 2, at_limit: stuck }
