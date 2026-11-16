@@ -1,0 +1,59 @@
+Scenario: Every feature has a verdict and a carrier
+feature rows: 51 (35 action-triage, 16 Session Atlas)
+A1   Meeting sync and action-item extraction      | Keep as is                                     | JP-121 (feeds the ticket creation graph); the job itself is judged in JP-96
+A2   Item classification and field prefill        | Merge with the ticket creation graph           | JP-121
+A3   Calendar tab                                 | Retire                                         | JP-121, then JP-124
+A4   Ticket drafting                              | Keep as is                                     | JP-124; used by JP-121
+A5   Quick capture                                | Merge with ticket drafting                     | JP-124
+A6   To-do tab                                    | Retire                                         | JP-124
+A7   Prompt settings                              | Keep as is                                     | JP-124
+A8   Tickets tab                                  | Keep as is                                     | JP-124
+A9   Jira ticket pickup (daemon)                  | Keep, move onto the ledger                     | JP-124; JP-117
+A10  GitHub-issue sessions                        | Retire                                         | JP-124 (action-triage phase 8)
+A11  Session Jira channel                         | Keep, move onto the ledger                     | JP-124; JP-118
+A12  Tasked tab and standalone issues             | Retire                                         | JP-124
+A13  Nudge, redo and model change on an issue     | Retire                                         | JP-124
+A14  Email-origin issues and result email         | Retire                                         | JP-124
+A15  Sprint lead handoff                          | Retire                                         | JP-128
+A16  Session spawning and its safety rails        | Keep as is                                     | JP-124
+A17  Session watchdog and recovery                | Keep as is                                     | JP-124; JP-112 reads it
+A18  Daemon self-checks                           | Keep as is                                     | JP-124
+A19  Diagnose a stuck session                     | Keep as is                                     | JP-124
+A20  Open in terminal and Send to Background      | Merge with Session Atlas's Send to Background  | JP-124
+A21  Automated PR audit                           | Keep as is                                     | JP-124; JP-115
+A22  Code Review board                            | Keep as is                                     | JP-124
+A23  Needs you tab and the question hook          | Keep, move onto the ledger                     | JP-125; JP-116, JP-126
+A24  History tab                                  | Keep, move onto the ledger                     | JP-124
+A25  Activity tab                                 | Keep, move onto the ledger                     | JP-124
+A26  Sessions catalog                             | Merge with Session Atlas's session index       | JP-124
+A27  Email Research Desk                          | Keep as is                                     | JP-124; JP-121
+A28  Desk tab                                     | Keep as is                                     | JP-124
+A29  Developer CLI                                | Keep as is                                     | JP-124
+A30  Pill window and panel                        | Keep as is                                     | JP-124
+A31  Phone bridge                                 | Keep as is                                     | JP-124
+A32  Packaged app and installers                  | Keep as is                                     | JP-124; JP-119
+A33  Bifrost request labels                       | Keep as is                                     | JP-124
+A34  GitHub label scripts                         | Keep as is                                     | JP-124
+A35  OpenCode server                              | Retire                                         | JP-124
+S1   Session index                                | Keep, move onto the ledger                     | JP-107; JP-111
+S2   Session lineage and titles                   | Keep, move onto the ledger                     | JP-107; JP-111
+S3   Focus summaries                              | Retire                                         | JP-108 (replacement); JP-111 (switch off)
+S4   Dashboard                                    | Keep, move onto the ledger                     | JP-111
+S5   Sessions grid and session page               | Keep, move onto the ledger                     | JP-111
+S6   Needs attention                              | Keep, move onto the ledger                     | JP-111
+S7   Send to Background                           | Keep as is                                     | JP-111
+S8   Cost ledger                                  | Keep, move onto the ledger                     | JP-99; JP-107; JP-111
+S9   Hourly cost import and cost cache            | Keep as is                                     | JP-111; JP-119
+S10  Jira session links                           | Merge with the ledger's session links          | JP-107
+S11  Artifact manager                             | Keep, move onto the ledger                     | JP-111
+S12  Durable output folder                        | Keep as is                                     | JP-111; JP-115
+S13  Worktree removal guard                       | Keep as is                                     | JP-111; JP-109
+S14  Older file list                              | Merge with the artifact manager                | JP-111
+S15  Project names                                | Keep, move onto the ledger                     | JP-107
+S16  Service plumbing                             | Keep as is                                     | JP-111; JP-119
+verdict counts: {'Keep as is': 23, 'Merge with': 6, 'Retire': 9, 'Keep, move onto the ledger': 13}
+check on the real file: no problems
+check on a copy with A7's verdict, reason and carrier broken:
+   verdict is not exactly one of ('Keep as is', 'Keep, move onto the ledger', 'Merge with ', 'Retire'): docs/inventory/features.md:72 (A7): Maybe
+   no reason: docs/inventory/features.md:72 (A7)
+   no carrier ticket or 'None needed': docs/inventory/features.md:72 (A7)
