@@ -1,0 +1,162 @@
+# Draft graph from the ticket creation design (JP-102, docs/design/ticket-creation-graph.md).
+# JP-121 builds it. Its gate scripts are stubs that refuse to run until then.
+convention: 1
+graph: ticket-creation
+title: Ticket creation
+description: >
+  One loose input (a forwarded email, a to-do, a session that crossed the ticket threshold, a
+  ticket asked for by hand, and later a Notion action item) becomes one complete ticket, or a
+  parent with children, in Josh's format, routed by the registry, checked for duplicates and
+  approved by Josh before anything is written. An open duplicate gets a comment instead. Tickets
+  end in Not Started; the triage and sign-off graph marks them Ready.
+
+header:
+  jira:
+    # The tickets this graph writes start, and stay, in Not Started. The graph never moves a
+    # ticket; an open duplicate only gets a comment.
+    - status: Not Started
+      steps: [read_intake, route, find_duplicates, duplicate_rule, decompose, draft,
+              check_draft, ask_gap, stuck, approve, write, write_failed, link_source]
+  entry_gate: intake-admitted
+  exit_gate: intake-closed
+  asks_josh: [ask_gap, stuck, approve, write_failed]
+  ledger: [run, step, outcome, loop_count, session, tier, ticket, started_at, ended_at]
+  access:
+    read_intake: read
+    route: read
+    find_duplicates: read
+    duplicate_rule: read
+    decompose: read
+    draft: read
+    check_draft: read
+    ask_gap: read
+    stuck: read
+    approve: read
+    write: shared          # AD and CI are team spaces, so a write there is shared
+    write_failed: read
+    link_source: josh      # the action item, to-do, desk thread or ledger entry is Josh's
+
+inputs:
+  source: { type: string, required: true, description: "email, todo, session, manual (notion in the second wave)" }
+  source_ref: { type: string, required: true, description: Pointer to the input; never its text }
+  named_space: { type: string, default: none, description: A space Josh named outright }
+  named_parent: { type: string, default: none, description: A ticket key Josh named outright }
+
+outputs:
+  ticket_keys: { type: list, description: "The tickets created, parent first; empty after a comment or a drop" }
+
+steps:
+  - id: read_intake
+    role: intake-reader
+    brief: "Source: {{ inputs.source }}, at {{ inputs.source_ref }}."
+    inputs: [source, source_ref]
+    outputs:
+      intake_record: { type: string, description: Path to the record, contract: intake-record }
+    outcomes: [recorded]
+
+  - id: route
+    gate: route-ticket
+    needs: [read_intake]
+    inputs: [intake_record, named_space, named_parent]
+    outputs:
+      route: { type: string, description: "space, parent, area, priority, system, labels, rule" }
+    outcomes: [matched, unmatched, personal]
+    on:
+      personal: end          # Linear work waits for phase 3; the item stays where it is
+
+  - id: find_duplicates
+    role: jira-searcher
+    brief: >
+      A match asks for the same deliverable. Search JP, AD and CI, open and closed, starting
+      with the routed system's space.
+    needs: [route]
+    inputs: [intake_record, route]
+    outputs:
+      candidates: { type: list, description: "key, summary, status, why it matches" }
+    outcomes: [searched]
+
+  - id: duplicate_rule
+    gate: duplicate-rule
+    needs: [find_duplicates]
+    inputs: [candidates, intake_record]
+    outputs:
+      match_key: { type: string, description: "The open match, or the Done or Cancelled one to link" }
+    outcomes: [open_match, new_light, new_full]
+
+  - id: decompose
+    role: decomposer
+    needs: [duplicate_rule]
+    when: { step: duplicate_rule, outcome: new_full }
+    inputs: [intake_record, route]
+    outputs:
+      shape: { type: string, description: "single, parent_with_subtasks or epic_with_tickets, with its children" }
+    outcomes: [shaped]
+
+  - id: draft
+    role: ticket-drafter
+    needs: [duplicate_rule, decompose]
+    inputs: [intake_record, route, match_key, shape]
+    outputs:
+      proposal: { type: string, description: Path to the proposal, contract: ticket-proposal }
+    outcomes: [drafted]
+
+  - id: check_draft
+    gate: ticket-complete
+    needs: [draft]
+    inputs: [proposal]
+    outcomes: [pass, fixable, needs_josh]
+    on:
+      fixable: { goto: draft, max_loops: 2, at_limit: stuck }
+
+  - id: ask_gap
+    needs: [check_draft]
+    when: { step: check_draft, outcome: needs_josh }
+    ask:
+      question: "A new ticket from {{ inputs.source }} needs one answer before it can be drafted."
+      choices: [answered, drop]
+    on:
+      answered: { goto: draft, max_loops: 2, at_limit: stuck }
+      drop: end
+
+  - id: stuck
+    ask:
+      question: "The ticket from {{ inputs.source_ref }} still has gaps after two rounds. Show it for approval as it is, or drop it?"
+      choices: [show_it, drop]
+      on_limit_only: true
+    on:
+      drop: end
+
+  - id: approve
+    needs: [check_draft, ask_gap]
+    ask:
+      question: "Create this from {{ inputs.source }}?"
+      choices: [approve, change, drop]
+      approves: [write]
+      approves_on: [approve]
+    on:
+      change: { goto: draft, max_loops: 2, at_limit: stuck }
+      drop: end
+
+  - id: write
+    gate: create-tickets
+    effects: [set_label]
+    needs: [approve]
+    when: { step: approve, outcome: approve }
+    inputs: [proposal, match_key]
+    outputs:
+      ticket_keys: { type: list, description: "Created keys, parent first" }
+    outcomes: [created, commented, partial]
+    on:
+      partial: { goto: write, max_loops: 1, at_limit: write_failed }
+
+  - id: write_failed
+    ask:
+      question: "Jira did not confirm every ticket from {{ inputs.source_ref }}. The ones that exist are listed. Finish by hand, then say done."
+      choices: [done]
+      on_limit_only: true
+
+  - id: link_source
+    gate: link-source
+    needs: [write]
+    inputs: [source, source_ref, ticket_keys]
+    outcomes: [linked]
