@@ -1,0 +1,21 @@
+Scenario: Keeping is the default (a retired row says what replaces it)
+A3   Calendar tab
+     reason: Replaced by the ticket creation graph's intake (JP-121). action-triage's approved console redesign already removes this tab. Timing is [question 2](#questions-for-josh).
+A6   To-do tab
+     reason: Replaced by the Tickets tab's Backlog view once quick capture files tickets (A5). Already planned in action-triage's phase 8.
+A10  GitHub-issue sessions
+     reason: Replaced by Jira ticket pickup (A9) and the session Jira channel (A11). See the answer above for timing.
+A12  Tasked tab and standalone issues
+     reason: Replaced by the Tickets tab (A8). Already planned in action-triage's phase 8.
+A13  Nudge, redo and model change on an issue
+     reason: Replaced by their ticket versions: Start sets Queued again, a mailbox message carries the nudge, and the spec property carries the model (A8, A11).
+A14  Email-origin issues and result email
+     reason: Replaced by the Email Research Desk (A27). The desk README's cutover retires this path.
+A15  Sprint lead handoff
+     reason: Replaced by the walker bound to Agent Manager (JP-117) once the sprint skill retires (JP-128).
+A35  OpenCode server
+     reason: Nothing replaces it, and nothing needs to: no code in `src/` calls the server, and every model call goes through the Bifrost one-shot client.
+S3   Focus summaries
+     reason: Replaced by five summary lines written once when a session goes quiet (JP-108) and STATE.md as the one live record (JP-100). Josh accepted this on 15 November 2026: no model runs per turn.
+check on a copy where A35's reason drops its replacement line:
+   retired without saying what replaces it: docs/inventory/features.md:130 (A35)
