@@ -573,7 +573,10 @@ SELECT s.run_id AS run, s.step_id AS step, r.outcome, s.loop_count, COALESCE(r.s
        s.attempt, s.allowed_by_josh, g.graph_id
 FROM step_runs s
 JOIN graph_runs g ON g.run_id = s.run_id
-LEFT JOIN step_results r ON r.step_run_id = s.id;
+LEFT JOIN step_results r ON r.step_run_id = s.id
+  AND NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'step_results' AND c.row_id = r.id)
+WHERE NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'step_runs' AND c.row_id = s.id)
+  AND NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'graph_runs' AND c.row_id = g.id);
 
 -- Cost per step: the cost of the session that did the step. Gate and ask steps cost nothing.
 CREATE VIEW step_costs AS
@@ -583,27 +586,23 @@ FROM step_ledger l LEFT JOIN session_cost_totals t ON t.session_uid = l.session;
 -- Questions waiting on Josh: asks with no decision yet.
 CREATE VIEW open_asks AS
 SELECT a.* FROM asks a
-WHERE NOT EXISTS (SELECT 1 FROM decisions d WHERE d.ask_id = a.ask_id)
+WHERE NOT EXISTS (SELECT 1 FROM decisions d WHERE d.ask_id = a.ask_id AND NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'decisions' AND c.row_id = d.id))
   AND NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'asks' AND c.row_id = a.id);
-
--- Decisions that may still be quoted: not overruled, not superseded, not retracted.
 CREATE VIEW current_decisions AS
 SELECT d.* FROM decisions d
-WHERE NOT EXISTS (SELECT 1 FROM decision_events e WHERE e.decision_id = d.id AND e.kind IN ('overruled', 'superseded'))
-  AND NOT EXISTS (SELECT 1 FROM decisions n WHERE n.supersedes_decision_id = d.id)
+WHERE NOT EXISTS (SELECT 1 FROM decision_events e WHERE e.decision_id = d.id AND e.kind IN ('overruled', 'superseded')
+                  AND NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'decision_events' AND c.row_id = e.id))
+  AND NOT EXISTS (SELECT 1 FROM decisions n WHERE n.supersedes_decision_id = d.id AND NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'decisions' AND c.row_id = n.id))
   AND NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'decisions' AND c.row_id = d.id);
-
--- The stage each category is at now (a category with no row is at stage one).
 CREATE VIEW current_category_stages AS
 SELECT s.* FROM category_stages s
-WHERE s.id = (SELECT s2.id FROM category_stages s2 WHERE s2.category = s.category
+WHERE s.id = (SELECT s2.id FROM category_stages s2 WHERE s2.category = s.category AND NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'category_stages' AND c.row_id = s2.id)
               ORDER BY s2.set_at DESC, s2.id DESC LIMIT 1);
-
--- Branches kept on purpose now.
 CREATE VIEW kept_branches AS
 SELECT m.git_root, m.branch, m.note, m.marked_at FROM branch_marks m
 WHERE m.mark = 'kept'
   AND m.id = (SELECT m2.id FROM branch_marks m2 WHERE m2.git_root = m.git_root AND m2.branch = m.branch
+              AND NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'branch_marks' AND c.row_id = m2.id)
               ORDER BY m2.marked_at DESC, m2.id DESC LIMIT 1);
 
 -- ---------------------------------------------------------------------------------------------------------------
