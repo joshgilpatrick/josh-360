@@ -34,3 +34,5 @@ jobs:
         run: python3 scripts/check.py
       - name: Full suite
         run: python3 scripts/check.py
+      - name: Unit tests
+        run: python3 -m unittest discover -s tests -v
