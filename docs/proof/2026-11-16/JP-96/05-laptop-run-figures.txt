@@ -1,0 +1,31 @@
+JP-96 follow-up: the figures written into docs/inventory/ come from the laptop's report.
+Command (cloud, josh-360 checkout): git fetch origin laptop-status && python3 docs/proof/2026-11-16/JP-96/05-derive.py
+05-derive.py reads origin/laptop-status:reports/inventory.json and prints counts only.
+
+run_on 2026-11-16 seconds 88.7 schema josh-360/laptop-inventory/1 trimmed None
+sessions 727 range {'from': '2026-08-24', 'to': '2026-11-15'} mean/week 60.58
+weekly [2, 3, 0, 2, 2, 31, 94, 307, 72, 81, 100, 33] last 7 weeks mean 102.6 first 5 weeks 9
+josh messages, all {'max': 617, 'mean': 10.94, 'median': 1, 'p90': 27, 'sessions': 727}
+josh messages, cli {'max': 617, 'mean': 15.97, 'median': 4, 'p90': 42, 'sessions': 479} sdk-cli sessions 243
+tied to ticket {'by_branch': 248, 'by_branch_or_message': 371, 'share_by_branch_or_message': 0.51, 'ticket_keys': ['JP', 'AD', 'CI', 'GIL']}
+loose ends 974 {'branches_ahead_of_remote': 74, 'branches_whose_remote_is_gone': 112, 'branches_without_remote': 494, 'extra_worktrees': 294, 'stashes': 5} repos 89 total with cloud 1011
+skill folders 219 called 88 not called 131 calls 1467
+agents 38 not called ['code-quality-strike-team', 'comment-sicko', 'docs-researcher', 'explorer', 'hl7-evidence-auditor', 'issue-tracker', 'keystone-branch-reviewer', 'poteto-agent', 'prompt-optimizer', 'reviewer', 'signature-standards-design-reviewer', 'slack-task-updater', 'smart-brevity-author', 'smart-brevity-educator', 'tailwindadmin-ui-engineer', 'task9-code-reviewer', 'ui-ux-critic', 'word-notion-comparator']
+job com.eventus.athena-pipeline {'last_exit': '2', 'running': False}
+job com.eventus.azure-batch-spend-alert {'last_exit': '1', 'running': False}
+job com.eventus.athena-test-suite-sync {'last_exit': '1', 'running': False}
+job com.eventus.qa-waker-watchdog {'last_exit': '1', 'running': False}
+job com.josh.quicktasks not loaded
+job com.eventus.meeting-watcher not loaded
+job com.jgilpatrick.rclone-sync not loaded
+job com.eventus.clickup-notion-sync not loaded
+job com.eventus.focus-dashboard {'last_exit': '-15', 'running': True}
+job com.omnara.daemon {'last_exit': '0', 'running': True}
+hook entries 39 events 13 atlas-removal-guard wired False
+store ~/.claude-mem 4485757351 170 2026-09-28 
+store ~/.claude/atlas 1691620014 2524 2026-11-16 
+store ~/.claude/cost-ledger 3419803648 16 2026-11-16 
+store ~/.claude/projects 9313114604 7512 2026-11-16 
+store ~/Development/active/obsidian-wiki/raw/claude-sessions 1101493251 616 2026-05-05 
+store ~/.config/free-claude-code None None None absent
+atlas.db 621359104
