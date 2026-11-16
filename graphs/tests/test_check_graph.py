@@ -101,6 +101,43 @@ class RunCapScenarios(unittest.TestCase):
         self.assertIn("tiers.yaml: tier 'mid' has no max_runs", result.stdout)
 
 
+class ScoringScenarios(unittest.TestCase):
+    """The scenarios on JP-140, by name, run through the command line as an agent would."""
+
+    def test_the_new_ledger_fields_are_allowed(self):
+        data = valid_data()
+        self.assertIn("graph_version", data["header"]["ledger"])
+        self.assertIn("model", data["header"]["ledger"])
+        result = run_cli("--root", str(PARTS), str(VALID))
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertNotIn("header.ledger", result.stdout)
+
+    def test_every_end_is_classified(self):
+        data = valid_data()
+        ends = [f"{s['id']}.{o}" for s in data["steps"] for o, then in (s.get("on") or {}).items() if then == "end"]
+        self.assertEqual(ends, ["approve_spec.drop", "decide_review.stop"])  # two outcomes whose on is end
+        self.assertEqual(data["header"]["end_states"]["approve_spec.drop"], "neutral")
+        self.assertEqual(data["header"]["end_states"]["decide_review.stop"], "needs-josh")
+        result = run_cli("--root", str(PARTS), str(VALID))
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertNotIn("end_states", result.stdout)
+
+    def test_an_unclassified_end_is_refused(self):
+        result = run_cli("--root", str(PARTS), str(BAD / "unclassified-end.yaml"))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("header.end_states: end 'decide_review.stop' is unclassified", result.stdout)
+
+    def test_an_unknown_classification_is_refused(self):
+        result = run_cli("--root", str(PARTS), str(BAD / "unknown-end-class.yaml"))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("header.end_states.finished: 'great' must be one of success, neutral, needs-josh",
+                      result.stdout)
+
+    def test_the_suite_still_passes(self):
+        result = run_cli()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+
 class CommandLine(unittest.TestCase):
     def test_unknown_role_is_named(self):
         result = run_cli("--root", str(PARTS), str(BAD / "unknown-role.yaml"))
@@ -258,6 +295,63 @@ class Rules(unittest.TestCase):
         data = valid_data()
         data["header"]["ledger"].append("transcript")
         self.assertProblem(data, "header.ledger: 'transcript' is not one of")
+
+    # End states (JP-140)
+    def test_end_states_is_a_required_header_field(self):
+        result = run_cli("--root", str(PARTS), str(BAD / "missing-end-states.yaml"))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("header: missing field 'end_states'", result.stdout)
+
+    def test_an_end_the_graph_does_not_have_is_refused(self):
+        result = run_cli("--root", str(PARTS), str(BAD / "unknown-end-name.yaml"))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("header.end_states: 'publish.opened' is not an end of this graph", result.stdout)
+
+    def test_running_out_of_steps_is_an_end_to_classify(self):
+        data = valid_data()
+        del data["header"]["end_states"]["finished"]
+        self.assertProblem(data, "header.end_states: end 'finished' is unclassified")
+
+    def test_an_outcome_that_only_moves_on_is_not_an_end(self):
+        data = valid_data()
+        data["header"]["end_states"]["lint_spec.pass"] = "success"
+        self.assertProblem(data, "header.end_states: 'lint_spec.pass' is not an end of this graph")
+
+    def test_a_loop_is_not_an_end(self):
+        data = valid_data()
+        data["header"]["end_states"]["lint_spec.incomplete"] = "neutral"
+        self.assertProblem(data, "header.end_states: 'lint_spec.incomplete' is not an end of this graph")
+
+    def test_a_new_end_must_be_classified(self):
+        data = valid_data()
+        step(data, "decide_review")["on"]["retry"] = "end"
+        self.assertProblem(data, "header.end_states: end 'decide_review.retry' is unclassified")
+
+    def test_every_class_is_accepted(self):
+        for value in ("success", "neutral", "needs-josh"):
+            with self.subTest(value):
+                data = valid_data()
+                data["header"]["end_states"]["finished"] = value
+                self.assertEqual(self.problems(data), [])
+
+    def test_end_states_must_be_a_mapping(self):
+        data = valid_data()
+        data["header"]["end_states"] = ["finished"]
+        self.assertProblem(data, "header.end_states: needs a mapping of each end to success, neutral, needs-josh")
+
+    def test_exit_refused_is_reserved_and_not_written_in_end_states(self):
+        for value in ("needs-josh", "success"):
+            with self.subTest(value):
+                data = valid_data()
+                data["header"]["end_states"]["exit_refused"] = value
+                found = self.problems(data)
+                self.assertEqual(found, ["header.end_states: 'exit_refused' is reserved: its score is "
+                                         "always needs-josh, so it is never written here"])
+
+    def test_a_class_that_is_not_text_is_refused(self):
+        data = valid_data()
+        data["header"]["end_states"]["finished"] = None
+        self.assertProblem(data, "header.end_states.finished: 'None' must be one of")
 
     def test_entry_gate_must_exist(self):
         data = valid_data()

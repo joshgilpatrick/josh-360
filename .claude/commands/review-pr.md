@@ -1,5 +1,5 @@
 ---
-description: 'Review a PR and post one "Fixes required: N" comment'
+description: 'Fallback cloud review of a PR, only when Josh asks for one instead of his laptop audit'
 argument-hint: <PR number>
 ---
-Review PR $ARGUMENTS. Follow the review-thread steps of the review-ceremony skill. Do not push, label or merge.
+Josh asked for a cloud review of PR $ARGUMENTS instead of his laptop audit. Run the `ceremony-reviewer` subagent on it and post its comment on the PR. Do not push, label or merge.

@@ -1,0 +1,3 @@
+$ python3 graphs/tools/check_graph.py --root graphs/tests/fixtures/parts graphs/tests/fixtures/parts/flows/valid.yaml   # two on:end outcomes plus finished, all classified
+check_graph: ok (1 graph(s))
+exit 0

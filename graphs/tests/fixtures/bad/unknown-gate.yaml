@@ -15,7 +15,7 @@ header:
   entry_gate: ready
   exit_gate: no-loose-ends
   asks_josh: [approve_spec, decide_review, approve_note]
-  ledger: [run, step, outcome, loop_count, session, tier]
+  ledger: [run, step, outcome, loop_count, session, tier, graph_version, model]
   access:
     design: josh
     lint_spec: read
@@ -28,6 +28,10 @@ header:
     to_validation: josh
     approve_note: read
     post_note: shared
+  end_states:
+    finished: success
+    approve_spec.drop: neutral
+    decide_review.stop: needs-josh
 
 inputs:
   ticket_key: { type: string, required: true, description: Jira key of the made-up ticket }
@@ -57,9 +61,10 @@ steps:
     needs: [lint_spec]
     ask:
       question: "The spec for {{ inputs.ticket_key }} is ready. Start building?"
-      choices: [build, revise]
+      choices: [build, revise, drop]
     on:
       revise: { goto: design, max_loops: 2, at_limit: approve_spec }
+      drop: end
 
   - id: build
     role: builder
