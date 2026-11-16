@@ -116,6 +116,7 @@ steps:
       question: "Post the release note for {{ inputs.ticket_key }} on the shared page?"
       choices: [post, skip]
       approves: [post_note]
+      approves_on: [post]
 
   - id: post_note
     role: publisher
