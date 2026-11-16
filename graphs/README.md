@@ -6,7 +6,7 @@ How a graph is stored, and the rules the checker enforces: [CONVENTION.md](CONVE
 
 | Folder or file | What it holds |
 | --- | --- |
-| `tiers.yaml` | The cheap, mid and gate tiers, mapped to a model and an effort |
+| `tiers.yaml` | The cheap, mid and gate tiers, mapped to a model and an effort, and the most times a role step of each tier may run (`max_runs`) |
 | `flows/` | One neutral graph file per graph |
 | `roles/` | Roles: `role.yaml` and `instructions.md` each |
 | `agents/` | Named agents that fill a role |

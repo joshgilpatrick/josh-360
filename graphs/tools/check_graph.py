@@ -74,7 +74,7 @@ GRAPH = {
 }
 # The schema accepts a bare name here; load_parts() below refuses any entry with no effort (JP-138).
 TIER_ENTRY = EITHER({"model": LEAF, "effort": LEAF})
-TIERS_FILE = {"convention": LEAF, "tiers": {t: LIST(TIER_ENTRY) for t in TIERS}}
+TIERS_FILE = {"convention": LEAF, "tiers": {t: LIST(TIER_ENTRY) for t in TIERS}, "max_runs": LEAF}
 ROLE_FILE = {"title": LEAF, "may_change": LEAF, "tier": LEAF, "reviewer": LEAF}
 AGENT_FILE = {"title": LEAF, "fills": LEAF}
 
@@ -171,6 +171,7 @@ class Parts:
         self.agents: dict[str, dict] = {}
         self.gates: set[str] = set()
         self.contracts: set[str] = set()
+        self.max_runs: dict[str, int] = {}  # tier -> most runs of one role step in one graph run (JP-139)
         self.problems: list[str] = []
 
 
@@ -223,6 +224,21 @@ def load_parts(root: Path) -> Parts:
                             f"every entry is {{model: <name>, effort: <level>}}")
                     elif effort not in EFFORTS:
                         parts.problems.append(f"tiers.yaml: tiers.{tier}[{i}].effort must be one of {', '.join(EFFORTS)}")
+
+        caps = tiers.get("max_runs") if isinstance(tiers.get("max_runs"), dict) else {}
+        if "max_runs" in tiers and not isinstance(tiers["max_runs"], dict):
+            parts.problems.append("tiers.yaml: max_runs must map each tier to a number of runs")
+        for name in caps:
+            if name not in TIERS:
+                parts.problems.append(f"tiers.yaml: max_runs.{name} is not a tier (one of {', '.join(TIERS)})")
+        for tier in TIERS:
+            cap = caps.get(tier)
+            if cap is None:
+                parts.problems.append(f"tiers.yaml: tier '{tier}' has no max_runs")
+            elif isinstance(cap, bool) or not isinstance(cap, int) or cap < 1:
+                parts.problems.append(f"tiers.yaml: max_runs.{tier} must be a whole number of 1 or more")
+            else:
+                parts.max_runs[tier] = cap
 
     for folder in sorted(p for p in (root / "roles").glob("*") if p.is_dir()):
         role = _load_part(parts, folder / "role.yaml", ROLE_FILE, ("title", "may_change", "tier"))
@@ -281,6 +297,29 @@ def _ancestors(steps: dict[str, dict]) -> dict[str, set[str]] | None:
         if visit(sid) is None:
             return None
     return memo
+
+
+def _reruns(steps: dict[str, dict], source: str, target: str) -> set[str]:
+    """The steps a loop from `source` back to `target` runs again: the target and every step that
+    depends on it (the convention's words), except the steps that need `source`, which cannot have run
+    yet because they wait for it to finish. Cycle-safe: a cycle in needs is reported elsewhere."""
+    children: dict[str, list[str]] = {sid: [] for sid in steps}
+    for sid, s in steps.items():
+        for parent in _names(s.get("needs")):
+            if parent in children:
+                children[parent].append(sid)
+
+    def below(start: str) -> set[str]:
+        seen: set[str] = set()
+        todo = [start]
+        while todo:
+            for child in children.get(todo.pop(), []):
+                if child not in seen:
+                    seen.add(child)
+                    todo.append(child)
+        return seen
+
+    return ({target} | below(target)) - below(source)
 
 
 def _check_header(header, steps, kind, parts) -> list[str]:
@@ -536,6 +575,19 @@ def check_graph_data(data, name: str, parts: Parts) -> list[str]:
                 out.append(f"{loop}: at_limit '{then['at_limit']}' is not an ask step, so the loop does not end at a human")
             else:
                 limit_targets.add(then["at_limit"])
+            # The run cap (JP-139): one more run than max_loops, for every role step the loop runs again.
+            if then["goto"] in steps and isinstance(then.get("max_loops"), int) and not isinstance(then["max_loops"], bool) \
+                    and then["max_loops"] >= 1:
+                runs = then["max_loops"] + 1
+                for rid in sorted(_reruns(steps, sid, then["goto"])):
+                    rerun_role = parts.roles.get(steps[rid]["role"]) if kind.get(rid) == "role" \
+                        and isinstance(steps[rid].get("role"), str) else None
+                    tier = steps[rid].get("tier") if steps[rid].get("tier") in TIERS else \
+                        (rerun_role or {}).get("tier")
+                    cap = parts.max_runs.get(tier) if tier in TIERS else None
+                    if cap is not None and runs > cap:
+                        out.append(f"{loop} would run step '{rid}' {runs} times (max_loops {then['max_loops']} + 1) "
+                                   f"against a {tier} cap of {cap}")
 
     for sid, s in steps.items():
         if kind.get(sid) == "ask" and isinstance(s["ask"], dict) and s["ask"].get("on_limit_only") is True \
