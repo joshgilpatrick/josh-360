@@ -8,7 +8,7 @@ A10  GitHub-issue sessions
 A12  Tasked tab and standalone issues
      reason: Replaced by the Tickets tab (A8). Already planned in action-triage's phase 8.
 A13  Nudge, redo and model change on an issue
-     reason: Replaced by their ticket versions: Start sets Queued again, a mailbox message carries the nudge, and the spec property carries the model (A8, A11).
+     reason: Replaced by their ticket versions: Start sets Queued again, a mailbox message carries the nudge, and the spec property carries the model (A8, A11). Ticket Cancel and Redo are planned in the console redesign but not built yet (they need the phase 4 mailbox), so JP-124 builds them before this retires.
 A14  Email-origin issues and result email
      reason: Replaced by the Email Research Desk (A27). The desk README's cutover retires this path.
 A15  Sprint lead handoff
