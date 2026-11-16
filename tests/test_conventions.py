@@ -152,6 +152,22 @@ class AKnownFolderResolves(unittest.TestCase):
         self.assertEqual(answer["priority"], "devex")
 
 
+    def test_a_relative_folder_resolves_from_where_the_command_runs(self):
+        # `lookup --folder .` from inside a listed folder answers for that folder, not Unassigned.
+        import os
+        with tempfile.TemporaryDirectory() as home:
+            inside = Path(home) / "Development/active/sample-app/src"
+            inside.mkdir(parents=True)
+            before = os.getcwd()
+            try:
+                os.chdir(inside)
+                for folder in (".", "..", "./"):
+                    answer = conventions.lookup_folder(SAMPLE_REGISTRY, folder, home=str(Path(home).resolve()))
+                    self.assertEqual(answer["system"], "sample-app", folder)
+            finally:
+                os.chdir(before)
+
+
 class AnUnknownFolderStaysUnassigned(unittest.TestCase):
     """Scenario: An unknown folder stays Unassigned."""
 
@@ -254,6 +270,45 @@ class TheCheckerRefusesABadRegistry(unittest.TestCase):
         self.refused(bad_fallback, "fallback", "ZZ")
         self.refused(area_disagrees, "sample-app", "disagrees", "devex")
         self.refused(repos_and_folders_missing, "sample-app", "nothing can resolve")
+
+    def test_wrong_types_are_refused_by_name_without_a_traceback(self):
+        def covers_is_a_list(p): p["priorities"][0]["covers"] = ["x"]
+        def covers_areas_not_a_list(p): p["priorities"][0]["covers"]["areas"] = "EHR"
+        def id_is_a_list(p): p["priorities"][1]["id"] = ["equip"]
+        def name_is_a_list(r): r["systems"][0]["name"] = ["sample-app"]
+        def space_is_a_number(r): r["systems"][0]["jira_space"] = 7
+        def folders_is_text(r): r["systems"][0]["folders"] = "~/Development/active/sample-app"
+        def area_is_a_mapping(r): r["systems"][0]["area"] = {"a": 1}
+        def systems_is_a_mapping(r): r["systems"] = {"sample-app": {}}
+        def fallback_is_text(r): r["fallback"] = "JP"
+        self.refused(covers_is_a_list, "athena", "covers", "mapping", target="priorities")
+        self.refused(covers_areas_not_a_list, "athena", "covers areas", target="priorities")
+        self.refused(id_is_a_list, "priority #2", "id", target="priorities")
+        self.refused(name_is_a_list, "#1", "name", "text")
+        self.refused(space_is_a_number, "sample-app", "jira_space", "text")
+        self.refused(folders_is_text, "sample-app", "folders", "list")
+        self.refused(area_is_a_mapping, "sample-app", "area", "text")
+        self.refused(systems_is_a_mapping, "systems", "list")
+        self.refused(fallback_is_text, "fallback", "mapping")
+
+    def test_a_file_that_is_not_valid_yaml_is_named(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            reg = Path(tmp) / "registry.yaml"
+            pri = Path(tmp) / "priorities.yaml"
+            reg.write_text("systems:\n  - name: [unclosed\n", encoding="utf-8")
+            pri.write_text(yaml.safe_dump(SAMPLE_PRIORITIES), encoding="utf-8")
+            for args in (["check"], ["lookup", "--repo", "sample-app"]):
+                out = io.StringIO()
+                with redirect_stdout(out):
+                    code = conventions.main(["--registry", str(reg), "--priorities", str(pri), *args])
+                self.assertEqual(code, 1, args)
+                self.assertIn("registry.yaml: not valid YAML", out.getvalue())
+            missing = Path(tmp) / "nope.yaml"
+            out = io.StringIO()
+            with redirect_stdout(out):
+                code = conventions.main(["check", "--registry", str(missing), "--priorities", str(pri)])
+            self.assertEqual(code, 1)
+            self.assertIn("nope.yaml: cannot be read", out.getvalue())
 
     def test_bad_priorities_files_are_refused_by_name(self):
         def missing_standing(p): p["priorities"] = [x for x in p["priorities"] if x["id"] != "pims"]
