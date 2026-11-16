@@ -1,0 +1,36 @@
+Part 1. The job on a made-up home (canary transcripts, secret-looking hook and job arguments,
+a Documents folder and the OneDrive store path), started the way the runner starts it: no arguments,
+launchd's short PATH with a brew that leaves a mark if run, HOME pointing at the made-up home.
+
+$ python3 scripts/laptop_inventory_job.py
+stderr: wrote standard output: 2 launchd plists, 2 sessions, 1 repos, 0.0 s
+exit code: 0
+standard output is one JSON value: True - 7593 bytes
+files added, changed or removed: []
+output contains 'CANARY': False
+output contains 'Jane': False
+output contains 'SECRETVALUE': False
+output contains 'Bearer': False
+output contains 'https://': False
+output guard problems: []
+OneDrive store: {'~/Library/CloudStorage/OneDrive-EventusWholeHealth/Development/active/claude_services/skills/task-manager': {'skipped': 'may prompt'}}
+~/Documents listed: False
+~/.config/twg (a symlink into OneDrive): {'skipped': 'may prompt'}
+skill task-manager (a symlink into OneDrive), last change: None
+brew run: False - {'available': False, 'skipped': 'brew writes its own cache'}
+
+Part 2. The JP-105 chain on a made-up GitHub and a made-up laptop: one runner pass with this
+branch's jobs.yaml, then what a cloud session sees on laptop-status.
+
+$ python3 laptop/run_jobs.py
+follow: exit 0
+inventory: report pushed
+inventory: exit 0
+
+laptop-status files: ['reports/inventory.json', 'status.json']
+reports/inventory.json sections: ['brew_services', 'claude_settings', 'cron', 'definitions', 'figures', 'home', 'launchctl', 'launchd_plists', 'listening_ports', 'loose_ends', 'run_on', 'running_programs', 'schema', 'seconds', 'stores']
+output guard problems: []
+
+$ python3 laptop/run_jobs.py --list   (after the pass)
+follow               every 600s     not due  last exit 0
+inventory            every once     not due  last exit 0

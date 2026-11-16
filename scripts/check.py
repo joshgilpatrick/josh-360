@@ -15,7 +15,7 @@ Checks:
      ticket, every retired row says what replaces it, and the Session Atlas focus summaries are retired.
   7. The conventions files from JP-98 exist and pass scripts/conventions.py (needs PyYAML, requirements.txt).
   8. The laptop side from JP-105: its files exist, hooks/dispatch is executable and parses as bash, and every
-     Python file that runs on the laptop (including JP-96's two laptop scripts) parses as Python 3.9 (the
+     Python file that runs on the laptop (including JP-96's three laptop scripts) parses as Python 3.9 (the
      laptop's /usr/bin/python3).
   9. The tests in tests/ (skipped with --fast).
  10. JP-96 inventory: every row of a table with Verdict and Reason columns in docs/inventory/ (except
@@ -102,7 +102,7 @@ def laptop_problems() -> list[str]:
             problems.append("not executable: hooks/dispatch")
         if subprocess.run(["bash", "-n", str(dispatch)]).returncode != 0:
             problems.append("does not parse as bash: hooks/dispatch")
-    jp96 = [ROOT / "scripts/laptop_inventory.py", ROOT / "scripts/laptop_figures.py"]  # run by hand on the laptop
+    jp96 = [ROOT / "scripts" / n for n in ("laptop_inventory.py", "laptop_figures.py", "laptop_inventory_job.py")]
     for py in sorted((ROOT / "laptop").glob("*.py")) + sorted((ROOT / "hooks").rglob("*.py")) + jp96:
         try:
             ast.parse(py.read_text(encoding="utf-8"), filename=str(py), feature_version=(3, 9))
