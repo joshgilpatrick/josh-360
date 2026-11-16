@@ -1,0 +1,176 @@
+# DRAFT (JP-103). Designed, not built: every gate script it names is a stub that refuses to run
+# until JP-122 builds it. Design: docs/superpowers/specs/2026-11-16-triage-graph-design.md.
+convention: 1
+graph: triage
+title: Ticket triage and sign-off
+description: >
+  Takes one drafted ticket in Not Started and ends with it either Ready, with exactly one route
+  (the development or the non-development graph) recorded on it, or sent back. A ticket Josh's
+  agents wrote is revised by the ticket drafter and checked again, and Josh is asked one question
+  only when the drafter cannot close a gap. A ticket someone else wrote gets a comment naming its
+  gaps and is never edited. Scripts run the Ready checklist and route the ticket; a separate
+  sign-off agent, which never wrote the ticket, judges only what a script cannot.
+
+header:
+  jira:
+    - status: Not Started
+      steps: [read_ticket, ready_check, route, sign_off, check_sign_off, verdict, revise,
+              apply_revision, ask_josh, ask_at_limit, send_back]
+    - { status: Ready, steps: [mark_ready] }
+  entry_gate: triageable
+  exit_gate: no-loose-ends
+  asks_josh: [ask_josh, ask_at_limit]
+  ledger: [run, step, outcome, loop_count, session, tier, ticket, started_at, ended_at]
+  access:
+    read_ticket: read
+    ready_check: read
+    route: read
+    sign_off: read
+    check_sign_off: read
+    verdict: read
+    revise: read
+    apply_revision: josh
+    ask_josh: read
+    ask_at_limit: read
+    send_back: josh
+    mark_ready: josh
+
+inputs:
+  ticket_key: { type: string, required: true, description: "Jira key of the drafted ticket, e.g. JP-140" }
+  reason:
+    type: string
+    default: new
+    description: >
+      Why this run started: new (a drafted ticket), returned (the development or non-development
+      graph sent it back with a question), or edited (the author changed it after a send-back).
+      Every reason takes the same path; it is recorded for the ledger.
+
+outputs:
+  graph: { type: string, description: "development or non-development; empty when not Ready" }
+  system: { type: string, description: "The registry system the target graph uses to pick its agents" }
+
+steps:
+  # ---- Facts, with no model ---------------------------------------------------------------------
+  - id: read_ticket
+    gate: ticket-facts
+    inputs: [ticket_key]
+    outputs:
+      ticket_type: { type: string, description: "Story, Task, Bug or Research" }
+      author_kind: { type: string, description: "own (created by an allowed account) or other" }
+      authors: { type: list, description: "Session ids in the josh360.authors property" }
+      version: { type: string, description: "Hash of the summary, description, type, labels and links" }
+    outcomes: [read]
+
+  - id: ready_check
+    gate: ready-check
+    needs: [read_ticket]
+    inputs: [ticket_key, ticket_type, version]
+    outputs:
+      failures: { type: list, description: "Checklist items that failed", contract: ready-checklist }
+    outcomes: [pass, gaps]
+
+  - id: route
+    gate: route
+    needs: [ready_check]
+    when: { step: ready_check, outcome: pass }
+    inputs: [ticket_key, ticket_type]
+    outputs:
+      graph: { type: string, contract: route-record }
+      system: { type: string, contract: route-record }
+      space: { type: string, contract: route-record }
+    outcomes: [development, non_development, conflict]
+
+  # ---- Judgment, only where a script cannot decide ----------------------------------------------
+  - id: sign_off
+    role: sign-off
+    needs: [route]
+    when: { step: route, outcome: [development, non_development] }
+    brief: "Ticket: {{ inputs.ticket_key }}. Judge items J1 to J5 only; the scripts have passed the rest."
+    inputs: [ticket_key, graph, version]
+    outputs:
+      defects: { type: list, description: "Each names a J item and quotes the ticket", contract: sign-off-defects }
+    outcomes: [ready, defects]
+
+  - id: check_sign_off
+    gate: check-sign-off
+    needs: [sign_off]
+    inputs: [ticket_key, defects, version, authors]
+    outputs:
+      kept: { type: list, contract: sign-off-defects }
+    outcomes: [ready, gaps, invalid]
+    on:
+      # invalid: the signing session is one of the ticket's authors, or the ticket changed while
+      # it was being judged. A fresh sign-off session judges it once more.
+      invalid: { goto: sign_off, max_loops: 1, at_limit: ask_at_limit }
+
+  - id: verdict
+    gate: triage-verdict
+    needs: [read_ticket, ready_check, route, check_sign_off]
+    inputs: [author_kind, failures, kept]
+    outputs:
+      gaps: { type: list, description: "Script failures and kept defects, numbered", contract: send-back }
+    outcomes: [ready, revise, comment]
+
+  # ---- Own tickets: the drafter fixes, then the checks run again --------------------------------
+  - id: revise
+    role: ticket-drafter
+    needs: [verdict]
+    when: { step: verdict, outcome: revise }
+    brief: >
+      Revise {{ inputs.ticket_key }} in place to close the numbered gaps you are given, and nothing
+      else. Answer an open question only by quoting a source; otherwise return needs_josh with the
+      one question.
+    inputs: [ticket_key, gaps]
+    outputs:
+      proposal: { type: string, contract: ticket-proposal }
+    outcomes: [revised, needs_josh]
+
+  - id: apply_revision
+    gate: apply-revision
+    needs: [revise]
+    when: { step: revise, outcome: revised }
+    inputs: [ticket_key, proposal, version]
+    outcomes: [applied, changed]
+    on:
+      applied: { goto: read_ticket, max_loops: 2, at_limit: ask_at_limit }
+      changed: { goto: read_ticket, max_loops: 2, at_limit: ask_at_limit }
+
+  - id: ask_josh
+    needs: [revise]
+    when: { step: revise, outcome: needs_josh }
+    ask:
+      question: "{{ inputs.ticket_key }} needs one answer from you before it can be Ready. The question is on the ticket."
+      choices: [answered, park]
+    on:
+      answered: { goto: revise, max_loops: 2, at_limit: ask_at_limit }
+      park: end
+
+  - id: ask_at_limit
+    ask:
+      question: "{{ inputs.ticket_key }} is still not Ready after the rounds allowed. Its remaining gaps are on the ticket."
+      choices: [one_more_round, park]
+      on_limit_only: true
+    on:
+      one_more_round: { goto: revise, max_loops: 1, at_limit: ask_at_limit }
+      park: end
+
+  # ---- Someone else's ticket: a comment, never an edit ------------------------------------------
+  - id: send_back
+    gate: send-back
+    needs: [verdict]
+    when: { step: verdict, outcome: comment }
+    inputs: [ticket_key, gaps]
+    outcomes: [sent]
+    on:
+      sent: end
+
+  # ---- Ready: the only status move in this graph ------------------------------------------------
+  - id: mark_ready
+    gate: mark-ready
+    effects: [move_ticket]
+    needs: [verdict]
+    when: { step: verdict, outcome: ready }
+    inputs: [ticket_key, version, graph, system, space]
+    outcomes: [moved, changed]
+    on:
+      changed: { goto: read_ticket, max_loops: 2, at_limit: ask_at_limit }
