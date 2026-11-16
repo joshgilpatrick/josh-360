@@ -6,7 +6,7 @@ Checks:
   2. No workflow file still holds an unfilled bootstrap value ("{{NAME}}"). GitHub's own "${{ ... }}"
      expressions in workflow YAML are allowed.
   3. Every skill has frontmatter whose name matches its folder and which has a description; every command
-     and subagent has a description.
+     and subagent has a description; a frontmatter value holding ": " is quoted.
   4. Every "](#anchor)" link in a Markdown file under docs/ or the repo root resolves to a heading in that
      file, using GitHub's anchor rule (lower case, spaces to hyphens, punctuation dropped, underscores kept).
 
@@ -53,6 +53,13 @@ def frontmatter(path: Path) -> dict[str, str]:
     return fields
 
 
+def unquoted_colons(path: Path, fm: dict[str, str]) -> list[str]:
+    """A plain YAML scalar may not contain ": " (strict parsers reject it), so such values must be quoted."""
+    return [f"unquoted ': ' in frontmatter {key}: {path.relative_to(ROOT)}"
+            for key, value in fm.items()
+            if ": " in value and not (value[:1] in "'\"" and value[-1:] == value[:1])]
+
+
 def github_anchor(heading: str) -> str:
     slug = heading.strip().lower()
     slug = re.sub(r"[^\w\- ]", "", slug)  # \w keeps letters, digits and underscores
@@ -97,10 +104,13 @@ def main() -> int:
             problems.append(f"skill name does not match its folder: {skill.relative_to(ROOT)}")
         if not fm.get("description"):
             problems.append(f"skill has no description: {skill.relative_to(ROOT)}")
+        problems += unquoted_colons(skill, fm)
     for folder in (".claude/commands", ".claude/agents"):
         for md in sorted((ROOT / folder).glob("*.md")):
-            if not frontmatter(md).get("description"):
+            fm = frontmatter(md)
+            if not fm.get("description"):
                 problems.append(f"no description: {md.relative_to(ROOT)}")
+            problems += unquoted_colons(md, fm)
 
     docs = [p for p in ROOT.glob("*.md") if p.is_file()] + sorted((ROOT / "docs").rglob("*.md"))
     for doc in docs:
