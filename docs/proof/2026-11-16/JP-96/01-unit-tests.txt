@@ -66,7 +66,9 @@ test_refuses_any_path_outside_home (test_install.LaneTest.test_refuses_any_path_
 wrote <tmp>/out/inventory.json: 2 launchd plists, 2 sessions, 1 repos, 0.0 s
 test_default_range_is_twelve_whole_weeks (test_laptop_inventory.LaptopInventoryTest.test_default_range_is_twelve_whole_weeks) ... ok
 test_failing_section_is_recorded_and_the_rest_runs (test_laptop_inventory.LaptopInventoryTest.test_failing_section_is_recorded_and_the_rest_runs) ... ok
+test_fit_drops_low_value_sections_to_stay_under_the_limit (test_laptop_inventory.LaptopInventoryTest.test_fit_drops_low_value_sections_to_stay_under_the_limit) ... ok
 test_guard_refuses_text (test_laptop_inventory.LaptopInventoryTest.test_guard_refuses_text) ... ok
+test_job_prints_only_json_and_writes_nothing (test_laptop_inventory.LaptopInventoryTest.test_job_prints_only_json_and_writes_nothing) ... ok
 test_lists_jobs_hooks_plugins_and_stores (test_laptop_inventory.LaptopInventoryTest.test_lists_jobs_hooks_plugins_and_stores) ... ok
 test_loose_ends (test_laptop_inventory.LaptopInventoryTest.test_loose_ends) ... ok
 test_non_utf8_branch_name_does_not_stop_git (test_laptop_inventory.LaptopInventoryTest.test_non_utf8_branch_name_does_not_stop_git) ... ok
@@ -82,17 +84,18 @@ test_session_figures (test_laptop_inventory.LaptopInventoryTest.test_session_fig
 test_shell_string_job_keeps_only_path_words (test_laptop_inventory.LaptopInventoryTest.test_shell_string_job_keeps_only_path_words) ... ok
 test_symlinked_home_run_keeps_home_relative_paths (test_laptop_inventory.LaptopInventoryTest.test_symlinked_home_run_keeps_home_relative_paths) ... wrote <tmp>/out/via-alias.json: 2 launchd plists, 2 sessions, 1 repos, 0.0 s
 ok
+test_the_job_is_listed_once_with_a_report (test_laptop_inventory.LaptopInventoryTest.test_the_job_is_listed_once_with_a_report) ... ok
 test_unreadable_store_is_reported_not_fatal (test_laptop_inventory.LaptopInventoryTest.test_unreadable_store_is_reported_not_fatal) ... ok
 test_use_is_dated_by_the_call_not_the_session_start (test_laptop_inventory.LaptopInventoryTest.test_use_is_dated_by_the_call_not_the_session_start) ... ok
 test_writes_nothing_but_its_output_file (test_laptop_inventory.LaptopInventoryTest.test_writes_nothing_but_its_output_file) ... ok
 
 ----------------------------------------------------------------------
-Ran 75 tests in 9.246s
+Ran 78 tests in 14.037s
 
 OK
 
 $ uv run --python 3.9 --no-project --with pyyaml python -m unittest discover -s tests -t tests   (Python 3.9, as on macOS)
 ----------------------------------------------------------------------
-Ran 75 tests in 9.326s
+Ran 78 tests in 12.794s
 
 OK
