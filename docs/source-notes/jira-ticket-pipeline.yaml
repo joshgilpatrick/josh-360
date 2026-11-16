@@ -1,0 +1,277 @@
+title: Jira ticket pipeline
+description: >
+  Turn a Jira ticket into a hardened spec (Sonnet design, Opus gate), build it phase by phase
+  on the model each phase names, check every phase with scripts, audit the finished work
+  against the plan, then open a PR and run it through the agent review label cycle.
+manager:
+  prompt: >
+    Never write or change the spec yourself. Accept a build step only after verify passed it.
+    Never set a review:* label yourself: only the record_audit scripts and queue_audit do.
+    Never merge the PR. When a step escalates, pass the question on exactly as written.
+
+inputs:
+  ticket_key: { type: string, required: true, description: "Jira key, e.g. AD-123" }
+  base_branch: { type: string, default: main }
+  github_issue: { type: string, default: "", description: "GitHub issue number to close from the PR; empty if none" }
+
+outputs:
+  pr_url: { type: string }
+
+steps:
+  # ---- 1+2. Intake and design (Sonnet, talking to the human) -------------------------------
+  - id: design
+    role:
+      name: designer
+      prompt: |
+        Ticket: {{ inputs.ticket_key }}. Read it with acli. Write or revise the spec at
+        {{ worktree }}/.workflow/{{ inputs.ticket_key }}/spec.yaml.
+        Return spec_path. Report needs_input, with your question as the summary, when
+        you cannot continue without the human.
+    inputs: [ticket_key]
+    outputs:
+      spec_path: { type: string }
+    outcomes: [ready, needs_input]
+    on:
+      needs_input: { ask: "The designer needs your input.", max_loops: 8 }
+
+  # ---- deterministic pre-check: cheap, runs before Opus is paid for -------------------------
+  - id: lint_spec
+    needs: [design]
+    script: { run: lint-spec.py }
+    inputs: [spec_path]
+    outcomes: [success, incomplete]
+    on:
+      incomplete: { goto: design, max_loops: 4 }
+
+  # ---- 3. Hardening gate (Opus, verdict + defect list, never a rewrite) ----------------------
+  - id: harden
+    needs: [lint_spec]
+    role: { name: hardener, prompt: "Review the spec at {{ inputs.spec_path }}.", agent: { tier: gate } }
+    inputs: [spec_path]
+    outputs:
+      defects: { type: string, description: "Numbered defects, or 'none'" }
+    outcomes: [pass, defects]
+    on:
+      defects: { goto: design, max_loops: 3 }      # at the limit a human decides
+
+  - id: approve_spec
+    needs: [harden]
+    gate:
+      question: "Spec for {{ playbook.inputs.ticket_key }} passed the hardening gate. Start building?"
+      choices:
+        approved: { label: Build }
+        revise: { label: Send back to design, comment: required, color: warning }
+    on:
+      revise: { goto: design }
+
+  # ---- 4. Build loop: one pass per phase, tier chosen by the spec --------------------------
+  # Reopened phases (from evidence or from the completion review) re-enter here, so a phase
+  # always goes back to the tier that built it.
+  - id: pick_phase
+    needs: [approve_spec]
+    script: { run: pick-phase.py }
+    inputs: [spec_path]
+    outputs:
+      phase_id: { type: string }
+      tier: { type: string, description: "cheap | mid | none" }
+      feedback_file: { type: string, description: "Reviewer instructions for a reopened phase, or 'none'" }
+
+  - id: route
+    needs: [pick_phase]
+    branch:
+      cases:
+        - { name: cheap, if: { steps.pick_phase.outputs.tier: cheap } }
+        - { name: mid, if: { steps.pick_phase.outputs.tier: mid } }
+        - { name: none }
+
+  - id: build_cheap
+    needs: [route]
+    when: { steps.route.outcome: cheap }
+    role:
+      name: builder_cheap
+      prompt: >
+        Execute phase {{ inputs.phase_id }} of {{ inputs.spec_path }}. Do not infer anything.
+        If {{ inputs.feedback_file }} is not "none", read it first: it holds the reviewer's
+        instructions for rework. Do every item in it, and nothing else.
+    inputs: [spec_path, phase_id, feedback_file]
+    outcomes: [success, needs_judgment]
+    on:
+      needs_judgment:
+        ask: "A builder hit a judgment call."
+        decider: { by: role, role: triager }
+        max_loops: 2
+        choices:
+          answered: {}
+          redesign: { goto: design, label: Send back to design }
+
+  - id: build_mid
+    needs: [route, build_cheap]            # a skipped step counts as done; this keeps the two writers ordered
+    when: { steps.route.outcome: mid }
+    role:
+      name: builder_mid
+      prompt: >
+        Execute phase {{ inputs.phase_id }} of {{ inputs.spec_path }}.
+        If {{ inputs.feedback_file }} is not "none", read it first: it holds the reviewer's
+        instructions for rework. Do every item in it, and nothing else.
+    inputs: [spec_path, phase_id, feedback_file]
+    outcomes: [success, needs_judgment]
+    on:
+      needs_judgment:
+        ask: "A builder hit a judgment call."
+        decider: { by: role, role: triager }
+        max_loops: 2
+        choices:
+          answered: {}
+          redesign: { goto: design, label: Send back to design }
+
+  # ---- 5. Verification: tools, not opinions ------------------------------------------------
+  - id: verify
+    needs: [build_cheap, build_mid]
+    when: { steps.route.outcome: [cheap, mid] }
+    script: { run: verify-phase.py }
+    inputs: [spec_path, phase_id]
+    # The script owns the per-phase retry count (state.json) and picks the outcome by tier,
+    # because loop counters are keyed source->target and are never reset per phase.
+    outcomes: [all_done, phase_passed, retry_cheap, retry_mid, phase_stuck]
+    on:
+      phase_passed: { goto: pick_phase, max_loops: 40 }   # one loop per phase, plus one per reopened phase
+      retry_cheap: { goto: build_cheap, max_loops: 20 }   # failing checks come back as feedback
+      retry_mid: { goto: build_mid, max_loops: 20 }
+      phase_stuck: { goto: design, max_loops: 2 }         # script gave up on this phase: back to design
+
+  # ---- 6. Completion review: did the builders do what the plan assigned? ---------------------
+  # Evidence first, without a model: every phase check re-run on the final tree, plus the
+  # placeholder and scope scan. A regression reopens the phase without paying for a reviewer.
+  - id: evidence
+    needs: [verify]
+    script: { run: collect-evidence.py }
+    inputs: [spec_path, base_branch]
+    outcomes: [ready, regressed]
+    on:
+      regressed: { goto: pick_phase, max_loops: 3 }
+
+  - id: completion_review
+    needs: [evidence]
+    role:
+      name: completion_reviewer
+      prompt: >
+        Audit the finished work for {{ inputs.ticket_key }} against {{ inputs.spec_path }}
+        and .workflow/{{ inputs.ticket_key }}/evidence.md. Judge only by criteria written in the spec.
+    inputs: [ticket_key, spec_path]
+    outputs:
+      gaps: { type: string, description: "JSON array of defects, or '[]'" }
+    outcomes: [complete, defects, plan_gap]
+    on:
+      defects: complete                            # check_review runs next, by its `when`
+      plan_gap: { goto: design, max_loops: 2 }     # two declared criteria conflict or cannot be met
+
+  # Checks every defect cites a criterion that exists in the spec, drops the rest, writes the
+  # per-phase feedback files and reopens the phases. Phases go back to their original tier.
+  - id: check_review
+    needs: [completion_review]
+    when: { steps.completion_review.outcome: defects }
+    script: { run: check-review.py }
+    inputs: [spec_path, gaps]
+    outcomes: [rework, withdrawn]
+    on:
+      rework: { goto: pick_phase, max_loops: 3 }   # at the limit a human decides
+      withdrawn: complete                          # nothing the reviewer cited is in the plan
+
+  # ---- 7. Pull request and the agent review cycle (/pr-agent-review labels) --------------------
+  - id: open_pr
+    needs: [completion_review, check_review]
+    role:
+      name: publisher
+      prompt: >
+        Push the branch and open the PR for {{ inputs.ticket_key }} against {{ inputs.base_branch }}
+        (reuse the open PR if the branch already has one). Put the Jira key in the title. Build the body
+        from {{ inputs.spec_path }} and .workflow/{{ inputs.ticket_key }}/evidence.md. If
+        {{ inputs.github_issue }} is not empty add the line "Closes #{{ inputs.github_issue }}"; never invent an
+        issue number. Do not touch any label. Comment the PR link on the Jira ticket with acli.
+    inputs: [ticket_key, base_branch, github_issue, spec_path]
+    outputs:
+      pr_url: { type: string }
+      pr_number: { type: string }
+
+  - id: queue_audit
+    needs: [open_pr]
+    script: { run: queue-audit.sh }
+    inputs: [pr_number]
+
+  - id: begin_audit
+    needs: [queue_audit]
+    script: { run: begin-audit.sh }
+    inputs: [pr_number]
+
+  - id: code_review
+    needs: [begin_audit]
+    role:
+      name: code_reviewer
+      prompt: "Review PR {{ inputs.pr_number }} the way the standing agent review does. Spec: {{ inputs.spec_path }}."
+      agent: { tier: gate }
+    inputs: [pr_number, spec_path]
+    outputs:
+      findings: { type: string, description: "Numbered findings with file:line, or a short pass note" }
+      issue_count: { type: number, description: "Distinct actionable issues in this round" }
+    outcomes: [pass, changes, blocked]
+    on:
+      changes: complete                            # audit_changes, fix_review, after_fix follow, by their `when`
+      blocked: complete                            # audit_blocked, unblock follow, by their `when`
+
+  # One script, three steps: record-audit.sh branches on PLAYBOOK_STEP_ID. It posts the findings
+  # as a PR comment and sets the label: pass | review:changes-requested | review:audit-blocked.
+  - id: audit_passed
+    needs: [code_review]
+    when: { steps.code_review.outcome: pass }
+    script: { run: record-audit.sh }
+    inputs: [pr_number, findings]
+
+  - id: audit_changes
+    needs: [code_review]
+    when: { steps.code_review.outcome: changes }
+    script: { run: record-audit.sh }
+    inputs: [pr_number, findings]
+
+  - id: audit_blocked
+    needs: [code_review]
+    when: { steps.code_review.outcome: blocked }
+    script: { run: record-audit.sh }
+    inputs: [pr_number, findings]
+
+  - id: unblock
+    needs: [audit_blocked]
+    when: { steps.code_review.outcome: blocked }
+    gate:
+      question: "The code reviewer is blocked on PR {{ steps.open_pr.outputs.pr_number }}. See its PR comment. Ready to re-run the audit?"
+      choices:
+        answered: { label: Re-run audit, comment: required }
+        stop: { label: Stop here, color: warning }
+    on:
+      answered: { goto: code_review, max_loops: 3 }
+      stop: end
+
+  - id: fix_review
+    needs: [audit_changes]
+    when: { steps.code_review.outcome: changes }
+    role:
+      name: review_fixer
+      prompt: "Address the review findings on PR {{ inputs.pr_number }}. Spec: {{ inputs.spec_path }}."
+    inputs: [pr_number, findings, spec_path]
+    outputs:
+      issues_addressed: { type: number }
+      resolution: { type: string, description: "Commit SHA, files changed, exact verification commands and results" }
+    outcomes: [fixed, needs_input]
+    on:
+      needs_input: { ask: "The review fixer needs your input.", max_loops: 3 }
+
+  # Posts the resolution comment, then sets the label by the convention: 4 or more distinct
+  # issues this round re-queue the audit; fewer, all addressed, set the pass label.
+  - id: after_fix
+    needs: [fix_review]
+    when: { steps.code_review.outcome: changes }
+    script: { run: after-fix.sh }
+    inputs: [pr_number, resolution, issues_addressed, spec_path]
+    outcomes: [done, requeue, checks_failed]
+    on:
+      requeue: { goto: begin_audit, max_loops: 3 }
+      checks_failed: { goto: fix_review, max_loops: 2 }
