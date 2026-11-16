@@ -33,13 +33,22 @@ class FollowTest(LaptopCase):
         self.assertRegex(status["time"], r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$")
         self.assertEqual(set(status["counts"]), {"changed", "unchanged", "problems"})
         # It holds no file contents: one small status file, nothing from the repo, plus the reports of
-        # report jobs (JP-96's one-time inventory: names, paths, sizes and counts only).
+        # report jobs (JP-96's one-time inventory: names, paths, sizes and counts only; JP-100's one-time
+        # focus dashboard retirement, which reports "not loaded" here because launchctl is a stub).
         tree = self.status_tree()
         self.assertEqual([p for p in tree if not p.startswith("reports/")], ["status.json"])
-        self.assertEqual([p for p in tree if p.startswith("reports/")], ["reports/inventory.json"])
+        self.assertEqual([p for p in tree if p.startswith("reports/")],
+                         ["reports/inventory.json", "reports/retire-focus-dashboard.json"])
         # And the reader a cloud session uses prints it.
         shown = self.laptop("status.py", "show", check=True)
         self.assertIn(merged, shown.stdout)
+
+    def test_jobs_never_reach_the_real_launchd(self):
+        """A run of the job runner, on a Mac or not, only ever talks to the stub launchctl, and never boots anything out."""
+        self.laptop("run_jobs.py", check=True)
+        calls = self.launchctl_log.read_text().splitlines() if self.launchctl_log.exists() else []
+        self.assertTrue(calls, "the retire job should have asked the stub launchctl whether the job is loaded")
+        self.assertTrue(all(c.startswith("print ") for c in calls), calls)
 
     def test_nothing_new_is_not_pushed_again(self):
         self.laptop("follow.py", check=True)

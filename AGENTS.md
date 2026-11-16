@@ -69,6 +69,7 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - `docs/design/`: design material; mock-up boards in `docs/design/views/`.
 - `docs/inventory/`: the inventory of the work laptop, with a verdict per item.
 - `docs/proof/`: proof for each ticket, by date and key.
+- `docs/phase-1-deletion-list.md`: what is archived and waits for Josh's one-sitting approval to be deleted for good.
 - `.claude/`: workflow values, skills, commands and subagents.
 - `scripts/check.py`: the repo's checks, run by CI as the `suite` job.
 - `scripts/conventions.py`: checks and reads the registry and the priorities file.
