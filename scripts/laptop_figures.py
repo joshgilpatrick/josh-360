@@ -31,7 +31,9 @@ INJECTED_PREFIXES = (
     "<bash-input>", "<bash-stdout>", "<bash-stderr>", "<user-memory-input>",
     "Caveat: The messages below", "[Request interrupted", "This session is being continued",
 )
-SLASH_COMMAND = re.compile(r"<command-name>/?([A-Za-z0-9_.:-]+)</command-name>")
+SLASH_COMMAND = re.compile(r"<command-name>/?([A-Za-z0-9_.:-]{1,80})</command-name>")
+# Skill and agent names become output keys, so only plain names are kept; anything else is counted as "(other)".
+TOOL_NAME = re.compile(r"^[A-Za-z0-9_.:-]{1,80}$")
 
 
 def ticket_pattern(keys: list[str]) -> re.Pattern[str]:
@@ -79,8 +81,9 @@ def read_session(path: Path, tickets: re.Pattern[str]) -> dict:
     entrypoints: Counter[str] = Counter()
     branch_ticket = False
     message_ticket = False
-    skills: Counter[str] = Counter()
-    agents: Counter[str] = Counter()
+    skills: Counter = Counter()  # (name, day of the call) -> uses
+    agents: Counter = Counter()
+    last_ts = None
     with path.open("r", encoding="utf-8", errors="replace") as fh:
         for line in fh:
             line = line.strip()
@@ -96,12 +99,15 @@ def read_session(path: Path, tickets: re.Pattern[str]) -> dict:
             ts = _parse_ts(entry.get("timestamp"))
             if ts and first is None:
                 first = ts
+            if ts:
+                last_ts = ts
+            day = last_ts.date() if last_ts else None
             if isinstance(entry.get("entrypoint"), str):
                 entrypoints[entry["entrypoint"]] += 1
             branch = entry.get("gitBranch")
             if isinstance(branch, str) and tickets.search(branch):
                 branch_ticket = True
-            _count_tool_uses(entry, skills, agents)
+            _count_tool_uses(entry, day, skills, agents)
             if is_josh_message(entry):
                 josh += 1
                 text = _text_of(entry["message"]["content"]) or ""
@@ -110,7 +116,8 @@ def read_session(path: Path, tickets: re.Pattern[str]) -> dict:
             elif entry.get("type") == "user":
                 text = _text_of((entry.get("message") or {}).get("content")) or ""
                 for name in SLASH_COMMAND.findall(text):
-                    skills[name] += 1
+                    if day:
+                        skills[(name, day)] += 1
     return {
         "first": first,
         "josh_messages": josh,
@@ -123,8 +130,9 @@ def read_session(path: Path, tickets: re.Pattern[str]) -> dict:
     }
 
 
-def _count_tool_uses(entry: dict, skills: Counter, agents: Counter) -> None:
-    if entry.get("type") != "assistant":
+def _count_tool_uses(entry: dict, day, skills: Counter, agents: Counter) -> None:
+    """Counts Skill and Agent/Task calls under the day of the entry that made them."""
+    if entry.get("type") != "assistant" or day is None:
         return
     content = (entry.get("message") or {}).get("content")
     if not isinstance(content, list):
@@ -134,9 +142,13 @@ def _count_tool_uses(entry: dict, skills: Counter, agents: Counter) -> None:
             continue
         args = block.get("input") or {}
         if block.get("name") == "Skill" and isinstance(args.get("skill"), str):
-            skills[args["skill"]] += 1
+            skills[(_tool_name(args["skill"]), day)] += 1
         elif block.get("name") in ("Task", "Agent") and isinstance(args.get("subagent_type"), str):
-            agents[args["subagent_type"]] += 1
+            agents[(_tool_name(args["subagent_type"]), day)] += 1
+
+
+def _tool_name(name: str) -> str:
+    return name if TOOL_NAME.match(name) else "(other)"
 
 
 def week_start(d: date) -> date:
@@ -164,8 +176,11 @@ def session_figures(projects: Path, since: date, until: date, keys: list[str], u
     skill_use: dict[str, dict] = {}
     agent_use: dict[str, dict] = {}
     files_read = bad_lines = 0
-    if not projects.is_dir():
-        return {"available": False}
+    try:
+        if not projects.is_dir():
+            return {"available": False}
+    except OSError:
+        return {"available": False, "error": "unreadable"}
     for path in sorted(projects.glob("*/*.jsonl")):
         try:
             if path.is_symlink() or path.stat().st_mtime < cutoff:
@@ -177,10 +192,9 @@ def session_figures(projects: Path, since: date, until: date, keys: list[str], u
         bad_lines += s["bad_lines"]
         if s["first"] is None:
             continue
+        _merge_use(skill_use, s["skills"], usage_since)
+        _merge_use(agent_use, s["agents"], usage_since)
         day = s["first"].date()
-        if day >= usage_since:
-            _merge_use(skill_use, s["skills"], day)
-            _merge_use(agent_use, s["agents"], day)
         if not (since <= day <= until):
             continue
         per_week[week_start(day).isoformat()] += 1
@@ -197,9 +211,8 @@ def session_figures(projects: Path, since: date, until: date, keys: list[str], u
             s = read_session(path, tickets)
         except OSError:
             continue
-        if s["first"] and s["first"].date() >= usage_since:
-            _merge_use(skill_use, s["skills"], s["first"].date())
-            _merge_use(agent_use, s["agents"], s["first"].date())
+        _merge_use(skill_use, s["skills"], usage_since)
+        _merge_use(agent_use, s["agents"], usage_since)
     weeks = []
     w = week_start(since)
     while w <= until:
@@ -233,8 +246,11 @@ def usage_since_ts(d: date) -> float:
     return datetime.combine(d, datetime.min.time()).timestamp()
 
 
-def _merge_use(table: dict, counts: Counter, day: date) -> None:
-    for name, n in counts.items():
+def _merge_use(table: dict, counts: Counter, usage_since: date) -> None:
+    """Adds the calls made on or after usage_since, each dated by its own entry, not the session start."""
+    for (name, day), n in counts.items():
+        if day < usage_since:
+            continue
         row = table.setdefault(name, {"uses": 0, "last_used": day.isoformat()})
         row["uses"] += n
         row["last_used"] = max(row["last_used"], day.isoformat())
@@ -249,12 +265,19 @@ SKIP_DIRS = {"node_modules", ".venv", "venv", "worktrees", "Library", ".Trash", 
 def find_repos(roots: list[Path], max_depth: int = 4) -> list[Path]:
     found: list[Path] = []
     for root in roots:
-        if not root.is_dir():
+        try:
+            if not root.is_dir():
+                continue
+        except OSError:
             continue
         stack = [(root, 0)]
         while stack:
             folder, depth = stack.pop()
-            if (folder / ".git").is_dir():
+            try:
+                is_repo = (folder / ".git").is_dir()
+            except OSError:
+                continue
+            if is_repo:
                 found.append(folder)
                 continue  # a repo's own subfolders are not searched for more repos
             if depth >= max_depth:
@@ -268,26 +291,30 @@ def find_repos(roots: list[Path], max_depth: int = 4) -> list[Path]:
     return sorted(found)
 
 
-def _git(repo: Path, *args: str) -> list[str] | None:
-    """Runs one read-only git command. Only the commands in READ_ONLY_GIT may be used."""
-    if args[0] not in READ_ONLY_GIT:
-        raise ValueError(f"not a read-only git command: {args[0]}")
+def _git(repo: Path, which: str) -> list[str] | None:
+    """Runs one of the read-only git commands in READ_ONLY_GIT, named by its key; nothing else can run."""
+    args = READ_ONLY_GIT[which]
     try:
         out = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True,
-                             env=GIT_ENV, timeout=30)
+                             errors="replace", env=GIT_ENV, timeout=30, stdin=subprocess.DEVNULL)
     except (OSError, subprocess.TimeoutExpired):
         return None
     return out.stdout.splitlines() if out.returncode == 0 else None
 
 
-READ_ONLY_GIT = ("for-each-ref", "worktree", "symbolic-ref", "rev-list")
+# The complete argument lists, not just subcommands: "worktree" alone would also allow "worktree remove".
+READ_ONLY_GIT = {
+    "branches": ("for-each-ref", "--format=%(refname:short)\t%(upstream)\t%(upstream:track)", "refs/heads"),
+    "worktrees": ("worktree", "list", "--porcelain"),
+    "origin_head": ("symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD"),
+    "stashes": ("rev-list", "--walk-reflogs", "--count", "refs/stash"),
+}
 
 
 def repo_loose_ends(repo: Path) -> dict:
-    refs = _git(repo, "for-each-ref", "--format=%(refname:short)\t%(upstream)\t%(upstream:track)",
-                "refs/heads")
-    worktrees = _git(repo, "worktree", "list", "--porcelain")
-    head = _git(repo, "symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD")
+    refs = _git(repo, "branches")
+    worktrees = _git(repo, "worktrees")
+    head = _git(repo, "origin_head")
     if refs is None:
         return {"readable": False}
     default = (head[0].split("/", 1)[1] if head else None)
@@ -306,7 +333,7 @@ def repo_loose_ends(repo: Path) -> dict:
         elif "ahead" in track:
             ahead += 1
     extra_worktrees = max(0, sum(1 for l in (worktrees or []) if l.startswith("worktree ")) - 1)
-    stashes = _git(repo, "rev-list", "--walk-reflogs", "--count", "refs/stash")
+    stashes = _git(repo, "stashes")
     return {
         "readable": True,
         "branches": len(refs),
@@ -326,13 +353,16 @@ def loose_end_figures(roots: list[Path], home: Path) -> dict:
     repos = []
     totals: Counter[str] = Counter()
     for repo in find_repos(roots):
-        row = repo_loose_ends(repo)
-        row["path"] = "~/" + str(repo.relative_to(home)) if _under(repo, home) else str(repo)
+        try:
+            row = repo_loose_ends(repo)
+        except (OSError, ValueError):
+            row = {"readable": False}
+        row["path"] = tilde(repo, home)
         repos.append(row)
         for k in LOOSE_END_KINDS + ("stashes",):
             totals[k] += row.get(k, 0)
     return {
-        "roots": ["~/" + str(r.relative_to(home)) if _under(r, home) else str(r) for r in roots],
+        "roots": [tilde(r, home) for r in roots],
         "repos_found": len(repos),
         "totals": dict(totals),
         "local_loose_ends": sum(totals[k] for k in LOOSE_END_KINDS),
@@ -340,9 +370,13 @@ def loose_end_figures(roots: list[Path], home: Path) -> dict:
     }
 
 
-def _under(path: Path, parent: Path) -> bool:
-    try:
-        path.relative_to(parent)
-        return True
-    except ValueError:
-        return False
+def tilde(path: Path, home: Path) -> str:
+    """~/-relative when the path is under home, as written or with symlinks resolved."""
+    homes = {Path(home), Path(os.path.realpath(home))}
+    for candidate in (Path(path), Path(os.path.realpath(path))):
+        for h in homes:
+            try:
+                return "~/" + str(candidate.relative_to(h))
+            except ValueError:
+                continue
+    return str(path)
