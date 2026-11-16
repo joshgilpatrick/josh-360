@@ -14,6 +14,7 @@
 - [The approval card](#the-approval-card)
 - [How approval relaxes over time](#how-approval-relaxes-over-time)
 - [Keeping tickets from piling up](#keeping-tickets-from-piling-up)
+- [How to tell it's working](#how-to-tell-its-working)
 - [What the graph hands to triage](#what-the-graph-hands-to-triage)
 - [Patient data](#patient-data)
 - [How every loop ends](#how-every-loop-ends)
@@ -283,6 +284,22 @@ Suggested ceiling (Josh moves categories, so this is advice): single tickets in 
 | Volume Josh cannot see | At stage 1 every ticket crosses his card, and dropping one is a tap. |
 
 The counts this graph gives the ledger: tickets created per source per week, cards approved, changed and dropped, searcher misses, and days from creation to Ready.
+
+## How to tell it's working
+
+Every number comes from the ledger rows the walker writes for each step (the run, the step, its outcome, its loop count, its tier and the session), joined to the session facts (cost, model) and to later runs on the same ticket in the triage and pipeline graphs. No model call is needed to work out any of them.
+
+| Question | Measure | Good direction |
+| --- | --- | --- |
+| Do the tickets hold up? (effective) | Share of created tickets that triage sends back, or that a pipeline later returns to triage | Down |
+| Does Josh get the ticket he would have written? (effective) | Share of approval cards approved as they are, rather than changed or dropped | Up |
+| Are duplicates caught? (effective) | Searcher misses per 10 tickets created: tickets Josh drops at the card, or cancels later, as duplicates | Down |
+| Does it spare Josh? (effective) | Share of runs that reach `ask_gap` or `stuck` (asks beyond the card), and how long a run waits on him | Down |
+| What does a ticket cost? (efficient) | Model cost per created ticket, and `draft` runs per run (1 is the target, 3 the cap) | Down |
+
+How each run ends: `created` or `commented` is success. `dropped` is neutral, but it is counted per source, so a source whose items Josh mostly drops shows up in the weekly review. Reaching `stuck` or `write_failed` counts as needing Josh.
+
+To compare the graph before and after a change, each run must record the version of the graph file it ran, and each step must record the model that actually answered. The convention's ledger fields do not have either yet. The triage design raises the same gap (JP-103), and one fix serves all the graphs.
 
 ## What the graph hands to triage
 
