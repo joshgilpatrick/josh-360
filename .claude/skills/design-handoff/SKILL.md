@@ -1,6 +1,6 @@
 ---
 name: design-handoff
-description: Use in a design thread for a josh-360 ticket that needs Josh's design approval: opening questions, mock-up boards, spec, then the plan and the hand-off to a build thread. Not for building.
+description: "Use in a design thread for a josh-360 ticket that needs Josh's design approval: opening questions, mock-up boards, spec, then the plan and the hand-off to a build thread. Not for building."
 ---
 
 # Design thread
