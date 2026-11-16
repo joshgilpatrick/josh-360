@@ -84,18 +84,19 @@ test_session_figures (test_laptop_inventory.LaptopInventoryTest.test_session_fig
 test_shell_string_job_keeps_only_path_words (test_laptop_inventory.LaptopInventoryTest.test_shell_string_job_keeps_only_path_words) ... ok
 test_symlinked_home_run_keeps_home_relative_paths (test_laptop_inventory.LaptopInventoryTest.test_symlinked_home_run_keeps_home_relative_paths) ... wrote <tmp>/out/via-alias.json: 2 launchd plists, 2 sessions, 1 repos, 0.0 s
 ok
+test_symlinks_into_prompting_folders_are_not_followed (test_laptop_inventory.LaptopInventoryTest.test_symlinks_into_prompting_folders_are_not_followed) ... ok
 test_the_job_is_listed_once_with_a_report (test_laptop_inventory.LaptopInventoryTest.test_the_job_is_listed_once_with_a_report) ... ok
 test_unreadable_store_is_reported_not_fatal (test_laptop_inventory.LaptopInventoryTest.test_unreadable_store_is_reported_not_fatal) ... ok
 test_use_is_dated_by_the_call_not_the_session_start (test_laptop_inventory.LaptopInventoryTest.test_use_is_dated_by_the_call_not_the_session_start) ... ok
 test_writes_nothing_but_its_output_file (test_laptop_inventory.LaptopInventoryTest.test_writes_nothing_but_its_output_file) ... ok
 
 ----------------------------------------------------------------------
-Ran 78 tests in 14.037s
+Ran 79 tests in 14.259s
 
 OK
 
 $ uv run --python 3.9 --no-project --with pyyaml python -m unittest discover -s tests -t tests   (Python 3.9, as on macOS)
 ----------------------------------------------------------------------
-Ran 78 tests in 12.794s
+Ran 79 tests in 13.542s
 
 OK
