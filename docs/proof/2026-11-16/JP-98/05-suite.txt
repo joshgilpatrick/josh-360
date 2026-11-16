@@ -4,11 +4,33 @@ $ python3 scripts/check.py
 check.py: ok (0 problem(s))
 (exit 0)
 
-$ python3 -m unittest discover -s tests
-....................
+$ python3 -m unittest discover -s tests -v
+test_a_known_folder_resolves (test_conventions.AKnownFolderResolves.test_a_known_folder_resolves) ... ok
+test_a_known_repository_resolves (test_conventions.AKnownFolderResolves.test_a_known_repository_resolves) ... ok
+test_a_linear_system_names_its_team_not_a_jira_space (test_conventions.AKnownFolderResolves.test_a_linear_system_names_its_team_not_a_jira_space) ... ok
+test_a_relative_folder_resolves_from_where_the_command_runs (test_conventions.AKnownFolderResolves.test_a_relative_folder_resolves_from_where_the_command_runs) ... ok
+test_a_subfolder_of_a_known_folder_resolves (test_conventions.AKnownFolderResolves.test_a_subfolder_of_a_known_folder_resolves) ... ok
+test_every_real_registry_folder_resolves_to_its_own_system (test_conventions.AKnownFolderResolves.test_every_real_registry_folder_resolves_to_its_own_system) ... ok
+test_the_cli_prints_the_answer_as_json (test_conventions.AKnownFolderResolves.test_the_cli_prints_the_answer_as_json) ... ok
+test_the_most_specific_folder_wins (test_conventions.AKnownFolderResolves.test_the_most_specific_folder_wins) ... ok
+test_an_unknown_folder_stays_unassigned (test_conventions.AnUnknownFolderStaysUnassigned.test_an_unknown_folder_stays_unassigned) ... ok
+test_an_unknown_repository_stays_unassigned (test_conventions.AnUnknownFolderStaysUnassigned.test_an_unknown_repository_stays_unassigned) ... ok
+test_nothing_is_guessed_from_a_similar_name (test_conventions.AnUnknownFolderStaysUnassigned.test_nothing_is_guessed_from_a_similar_name) ... ok
+test_the_cli_says_unassigned_and_exits_zero (test_conventions.AnUnknownFolderStaysUnassigned.test_the_cli_says_unassigned_and_exits_zero) ... ok
+test_the_most_specific_link_wins (test_conventions.PriorityFromJiraLinks.test_the_most_specific_link_wins) ... ok
+test_unknown_links_stay_unassigned (test_conventions.PriorityFromJiraLinks.test_unknown_links_stay_unassigned) ... ok
+test_a_file_that_is_not_valid_yaml_is_named (test_conventions.TheCheckerRefusesABadRegistry.test_a_file_that_is_not_valid_yaml_is_named) ... ok
+test_bad_priorities_files_are_refused_by_name (test_conventions.TheCheckerRefusesABadRegistry.test_bad_priorities_files_are_refused_by_name) ... ok
+test_other_bad_registries_are_refused_by_name (test_conventions.TheCheckerRefusesABadRegistry.test_other_bad_registries_are_refused_by_name) ... ok
+test_the_checker_refuses_a_bad_registry (test_conventions.TheCheckerRefusesABadRegistry.test_the_checker_refuses_a_bad_registry) ... ok
+test_the_cli_exits_with_an_error_that_names_the_entry (test_conventions.TheCheckerRefusesABadRegistry.test_the_cli_exits_with_an_error_that_names_the_entry) ... ok
+test_the_real_files_pass (test_conventions.TheCheckerRefusesABadRegistry.test_the_real_files_pass) ... ok
+test_the_sample_files_pass (test_conventions.TheCheckerRefusesABadRegistry.test_the_sample_files_pass) ... ok
+test_wrong_types_are_refused_by_name_without_a_traceback (test_conventions.TheCheckerRefusesABadRegistry.test_wrong_types_are_refused_by_name_without_a_traceback) ... ok
+test_the_ready_rule_is_written_down (test_conventions.TheReadyRuleIsWrittenDown.test_the_ready_rule_is_written_down) ... ok
+
 ----------------------------------------------------------------------
-Ran 20 tests in 0.088s
+Ran 23 tests in 0.108s
 
 OK
 (exit 0)
-
