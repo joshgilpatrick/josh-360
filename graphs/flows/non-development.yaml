@@ -1,0 +1,264 @@
+# DRAFT (JP-104). The non-development graph as designed in docs/design/non-development-graph.md.
+# JP-123 turns it into the real graph: its gate scripts are refusing stubs until then. Convention: graphs/CONVENTION.md.
+convention: 1
+graph: non-development
+title: Non-development pipeline
+description: >
+  Takes a Ready non-development ticket in JP (an answer, a document, a reply to draft, a file to find)
+  and ends with its deliverable saved outside any working folder, the sources behind it in an evidence
+  file, Josh's sign-off (or, for an emailed ask, the answer emailed to him, reopened only by his reply),
+  and a resolution comment that the next run's lookup can find. Nothing is sent to anyone but Josh, and a
+  shared write runs only on his yes.
+
+header:
+  jira:
+    - { status: Ready, steps: [read_ticket] }
+    - { status: Not Started, steps: [return_early, return_late] }
+    - status: In Progress
+      steps: [start_run, find_precedent, judge_precedent, check_gaps, ping_before, do_work, ping_during,
+              check_deliverable, pick_path, review_work, check_review, decide_stuck]
+    - { status: Validation, steps: [to_validation, deliver, pick_sign_off, sign_off, share_out] }
+    - { status: Done, steps: [close_emailed, close] }
+  entry_gate: ready
+  exit_gate: no-loose-ends
+  asks_josh: [ping_before, ping_during, sign_off, decide_stuck]
+  ledger: [run, step, outcome, loop_count, session, tier, ticket, started_at, ended_at, graph_version, model]
+  end_states:
+    finished: success
+    close_emailed.closed: success
+    return_early.returned: neutral
+    return_late.returned: neutral
+    decide_stuck.stop: needs-josh
+  access:
+    read_ticket: read
+    return_early: josh
+    start_run: josh
+    find_precedent: read
+    judge_precedent: read
+    check_gaps: read
+    ping_before: read
+    do_work: josh
+    ping_during: read
+    return_late: josh
+    check_deliverable: read
+    pick_path: read
+    review_work: read
+    check_review: josh
+    decide_stuck: read
+    to_validation: josh
+    deliver: josh
+    pick_sign_off: read
+    close_emailed: josh
+    sign_off: read
+    share_out: shared
+    close: josh
+
+inputs:
+  ticket_key: { type: string, required: true, description: "The JP ticket, for example JP-140" }
+  kind:
+    type: string
+    default: research
+    description: >
+      The work kind from the ticket's action-triage.spec property (research, doc, email, meeting, misc);
+      research when the ticket has none. Picks the agent.
+  system: { type: string, default: none, description: "The registry system triage recorded, or none" }
+  origin: { type: string, default: ticket, description: "email when the ticket came through the Email Research Desk, else ticket" }
+  desk_row: { type: string, default: none, description: "The desk ledger row of the email thread, when origin is email" }
+  phi: { type: boolean, default: true, description: "The ticket's phi_risk; true when the ticket does not say" }
+
+outputs:
+  deliverable_path: { type: string, description: "Where the deliverable is saved, outside any working folder" }
+  evidence_path: { type: string, description: "The evidence file beside it" }
+
+steps:
+  # --- Ready: check the ticket can be worked here ----------------------------------------------------------
+  - id: read_ticket
+    gate: read-ticket
+    inputs: [ticket_key, kind, system, phi]
+    outputs:
+      search_terms: { type: list, description: "Words and synonyms for the lookup, from the ticket" }
+      deliverable_given: { type: boolean, description: "True when the Deliverable format came from Josh, not inferred" }
+    outcomes: [workable, not_here]
+
+  - id: return_early
+    gate: return-to-triage
+    effects: [move_ticket]
+    needs: [read_ticket]
+    when: { step: read_ticket, outcome: not_here }
+    inputs: [ticket_key]
+    outcomes: [returned]
+    on:
+      returned: end
+
+  # --- In Progress: look for an earlier answer, check for gaps, do the work ---------------------------------
+  - id: start_run
+    gate: move-ticket
+    effects: [move_ticket]
+    needs: [return_early]
+    when: { step: read_ticket, outcome: workable }
+    inputs: [ticket_key]
+    outcomes: [moved]
+
+  - id: find_precedent
+    role: jira-searcher
+    brief: "Search JP for tickets that already answered the question on {{ inputs.ticket_key }}. A match is a ticket asking the same question; list closed ones with a Resolution comment first, then open ones."
+    needs: [start_run]
+    inputs: [ticket_key, search_terms]
+    outputs:
+      candidates: { type: list, description: "The role's JSON list of {key, summary, status, is_match, why}, best first" }
+    outcomes: [found, none]
+
+  - id: judge_precedent
+    role: precedent-judge
+    needs: [find_precedent]
+    when: { step: find_precedent, outcome: found }
+    inputs: [ticket_key, candidates]
+    outputs:
+      precedent: { type: string, description: "The one ticket whose resolution answers this one, or none" }
+    outcomes: [answers, related_only]
+
+  - id: check_gaps
+    gate: gap-check
+    needs: [judge_precedent]
+    inputs: [ticket_key, kind, deliverable_given, precedent]
+    outputs:
+      gap: { type: string, description: "The one thing to ask, in one sentence, when the outcome is gap" }
+    outcomes: [clear, gap]
+
+  - id: ping_before
+    needs: [check_gaps]
+    when: { step: check_gaps, outcome: gap }
+    ask:
+      question: "Before I start {{ inputs.ticket_key }}: is the deliverable I assumed the right one? (One sentence is enough.)"
+      choices: [answered]
+
+  - id: do_work
+    role: researcher
+    agent:
+      by: kind
+      map: { research: answerer, doc: drafter, email: drafter, misc: finder }
+      default: answerer
+    brief: "Ticket {{ inputs.ticket_key }}, system {{ inputs.system }}. Read the ticket and its comments, including any answer from Josh."
+    needs: [ping_before]
+    inputs: [ticket_key, system, phi, precedent]
+    outputs:
+      deliverable_path: { type: string, description: "The deliverable, saved in Josh's artifacts folder" }
+      evidence_path: { type: string, contract: evidence }
+    outcomes: [done, blocked, needs_code]
+
+  - id: ping_during
+    needs: [do_work]
+    when: { step: do_work, outcome: blocked }
+    ask:
+      question: "{{ inputs.ticket_key }} is stuck on one missing fact, named in the ticket's last comment. What is it?"
+      choices: [answered]
+    on:
+      answered: { goto: do_work, max_loops: 2, at_limit: decide_stuck }
+
+  - id: return_late
+    gate: return-to-triage
+    effects: [move_ticket]
+    needs: [do_work]
+    when: { step: do_work, outcome: needs_code }
+    inputs: [ticket_key]
+    outcomes: [returned]
+    on:
+      returned: end
+
+  - id: check_deliverable
+    gate: check-deliverable
+    needs: [ping_during, return_late]
+    when: { step: do_work, outcome: done }
+    inputs: [ticket_key, phi, deliverable_path, evidence_path]
+    outcomes: [complete, incomplete]
+    on:
+      incomplete: { goto: do_work, max_loops: 2, at_limit: decide_stuck }
+
+  - id: pick_path
+    gate: pick-path
+    needs: [check_deliverable]
+    inputs: [ticket_key, kind, precedent, evidence_path]
+    outcomes: [short, full]
+
+  - id: review_work
+    role: work-checker
+    needs: [pick_path]
+    when: { step: pick_path, outcome: full }
+    inputs: [ticket_key, deliverable_path, evidence_path]
+    outputs:
+      findings: { type: list, description: "Defects, each quoting the ticket's Question or Deliverable format", contract: feedback }
+    outcomes: [pass, defects]
+
+  - id: check_review
+    gate: check-review
+    needs: [review_work]
+    when: { step: pick_path, outcome: full }
+    inputs: [ticket_key, findings]
+    outcomes: [clean, rework]
+    on:
+      rework: { goto: do_work, max_loops: 2, at_limit: decide_stuck }
+
+  - id: decide_stuck
+    ask:
+      question: "{{ inputs.ticket_key }} has used its work runs (three per run) without a usable deliverable. Allow one more run, or stop and leave it with me?"
+      choices: [retry, stop]
+      on_limit_only: true
+    on:
+      retry: { goto: do_work, max_loops: 1, at_limit: decide_stuck }
+      stop: end
+
+  # --- Validation: hand it to Josh and wait for his sign-off ------------------------------------------------
+  - id: to_validation
+    gate: move-ticket
+    effects: [move_ticket]
+    needs: [check_review]
+    inputs: [ticket_key]
+    outcomes: [moved]
+
+  - id: deliver
+    gate: deliver
+    needs: [to_validation]
+    inputs: [ticket_key, origin, desk_row, phi, deliverable_path, evidence_path]
+    outcomes: [delivered]
+
+  - id: pick_sign_off
+    gate: sign-off-rule
+    needs: [deliver]
+    inputs: [origin]
+    outcomes: [ask_josh, emailed]
+
+  # An emailed ask closes once the answer is in Josh's inbox; his reply to that email reopens the ticket.
+  - id: close_emailed
+    gate: close-ticket
+    effects: [move_ticket]
+    needs: [pick_sign_off]
+    when: { step: pick_sign_off, outcome: emailed }
+    inputs: [ticket_key, phi, evidence_path]
+    outcomes: [closed]
+    on:
+      closed: end
+
+  - id: sign_off
+    needs: [close_emailed]
+    ask:
+      question: "The deliverable for {{ inputs.ticket_key }} is ready (path and summary in the ticket). Sign it off?"
+      choices: [accept, accept_and_share, revise]
+      approves: [share_out]
+      approves_on: [accept_and_share]
+    on:
+      revise: { goto: do_work, max_loops: 2, at_limit: decide_stuck }
+
+  - id: share_out
+    gate: share
+    needs: [sign_off]
+    when: { step: sign_off, outcome: accept_and_share }
+    inputs: [ticket_key, phi, deliverable_path, evidence_path]
+    outcomes: [shared, refused]
+
+  # --- Done: record the resolution so the next lookup finds it ---------------------------------------------
+  - id: close
+    gate: close-ticket
+    effects: [move_ticket]
+    needs: [share_out]
+    inputs: [ticket_key, phi, evidence_path]
+    outcomes: [closed]
