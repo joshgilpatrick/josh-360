@@ -22,7 +22,7 @@
 
 Every background job, hook, data store, skill, agent definition and memory mechanism on Josh's work laptop, each with one verdict and a reason (JP-96). It was written in the cloud from four repositories: claude-harness (Josh's `~/.claude`), macbook-automations, claude-360 (Session Atlas) and action-triage, plus the harness's own storage register of 8 November 2026 (`docs/harness/state-stores.md` and its siblings in claude-harness).
 
-What only the laptop can say (which jobs are loaded, current sizes, when each thing last ran, which skills and agents were used) comes from the one read-only script, `scripts/laptop_inventory.py`, run in the hookup sitting (JP-105). Where a row says "laptop run", that is the field that answers it. A verdict that the run contradicts is changed in the pull request that brings the run back.
+What only the laptop can say (which jobs are loaded, current sizes, when each thing last ran, which skills and agents were used) comes from the one read-only script, `scripts/laptop_inventory.py`. The laptop runs it once on its own, as the JP-105 job `inventory`, and its report comes back on the `laptop-status` branch as `reports/inventory.json`. Where a row says "laptop run", that is the field that answers it. A verdict that the run contradicts is changed in the pull request that brings the run back.
 
 The features of action-triage and Session Atlas have their own ticket (JP-97). Here they appear only as jobs, hooks and stores. Nothing is switched off by this ticket.
 
@@ -246,7 +246,7 @@ Sizes from the storage register of 8 November 2026 unless noted; the laptop run 
 | `docs/harness/generate_inventory.py` | Regenerates the harness register | by hand | `~/.claude` | 2026-11-08 | keep | Complements this script, which covers jobs and figures. |
 | `bin/sync-opencode-agents.py` | OpenCode agent sync | its job | Agents | laptop run | dismantle | Goes with its job. |
 | `commands/seq_tool.md`, `commands/apps.md`, `commands/save-session.md` | Slash commands | by hand | — | laptop run | keep | `save-session` uses the old handoff path; it changes with JP-100. |
-| `scripts/laptop_inventory.py` (josh-360) | This inventory's laptop step | by hand, in the JP-105 sitting | Reads only; writes one output file | new | keep | The repeatable way to refresh this file. |
+| `scripts/laptop_inventory.py` (josh-360) | This inventory's laptop step | the JP-105 job `inventory`, once; or by hand | Reads only; writes its report to standard output or one new file | new | keep | The repeatable way to refresh this file. |
 
 ## Dismantling plan
 
@@ -287,7 +287,7 @@ Collected for JP-106, each with a recommendation. The verdicts above already tak
 
 ## What the laptop run adds
 
-The run (`python3 scripts/laptop_inventory.py --out ~/josh-360-inventory.json`, in the JP-105 sitting) returns, as names, paths, sizes and counts only:
+The run (the JP-105 job `inventory`, which runs `scripts/laptop_inventory_job.py` once after the merge and puts its report on `laptop-status` as `reports/inventory.json`) returns, as names, paths, sizes and counts only. Run as a background job, it leaves out the folders macOS may guard with a privacy prompt (iCloud, OneDrive, Desktop, Documents, Downloads), so the one OneDrive store in the table above reads "skipped":
 
 - every launchd plist and whether launchd has it loaded, with its log file's size and last change (the "last used" column for jobs);
 - the live hooks, plugins and MCP server names;
