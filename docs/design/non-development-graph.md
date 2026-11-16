@@ -8,6 +8,7 @@
 - [The run, step by step](#the-run-step-by-step)
 - [The short path and the full path](#the-short-path-and-the-full-path)
 - [When it asks Josh](#when-it-asks-josh)
+- [How every loop ends](#how-every-loop-ends)
 - [Deliverables and where they live](#deliverables-and-where-they-live)
 - [Evidence and sources](#evidence-and-sources)
 - [Patient data from start to finish](#patient-data-from-start-to-finish)
@@ -118,7 +119,7 @@ flowchart TD
 | `pick_path` | gate | `pick-path` | none | read | Short or full path (see below). |
 | `review_work` | role | `work-checker` | mid | read | Full path only. Lists defects, each quoting the ticket. |
 | `check_review` | gate | `check-review` | none | josh | Drops defects that quote nothing, and saves the rest as feedback. Any left go back to `do_work`. |
-| `decide_stuck` | ask | Josh | none | read | Only when a loop hits its limit: try once more, or stop. |
+| `decide_stuck` | ask | Josh | none | read | Only when a loop or the tier cap is reached: one more run, or stop. |
 | `to_validation` | gate | `move-ticket` | none | josh | Moves the ticket to Validation. |
 | `deliver` | gate | `deliver` | none | josh | A ticket comment with the path and summary. For an emailed ask, also a reply on the email thread through the desk mailer, to Josh only. |
 | `pick_sign_off` | gate | `sign-off-rule` | none | read | `emailed` when the ticket came through the desk, otherwise `ask_josh`. |
@@ -145,9 +146,41 @@ A run asks Josh in four places, all through the one Needs you queue plus the Jir
 1. **`ping_before`, before any work.** `gap-check` fires only on signals a script can see, never on a model's confidence. Today that means no precedent was found and the ticket marks its Deliverable format as inferred rather than given by Josh. This is the "confident about the wrong deliverable" pitfall from Josh's notes: when an earlier answer exists or Josh named the deliverable, the run does not ask.
 2. **`ping_during`, mid-work.** Only when the answer depends on a fact no reachable source holds. Before asking, the researcher comments on the ticket with what it searched. An assumption is not a question: an ambiguous ask gets the likelier reading, stated in the evidence.
 3. **`sign_off`, at the end.** Every deliverable except an emailed ask's. An emailed ask closes once the answer is in Josh's inbox; it stays closed unless he replies to the email, and the reply reopens it. A reopen counts as "sent back" in the improvement figures.
-4. **`decide_stuck`, at a loop limit.** Only when `do_work` has gone round twice.
+4. **`decide_stuck`, at a limit.** Only when `do_work` has used its three runs, or a loop its two trips back (see [How every loop ends](#how-every-loop-ends)).
 
 Josh answers a ping in one sentence. His reply lands on the ticket as a comment, and `do_work` reads every comment, so no new channel is needed. He can always type his own answer, and stopping a ticket is cancelling it in Jira.
+
+## How every loop ends
+
+Josh set two limits on 16 November 2026. First, every loop has a limit that ends at him (the convention's rule 4). Second, no role step runs more times in one run than its tier allows: `cheap` (Haiku) 5, `mid` (Sonnet) 3, `gate` (Opus) 2. The caps live in `graphs/tiers.yaml` as `max_runs` (JP-139). The count goes by tier, not by the model that answered. The walker (JP-114) counts every run of a step, whichever loop caused it. When the next run would pass the cap, the run goes to that loop's `at_limit` ask, and each yes from Josh allows one more run. This follows the triage spec (JP-103), "How every loop ends".
+
+**Role steps and their caps.**
+
+| Step | Tier | Cap per run | Runs again when |
+| --- | --- | --- | --- |
+| `find_precedent` | cheap | 5 | Never. It sits before every loop, so it runs once. |
+| `judge_precedent` | mid | 3 | Never. It runs once, and only when candidates exist. |
+| `do_work` | mid | 3 | Any of the five loops below. They share its three runs. |
+| `review_work` | mid | 3 | Whenever `do_work` runs again on the full path, so never more often than `do_work`. |
+
+**Loops back to `do_work`.** Every loop returns to the one work step, and every one ends at `decide_stuck`.
+
+| Loop | `max_loops` | Runs of `do_work` it allows (`max_loops` + 1, at most 3) |
+| --- | --- | --- |
+| `ping_during` (Josh answered a missing fact) | 2 | 3 |
+| `check_deliverable` incomplete | 2 | 3 |
+| `check_review` rework | 2 | 3 |
+| `sign_off` revise | 2 | 3 |
+| `decide_stuck` retry | 1 | 2 |
+
+So however the loops add up, one run uses at most three Sonnet work runs and three Sonnet reviews before Josh is asked. The fourth work run, and each after it, needs his yes at `decide_stuck`.
+
+**Between runs.** A new run starts with fresh counts, so two rules bound repeats across runs:
+
+- Only a new Ready ticket, or Josh's own reply to an emailed ask, starts a run. The graph's own comments and edits never do (rule 16).
+- A "needs code" or "not workable here" return is counted by triage, which takes a ticket back at most twice. The third return goes straight to Josh (rule 17).
+
+**Inside a step.** A role session that never ends, or a gate script that keeps failing, is the binding's job. Every role step gets a turn cap and a time cap, and a failing gate stops the run instead of being retried (rule 19).
 
 ## Deliverables and where they live
 
@@ -224,7 +257,7 @@ Every gate script in the draft is a stub that refuses to run, so nothing can pas
 6. The researcher reads anything Josh can read, with SELECT-only SQL, and writes only its deliverable, evidence and saved queries in `.artifacts/<system>/` and comments on its own ticket.
 7. Every deliverable passes `check-deliverable`: saved outside any repository or worktree, with at least one source.
 8. The full path's reviewer can only cite the ticket's Question and Deliverable format. `check-review` drops anything else.
-9. Every loop goes round at most twice, then asks Josh.
+9. Every loop goes round at most twice, and no role step runs more often in one run than its tier allows (cheap 5, mid 3, gate 2). Either limit asks Josh, and each yes allows one more run.
 10. Every deliverable waits for Josh's sign-off, except an emailed ask's, which closes when the answer is emailed to him and reopens only on his reply.
 11. Nothing is sent to anyone but Josh. A share runs only on "accept and share", and an email to someone else is only ever a draft in Josh's mailbox.
 12. When `phi` is true, the ticket, email, ledger and resolution carry paths only, and `share` refuses.
@@ -248,7 +281,7 @@ Every gate script in the draft is a stub that refuses to run, so nothing can pas
 
 `decide_stuck`:
 
-> `<KEY>` went round its loop twice without a usable deliverable. Try once more, or stop and leave it with me?
+> `<KEY>` has used its work runs (three per run) without a usable deliverable. Allow one more run, or stop and leave it with me?
 
 `deliver` ticket comment, in the workflow's `result | evidence | next gate` shape:
 
