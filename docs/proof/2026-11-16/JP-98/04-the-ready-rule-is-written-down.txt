@@ -1,0 +1,21 @@
+Scenario: The Ready rule is written down (@auto, tests/test_conventions.py, class TheReadyRuleIsWrittenDown)
+
+$ grep -n -A6 "^## The Ready rule" conventions/tickets.md
+113:## The Ready rule
+114-
+115-A Ready ticket has no open questions for Josh. The one exception is a ticket whose purpose is to produce a spec, a design or a plan: its open questions are its work.
+116-
+117-- Ready means complete: every required section is filled with something a person or an agent can act on without guessing.
+118-- A separate agent signs a ticket off as Ready, or sends it back with a comment naming the open question. The author of a ticket never marks it Ready.
+119-- A ticket that cannot be completed stays in Not Started (Backlog in spaces that have one) with that comment.
+(exit 0)
+
+$ python3 -m unittest -v tests.test_conventions.TheReadyRuleIsWrittenDown
+test_the_ready_rule_is_written_down (tests.test_conventions.TheReadyRuleIsWrittenDown.test_the_ready_rule_is_written_down) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+(exit 0)
+

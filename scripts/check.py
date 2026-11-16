@@ -13,6 +13,7 @@ Checks:
      names exist, nothing in the vision is still marked Proposed, and git ignores a file inside a .phi folder.
   6. The feature list from JP-97 (docs/inventory/features.md): every row has one verdict, a reason and a carrier
      ticket, every retired row says what replaces it, and the Session Atlas focus summaries are retired.
+  7. The conventions files from JP-98 exist and pass scripts/conventions.py (needs PyYAML, requirements.txt).
 
 Tickets that add code add their own checks here or beside it. Exit 0 when everything passes, 1 otherwise.
 """
@@ -50,6 +51,17 @@ LAYOUT = [
 ] + [f"{d}/README.md" for d in (
     "apps", "ledger", "graphs", "conventions", "docs/design", "docs/inventory", "docs/proof",
 )]
+
+# JP-98: the conventions, the system registry, the standing priorities and the surface map.
+CONVENTIONS = [
+    "conventions/tickets.md",
+    "conventions/registry.yaml",
+    "conventions/priorities.yaml",
+    "docs/surface-map.md",
+    "scripts/conventions.py",
+    "tests/test_conventions.py",
+    "requirements.txt",
+]
 
 # A status marker, not the ordinary verb: "Proposed:", "(Proposed)", "**Proposed**", "| Proposed |".
 PROPOSED_MARKER = re.compile(r"(\*\*Proposed\*\*|\(Proposed\)|\bProposed:|\|\s*Proposed\s*\|)")
@@ -158,6 +170,22 @@ def feature_list_problems(text: str) -> list[str]:
     return problems
 
 
+def conventions_problems() -> list[str]:
+    """scripts/conventions.py's own check of the registry and the priorities file."""
+    if not ((ROOT / "conventions/registry.yaml").is_file() and (ROOT / "conventions/priorities.yaml").is_file()):
+        return []  # reported as missing above
+    try:
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import conventions
+    except ImportError as exc:
+        return [f"cannot check conventions/: {exc} (pip install -r requirements.txt)"]
+    try:
+        registry, priorities = conventions.load(conventions.REGISTRY), conventions.load(conventions.PRIORITIES)
+    except conventions.ConventionsFileError as exc:
+        return [f"conventions: {exc}"]
+    return [f"conventions: {p}" for p in conventions.validate(registry, priorities)]
+
+
 def main() -> int:
     problems: list[str] = []
 
@@ -188,6 +216,7 @@ def main() -> int:
             problems += unquoted_colons(md, fm)
 
     docs = [p for p in ROOT.glob("*.md") if p.is_file()] + sorted((ROOT / "docs").rglob("*.md"))
+    docs += sorted((ROOT / "conventions").rglob("*.md"))
     for doc in docs:
         text = doc.read_text(encoding="utf-8")
         known = anchors_in(text)
@@ -211,6 +240,11 @@ def main() -> int:
         problems += feature_list_problems(features.read_text(encoding="utf-8"))
     else:
         problems.append(f"missing: {FEATURES}")
+
+    for rel in CONVENTIONS:
+        if not (ROOT / rel).is_file():
+            problems.append(f"missing: {rel}")
+    problems += conventions_problems()
 
     for p in problems:
         print(p)

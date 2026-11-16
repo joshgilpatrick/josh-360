@@ -1,0 +1,29 @@
+Scenario: The checker refuses a bad registry (@auto, tests/test_conventions.py, class TheCheckerRefusesABadRegistry)
+
+A copy of conventions/registry.yaml with jira_space removed from its first entry (keystone-platform), in a scratch folder:
+
+$ python3 scripts/conventions.py check --registry <scratch>/registry.yaml
+registry system keystone-platform: no jira_space
+conventions: FAILED (1 problem(s))
+(exit 1)
+
+The real files pass:
+
+$ python3 scripts/conventions.py check
+conventions: ok (0 problem(s))
+(exit 0)
+
+$ python3 -m unittest -v tests.test_conventions.TheCheckerRefusesABadRegistry
+test_bad_priorities_files_are_refused_by_name (tests.test_conventions.TheCheckerRefusesABadRegistry.test_bad_priorities_files_are_refused_by_name) ... ok
+test_other_bad_registries_are_refused_by_name (tests.test_conventions.TheCheckerRefusesABadRegistry.test_other_bad_registries_are_refused_by_name) ... ok
+test_the_checker_refuses_a_bad_registry (tests.test_conventions.TheCheckerRefusesABadRegistry.test_the_checker_refuses_a_bad_registry) ... ok
+test_the_cli_exits_with_an_error_that_names_the_entry (tests.test_conventions.TheCheckerRefusesABadRegistry.test_the_cli_exits_with_an_error_that_names_the_entry) ... ok
+test_the_real_files_pass (tests.test_conventions.TheCheckerRefusesABadRegistry.test_the_real_files_pass) ... ok
+test_the_sample_files_pass (tests.test_conventions.TheCheckerRefusesABadRegistry.test_the_sample_files_pass) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.028s
+
+OK
+(exit 0)
+
