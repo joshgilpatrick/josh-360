@@ -1,0 +1,14 @@
+The whole suite, as CI runs it
+
+$ python3 scripts/check.py
+check.py: ok (0 problem(s))
+(exit 0)
+
+$ python3 -m unittest discover -s tests
+....................
+----------------------------------------------------------------------
+Ran 20 tests in 0.088s
+
+OK
+(exit 0)
+
