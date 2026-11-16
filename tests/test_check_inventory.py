@@ -33,6 +33,10 @@ class InventoryCheckTest(unittest.TestCase):
     def test_missing_reason_fails(self):
         self.assertTrue(problems_for(HEADER + "| a | b | c | d | e | dismantle |  |\n"))
 
+    def test_item_table_without_verdict_column_fails(self):
+        head = "| Item | What it is |\n| --- | --- |\n"
+        self.assertTrue(problems_for(head + "| a | b |\n"))
+
     def test_figure_needs_range_and_command(self):
         head = "| Figure | Value | Date range | Produced by |\n| --- | --- | --- | --- |\n"
         self.assertEqual(problems_for(head + "| x | 1 | 2026-11-16 | `gh api` |\n"), [])
