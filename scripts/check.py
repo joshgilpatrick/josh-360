@@ -122,13 +122,14 @@ def feature_list_problems(text: str) -> list[str]:
     "retired" summary table at the top has 3 columns and is not a feature row."""
     problems: list[str] = []
     seen: set[str] = set()
+    section = ""
     for n, line in enumerate(text.splitlines(), 1):
+        if line.startswith("## "):
+            section = line[3:].strip()
         m = FEATURE_ROW.match(line)
-        if not m:
-            continue
+        if not m or section.startswith("Answers"):
+            continue  # the short summary table of retired features sits under "Answers to ..."
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        if len(cells) == 3:
-            continue  # the short summary table of retired features
         if len(cells) != 7:
             problems.append(f"feature row does not have 7 columns: {FEATURES}:{n} ({m.group(1)})")
             continue
@@ -144,7 +145,7 @@ def feature_list_problems(text: str) -> list[str]:
             problems.append(f"no reason: {where}")
         if not CARRIER.search(carrier):
             problems.append(f"no carrier ticket or 'None needed': {where}")
-        if verdict == "Retire" and not re.search(r"Replaced by|Nothing replaces", reason):
+        if verdict.startswith("Retire") and not re.search(r"Replaced by|Nothing replaces", reason):
             problems.append(f"retired without saying what replaces it: {where}")
         if fid.startswith("S") and feature == "Focus summaries" and verdict != "Retire":
             problems.append(f"focus summaries must be retired: {where}")
