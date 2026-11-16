@@ -20,7 +20,14 @@ header:
   entry_gate: triageable
   exit_gate: no-loose-ends
   asks_josh: [ask_josh, ask_returned, ask_at_limit]
-  ledger: [run, step, outcome, loop_count, session, tier, ticket, started_at, ended_at]
+  ledger: [run, step, outcome, loop_count, session, tier, ticket, started_at, ended_at, graph_version, model]
+  # finished is a ticket moved to Ready. A refused exit gate ends as exit_refused (needs-josh, reserved).
+  end_states:
+    finished: success
+    send_back.sent: neutral
+    ask_josh.park: needs-josh
+    ask_returned.park: needs-josh
+    ask_at_limit.park: needs-josh
   access:
     read_ticket: read
     ready_check: read
@@ -110,8 +117,10 @@ steps:
     inputs: [author_kind, failures, kept]
     outputs:
       gaps: { type: list, description: "Script failures and kept defects, numbered", contract: send-back }
-    # escalate: the ticket has come back from another graph a third time (rule 10); the
-    # return count lives in the josh360.route record and survives between runs.
+    # escalate: an own ticket has come back from another graph a third time (rule 10); the
+    # return count lives in the josh360.route record and survives between runs. Someone
+    # else's ticket never escalates: a third return gets a comment like any other gap.
+    # revise is own tickets only; comment is someone else's tickets only.
     outcomes: [ready, revise, comment, escalate]
 
   # ---- Own tickets: the drafter fixes, then the checks run again --------------------------------
@@ -166,7 +175,9 @@ steps:
       choices: [one_more_round, park]
       on_limit_only: true
     on:
-      one_more_round: { goto: revise, max_loops: 1, at_limit: ask_at_limit }
+      # One more round re-reads and re-checks the ticket. The drafter runs again only if the
+      # verdict says revise, which it never does for someone else's ticket (rule 7).
+      one_more_round: { goto: read_ticket, max_loops: 1, at_limit: ask_at_limit }
       park: end
 
   # ---- Someone else's ticket: a comment, never an edit ------------------------------------------
