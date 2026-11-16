@@ -43,7 +43,7 @@ The laptop's job runner does it once, with no one at the keyboard (`scripts/lapt
 python3 scripts/laptop_inventory.py --out ~/josh-360-inventory.json
 ```
 
-Options: `--out -` prints the report instead of writing a file, `--skip-prompting-folders` leaves out the folders macOS may guard with a privacy prompt, `--since` and `--until` (dates) change the range, `--ticket-keys` the keys, `--repo-root` the folders searched for repositories, and `--usage-days` the window for skill and agent use. The script refuses to overwrite an existing file and writes nothing else. Its tests run on made-up data: `python3 -m unittest discover -s tests -v`.
+Options: `--out -` prints the report instead of writing a file, `--skip-prompting-folders` leaves out the folders macOS may guard with a privacy prompt, `--no-brew` does not run `brew` (which writes its own cache), `--since` and `--until` (dates) change the range, `--ticket-keys` the keys, `--repo-root` the folders searched for repositories, and `--usage-days` the window for skill and agent use. The script refuses to overwrite an existing file and writes nothing else; run by hand without `--no-brew`, `brew services list` may refresh Homebrew's own cache. Its tests run on made-up data: `python3 -m unittest discover -s tests -v`.
 
 ## Limits
 
