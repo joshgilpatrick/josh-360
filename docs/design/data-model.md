@@ -69,7 +69,7 @@ Nothing here stores transcript text, message text or file contents, and nothing 
 | Backup | Daily, compressed, kept locally: 14 daily and 8 weekly copies in `~/.josh-360/backups/` | None: it is rebuilt from transcripts and the repository |
 | Kept | For ever (see [Expected size and retention](#expected-size-and-retention)) | Per-message rows for 90 days after their session's cost is copied into the ledger |
 
-**Engine.** SQLite, through Python 3.9's standard `sqlite3` module, because laptop code runs on `/usr/bin/python3` with the standard library only (`.claude/workflow.config.md`, Deploy). It needs no server, no install and no network. The schema uses nothing newer than SQLite 3.31: no `STRICT` tables and no `RETURNING`. Every connection turns on `PRAGMA foreign_keys`, uses write-ahead logging (`journal_mode = WAL`) so the walker and the recorder can write at the same time, and waits up to five seconds for a lock (`busy_timeout`).
+**Engine.** SQLite, through Python 3.9's standard `sqlite3` module, because laptop code runs on `/usr/bin/python3` with the standard library only (`.claude/workflow.config.md`, Deploy). It needs no server, no install and no network. The schema uses nothing newer than SQLite 3.31: no `STRICT` tables and no `RETURNING`. Every connection turns on `PRAGMA foreign_keys` and `PRAGMA recursive_triggers` (without the second, `INSERT OR REPLACE` removes the old row without firing its delete trigger, a hole in the append-only rule), uses write-ahead logging (`journal_mode = WAL`) so the walker and the recorder can write at the same time, and waits up to five seconds for a lock (`busy_timeout`).
 
 **Backup.** A daily job, `ledger-backup` in `jobs.yaml`, copies the live database with SQLite's own backup call (safe while others write), runs `PRAGMA integrity_check` on the copy, compresses it with gzip and keeps the newest 14 daily and 8 weekly copies. To restore: stop the jobs with `laptop/pause.py on`, unzip the chosen copy over `ledger.db`, and resume. Copies stay on the laptop, like the ledger; an off-laptop copy is [question 3](#questions-for-josh).
 
@@ -79,7 +79,7 @@ Nothing here stores transcript text, message text or file contents, and nothing 
 
 ## The append-only rule
 
-1. Every table has a pair of triggers that refuse `UPDATE` and `DELETE`. `tests/test_ledger_schema.py` fails if a table lacks them.
+1. Every table has a pair of triggers that refuse `UPDATE` and `DELETE`, and every connection turns on `recursive_triggers` so `INSERT OR REPLACE` is refused too. `tests/test_ledger_schema.py` fails if a table lacks them or a replace gets through.
 2. A fact that changes over time is a new row, not an edit. A resumed session gets a new episode. A session whose ticket moved epic gets a new home. A re-priced session gets a new cost batch. Views named `current_*` show the newest row.
 3. **A wrong row is withdrawn, not edited.** A row in `corrections` names the table and row, a reason (`wrong`, `duplicate`, `test-row` or `patient-data`) and, if there is one, the row that replaces it. Every `current_*` view leaves withdrawn rows out. `ledger/correct.py` writes corrections; Josh or a script may use it, and each row says which.
 4. **One exception: patient data.** If patient data ever reaches a text column, withdrawing the row is not enough, because the text would still be in the file. `ledger/redact.py`, which only Josh runs, overwrites that one column of that one row with `withheld: patient data`, inside one transaction that drops and restores that table's update trigger, and adds a `redactions` row saying which table, row and column (never what was there). It then rewrites the backups that hold the row. This is a permanent change, so it is Josh's to run.
@@ -183,13 +183,13 @@ Lookup is exact: same `question_key`, same `system`, same `work_type`. An open q
 The recorder works out a home when an episode goes quiet, with no model, in this order. The first step that gives an answer wins. Every answer is written to `session_homes` with the method, the evidence it used and the commit of `conventions/` it read.
 
 1. **Branch name.** The episode's branch starts with a ticket key: `^([A-Z][A-Z0-9]+-[0-9]+)([/-]|$)` (`conventions/tickets.md`, "Branches"), in a space the registry lists or a Linear team key. Method `branch`.
-2. **Ticket links.** Otherwise, the session's `ticket_links`: first the ticket of a graph run the session did a step for (`step_runs.session_uid`), then the newest link from the daemon, an accepted ticket offer, or Josh. A Jira command counts only when it changed the ticket (a comment, a transition, an edit or a create), so a session that only read a ticket is not homed under it. Method `ticket-link`.
+2. **Ticket links.** Otherwise, the session's `ticket_links`: first the ticket of a graph run the session did a step for (`step_runs.session_uid`), then the newest link from the daemon, an accepted ticket offer, or Josh. A Jira command counts only when it moved or commented on the ticket, the rule the cost ledger's Jira hook already follows (`claude-360/src/costledger/jira-hook.ts`), so a session that only read a ticket is not homed under it. Method `ticket-link`.
 3. **The registry.** Otherwise, `scripts/conventions.py lookup --folder <folder>` on the episode's folder, then `--repo <repo>`. The system's registry row gives its area and priority. Method `registry`.
 4. **Unassigned.** Otherwise the home is `unassigned`, and nobody is asked.
 
 For methods 1 and 2, the recorder reads the ticket from Jira to get its epic, the initiative the epic relates to, and its system (its Repository field, else its system label). The priority then comes from `conventions.py priority`: the epic, then the initiative, then the system's area, else `unassigned`. If the Jira read fails, the home is written with the ticket and `jira_read = failed`, and the next pass tries again. A Linear key's home has `tracker = linear` and priority `unassigned` until JP-132 designs personal homes.
 
-As queries, with the registry and priorities read from their JSON copies (see the plan, Task 5):
+As queries, with the registry and priorities read from their JSON copies (see the plan, Task 4):
 
 ```sql
 -- 1. Branch: the newest episode's branch, matched in the recorder (Python re), never by a model.
@@ -459,7 +459,7 @@ Choices that can be undone, taken on the recommended option and recorded in `doc
 | What is "gone quiet"? | `SessionEnd`, or 30 minutes with no new transcript entry. JP-107 owns it, JP-108 reuses it. | Change the rule in the recorder. |
 | Do hooks write the database? | No. They append a spool line; a job writes the database every five minutes. A hook stays fast and a locked database never slows a session. | Let the `SessionEnd` hook write directly. |
 | Is the PR audit a graph run? | Yes, an `external` run with one step per round, until it becomes a graph. | Give audits their own table. |
-| Does a Jira command that only reads a ticket home a session under it? | No; only a command that changes the ticket. | Count every Jira command in rule 2. |
+| Does a Jira command that only reads a ticket home a session under it? | No; only a transition or a comment, the cost ledger hook's own rule. | Count every Jira command in rule 2. |
 | Which version does a run record? | Both the graph file's commit (`graph_version`, JP-140) and josh-360's commit (`repo_commit`), which answers JP-140's open question about parts without a choice. | Drop `repo_commit`. |
 | Where do the growing code lists live? | `ledger/codes.json`, not `CHECK`s. | Move them into `CHECK`s with a migration each. |
 
