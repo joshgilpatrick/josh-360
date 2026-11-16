@@ -1,0 +1,8 @@
+$ bash -c for f in unknown-role unknown-gate missing-header-field; do python3 graphs/tools/check_graph.py --root graphs/tests/fixtures/parts graphs/tests/fixtures/bad/$f.yaml; done
+graphs/tests/fixtures/bad/unknown-role.yaml: step 'publish' names unknown role 'releaser'
+check_graph: FAILED (1 problem(s) in 1 graph(s))
+graphs/tests/fixtures/bad/unknown-gate.yaml: step 'lint_spec' names unknown gate 'lint-the-spec'
+check_graph: FAILED (1 problem(s) in 1 graph(s))
+graphs/tests/fixtures/bad/missing-header-field.yaml: header: missing field 'exit_gate'
+check_graph: FAILED (1 problem(s) in 1 graph(s))
+[exit 1]

@@ -51,13 +51,14 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - What the laptop has installed: `python3 laptop/status.py show` (reads the `laptop-status` branch).
 - Install: merging to `main` installs on the laptop on its own (JP-105). Code that runs on the laptop uses Python 3.9 and the standard library only. A new background job is an entry in `jobs.yaml`; a new Claude Code hook is an executable file in `hooks/<Event>/`; a new install step goes in `STEPS` in `laptop/install.py`.
 - Pause the laptop from the cloud: push a branch named `laptop-pause`; delete it to resume.
+- Graph checker on its own: `python3 graphs/tools/check_graph.py` (rules in `graphs/CONVENTION.md`).
 
 ## Layout
 
 - `README.md`: what the repository is and where things live.
 - `apps/`: runnable parts (moved in from Session Atlas and action-triage later).
 - `ledger/`: the ledger, the local record of every agent session.
-- `graphs/`: the agent graphs and the walker.
+- `graphs/`: the agent graphs and the walker. How a graph is stored, and the checker's rules: `graphs/CONVENTION.md`.
 - `conventions/`: ticket conventions (`tickets.md`), the system registry (`registry.yaml`) and the standing priorities (`priorities.yaml`). Ticket rules for all of Josh's work start here.
 - `docs/surface-map.md`: every surface Josh works through, and where its configuration lives.
 - `docs/vision-and-roadmap.md`: the approved vision and roadmap (the requirements source).

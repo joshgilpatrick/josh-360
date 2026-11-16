@@ -1,0 +1,125 @@
+# A made-up graph that follows the convention. The checker's tests use it; it is not a real graph.
+convention: 1
+graph: valid
+title: Sample graph that follows the convention
+description: >
+  A made-up ticket goes from a spec to a reviewed pull request, then a release note goes on a
+  shared page once Josh approves it.
+
+header:
+  jira:
+    - { status: Design/Planning, steps: [design, lint_spec, approve_spec] }
+    - { status: In Progress, steps: [build] }
+    - { status: Code Review, steps: [review, check_review, decide_review, publish] }
+    - { status: Validation, steps: [to_validation, approve_note, post_note] }
+  entry_gate: ready
+  exit_gate: no-loose-ends
+  asks_josh: [approve_spec, decide_review, approve_note]
+  ledger: [run, step, outcome, loop_count, session, tier]
+  access:
+    design: josh
+    lint_spec: read
+    approve_spec: read
+    build: josh
+    review: read
+    check_review: josh
+    decide_review: read
+    publish: josh
+    to_validation: josh
+    approve_note: read
+    post_note: shared
+
+inputs:
+  ticket_key: { type: string, required: true, description: Jira key of the made-up ticket }
+  system: { type: string, default: none, description: The ticket's system label }
+
+outputs:
+  pr_url: { type: string }
+
+steps:
+  - id: design
+    role: designer
+    brief: "Ticket: {{ inputs.ticket_key }}."
+    inputs: [ticket_key]
+    outputs:
+      spec_path: { type: string, contract: spec }
+    outcomes: [ready]
+
+  - id: lint_spec
+    gate: lint-spec
+    needs: [design]
+    inputs: [spec_path]
+    outcomes: [pass, incomplete]
+    on:
+      incomplete: { goto: design, max_loops: 3, at_limit: approve_spec }
+
+  - id: approve_spec
+    needs: [lint_spec]
+    ask:
+      question: "The spec for {{ inputs.ticket_key }} is ready. Start building?"
+      choices: [build, revise]
+    on:
+      revise: { goto: design, max_loops: 3, at_limit: approve_spec }
+
+  - id: build
+    role: builder
+    agent: { by: system, map: { sample: sample-builder } }
+    tier: cheap
+    needs: [approve_spec]
+    when: { step: approve_spec, outcome: build }
+    inputs: [spec_path]
+    outcomes: [done]
+
+  - id: review
+    role: code-reviewer
+    needs: [build]
+    inputs: [spec_path]
+    outputs:
+      defects: { type: list, description: "Defects, each quoting the spec" }
+    outcomes: [pass, defects]
+
+  - id: check_review
+    gate: check-review
+    needs: [review]
+    inputs: [defects, spec_path]
+    outcomes: [clean, rework]
+    on:
+      rework: { goto: build, max_loops: 3, at_limit: decide_review }
+
+  - id: decide_review
+    ask:
+      question: "Review rework hit its limit on {{ inputs.ticket_key }}. Try once more?"
+      choices: [retry, stop]
+      on_limit_only: true
+    on:
+      retry: { goto: build, max_loops: 1, at_limit: decide_review }
+      stop: end
+
+  - id: publish
+    role: publisher
+    needs: [check_review]
+    when: { step: check_review, outcome: clean }
+    outputs:
+      pr_url: { type: string }
+    outcomes: [opened]
+
+  - id: to_validation
+    gate: move-ticket
+    effects: [move_ticket, set_label]
+    needs: [publish]
+    inputs: [ticket_key]
+    outcomes: [moved]
+
+  - id: approve_note
+    needs: [to_validation]
+    ask:
+      question: "Post the release note for {{ inputs.ticket_key }} on the shared page?"
+      choices: [post, skip]
+      approves: [post_note]
+      approves_on: [post]
+
+  - id: post_note
+    role: publisher
+    needs: [approve_note]
+    when: { step: approve_note, outcome: post }
+    outcomes: [posted]

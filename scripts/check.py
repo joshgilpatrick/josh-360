@@ -22,6 +22,9 @@ Checks:
      features.md) has exactly one verdict of keep, migrate, build new or dismantle, and a reason; every row
      of a table with Date range and Produced by columns states both; a table of items (a "What it is"
      column) must have Verdict and Reason columns; and laptop.md and starting-figures.md must exist.
+ 11. JP-101: every graph passes the graph checker (graphs/tools/check_graph.py), and the checker's own tests
+     in graphs/tests/ pass (skipped with --fast). Both need PyYAML (requirements.txt). Markdown under graphs/
+     is anchor-checked too.
 
 Tickets that add code add their own checks here or beside it. Exit 0 when everything passes, 1 otherwise.
 """
@@ -60,7 +63,14 @@ LAYOUT = [
     ".gitignore",
 ] + [f"{d}/README.md" for d in (
     "apps", "ledger", "graphs", "conventions", "docs/design", "docs/inventory", "docs/proof",
-)]
+)] + ["graphs/CONVENTION.md", "graphs/tiers.yaml", "graphs/tools/check_graph.py"] + [
+    f"graphs/{d}/README.md" for d in ("flows", "roles", "agents", "gates", "contracts", "bindings")
+]
+
+
+def run_quietly(argv: list[str]) -> tuple[int, str]:
+    result = subprocess.run([sys.executable, *argv], cwd=ROOT, capture_output=True, text=True)
+    return result.returncode, (result.stdout + result.stderr).strip()
 
 # JP-98: the conventions, the system registry, the standing priorities and the surface map.
 CONVENTIONS = [
@@ -304,6 +314,7 @@ def main() -> int:
             problems += unquoted_colons(md, fm)
 
     docs = [p for p in ROOT.glob("*.md") if p.is_file()] + sorted((ROOT / "docs").rglob("*.md"))
+    docs += sorted((ROOT / "graphs").rglob("*.md"))
     docs += sorted((ROOT / "conventions").rglob("*.md"))
     for doc in docs:
         text = doc.read_text(encoding="utf-8")
@@ -343,6 +354,14 @@ def main() -> int:
     for doc in sorted((ROOT / "docs/inventory").glob("*.md")):
         if doc != ROOT / FEATURES:  # JP-97's list has its own verdicts and check (check 6)
             problems += inventory_problems(doc)
+
+    code, output = run_quietly(["graphs/tools/check_graph.py"])
+    if code != 0:
+        problems.append(f"graph checker failed:\n{output}")
+    if "--fast" not in sys.argv[1:]:
+        code, output = run_quietly(["-m", "unittest", "discover", "-s", "graphs/tests"])
+        if code != 0:
+            problems.append(f"graph checker tests failed:\n{output}")
 
     for p in problems:
         print(p)
