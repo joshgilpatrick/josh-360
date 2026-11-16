@@ -1,0 +1,5 @@
+$ python3 graphs/tools/check_graph.py --root graphs/tests/fixtures/parts graphs/tests/fixtures/bad/loop-without-limit.yaml
+graphs/tests/fixtures/bad/loop-without-limit.yaml: loop lint_spec -> design (outcome 'incomplete') has no max_loops
+graphs/tests/fixtures/bad/loop-without-limit.yaml: loop lint_spec -> design (outcome 'incomplete') has no at_limit, so it does not end at a human
+check_graph: FAILED (2 problem(s) in 1 graph(s))
+[exit 1]
