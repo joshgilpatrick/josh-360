@@ -44,7 +44,8 @@ class InventoryCheckTest(unittest.TestCase):
 
     def test_repo_inventory_passes(self):
         for doc in sorted((ROOT / "docs/inventory").glob("*.md")):
-            self.assertEqual(check.inventory_problems(doc), [], doc.name)
+            if doc != ROOT / check.FEATURES:  # JP-97's feature list has its own check
+                self.assertEqual(check.inventory_problems(doc), [], doc.name)
 
 
 if __name__ == "__main__":
