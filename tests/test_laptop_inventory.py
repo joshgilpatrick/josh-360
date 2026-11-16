@@ -353,9 +353,15 @@ class LaptopInventoryTest(unittest.TestCase):
         shutil.copytree(ROOT / "scripts", copy, ignore=shutil.ignore_patterns("__pycache__"))
         (self.home / "Documents").mkdir()
         (self.home / "Documents/agent-notes").mkdir()
+        # A brew that leaves a mark if anything runs it, first on PATH, so the test does not depend on
+        # whether the machine has Homebrew (the PR #11 audit: a real brew writes its cache into HOME).
+        fake_bin = self.tmp / "fake-bin"
+        fake_bin.mkdir()
+        (fake_bin / "brew").write_text(f"#!/bin/sh\ntouch {self.tmp / 'brew-was-run'}\n")
+        (fake_bin / "brew").chmod(0o755)
         before = snapshot(self.tmp)
         env = {k: v for k, v in os.environ.items() if k != "PYTHONDONTWRITEBYTECODE"}
-        env.update(HOME=str(self.home), PATH="/usr/bin:/bin:/usr/sbin:/sbin")
+        env.update(HOME=str(self.home), PATH=f"{fake_bin}:/usr/bin:/bin:/usr/sbin:/sbin")
         try:
             run = subprocess.run([sys.executable, str(copy / "laptop_inventory_job.py")], cwd=str(copy),
                                  capture_output=True, text=True, env=env, timeout=120)
@@ -371,9 +377,63 @@ class LaptopInventoryTest(unittest.TestCase):
             onedrive = [k for k in report["stores"]["known"] if k.startswith("~/Library/CloudStorage/")]
             self.assertEqual([report["stores"]["known"][k] for k in onedrive], [{"skipped": "may prompt"}])
             self.assertNotIn("~/Documents", report["stores"]["home_folders"])
+            self.assertEqual(report["brew_services"], {"available": False, "skipped": "brew writes its own cache"})
         finally:
+            shutil.rmtree(fake_bin)
             shutil.rmtree(copy)
             shutil.rmtree(self.home / "Documents")
+
+    # PR #11 review: the skip must follow symlinks. A link that leads into OneDrive is not walked, by the
+    # path as written or through a chain of relative links, and nothing behind it is opened.
+    def test_symlinks_into_prompting_folders_are_not_followed(self):
+        cloud = self.home / "Library/CloudStorage/OneDrive-Example/skills/task-manager"
+        cloud.mkdir(parents=True)
+        (cloud / "SKILL.md").write_text(CANARY)
+        (cloud / "notes.db").write_bytes(b"z" * 10)
+        links = [self.home / ".claude/skills/task-manager", self.home / ".config/twg",
+                 self.home / "hop1", self.home / "hop2"]
+        links[0].symlink_to(cloud, target_is_directory=True)
+        links[1].parent.mkdir(exist_ok=True)
+        links[1].symlink_to("../Library/CloudStorage/OneDrive-Example/skills")  # relative link
+        links[3].symlink_to("Library/CloudStorage/OneDrive-Example")
+        links[2].symlink_to("hop2")  # a chain: hop1 -> hop2 -> OneDrive
+        cloud_real = os.path.realpath(str(cloud.parent.parent))
+        touched = []
+        real = {name: getattr(os, name) for name in ("stat", "lstat", "scandir", "listdir")}
+
+        def spy(name):
+            def call(p=".", *a, **k):
+                s = os.path.abspath(os.fspath(p))
+                follows = name != "lstat" and k.get("follow_symlinks", True)  # Path.lstat is stat(follow_symlinks=False)
+                if s.startswith(cloud_real) or (follows and s in {str(l) for l in links}):
+                    touched.append((name, s))
+                return real[name](p, *a, **k)
+            return call
+        try:
+            with mock.patch.multiple(os, **{n: spy(n) for n in real}):
+                report = laptop_inventory.build(self.home, date(2026, 11, 2), date(2026, 11, 15), ["JP"],
+                                                [self.home / "Development", self.home / "hop1"], 36500,
+                                                date(2026, 11, 16), skip_prompting=True)
+            homes = [str(self.home), os.path.realpath(str(self.home))]
+            with mock.patch.dict(laptop_inventory.GUARD, {"homes": homes}):
+                self.assertTrue(laptop_inventory.leads_into_prompting(self.home / "hop1"))  # hop1 -> hop2 -> OneDrive
+                self.assertTrue(laptop_inventory.leads_into_prompting(self.home / ".config/twg/x"))
+                self.assertFalse(laptop_inventory.leads_into_prompting(self.home / ".claude/atlas"))
+            self.assertFalse(laptop_inventory.leads_into_prompting(self.home / "hop1"))  # guard off after build
+            self.assertEqual(touched, [])
+            self.assertEqual(report["stores"]["known"]["~/.config/twg"], {"skipped": "may prompt"})
+            self.assertIsNone(report["definitions"][".claude/skills"]["task-manager"])
+            self.assertFalse(any("notes.db" in k for k in report["stores"]["sqlite_files"]))
+            self.assertEqual(report["loose_ends"]["roots"], ["~/Development"])
+            self.assertNotIn("CANARY", json.dumps(report))
+            # Without the job's flag, the same home is walked as before (the by-hand run is unchanged).
+            plain = laptop_inventory.build(self.home, date(2026, 11, 2), date(2026, 11, 15), ["JP"],
+                                           [self.home / "Development"], 36500, date(2026, 11, 16))
+            self.assertEqual(plain["stores"]["known"]["~/.config/twg"]["files"], 2)
+        finally:
+            for link in links:
+                link.unlink()
+            shutil.rmtree(self.home / "Library/CloudStorage")
 
     def test_the_job_is_listed_once_with_a_report(self):
         sys.path.insert(0, str(ROOT / "laptop"))
