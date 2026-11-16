@@ -12,16 +12,16 @@
 #   rest are logged.
 set -u
 event="${1:-}"
-case "$event" in ''|*/*|.*) exit 0 ;; esac
+case "$event" in ''|*/*|.*) cat >/dev/null; exit 0 ;; esac
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 dir="${here}/${event}"
-[ -d "$dir" ] || exit 0
+if [ ! -d "$dir" ]; then cat >/dev/null; exit 0; fi
 
 hooks=()
 for f in "$dir"/*; do
   [ -f "$f" ] && [ -x "$f" ] && hooks+=("$f")
 done
-[ "${#hooks[@]}" -eq 0 ] && exit 0
+if [ "${#hooks[@]}" -eq 0 ]; then cat >/dev/null; exit 0; fi
 
 log_dir="${JOSH360_HOME:-$HOME/.josh-360}/logs"
 log() {
