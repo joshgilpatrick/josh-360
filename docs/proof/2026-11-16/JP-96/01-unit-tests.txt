@@ -1,0 +1,98 @@
+$ python3 -m unittest discover -s tests -t tests -v   (Python 3.13)
+test_figure_needs_range_and_command (test_check_inventory.InventoryCheckTest.test_figure_needs_range_and_command) ... ok
+test_good_row_passes (test_check_inventory.InventoryCheckTest.test_good_row_passes) ... ok
+test_item_table_without_verdict_column_fails (test_check_inventory.InventoryCheckTest.test_item_table_without_verdict_column_fails) ... ok
+test_missing_reason_fails (test_check_inventory.InventoryCheckTest.test_missing_reason_fails) ... ok
+test_repo_inventory_passes (test_check_inventory.InventoryCheckTest.test_repo_inventory_passes) ... ok
+test_two_verdicts_fail (test_check_inventory.InventoryCheckTest.test_two_verdicts_fail) ... ok
+test_unknown_verdict_fails (test_check_inventory.InventoryCheckTest.test_unknown_verdict_fails) ... ok
+test_a_known_folder_resolves (test_conventions.AKnownFolderResolves.test_a_known_folder_resolves) ... ok
+test_a_known_repository_resolves (test_conventions.AKnownFolderResolves.test_a_known_repository_resolves) ... ok
+test_a_linear_system_names_its_team_not_a_jira_space (test_conventions.AKnownFolderResolves.test_a_linear_system_names_its_team_not_a_jira_space) ... ok
+test_a_relative_folder_resolves_from_where_the_command_runs (test_conventions.AKnownFolderResolves.test_a_relative_folder_resolves_from_where_the_command_runs) ... ok
+test_a_subfolder_of_a_known_folder_resolves (test_conventions.AKnownFolderResolves.test_a_subfolder_of_a_known_folder_resolves) ... ok
+test_every_real_registry_folder_resolves_to_its_own_system (test_conventions.AKnownFolderResolves.test_every_real_registry_folder_resolves_to_its_own_system) ... ok
+test_the_cli_prints_the_answer_as_json (test_conventions.AKnownFolderResolves.test_the_cli_prints_the_answer_as_json) ... ok
+test_the_most_specific_folder_wins (test_conventions.AKnownFolderResolves.test_the_most_specific_folder_wins) ... ok
+test_an_unknown_folder_stays_unassigned (test_conventions.AnUnknownFolderStaysUnassigned.test_an_unknown_folder_stays_unassigned) ... ok
+test_an_unknown_repository_stays_unassigned (test_conventions.AnUnknownFolderStaysUnassigned.test_an_unknown_repository_stays_unassigned) ... ok
+test_nothing_is_guessed_from_a_similar_name (test_conventions.AnUnknownFolderStaysUnassigned.test_nothing_is_guessed_from_a_similar_name) ... ok
+test_the_cli_says_unassigned_and_exits_zero (test_conventions.AnUnknownFolderStaysUnassigned.test_the_cli_says_unassigned_and_exits_zero) ... ok
+test_the_most_specific_link_wins (test_conventions.PriorityFromJiraLinks.test_the_most_specific_link_wins) ... ok
+test_unknown_links_stay_unassigned (test_conventions.PriorityFromJiraLinks.test_unknown_links_stay_unassigned) ... ok
+test_a_file_that_is_not_valid_yaml_is_named (test_conventions.TheCheckerRefusesABadRegistry.test_a_file_that_is_not_valid_yaml_is_named) ... ok
+test_bad_priorities_files_are_refused_by_name (test_conventions.TheCheckerRefusesABadRegistry.test_bad_priorities_files_are_refused_by_name) ... ok
+test_other_bad_registries_are_refused_by_name (test_conventions.TheCheckerRefusesABadRegistry.test_other_bad_registries_are_refused_by_name) ... ok
+test_the_checker_refuses_a_bad_registry (test_conventions.TheCheckerRefusesABadRegistry.test_the_checker_refuses_a_bad_registry) ... ok
+test_the_cli_exits_with_an_error_that_names_the_entry (test_conventions.TheCheckerRefusesABadRegistry.test_the_cli_exits_with_an_error_that_names_the_entry) ... ok
+test_the_real_files_pass (test_conventions.TheCheckerRefusesABadRegistry.test_the_real_files_pass) ... ok
+test_the_sample_files_pass (test_conventions.TheCheckerRefusesABadRegistry.test_the_sample_files_pass) ... ok
+test_wrong_types_are_refused_by_name_without_a_traceback (test_conventions.TheCheckerRefusesABadRegistry.test_wrong_types_are_refused_by_name_without_a_traceback) ... ok
+test_the_ready_rule_is_written_down (test_conventions.TheReadyRuleIsWrittenDown.test_the_ready_rule_is_written_down) ... ok
+test_a_cloud_session_can_see_the_result (test_follow.FollowTest.test_a_cloud_session_can_see_the_result)
+Scenario: A cloud session can see the result. ... ok
+test_a_failed_install_leaves_the_last_good_install (test_follow.FollowTest.test_a_failed_install_leaves_the_last_good_install) ... ok
+test_a_merge_reaches_the_laptop_on_its_own (test_follow.FollowTest.test_a_merge_reaches_the_laptop_on_its_own)
+Scenario: A merge reaches the laptop on its own (one launchd pass of the runner, nothing else). ... ok
+test_a_once_job_reports_back_on_the_status_branch (test_follow.FollowTest.test_a_once_job_reports_back_on_the_status_branch)
+The mechanism the inventory (JP-96) will use: a once job whose JSON output comes back. ... ok
+test_josh_can_pause_it_from_the_cloud (test_follow.FollowTest.test_josh_can_pause_it_from_the_cloud)
+Scenario: Josh can pause it (a laptop-pause branch on GitHub). ... ok
+test_josh_can_pause_it_on_the_laptop (test_follow.FollowTest.test_josh_can_pause_it_on_the_laptop)
+Scenario: Josh can pause it (local switch). ... ok
+test_local_changes_stop_it (test_follow.FollowTest.test_local_changes_stop_it) ... ok
+test_nothing_new_is_not_pushed_again (test_follow.FollowTest.test_nothing_new_is_not_pushed_again) ... ok
+test_refuses_to_run_from_any_other_clone (test_follow.FollowTest.test_refuses_to_run_from_any_other_clone)
+A clone Josh works in is never moved, recorded as installed, or reported. ... ok
+test_a_broken_hook_fails_open (test_hooks.DispatchTest.test_a_broken_hook_fails_open) ... ok
+test_a_new_hook_file_is_picked_up (test_hooks.DispatchTest.test_a_new_hook_file_is_picked_up) ... ok
+test_exit_2_blocks (test_hooks.DispatchTest.test_exit_2_blocks) ... ok
+test_files_that_are_not_executable_are_ignored (test_hooks.DispatchTest.test_files_that_are_not_executable_are_ignored) ... ok
+test_first_json_wins (test_hooks.DispatchTest.test_first_json_wins) ... ok
+test_no_hooks_is_a_quiet_no_op (test_hooks.DispatchTest.test_no_hooks_is_a_quiet_no_op) ... ok
+test_odd_event_names_do_nothing (test_hooks.DispatchTest.test_odd_event_names_do_nothing) ... ok
+test_dry_run_changes_nothing (test_install.InstallTest.test_dry_run_changes_nothing) ... ok
+test_running_twice_reports_no_changes (test_install.InstallTest.test_running_twice_reports_no_changes)
+Scenario: Running it twice is safe. ... ok
+test_stays_in_its_lane (test_install.InstallTest.test_stays_in_its_lane)
+Scenario: The install script stays in its lane. ... ok
+test_stops_on_a_bad_hooks_folder (test_install.InstallTest.test_stops_on_a_bad_hooks_folder) ... ok
+test_stops_on_a_linked_state_folder (test_install.InstallTest.test_stops_on_a_linked_state_folder) ... ok
+test_stops_with_nothing_changed_on_the_unexpected (test_install.InstallTest.test_stops_with_nothing_changed_on_the_unexpected) ... ok
+test_once_and_report (test_install.JobsFileTest.test_once_and_report) ... ok
+test_rejects_what_it_does_not_expect (test_install.JobsFileTest.test_rejects_what_it_does_not_expect) ... ok
+test_the_real_file_starts_with_follow (test_install.JobsFileTest.test_the_real_file_starts_with_follow) ... ok
+test_refuses_any_path_outside_home (test_install.LaneTest.test_refuses_any_path_outside_home) ... ok
+wrote <tmp>/out/inventory.json: 2 launchd plists, 2 sessions, 1 repos, 0.0 s
+test_default_range_is_twelve_whole_weeks (test_laptop_inventory.LaptopInventoryTest.test_default_range_is_twelve_whole_weeks) ... ok
+test_failing_section_is_recorded_and_the_rest_runs (test_laptop_inventory.LaptopInventoryTest.test_failing_section_is_recorded_and_the_rest_runs) ... ok
+test_guard_refuses_text (test_laptop_inventory.LaptopInventoryTest.test_guard_refuses_text) ... ok
+test_lists_jobs_hooks_plugins_and_stores (test_laptop_inventory.LaptopInventoryTest.test_lists_jobs_hooks_plugins_and_stores) ... ok
+test_loose_ends (test_laptop_inventory.LaptopInventoryTest.test_loose_ends) ... ok
+test_non_utf8_branch_name_does_not_stop_git (test_laptop_inventory.LaptopInventoryTest.test_non_utf8_branch_name_does_not_stop_git) ... ok
+test_non_utf8_command_output_does_not_stop_the_run (test_laptop_inventory.LaptopInventoryTest.test_non_utf8_command_output_does_not_stop_the_run) ... ok
+test_only_read_only_commands (test_laptop_inventory.LaptopInventoryTest.test_only_read_only_commands) ... ok
+test_output_holds_no_file_contents (test_laptop_inventory.LaptopInventoryTest.test_output_holds_no_file_contents) ... ok
+test_paths_through_a_symlink_stay_home_relative (test_laptop_inventory.LaptopInventoryTest.test_paths_through_a_symlink_stay_home_relative) ... ok
+test_refuses_to_overwrite (test_laptop_inventory.LaptopInventoryTest.test_refuses_to_overwrite) ... refusing to overwrite <tmp>/out/inventory.json
+ok
+test_runs_on_python_39_syntax (test_laptop_inventory.LaptopInventoryTest.test_runs_on_python_39_syntax) ... ok
+test_script_run_writes_no_bytecode (test_laptop_inventory.LaptopInventoryTest.test_script_run_writes_no_bytecode) ... ok
+test_session_figures (test_laptop_inventory.LaptopInventoryTest.test_session_figures) ... ok
+test_shell_string_job_keeps_only_path_words (test_laptop_inventory.LaptopInventoryTest.test_shell_string_job_keeps_only_path_words) ... ok
+test_symlinked_home_run_keeps_home_relative_paths (test_laptop_inventory.LaptopInventoryTest.test_symlinked_home_run_keeps_home_relative_paths) ... wrote <tmp>/out/via-alias.json: 2 launchd plists, 2 sessions, 1 repos, 0.0 s
+ok
+test_unreadable_store_is_reported_not_fatal (test_laptop_inventory.LaptopInventoryTest.test_unreadable_store_is_reported_not_fatal) ... ok
+test_use_is_dated_by_the_call_not_the_session_start (test_laptop_inventory.LaptopInventoryTest.test_use_is_dated_by_the_call_not_the_session_start) ... ok
+test_writes_nothing_but_its_output_file (test_laptop_inventory.LaptopInventoryTest.test_writes_nothing_but_its_output_file) ... ok
+
+----------------------------------------------------------------------
+Ran 75 tests in 9.246s
+
+OK
+
+$ uv run --python 3.9 --no-project --with pyyaml python -m unittest discover -s tests -t tests   (Python 3.9, as on macOS)
+----------------------------------------------------------------------
+Ran 75 tests in 9.326s
+
+OK

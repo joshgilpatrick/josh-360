@@ -15,8 +15,13 @@ Checks:
      ticket, every retired row says what replaces it, and the Session Atlas focus summaries are retired.
   7. The conventions files from JP-98 exist and pass scripts/conventions.py (needs PyYAML, requirements.txt).
   8. The laptop side from JP-105: its files exist, hooks/dispatch is executable and parses as bash, and every
-     Python file that runs on the laptop parses as Python 3.9 (the laptop's /usr/bin/python3).
+     Python file that runs on the laptop (including JP-96's two laptop scripts) parses as Python 3.9 (the
+     laptop's /usr/bin/python3).
   9. The tests in tests/ (skipped with --fast).
+ 10. JP-96 inventory: every row of a table with Verdict and Reason columns in docs/inventory/ (except
+     features.md) has exactly one verdict of keep, migrate, build new or dismantle, and a reason; every row
+     of a table with Date range and Produced by columns states both; a table of items (a "What it is"
+     column) must have Verdict and Reason columns; and laptop.md and starting-figures.md must exist.
 
 Tickets that add code add their own checks here or beside it. Exit 0 when everything passes, 1 otherwise.
 """
@@ -87,7 +92,8 @@ def laptop_problems() -> list[str]:
             problems.append("not executable: hooks/dispatch")
         if subprocess.run(["bash", "-n", str(dispatch)]).returncode != 0:
             problems.append("does not parse as bash: hooks/dispatch")
-    for py in sorted((ROOT / "laptop").glob("*.py")) + sorted((ROOT / "hooks").rglob("*.py")):
+    jp96 = [ROOT / "scripts/laptop_inventory.py", ROOT / "scripts/laptop_figures.py"]  # run by hand on the laptop
+    for py in sorted((ROOT / "laptop").glob("*.py")) + sorted((ROOT / "hooks").rglob("*.py")) + jp96:
         try:
             ast.parse(py.read_text(encoding="utf-8"), filename=str(py), feature_version=(3, 9))
         except SyntaxError as e:
@@ -228,6 +234,46 @@ def conventions_problems() -> list[str]:
     return [f"conventions: {p}" for p in conventions.validate(registry, priorities)]
 
 
+INVENTORY_VERDICTS = {"keep", "migrate", "build new", "dismantle"}
+
+
+def table_rows(text: str):
+    """Yields (header, cells, line number) for every Markdown table body row."""
+    header = None
+    for n, line in enumerate(text.splitlines(), 1):
+        stripped = line.strip()
+        if not (stripped.startswith("|") and stripped.endswith("|")):
+            header = None
+            continue
+        cells = [c.strip() for c in stripped.strip("|").split("|")]
+        if header is None:
+            header = cells
+        elif not all(re.fullmatch(r":?-+:?", c) for c in cells):
+            yield header, cells, n
+
+
+def inventory_problems(path: Path) -> list[str]:
+    problems = []
+    rel = path.relative_to(ROOT) if path.is_relative_to(ROOT) else path
+    for header, cells, n in table_rows(path.read_text(encoding="utf-8")):
+        row = dict(zip(header, cells))
+        if len(cells) != len(header):
+            problems.append(f"inventory row has {len(cells)} cells, header has {len(header)}: {rel}:{n}")
+            continue
+        if "What it is" in row and not ("Verdict" in row and "Reason" in row):
+            problems.append(f"inventory table of items (a 'What it is' column) without Verdict and Reason columns: {rel}:{n}")
+            continue
+        if "Verdict" in row and "Reason" in row:
+            if row["Verdict"] not in INVENTORY_VERDICTS:
+                problems.append(f"inventory row without exactly one verdict: {rel}:{n}: {row['Verdict']!r}")
+            if len(row["Reason"]) < 10:
+                problems.append(f"inventory row without a reason: {rel}:{n}")
+        if "Date range" in row and "Produced by" in row:
+            if not row["Date range"] or not row["Produced by"]:
+                problems.append(f"figure without a date range or command: {rel}:{n}")
+    return problems
+
+
 def main() -> int:
     problems: list[str] = []
 
@@ -290,6 +336,13 @@ def main() -> int:
     problems += laptop_problems()
     if "--fast" not in sys.argv[1:]:
         problems += test_problems()
+
+    for name in ("laptop.md", "starting-figures.md"):
+        if not (ROOT / "docs/inventory" / name).is_file():
+            problems.append(f"JP-96 deliverable missing: docs/inventory/{name}")
+    for doc in sorted((ROOT / "docs/inventory").glob("*.md")):
+        if doc != ROOT / FEATURES:  # JP-97's list has its own verdicts and check (check 6)
+            problems += inventory_problems(doc)
 
     for p in problems:
         print(p)
