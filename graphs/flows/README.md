@@ -1,7 +1,8 @@
 # Flows
 
-One graph file per graph, `<graph>.yaml`, following `graphs/CONVENTION.md`. The four graphs are designed in their own phase 1 tickets (JP-102, JP-103, JP-104, and the development graph's). A draft graph's gate scripts are stubs that refuse to run until its build ticket.
+One graph file per graph, `<graph>.yaml`, following `graphs/CONVENTION.md`. The four graphs are designed in their own phase 1 tickets (JP-102, JP-103, JP-104, and the development graph's).
 
-| File | Graph | Design | State |
-| --- | --- | --- | --- |
-| `non-development.yaml` | Non-development pipeline | `docs/design/non-development-graph.md` (JP-104) | Draft; built in JP-123 |
+| File | Graph | State |
+| --- | --- | --- |
+| `triage.yaml` | Ticket triage and sign-off | Draft from JP-103; its gate scripts are stubs until JP-122 builds them |
+| `non-development.yaml` | Non-development pipeline | Draft from JP-104 (`docs/design/non-development-graph.md`); its gate scripts are stubs until JP-123 builds them |
