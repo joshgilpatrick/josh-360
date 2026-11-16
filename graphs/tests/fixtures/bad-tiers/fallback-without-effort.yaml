@@ -1,0 +1,8 @@
+# Bad on purpose: the cheap tier's second entry (a fallback) is a mapping with no effort.
+convention: 1
+tiers:
+  cheap:
+    - {model: sample-small-model, effort: high}
+    - {model: claude-sonnet-5-5}
+  mid: [{model: sample-medium-model, effort: medium}]
+  gate: [{model: sample-large-model, effort: high}]

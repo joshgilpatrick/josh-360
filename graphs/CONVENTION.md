@@ -26,7 +26,7 @@ The checker, `graphs/tools/check_graph.py`, refuses a graph file that breaks thi
 ```text
 graphs/
   CONVENTION.md          this file
-  tiers.yaml             the three tiers, mapped to models (the only place a model is named)
+  tiers.yaml             the three tiers, mapped to a model and an effort (the only place a model is named)
   flows/<graph>.yaml     one neutral graph file per graph; the file name is the graph's id
   roles/<role>/          role.yaml and instructions.md
   agents/<agent>/        agent.yaml and instructions.md
@@ -77,7 +77,7 @@ A contract is a format passed between steps. Each is described in `contracts/<na
 
 ### Tiers
 
-There are three tiers, from cheapest to dearest: `cheap` (fully specified, mechanical work), `mid` (intake, design, moderate ambiguity) and `gate` (a judgment that needs the most foresight). `tiers.yaml` maps each tier to a list of models: the first is used, the rest are fallbacks in order. An entry is a model name, or `{model: <name>, effort: low|medium|high}`. Graph files, roles and agents name tiers, never models.
+There are three tiers, from cheapest to dearest: `cheap` (fully specified, mechanical work), `mid` (intake, design, moderate ambiguity) and `gate` (a judgment that needs the most foresight). `tiers.yaml` maps each tier to a list of models: the first is used, the rest are fallbacks in order. An entry is always `{model: <name>, effort: low|medium|high}`: a bare model name is not allowed, fallbacks included, so every tier states how hard its model thinks as well as which model it is. *The checker refuses an entry with no effort, naming it (for example `tiers.mid[0]`).* A step still chooses its model only by role and tier, never by how hard the task is. Graph files, roles and agents name tiers, never models.
 
 ## The graph file
 
