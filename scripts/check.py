@@ -11,11 +11,16 @@ Checks:
      file, using GitHub's anchor rule (lower case, spaces to hyphens, punctuation dropped, underscores kept).
   5. The repository layout from JP-95: the starting folders each have a README, README.md and the docs it
      names exist, nothing in the vision is still marked Proposed, and git ignores a file inside a .phi folder.
+  6. The laptop side from JP-105: its files exist, hooks/dispatch is executable and parses as bash, and every
+     Python file that runs on the laptop parses as Python 3.9 (the laptop's /usr/bin/python3).
+  7. The tests in tests/ (skipped with --fast).
 
 Tickets that add code add their own checks here or beside it. Exit 0 when everything passes, 1 otherwise.
 """
 from __future__ import annotations
 
+import ast
+import os
 import re
 import subprocess
 import sys
@@ -48,6 +53,42 @@ LAYOUT = [
 ] + [f"{d}/README.md" for d in (
     "apps", "ledger", "graphs", "conventions", "docs/design", "docs/inventory", "docs/proof",
 )]
+
+# JP-105: the laptop follows josh-360.
+LAPTOP = [
+    "jobs.yaml", "hooks/dispatch", "hooks/README.md", "laptop/README.md",
+    "docs/superpowers/specs/2026-11-16-laptop-follows-josh-360-design.md",
+] + [f"laptop/{m}.py" for m in ("common", "install", "run_jobs", "follow", "status", "pause")]
+
+
+def laptop_problems() -> list[str]:
+    problems = []
+    for rel in LAPTOP:
+        if not (ROOT / rel).is_file():
+            problems.append(f"missing: {rel}")
+    dispatch = ROOT / "hooks/dispatch"
+    if dispatch.is_file():
+        if not os.access(dispatch, os.X_OK):
+            problems.append("not executable: hooks/dispatch")
+        if subprocess.run(["bash", "-n", str(dispatch)]).returncode != 0:
+            problems.append("does not parse as bash: hooks/dispatch")
+    for py in sorted((ROOT / "laptop").glob("*.py")) + sorted((ROOT / "hooks").rglob("*.py")):
+        try:
+            ast.parse(py.read_text(encoding="utf-8"), filename=str(py), feature_version=(3, 9))
+        except SyntaxError as e:
+            problems.append(f"not Python 3.9: {py.relative_to(ROOT)}:{e.lineno}: {e.msg}")
+    return problems
+
+
+def test_problems() -> list[str]:
+    result = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-t", "tests"],
+                            cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    print(result.stdout.strip().splitlines()[-1] if result.stdout.strip() else "tests: no output")
+    if result.returncode != 0:
+        print(result.stdout)
+        return ["tests failed (python3 -m unittest discover -s tests -t tests)"]
+    return []
+
 
 # A status marker, not the ordinary verb: "Proposed:", "(Proposed)", "**Proposed**", "| Proposed |".
 PROPOSED_MARKER = re.compile(r"(\*\*Proposed\*\*|\(Proposed\)|\bProposed:|\|\s*Proposed\s*\|)")
@@ -155,6 +196,10 @@ def main() -> int:
                 problems.append(f"still marked Proposed: docs/vision-and-roadmap.md:{n}: {line.strip()}")
     if (ROOT / ".git").exists() and not phi_is_ignored():
         problems.append("not ignored: a file inside a .phi folder (.gitignore needs *[Pp][Hh][Ii])")
+
+    problems += laptop_problems()
+    if "--fast" not in sys.argv[1:]:
+        problems += test_problems()
 
     for p in problems:
         print(p)
