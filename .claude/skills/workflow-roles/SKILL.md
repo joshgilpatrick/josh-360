@@ -1,6 +1,6 @@
 ---
 name: workflow-roles
-description: Use when starting a Josh 360 thread (design, build, fix, review, Ticket Master, a watcher) or setting up a watcher's scheduled task: the exact brief or stored prompt for each role.
+description: "Use when starting a Josh 360 thread (design, build, fix, review, Ticket Master, a watcher) or setting up a watcher's scheduled task: the exact brief or stored prompt for each role."
 ---
 
 # Briefs
