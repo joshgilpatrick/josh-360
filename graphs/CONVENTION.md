@@ -7,9 +7,11 @@
 - [The portable parts](#the-portable-parts)
 - [The graph file](#the-graph-file)
 - [The header](#the-header)
+- [Scoring a run](#scoring-a-run)
 - [Steps](#steps)
 - [How a graph runs](#how-a-graph-runs)
 - [The rules](#the-rules)
+- [The run cap](#the-run-cap)
 - [The checker](#the-checker)
 - [Changing this convention](#changing-this-convention)
 
@@ -26,7 +28,7 @@ The checker, `graphs/tools/check_graph.py`, refuses a graph file that breaks thi
 ```text
 graphs/
   CONVENTION.md          this file
-  tiers.yaml             the three tiers, mapped to models (the only place a model is named)
+  tiers.yaml             the three tiers, mapped to a model and an effort, plus each tier's run cap (the only place a model is named)
   flows/<graph>.yaml     one neutral graph file per graph; the file name is the graph's id
   roles/<role>/          role.yaml and instructions.md
   agents/<agent>/        agent.yaml and instructions.md
@@ -77,7 +79,7 @@ A contract is a format passed between steps. Each is described in `contracts/<na
 
 ### Tiers
 
-There are three tiers, from cheapest to dearest: `cheap` (fully specified, mechanical work), `mid` (intake, design, moderate ambiguity) and `gate` (a judgment that needs the most foresight). `tiers.yaml` maps each tier to a list of models: the first is used, the rest are fallbacks in order. An entry is a model name, or `{model: <name>, effort: low|medium|high}`. Graph files, roles and agents name tiers, never models.
+There are three tiers, from cheapest to dearest: `cheap` (fully specified, mechanical work), `mid` (intake, design, moderate ambiguity) and `gate` (a judgment that needs the most foresight). `tiers.yaml` maps each tier to a list of models: the first is used, the rest are fallbacks in order. An entry is always `{model: <name>, effort: low|medium|high}`: a bare model name is not allowed, fallbacks included, so every tier states how hard its model thinks as well as which model it is. *The checker refuses an entry with no effort, naming it (for example `tiers.mid[0]`).* A step still chooses its model only by role and tier, never by how hard the task is. Graph files, roles and agents name tiers, never models. `tiers.yaml` also carries each tier's `max_runs`; see [The run cap](#the-run-cap).
 
 ## The graph file
 
@@ -100,7 +102,7 @@ Any other key, at any depth, is refused. A key that belongs to one runner (`mode
 
 ## The header
 
-Every graph file carries a `header` with all six fields:
+Every graph file carries a `header` with all seven fields:
 
 | Field | What it says |
 | --- | --- |
@@ -108,8 +110,43 @@ Every graph file carries a `header` with all six fields:
 | `entry_gate` | The gate script that admits a ticket (for most graphs, `ready`). |
 | `exit_gate` | The gate script that closes a run (for most graphs, `no-loose-ends`). |
 | `asks_josh` | Every step where Josh is asked: exactly the graph's `ask` steps. |
-| `ledger` | What the walker writes to the ledger for each step, from: `run`, `step`, `outcome`, `loop_count`, `session`, `tier`, `ticket`, `started_at`, `ended_at`. |
+| `ledger` | What the walker writes to the ledger for each step, from: `run`, `step`, `outcome`, `loop_count`, `session`, `tier`, `ticket`, `started_at`, `ended_at`, `graph_version`, `model`. |
 | `access` | For every step, what it touches: `read` (only reads), `josh` (writes something of Josh's, such as his repository or his JP ticket) or `shared` (writes something other people use). |
+| `end_states` | Every way a run can end, scored as `success`, `neutral` or `needs-josh`. See [Scoring a run](#scoring-a-run). |
+
+## Scoring a run
+
+Josh wants to judge any graph the same way, on whether it works (effectiveness) and what it costs (efficiency) (16 November 2026, JP-140). Three things make that possible: two ledger fields, and a score for each way a run can end.
+
+**`graph_version`** is the commit of the graph file the run used: the last commit that changed `graphs/flows/<graph>.yaml`. Two runs with the same value ran the same graph file, so a change to a graph can be compared before and after. It does not cover a change to a role, an agent or a gate script the graph names; those are separate files and a separate version if that ever matters.
+
+**`model`** is the model that actually answered the step. It is not the tier's first choice: when a fallback answers, the fallback is named, which is what makes cost per step computable. A gate or ask step has no model and leaves it empty. The run cap still counts by tier (see [The run cap](#the-run-cap)); `model` changes nothing there.
+
+**`end_states`** names every way a run of this graph can end, and scores each one. Every graph uses the same three scores:
+
+| Score | Meaning |
+| --- | --- |
+| `success` | The run did what the graph is for. |
+| `neutral` | The run ended with nothing wrong and nothing gained, such as a ticket Josh dropped or sent back. |
+| `needs-josh` | The run could not finish without him, or ended in a state he must look at. |
+
+The ends of a graph are:
+
+- `finished`: the run ran out of steps and passed the exit gate. Every graph has it.
+- `<step>.<outcome>`: one for each outcome whose `on` is `end`, such as `decide_review.stop`.
+
+```yaml
+end_states:
+  finished: success
+  approve_spec.drop: neutral
+  decide_review.stop: needs-josh
+```
+
+*The checker refuses a graph with no `end_states`, an end that is not named (it reports it as unclassified), a name that is not an end of the graph, and a score other than the three above.* A loop (`goto`) and an outcome that only moves on are not ends. A run whose exit gate refuses never finished, so it is not `finished`. It ends as `exit_refused`, a name reserved for every graph: it always scores `needs-josh`, because the loose end is for Josh to close, and it is never written in `end_states` (the checker refuses it there).
+
+Exit gates are scripts, and a graph file does not list their outcomes, so the checker cannot see more than one way for the exit gate to pass. A graph that needs two scores for a finished run ends them in two steps, each with an `on: end` outcome, before the exit gate.
+
+The walker (JP-114) writes the end a run reached, as one of these names or `exit_refused`, and the data model (JP-99) stores it. The score for a name comes from the header of the graph version the run used, so a later change to a score does not rewrite the old runs. Which measures are built from these fields, and how they are shown, is JP-130.
 
 ## Steps
 
@@ -138,9 +175,9 @@ The walker (a later ticket) holds this logic; a runner only starts the step the 
 
 1. The entry gate runs first. A run starts only if it passes.
 2. A step is ready when every step in its `needs` has finished or been skipped, and its `when` matches. A step whose `when` does not match is skipped.
-3. When a step ends, its outcome is looked up in `on`. `end` ends the run. `goto` sends the run back to that step, which runs again with every step that depends on it, and counts one loop. When the count reaches `max_loops`, the run goes to the `at_limit` ask step instead, so Josh decides. No entry means the run moves on. An `on_limit_only` ask step never runs in the normal flow.
+3. When a step ends, its outcome is looked up in `on`. `end` ends the run. `goto` sends the run back to that step, which runs again with every step that depends on it, and counts one loop. When the count reaches `max_loops`, the run goes to the `at_limit` ask step instead, so Josh decides. The run cap (rule 8) is a second limit, counted per role step across every loop. No entry means the run moves on. An `on_limit_only` ask step never runs in the normal flow.
 4. When no step is left, the exit gate runs. The run is finished only if it passes.
-5. The walker writes the header's `ledger` fields for every step.
+5. The walker writes the header's `ledger` fields for every step, and the end the run reached (see [Scoring a run](#scoring-a-run)).
 
 ## The rules
 
@@ -153,6 +190,32 @@ These are the habits from Josh's drafted pipeline. Each line says how it is held
 5. **A reviewer can only cite the plan.** *The checker refuses a step whose role is a reviewer unless a gate step directly `needs` it: that gate deletes any defect that does not quote the spec.*
 6. **A shared write runs only on Josh's yes.** *The checker refuses a `shared` step unless an ask step that `approves` it comes before it through `needs`, and the shared step's `when` names that ask with only `approves_on` choices. The approving ask takes no `when` and is never `on_limit_only`, because a skipped approval is not a yes.*
 7. **A role that only reads only reads.** *The checker refuses a step whose access is `josh` or `shared` when its role has `may_change: false`.*
+8. **A role step runs no more often than its tier allows.** *`tiers.yaml` gives every tier a `max_runs`, and the checker refuses a `goto` whose `max_loops` + 1 passes the cap of a role step it runs again. Details in [The run cap](#the-run-cap).*
+
+## The run cap
+
+Josh wants no unnecessary loops on the costlier models (16 November 2026, JP-139). `max_loops` limits one `goto`, but several loops can send the run back to the same step, so a second limit counts the runs of the step itself.
+
+**The values.** `tiers.yaml` has a `max_runs` mapping beside `tiers`, one whole number of 1 or more for each tier: `cheap` 5, `mid` 3, `gate` 2 (Haiku, Sonnet and Opus as the tiers stand today). It is the most times one role step runs in one run of a graph, the first run included.
+
+**The count is by tier, not by the model that answered.** A step's tier is its own `tier` when it names one, otherwise its role's. When the first model in the tier is out of tokens and a fallback answers, the run still counts against the tier's cap, not a cap of its own. Nothing about the model that answered moves the count.
+
+**What the checker holds.** A `goto` whose `max_loops` is *n* can run each role step it sends the run back through *n* + 1 times. The checker refuses the graph when that is more than the step's tier cap, naming the loop, the step and the tier:
+
+```text
+loop check_review -> build (outcome 'rework') would run step 'review' 3 times (max_loops 2 + 1) against a gate cap of 2
+```
+
+The steps a loop runs again are the target and every step that depends on it (`needs`, directly or further down), except the steps that depend on the loop's own step, because those cannot have run yet. A step that is skipped by its `when` is still counted, so for a single loop the check is an upper bound. The checker also refuses a `tiers.yaml` where a tier has no `max_runs`, where one is not a whole number of 1 or more, or where `max_runs` names something that is not a tier. A `goto` that reruns any role step of the `gate` tier can have a `max_loops` of 1 at most, because the gate cap is 2. (The `gate` tier is the Opus tier; script gates, the `gate` step kind, have no cap.)
+
+**What the walker holds** (JP-114 builds this; this section is its rule):
+
+1. Count every run of every role step, whichever loop sent the run back to it, in one counter for each step in one run of the graph. The first run counts as run 1.
+2. Before starting a role step again, compare the count with the cap of the step's tier. When the next run would pass the cap, do not start it: send the run to that loop's `at_limit` ask step.
+3. Each yes from Josh at that ask allows exactly one more run of that step, no more. The extra run is counted like any other, so the next time the cap is reached Josh is asked again.
+4. Record the tier, and whether the run was one Josh allowed, in the ledger for the step (`tier` is already a ledger field).
+
+The checker cannot add up loops that share a step, because which loops fire depends on the outcomes of the run. That sum is the walker's job; the checker only makes sure no single loop is written to break the cap.
 
 ## The checker
 
@@ -162,7 +225,7 @@ python3 graphs/tools/check_graph.py graphs/flows/my-graph.yaml   # one file
 python3 graphs/tools/check_graph.py --root <dir> <file>         # another parts folder (the tests use this)
 ```
 
-It checks `tiers.yaml`, every role and agent, and each graph file. It prints one line per problem, naming the file and where in it (a step id, a loop, a key), and exits 0 when there are none, 1 when there are, and 2 when it cannot run (a missing folder, or PyYAML not installed). A YAML key written twice in one mapping is refused, and `on`, `off`, `yes` and `no` are read as plain words, not as true or false. It needs PyYAML (`pip install -r requirements.txt`). `python3 scripts/check.py`, the repository's suite, runs it and its tests (`graphs/tests/`). The sample graphs there, one that passes and one per broken rule, are the quickest way to see the convention in use.
+It checks `tiers.yaml` (models, efforts and run caps), every role and agent, and each graph file. It prints one line per problem, naming the file and where in it (a step id, a loop, a key), and exits 0 when there are none, 1 when there are, and 2 when it cannot run (a missing folder, or PyYAML not installed). A YAML key written twice in one mapping is refused, and `on`, `off`, `yes` and `no` are read as plain words, not as true or false. It needs PyYAML (`pip install -r requirements.txt`). `python3 scripts/check.py`, the repository's suite, runs it and its tests (`graphs/tests/`). The sample graphs there, one that passes and one per broken rule, are the quickest way to see the convention in use.
 
 ## Changing this convention
 

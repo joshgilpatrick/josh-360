@@ -32,8 +32,11 @@ class FollowTest(LaptopCase):
         self.assertEqual(status["result"], "passed")
         self.assertRegex(status["time"], r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$")
         self.assertEqual(set(status["counts"]), {"changed", "unchanged", "problems"})
-        # It holds no file contents: one small file, nothing from the repo.
-        self.assertEqual(self.status_tree(), ["status.json"])
+        # It holds no file contents: one small status file, nothing from the repo, plus the reports of
+        # report jobs (JP-96's one-time inventory: names, paths, sizes and counts only).
+        tree = self.status_tree()
+        self.assertEqual([p for p in tree if not p.startswith("reports/")], ["status.json"])
+        self.assertEqual([p for p in tree if p.startswith("reports/")], ["reports/inventory.json"])
         # And the reader a cloud session uses prints it.
         shown = self.laptop("status.py", "show", check=True)
         self.assertIn(merged, shown.stdout)

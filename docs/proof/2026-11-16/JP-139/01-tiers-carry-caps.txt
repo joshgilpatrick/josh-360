@@ -1,0 +1,8 @@
+$ python3 graphs/tools/check_graph.py
+check_graph: ok (0 graph(s))
+exit 0
+
+max_runs:
+  cheap: 5
+  mid: 3
+  gate: 2

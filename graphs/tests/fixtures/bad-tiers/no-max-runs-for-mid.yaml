@@ -1,0 +1,9 @@
+# Bad on purpose: max_runs gives the cheap and gate tiers a cap and leaves mid without one.
+convention: 1
+tiers:
+  cheap: [{model: sample-small-model, effort: high}]
+  mid: [{model: sample-medium-model, effort: medium}]
+  gate: [{model: sample-large-model, effort: high}]
+max_runs:
+  cheap: 5
+  gate: 2

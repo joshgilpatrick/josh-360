@@ -23,11 +23,15 @@ except ImportError:  # reported in main(), so the tests and the suite say what t
 CONVENTION = 1
 TIERS = ("cheap", "mid", "gate")
 ACCESS = ("read", "josh", "shared")
-LEDGER = ("run", "step", "outcome", "loop_count", "session", "tier", "ticket", "started_at", "ended_at")
+LEDGER = ("run", "step", "outcome", "loop_count", "session", "tier", "ticket", "started_at", "ended_at",
+          "graph_version", "model")
 EFFECTS = ("move_ticket", "set_label")
 TYPES = ("string", "number", "boolean", "list")
 EFFORTS = ("low", "medium", "high")
-HEADER_FIELDS = ("jira", "entry_gate", "exit_gate", "asks_josh", "ledger", "access")
+HEADER_FIELDS = ("jira", "entry_gate", "exit_gate", "asks_josh", "ledger", "access", "end_states")
+END_CLASSES = ("success", "neutral", "needs-josh")  # how a run's end is scored (JP-140)
+FINISHED = "finished"  # the end of a run that runs out of steps and passes the exit gate
+EXIT_REFUSED = "exit_refused"  # the end of a run whose exit gate refuses; always needs-josh, never written in end_states
 
 # Keys that belong to one runner. They are refused by name, so the message says where they go instead.
 ORCHESTRATOR_KEYS = {
@@ -66,14 +70,15 @@ STEP = {
 }
 HEADER = {
     "jira": LIST({"status": LEAF, "steps": LEAF}), "entry_gate": LEAF, "exit_gate": LEAF,
-    "asks_josh": LEAF, "ledger": LEAF, "access": MAP(LEAF),
+    "asks_josh": LEAF, "ledger": LEAF, "access": MAP(LEAF), "end_states": MAP(LEAF),
 }
 GRAPH = {
     "convention": LEAF, "graph": LEAF, "title": LEAF, "description": LEAF, "header": HEADER,
     "inputs": MAP(IO), "outputs": MAP(IO), "steps": LIST(STEP),
 }
+# The schema accepts a bare name here; load_parts() below refuses any entry with no effort (JP-138).
 TIER_ENTRY = EITHER({"model": LEAF, "effort": LEAF})
-TIERS_FILE = {"convention": LEAF, "tiers": {t: LIST(TIER_ENTRY) for t in TIERS}}
+TIERS_FILE = {"convention": LEAF, "tiers": {t: LIST(TIER_ENTRY) for t in TIERS}, "max_runs": LEAF}
 ROLE_FILE = {"title": LEAF, "may_change": LEAF, "tier": LEAF, "reviewer": LEAF}
 AGENT_FILE = {"title": LEAF, "fills": LEAF}
 
@@ -170,6 +175,7 @@ class Parts:
         self.agents: dict[str, dict] = {}
         self.gates: set[str] = set()
         self.contracts: set[str] = set()
+        self.max_runs: dict[str, int] = {}  # tier -> most runs of one role step in one graph run (JP-139)
         self.problems: list[str] = []
 
 
@@ -216,8 +222,27 @@ def load_parts(root: Path) -> Parts:
                     effort = entry.get("effort") if isinstance(entry, dict) else None
                     if not _is_text(model):
                         parts.problems.append(f"tiers.yaml: tiers.{tier}[{i}] needs a model name")
-                    if effort is not None and effort not in EFFORTS:
+                    if effort is None:
+                        parts.problems.append(
+                            f"tiers.yaml: tiers.{tier}[{i}] is missing an effort (one of {', '.join(EFFORTS)}); "
+                            f"every entry is {{model: <name>, effort: <level>}}")
+                    elif effort not in EFFORTS:
                         parts.problems.append(f"tiers.yaml: tiers.{tier}[{i}].effort must be one of {', '.join(EFFORTS)}")
+
+        caps = tiers.get("max_runs") if isinstance(tiers.get("max_runs"), dict) else {}
+        if "max_runs" in tiers and not isinstance(tiers["max_runs"], dict):
+            parts.problems.append("tiers.yaml: max_runs must map each tier to a number of runs")
+        for name in caps:
+            if name not in TIERS:
+                parts.problems.append(f"tiers.yaml: max_runs.{name} is not a tier (one of {', '.join(TIERS)})")
+        for tier in TIERS:
+            cap = caps.get(tier)
+            if cap is None:
+                parts.problems.append(f"tiers.yaml: tier '{tier}' has no max_runs")
+            elif isinstance(cap, bool) or not isinstance(cap, int) or cap < 1:
+                parts.problems.append(f"tiers.yaml: max_runs.{tier} must be a whole number of 1 or more")
+            else:
+                parts.max_runs[tier] = cap
 
     for folder in sorted(p for p in (root / "roles").glob("*") if p.is_dir()):
         role = _load_part(parts, folder / "role.yaml", ROLE_FILE, ("title", "may_change", "tier"))
@@ -278,7 +303,30 @@ def _ancestors(steps: dict[str, dict]) -> dict[str, set[str]] | None:
     return memo
 
 
-def _check_header(header, steps, kind, parts) -> list[str]:
+def _reruns(steps: dict[str, dict], source: str, target: str) -> set[str]:
+    """The steps a loop from `source` back to `target` runs again: the target and every step that
+    depends on it (the convention's words), except the steps that need `source`, which cannot have run
+    yet because they wait for it to finish. Cycle-safe: a cycle in needs is reported elsewhere."""
+    children: dict[str, list[str]] = {sid: [] for sid in steps}
+    for sid, s in steps.items():
+        for parent in _names(s.get("needs")):
+            if parent in children:
+                children[parent].append(sid)
+
+    def below(start: str) -> set[str]:
+        seen: set[str] = set()
+        todo = [start]
+        while todo:
+            for child in children.get(todo.pop(), []):
+                if child not in seen:
+                    seen.add(child)
+                    todo.append(child)
+        return seen
+
+    return ({target} | below(target)) - below(source)
+
+
+def _check_header(header, steps, kind, outcomes, parts) -> list[str]:
     out: list[str] = []
     if not isinstance(header, dict):
         return ["header: missing or not a mapping"]
@@ -335,6 +383,34 @@ def _check_header(header, steps, kind, parts) -> list[str]:
             elif value not in ACCESS:
                 out.append(f"header.access.{sid}: '{value}' is not one of {', '.join(ACCESS)}")
         out += [f"header.access: step '{sid}' has no access" for sid in steps if isinstance(header["access"], dict) and sid not in access]
+
+    if "end_states" in header:
+        out += _check_end_states(header["end_states"], steps, outcomes)
+    return out
+
+
+def graph_ends(steps: dict[str, dict], outcomes: dict[str, list]) -> list[str]:
+    """Every way a run of this graph can end: `finished`, then `<step>.<outcome>` for each outcome whose on is end."""
+    ends = [FINISHED]
+    for sid, s in steps.items():
+        on = s.get("on") if isinstance(s.get("on"), dict) else {}
+        ends += [f"{sid}.{o}" for o, then in on.items() if then == "end" and o in outcomes.get(sid, [])]
+    return ends
+
+
+def _check_end_states(end_states, steps, outcomes) -> list[str]:
+    if not isinstance(end_states, dict):
+        return [f"header.end_states: needs a mapping of each end to {', '.join(END_CLASSES)}"]
+    ends = graph_ends(steps, outcomes)
+    out = []
+    if EXIT_REFUSED in end_states:
+        out.append(f"header.end_states: '{EXIT_REFUSED}' is reserved: its score is always needs-josh, "
+                   "so it is never written here")
+    out += [f"header.end_states: end '{e}' is unclassified" for e in ends if e not in end_states]
+    out += [f"header.end_states: '{e}' is not an end of this graph (its ends are {', '.join(ends)})"
+            for e in end_states if e not in ends and e != EXIT_REFUSED]
+    out += [f"header.end_states.{e}: '{v}' must be one of {', '.join(END_CLASSES)}"
+            for e, v in end_states.items() if e in ends and v not in END_CLASSES]
     return out
 
 
@@ -531,13 +607,27 @@ def check_graph_data(data, name: str, parts: Parts) -> list[str]:
                 out.append(f"{loop}: at_limit '{then['at_limit']}' is not an ask step, so the loop does not end at a human")
             else:
                 limit_targets.add(then["at_limit"])
+            # The run cap (JP-139): one more run than max_loops, for every role step the loop runs again.
+            if then["goto"] in steps and isinstance(then.get("max_loops"), int) and not isinstance(then["max_loops"], bool) \
+                    and then["max_loops"] >= 1:
+                runs = then["max_loops"] + 1
+                for rid in sorted(_reruns(steps, sid, then["goto"])):
+                    if kind.get(rid) != "role":  # only a role step has a tier (a tier on any other step is reported above)
+                        continue
+                    rerun_role = parts.roles.get(steps[rid]["role"]) if isinstance(steps[rid].get("role"), str) else None
+                    tier = steps[rid].get("tier") if steps[rid].get("tier") in TIERS else \
+                        (rerun_role or {}).get("tier")
+                    cap = parts.max_runs.get(tier) if tier in TIERS else None
+                    if cap is not None and runs > cap:
+                        out.append(f"{loop} would run step '{rid}' {runs} times (max_loops {then['max_loops']} + 1) "
+                                   f"against a {tier} cap of {cap}")
 
     for sid, s in steps.items():
         if kind.get(sid) == "ask" and isinstance(s["ask"], dict) and s["ask"].get("on_limit_only") is True \
                 and sid not in limit_targets:
             out.append(f"ask step '{sid}' is on_limit_only but no loop ends at it")
 
-    out += _check_header(data.get("header"), steps, kind, parts)
+    out += _check_header(data.get("header"), steps, kind, outcomes, parts)
 
     # The habits that need the whole graph.
     access = data.get("header", {}).get("access") if isinstance(data.get("header"), dict) else None

@@ -1,0 +1,14 @@
+$ python3 graphs/tools/check_graph.py --root graphs/tests/fixtures/parts <valid graph with "exit_refused: success" added to end_states>
+/tmp/tmp.lqZgPSmzgT/exit-refused-scored.yaml: header.end_states: 'exit_refused' is reserved: its score is always needs-josh, so it is never written here
+check_graph: FAILED (1 problem(s) in 1 graph(s))
+exit 1
+
+$ python3 -m unittest discover -s graphs/tests
+Ran 117 tests in 3.898s
+
+OK
+
+$ python3 scripts/check.py
+OK
+check.py: ok (0 problem(s))
+exit 0
