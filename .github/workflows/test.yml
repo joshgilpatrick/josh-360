@@ -30,6 +30,8 @@ jobs:
         with:
           python-version: '3.12'
       # Tickets that add code add their install and test steps here, and in .claude/workflow.config.md.
+      - name: Install the graph checker's one dependency (JP-101)
+        run: pip install -r graphs/requirements.txt
       - name: Fast checks
         run: python3 scripts/check.py
       - name: Full suite
