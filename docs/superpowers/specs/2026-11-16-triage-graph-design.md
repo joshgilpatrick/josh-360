@@ -14,6 +14,7 @@
 - [Sending a ticket back](#sending-a-ticket-back)
 - [Tickets that come back from another graph](#tickets-that-come-back-from-another-graph)
 - [The three gaps, closed here](#the-three-gaps-closed-here)
+- [How every loop ends](#how-every-loop-ends)
 - [Exact copy](#exact-copy)
 - [Rules](#rules)
 - [Acceptance criteria](#acceptance-criteria)
@@ -76,6 +77,9 @@ flowchart TD
   AJ -->|park| X
   AL -->|one more round| RV
   AL -->|park| X
+  V -->|escalate: third return| AQ{{ask_returned: Josh}}
+  AQ -->|answered| R
+  AQ -->|park| X
   V -->|comment: someone else's ticket| SB[send_back: one comment, no edit]
   SB --> X
 ```
@@ -126,11 +130,12 @@ The allowed accounts are the ones action-triage's start gate already uses: `ACTI
 | `revise` | role `ticket-drafter` | mid | read | Own ticket only. Writes a revised ticket proposal that closes the numbered gaps and nothing else. Returns `needs_josh` with one question if a gap needs an answer it cannot quote from a source. |
 | `apply_revision` | gate `apply-revision` | none | josh | Writes the proposal to the ticket in place, adds the drafter's session to `josh360.authors`, and comments the round. Then the run goes back to `read_ticket`. |
 | `ask_josh` | ask | none | read | One question in Needs you, with the Jira flag. `answered` sends the answer to the drafter, which writes it into Decisions already made. `park` ends the run. |
+| `ask_returned` | ask | none | read | A ticket came back from another graph a third time (rule 10). `answered` resets the return count and runs the checks again; `park` ends the run. |
 | `ask_at_limit` | ask, at a loop limit only | none | read | The rounds ran out. `one_more_round` or `park`. |
 | `send_back` | gate `send-back` | none | josh | Someone else's ticket only. Posts one comment listing the gaps. Ends the run. |
 | `mark_ready` | gate `mark-ready` | none | josh | Checks that the ticket version still equals the signed-off version, writes the route record, moves the ticket to Ready and comments. A changed ticket goes back to `read_ticket`. |
 
-Header: Jira stretch "Not Started" for every step but `mark_ready`, which is the only status move; entry gate `triageable`; exit gate `no-loose-ends` (shared, built in JP-109; for triage it confirms that the run's comment is on the ticket and its status matches the outcome); `asks_josh` is `ask_josh` and `ask_at_limit`; the ledger takes all nine fields.
+Header: Jira stretch "Not Started" for every step but `mark_ready`, which is the only status move; entry gate `triageable`; exit gate `no-loose-ends` (shared, built in JP-109; for triage it confirms that the run's comment is on the ticket and its status matches the outcome); `asks_josh` is `ask_josh`, `ask_returned` and `ask_at_limit`; the ledger takes all nine fields.
 
 ## The Ready checklist
 
@@ -236,9 +241,41 @@ Triage then starts with `reason: returned`. C12 fails on the open question, so t
 
 | Gap | How triage closes it |
 | --- | --- |
-| Too many places wait on Josh | Josh is asked only in two steps, only for his own tickets, and only after the drafter has failed to answer from sources. Designer questions and non-development reroutes come here instead of waiting mid-run. Someone else's ticket never waits on Josh. |
+| Too many places wait on Josh | Josh is asked only in three steps, only for his own tickets, and only after the drafter has failed to answer from sources. Designer questions and non-development reroutes come here instead of waiting mid-run. Someone else's ticket never waits on Josh. |
 | The Jira ticket never moves | `mark-ready` moves Not Started to Ready. `return-to-triage` moves a returned ticket back to Not Started. Each move is a script, read back, with a `result \| evidence \| next gate` comment. |
 | Working files vanish at cleanup | Triage has no worktree. Its findings live on the ticket (comments, the route record) and in the run record and the ledger, including the defects `check-sign-off` dropped. |
+
+## How every loop ends
+
+A loop can hide in three places. The checker already closes the first. The other two are closed by the rules below, because no single graph file can see them.
+
+**1. Loops inside one run.** Each one has a limit, and the limit ends at Josh. The checker refuses a graph without these limits.
+
+| Loop | Limit | At the limit |
+| --- | --- | --- |
+| Drafter round: `apply_revision` back to `read_ticket` | 2 | `ask_at_limit` |
+| Ticket edited mid-run: `mark_ready` back to `read_ticket` | 2 | `ask_at_limit` |
+| Signer was an author: `check_sign_off` back to `sign_off` | 1 | `ask_at_limit` |
+| Josh answered: `ask_josh` back to `revise` | 2 | `ask_at_limit` |
+| Josh answered a third return: `ask_returned` back to `read_ticket` | 1 | `ask_at_limit` |
+| Josh chose one more round: `ask_at_limit` back to `revise` | 1 | `ask_at_limit` again, so Josh decides every extra round |
+
+The walker (JP-114) must count these loops the way this table assumes. A loop's counter belongs to its arrow (from step, to step) and never resets during a run, even when an outer loop runs the same steps again. Without that rule, two nested loops could reset each other's counters and run forever. With it, a run that never reaches Josh has at most 2 + 2 + 1 trips back, so it always ends.
+
+**2. Loops between runs and graphs.** Each run starts with fresh counters, so in-run limits cannot stop these:
+
+- **Ping-pong.** The development designer returns a ticket, triage makes it Ready, and the designer returns it again with a new question. The same thing can happen with the non-development graph's "needs code".
+- **Self-triggering.** A run starts whenever a ticket is edited or commented on. Triage's own edit (`apply_revision`) or comment (`send-back`) would then start another triage run.
+
+Three rules close them:
+
+- **A return budget for each ticket.** Every return is counted on the ticket's route record (`returns`, kept across runs). A ticket may come back to triage **twice**. At the third return, `triage-verdict` sends it straight to Josh (`ask_returned`), with every earlier question and answer listed on the ticket, instead of to the drafter. Josh's answer resets the budget, because it is new information.
+- **Triage never triggers itself.** A run starts only on an edit or comment made by someone other than a triage session, judged by `josh360.authors` and the `Triage:` prefix on its comments.
+- **One run per ticket at a time.** The `triageable` entry gate already refuses a second open run.
+
+**3. Loops inside a step.** An agent session that keeps working without ending, or a gate script that keeps failing, is the binding's job. The convention keeps timeouts out of graph files. The Agent Manager binding (JP-117) gives every role step a turn cap and a time cap, and treats a step that hits either as a stop that goes to Josh, as action-triage's watchdog does today. A gate script that exits with an error is not retried by the walker. It stops the run with the error on the ticket.
+
+A safety net covers anything these rules miss. Starting with JP-107, the ledger records every run, so a script can flag any ticket with more than five runs of any graph in 24 hours. The weekly review (JP-127) turns a repeat into a ticket.
 
 ## Exact copy
 
@@ -286,6 +323,9 @@ Triage: Ready | run <run id>, signed off by session <id> | route: <development o
 7. Own tickets get at most two drafter rounds before Josh is asked. Someone else's ticket is never edited and never reaches Josh.
 8. No step reads or passes priority.
 9. Every run ends with a comment on the ticket in the `result | evidence | next gate` shape. No patient data in any comment, record or ledger row.
+10. A ticket comes back to triage from another graph at most twice. The third return goes to Josh, and his answer resets the count.
+11. Triage's own edits and comments never start a triage run.
+12. Loop counters belong to their arrow and never reset during a run.
 
 ## Acceptance criteria
 
@@ -370,6 +410,25 @@ Feature: Ticket triage and sign-off
     Then the drafter writes the answer into Decisions already made with its source
     And the ticket becomes Ready with returned_from set
     And Josh is not asked
+
+  @auto
+  Scenario: A third return goes to Josh, not the drafter
+    Given an own Story whose route record shows two returns
+    When the development graph returns it a third time
+    Then the run goes to ask_returned with the earlier questions listed on the ticket
+    And the drafter is not started
+
+  @auto
+  Scenario: Triage's own edit does not start a run
+    Given a triage run that has just applied a drafter revision to a ticket
+    When the trigger sees that edit
+    Then no new triage run starts
+
+  @auto
+  Scenario: Nested loops cannot reset each other's counters
+    Given a run whose mark_ready loop has gone back to read_ticket twice
+    When a drafter round runs the same steps again
+    Then the mark_ready loop's count is still 2
 
   @e2e
   Scenario: The draft graph runs on a made-up ticket end to end
