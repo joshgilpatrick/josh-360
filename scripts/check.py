@@ -11,13 +11,27 @@ Checks:
      file, using GitHub's anchor rule (lower case, spaces to hyphens, punctuation dropped, underscores kept).
   5. The repository layout from JP-95: the starting folders each have a README, README.md and the docs it
      names exist, nothing in the vision is still marked Proposed, and git ignores a file inside a .phi folder.
-  6. JP-101: every graph passes the graph checker (graphs/tools/check_graph.py), and the checker's own tests
-     pass. Both need PyYAML (pip install -r graphs/requirements.txt). Markdown under graphs/ is anchor-checked too.
+  6. The feature list from JP-97 (docs/inventory/features.md): every row has one verdict, a reason and a carrier
+     ticket, every retired row says what replaces it, and the Session Atlas focus summaries are retired.
+  7. The conventions files from JP-98 exist and pass scripts/conventions.py (needs PyYAML, requirements.txt).
+  8. The laptop side from JP-105: its files exist, hooks/dispatch is executable and parses as bash, and every
+     Python file that runs on the laptop (including JP-96's two laptop scripts) parses as Python 3.9 (the
+     laptop's /usr/bin/python3).
+  9. The tests in tests/ (skipped with --fast).
+ 10. JP-96 inventory: every row of a table with Verdict and Reason columns in docs/inventory/ (except
+     features.md) has exactly one verdict of keep, migrate, build new or dismantle, and a reason; every row
+     of a table with Date range and Produced by columns states both; a table of items (a "What it is"
+     column) must have Verdict and Reason columns; and laptop.md and starting-figures.md must exist.
+ 11. JP-101: every graph passes the graph checker (graphs/tools/check_graph.py), and the checker's own tests
+     in graphs/tests/ pass (skipped with --fast). Both need PyYAML (requirements.txt). Markdown under graphs/
+     is anchor-checked too.
 
 Tickets that add code add their own checks here or beside it. Exit 0 when everything passes, 1 otherwise.
 """
 from __future__ import annotations
 
+import ast
+import os
 import re
 import subprocess
 import sys
@@ -49,7 +63,7 @@ LAYOUT = [
     ".gitignore",
 ] + [f"{d}/README.md" for d in (
     "apps", "ledger", "graphs", "conventions", "docs/design", "docs/inventory", "docs/proof",
-)] + ["graphs/CONVENTION.md", "graphs/tiers.yaml", "graphs/requirements.txt", "graphs/tools/check_graph.py"] + [
+)] + ["graphs/CONVENTION.md", "graphs/tiers.yaml", "graphs/tools/check_graph.py"] + [
     f"graphs/{d}/README.md" for d in ("flows", "roles", "agents", "gates", "contracts", "bindings")
 ]
 
@@ -57,6 +71,55 @@ LAYOUT = [
 def run_quietly(argv: list[str]) -> tuple[int, str]:
     result = subprocess.run([sys.executable, *argv], cwd=ROOT, capture_output=True, text=True)
     return result.returncode, (result.stdout + result.stderr).strip()
+
+# JP-98: the conventions, the system registry, the standing priorities and the surface map.
+CONVENTIONS = [
+    "conventions/tickets.md",
+    "conventions/registry.yaml",
+    "conventions/priorities.yaml",
+    "docs/surface-map.md",
+    "scripts/conventions.py",
+    "tests/test_conventions.py",
+    "requirements.txt",
+]
+
+
+# JP-105: the laptop follows josh-360.
+LAPTOP = [
+    "jobs.yaml", "hooks/dispatch", "hooks/README.md", "laptop/README.md",
+    "docs/superpowers/specs/2026-11-16-laptop-follows-josh-360-design.md",
+] + [f"laptop/{m}.py" for m in ("common", "install", "run_jobs", "follow", "status", "pause")]
+
+
+def laptop_problems() -> list[str]:
+    problems = []
+    for rel in LAPTOP:
+        if not (ROOT / rel).is_file():
+            problems.append(f"missing: {rel}")
+    dispatch = ROOT / "hooks/dispatch"
+    if dispatch.is_file():
+        if not os.access(dispatch, os.X_OK):
+            problems.append("not executable: hooks/dispatch")
+        if subprocess.run(["bash", "-n", str(dispatch)]).returncode != 0:
+            problems.append("does not parse as bash: hooks/dispatch")
+    jp96 = [ROOT / "scripts/laptop_inventory.py", ROOT / "scripts/laptop_figures.py"]  # run by hand on the laptop
+    for py in sorted((ROOT / "laptop").glob("*.py")) + sorted((ROOT / "hooks").rglob("*.py")) + jp96:
+        try:
+            ast.parse(py.read_text(encoding="utf-8"), filename=str(py), feature_version=(3, 9))
+        except SyntaxError as e:
+            problems.append(f"not Python 3.9: {py.relative_to(ROOT)}:{e.lineno}: {e.msg}")
+    return problems
+
+
+def test_problems() -> list[str]:
+    result = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-t", "tests"],
+                            cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    print(result.stdout.strip().splitlines()[-1] if result.stdout.strip() else "tests: no output")
+    if result.returncode != 0:
+        print(result.stdout)
+        return ["tests failed (python3 -m unittest discover -s tests -t tests)"]
+    return []
+
 
 # A status marker, not the ordinary verb: "Proposed:", "(Proposed)", "**Proposed**", "| Proposed |".
 PROPOSED_MARKER = re.compile(r"(\*\*Proposed\*\*|\(Proposed\)|\bProposed:|\|\s*Proposed\s*\|)")
@@ -117,6 +180,110 @@ def anchors_in(text: str) -> set[str]:
     return result
 
 
+FEATURES = "docs/inventory/features.md"
+VERDICTS = ("Keep as is", "Keep, move onto the ledger", "Merge with ", "Retire")
+CARRIER = re.compile(r"\bJP-\d+\b|None needed")
+FEATURE_ROW = re.compile(r"^\|\s*([AS]\d+)\s*\|")
+
+
+def feature_list_problems(text: str) -> list[str]:
+    """JP-97: every feature row has one verdict, a reason and a carrier; a retired row says what replaces it;
+    the Session Atlas focus summaries are retired. Rows are the 7-column tables (ID first); the short
+    "retired" summary table at the top has 3 columns and is not a feature row."""
+    problems: list[str] = []
+    seen: set[str] = set()
+    section = ""
+    for n, line in enumerate(text.splitlines(), 1):
+        if line.startswith("## "):
+            section = line[3:].strip()
+        m = FEATURE_ROW.match(line)
+        if not m or section.startswith("Answers"):
+            continue  # the short summary table of retired features sits under "Answers to ..."
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) != 7:
+            problems.append(f"feature row does not have 7 columns: {FEATURES}:{n} ({m.group(1)})")
+            continue
+        fid, feature, _what, _data, verdict, reason, carrier = cells
+        where = f"{FEATURES}:{n} ({fid})"
+        if fid in seen:
+            problems.append(f"duplicate feature id: {where}")
+        seen.add(fid)
+        matches = [v for v in VERDICTS if verdict.startswith(v)]
+        if len(matches) != 1 or (verdict.startswith("Keep as is") and verdict != "Keep as is"):
+            problems.append(f"verdict is not exactly one of {VERDICTS}: {where}: {verdict}")
+        if not reason:
+            problems.append(f"no reason: {where}")
+        if not CARRIER.search(carrier):
+            problems.append(f"no carrier ticket or 'None needed': {where}")
+        if verdict.startswith("Retire") and not re.search(r"Replaced by|Nothing replaces", reason):
+            problems.append(f"retired without saying what replaces it: {where}")
+        if fid.startswith("S") and feature == "Focus summaries" and verdict != "Retire":
+            problems.append(f"focus summaries must be retired: {where}")
+    if not seen:
+        problems.append(f"no feature rows found in {FEATURES}")
+    if not any(fid.startswith("S") for fid in seen) or not any(fid.startswith("A") for fid in seen):
+        problems.append(f"{FEATURES} needs rows for both action-triage (A) and Session Atlas (S)")
+    if "| Focus summaries |" not in text:
+        problems.append(f"no Focus summaries row in {FEATURES}")
+    return problems
+
+
+def conventions_problems() -> list[str]:
+    """scripts/conventions.py's own check of the registry and the priorities file."""
+    if not ((ROOT / "conventions/registry.yaml").is_file() and (ROOT / "conventions/priorities.yaml").is_file()):
+        return []  # reported as missing above
+    try:
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import conventions
+    except ImportError as exc:
+        return [f"cannot check conventions/: {exc} (pip install -r requirements.txt)"]
+    try:
+        registry, priorities = conventions.load(conventions.REGISTRY), conventions.load(conventions.PRIORITIES)
+    except conventions.ConventionsFileError as exc:
+        return [f"conventions: {exc}"]
+    return [f"conventions: {p}" for p in conventions.validate(registry, priorities)]
+
+
+INVENTORY_VERDICTS = {"keep", "migrate", "build new", "dismantle"}
+
+
+def table_rows(text: str):
+    """Yields (header, cells, line number) for every Markdown table body row."""
+    header = None
+    for n, line in enumerate(text.splitlines(), 1):
+        stripped = line.strip()
+        if not (stripped.startswith("|") and stripped.endswith("|")):
+            header = None
+            continue
+        cells = [c.strip() for c in stripped.strip("|").split("|")]
+        if header is None:
+            header = cells
+        elif not all(re.fullmatch(r":?-+:?", c) for c in cells):
+            yield header, cells, n
+
+
+def inventory_problems(path: Path) -> list[str]:
+    problems = []
+    rel = path.relative_to(ROOT) if path.is_relative_to(ROOT) else path
+    for header, cells, n in table_rows(path.read_text(encoding="utf-8")):
+        row = dict(zip(header, cells))
+        if len(cells) != len(header):
+            problems.append(f"inventory row has {len(cells)} cells, header has {len(header)}: {rel}:{n}")
+            continue
+        if "What it is" in row and not ("Verdict" in row and "Reason" in row):
+            problems.append(f"inventory table of items (a 'What it is' column) without Verdict and Reason columns: {rel}:{n}")
+            continue
+        if "Verdict" in row and "Reason" in row:
+            if row["Verdict"] not in INVENTORY_VERDICTS:
+                problems.append(f"inventory row without exactly one verdict: {rel}:{n}: {row['Verdict']!r}")
+            if len(row["Reason"]) < 10:
+                problems.append(f"inventory row without a reason: {rel}:{n}")
+        if "Date range" in row and "Produced by" in row:
+            if not row["Date range"] or not row["Produced by"]:
+                problems.append(f"figure without a date range or command: {rel}:{n}")
+    return problems
+
+
 def main() -> int:
     problems: list[str] = []
 
@@ -148,6 +315,7 @@ def main() -> int:
 
     docs = [p for p in ROOT.glob("*.md") if p.is_file()] + sorted((ROOT / "docs").rglob("*.md"))
     docs += sorted((ROOT / "graphs").rglob("*.md"))
+    docs += sorted((ROOT / "conventions").rglob("*.md"))
     for doc in docs:
         text = doc.read_text(encoding="utf-8")
         known = anchors_in(text)
@@ -166,12 +334,34 @@ def main() -> int:
     if (ROOT / ".git").exists() and not phi_is_ignored():
         problems.append("not ignored: a file inside a .phi folder (.gitignore needs *[Pp][Hh][Ii])")
 
+    features = ROOT / FEATURES
+    if features.is_file():
+        problems += feature_list_problems(features.read_text(encoding="utf-8"))
+    else:
+        problems.append(f"missing: {FEATURES}")
+
+    for rel in CONVENTIONS:
+        if not (ROOT / rel).is_file():
+            problems.append(f"missing: {rel}")
+    problems += conventions_problems()
+    problems += laptop_problems()
+    if "--fast" not in sys.argv[1:]:
+        problems += test_problems()
+
+    for name in ("laptop.md", "starting-figures.md"):
+        if not (ROOT / "docs/inventory" / name).is_file():
+            problems.append(f"JP-96 deliverable missing: docs/inventory/{name}")
+    for doc in sorted((ROOT / "docs/inventory").glob("*.md")):
+        if doc != ROOT / FEATURES:  # JP-97's list has its own verdicts and check (check 6)
+            problems += inventory_problems(doc)
+
     code, output = run_quietly(["graphs/tools/check_graph.py"])
     if code != 0:
         problems.append(f"graph checker failed:\n{output}")
-    code, output = run_quietly(["-m", "unittest", "discover", "-s", "graphs/tests"])
-    if code != 0:
-        problems.append(f"graph checker tests failed:\n{output}")
+    if "--fast" not in sys.argv[1:]:
+        code, output = run_quietly(["-m", "unittest", "discover", "-s", "graphs/tests"])
+        if code != 0:
+            problems.append(f"graph checker tests failed:\n{output}")
 
     for p in problems:
         print(p)

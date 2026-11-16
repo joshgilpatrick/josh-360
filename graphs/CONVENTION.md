@@ -162,7 +162,7 @@ python3 graphs/tools/check_graph.py graphs/flows/my-graph.yaml   # one file
 python3 graphs/tools/check_graph.py --root <dir> <file>         # another parts folder (the tests use this)
 ```
 
-It checks `tiers.yaml`, every role and agent, and each graph file. It prints one line per problem, naming the file and where in it (a step id, a loop, a key), and exits 0 when there are none, 1 when there are, and 2 when it cannot run (a missing folder, or PyYAML not installed). A YAML key written twice in one mapping is refused, and `on`, `off`, `yes` and `no` are read as plain words, not as true or false. It needs PyYAML (`pip install -r graphs/requirements.txt`). `python3 scripts/check.py`, the repository's suite, runs it and its tests (`graphs/tests/`). The sample graphs there, one that passes and one per broken rule, are the quickest way to see the convention in use.
+It checks `tiers.yaml`, every role and agent, and each graph file. It prints one line per problem, naming the file and where in it (a step id, a loop, a key), and exits 0 when there are none, 1 when there are, and 2 when it cannot run (a missing folder, or PyYAML not installed). A YAML key written twice in one mapping is refused, and `on`, `off`, `yes` and `no` are read as plain words, not as true or false. It needs PyYAML (`pip install -r requirements.txt`). `python3 scripts/check.py`, the repository's suite, runs it and its tests (`graphs/tests/`). The sample graphs there, one that passes and one per broken rule, are the quickest way to see the convention in use.
 
 ## Changing this convention
 

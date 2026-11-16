@@ -44,9 +44,14 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 
 ## Commands
 
-- Checks (the whole suite for now): `python3 scripts/check.py`. It needs PyYAML once: `pip install -r graphs/requirements.txt`.
+- Install once: `pip install -r requirements.txt` (PyYAML).
+- Checks and tests: `python3 scripts/check.py` (add `--fast` to skip `tests/`).
+- Conventions: `python3 scripts/conventions.py check`, and `python3 scripts/conventions.py lookup --folder <path>` or `--repo <name>` to find where work belongs.
+- Laptop inventory (JP-96, run on the laptop only, read-only, standard library only): `python3 scripts/laptop_inventory.py --out ~/josh-360-inventory.json`
+- What the laptop has installed: `python3 laptop/status.py show` (reads the `laptop-status` branch).
+- Install: merging to `main` installs on the laptop on its own (JP-105). Code that runs on the laptop uses Python 3.9 and the standard library only. A new background job is an entry in `jobs.yaml`; a new Claude Code hook is an executable file in `hooks/<Event>/`; a new install step goes in `STEPS` in `laptop/install.py`.
+- Pause the laptop from the cloud: push a branch named `laptop-pause`; delete it to resume.
 - Graph checker on its own: `python3 graphs/tools/check_graph.py` (rules in `graphs/CONVENTION.md`).
-- There is no app, build or install step yet. The ticket that adds one adds its command here and in `.claude/workflow.config.md`.
 
 ## Layout
 
@@ -54,7 +59,8 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - `apps/`: runnable parts (moved in from Session Atlas and action-triage later).
 - `ledger/`: the ledger, the local record of every agent session.
 - `graphs/`: the agent graphs and the walker. How a graph is stored, and the checker's rules: `graphs/CONVENTION.md`.
-- `conventions/`: ticket conventions, the system registry and the standing priorities.
+- `conventions/`: ticket conventions (`tickets.md`), the system registry (`registry.yaml`) and the standing priorities (`priorities.yaml`). Ticket rules for all of Josh's work start here.
+- `docs/surface-map.md`: every surface Josh works through, and where its configuration lives.
 - `docs/vision-and-roadmap.md`: the approved vision and roadmap (the requirements source).
 - `docs/decisions.md`: decisions from the question round, and default choices made while building.
 - `docs/source-notes/`: Josh's notes for the four graphs and the brainstorm, unchanged.
@@ -65,6 +71,12 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - `docs/proof/`: proof for each ticket, by date and key.
 - `.claude/`: workflow values, skills, commands and subagents.
 - `scripts/check.py`: the repo's checks, run by CI as the `suite` job.
+- `scripts/conventions.py`: checks and reads the registry and the priorities file.
+- `scripts/laptop_inventory.py`, `scripts/laptop_figures.py`: the read-only laptop inventory and starting figures (JP-96), run by hand once, not installed.
+- `tests/`: the tests (stdlib unittest), run by `scripts/check.py`.
+- `jobs.yaml`: Josh 360's background jobs on the laptop.
+- `laptop/`: how the laptop follows `main`: the install script, the job runner, the `follow` job, the status branch and the pause switch.
+- `hooks/`: Claude Code hooks, loaded on the laptop through `hooks/dispatch`.
 
 ## Product
 

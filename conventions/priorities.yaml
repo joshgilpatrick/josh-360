@@ -1,0 +1,102 @@
+# Josh's standing priorities (JP-98). Josh edits this file by hand.
+#
+# The six he is answerable for, as he named them at a leadership forum, plus DevEx (shown only in Josh 360)
+# and Unassigned (what is left over, kept honest so time outside the six can be counted). Nothing is forced
+# into a bucket: work that matches none of the links below is Unassigned.
+#
+# Each priority points at what it covers in Jira. A ticket's priority comes from its epic first, then the
+# initiative its epic relates to, then its area:
+#
+#   python3 scripts/conventions.py priority --epic AD-198
+#
+# A link may point at one priority only. Working agents never read this file; only the step that links work
+# to priorities does, and it picks from this list. Weekly priorities are not here: Josh marks them in Jira.
+# Check after every edit: python3 scripts/conventions.py check
+#
+# kind:      standing (one of the six), devex or unassigned.
+# shown_to:  department (the six) or josh (DevEx and Unassigned appear only in Josh 360).
+# covers:    areas (names from conventions/registry.yaml), initiatives (TECH keys) and epics.
+#
+# The covers lists were seeded on 16 November 2026 from the open epics in AD, CI and JP and the initiatives in
+# TECH. Josh confirms them at JP-106. A priority with empty lists is real; nothing in Jira is tied to it yet.
+
+version: 1
+
+priorities:
+  - id: athena
+    name: Athena
+    kind: standing
+    rank: 1
+    shown_to: department
+    covers:
+      areas: [EHR administration]
+      initiatives: [TECH-13, TECH-14, TECH-15, TECH-16, TECH-18]
+      epics: [CI-1, CI-41, CI-42, CI-43, AD-119, AD-150, AD-219]
+
+  - id: equip
+    name: EQuIP
+    kind: standing
+    rank: 2
+    shown_to: department
+    covers:
+      areas: [Clinical quality programs]
+      initiatives: []
+      epics: [AD-38, AD-197, AD-198, AD-305, CI-54, CI-55, CI-56]
+
+  - id: pims
+    name: PIMS
+    kind: standing
+    rank: 3
+    shown_to: department
+    covers:
+      areas: []
+      initiatives: []
+      epics: []
+
+  - id: ma-clinical-data-transfer
+    name: "M&A: clinical data transfer"
+    kind: standing
+    rank: 4
+    shown_to: department
+    covers:
+      areas: []
+      initiatives: []
+      epics: []
+
+  - id: clinician-tech-stack-ux
+    name: Clinician tech stack and UX
+    kind: standing
+    rank: 5
+    shown_to: department
+    covers:
+      areas: []
+      initiatives: [TECH-17]
+      epics: [AD-65, AD-88, AD-117, AD-118, AD-291, CI-50, CI-53]
+
+  - id: ai-scribing-utilization
+    name: AI scribing utilization
+    kind: standing
+    rank: 6
+    shown_to: department
+    covers:
+      areas: []
+      initiatives: []
+      epics: []
+
+  - id: devex
+    name: DevEx
+    kind: devex
+    shown_to: josh
+    covers:
+      areas: [Automation and AI enablement]
+      initiatives: []
+      epics: [JP-94, CI-57]
+
+  - id: unassigned
+    name: Unassigned
+    kind: unassigned
+    shown_to: josh
+    covers:
+      areas: []
+      initiatives: []
+      epics: []

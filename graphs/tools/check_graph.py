@@ -595,7 +595,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if yaml is None:
-        print("check_graph: cannot run: PyYAML is not installed (pip install -r graphs/requirements.txt)")
+        print("check_graph: cannot run: PyYAML is not installed (pip install -r requirements.txt)")
         return 2
     if not args.root.is_dir():
         print(f"check_graph: cannot run: no folder {args.root}")

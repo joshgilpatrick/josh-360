@@ -1,0 +1,63 @@
+# JP-105 proof 01: the josh-360 suite (Python 3 and the laptop's Python 3.9)
+# Covers @auto scenarios: stays in its lane, running twice, cloud can see the result, Josh can pause it.
+# Refreshed after the review fixes (head after 5532007).
+
+$ python3 scripts/check.py
+OK
+check.py: ok (0 problem(s))
+
+$ python3.9 -m unittest discover -s tests -t tests -v
+test_a_cloud_session_can_see_the_result (test_follow.FollowTest)
+Scenario: A cloud session can see the result. ... ok
+test_a_failed_install_leaves_the_last_good_install (test_follow.FollowTest) ... ok
+test_a_merge_reaches_the_laptop_on_its_own (test_follow.FollowTest)
+Scenario: A merge reaches the laptop on its own (one launchd pass of the runner, nothing else). ... ok
+test_a_once_job_reports_back_on_the_status_branch (test_follow.FollowTest)
+The mechanism the inventory (JP-96) will use: a once job whose JSON output comes back. ... ok
+test_josh_can_pause_it_from_the_cloud (test_follow.FollowTest)
+Scenario: Josh can pause it (a laptop-pause branch on GitHub). ... ok
+test_josh_can_pause_it_on_the_laptop (test_follow.FollowTest)
+Scenario: Josh can pause it (local switch). ... ok
+test_local_changes_stop_it (test_follow.FollowTest) ... ok
+test_nothing_new_is_not_pushed_again (test_follow.FollowTest) ... ok
+test_refuses_to_run_from_any_other_clone (test_follow.FollowTest)
+A clone Josh works in is never moved, recorded as installed, or reported. ... ok
+test_a_broken_hook_fails_open (test_hooks.DispatchTest) ... ok
+test_a_new_hook_file_is_picked_up (test_hooks.DispatchTest) ... ok
+test_exit_2_blocks (test_hooks.DispatchTest) ... ok
+test_files_that_are_not_executable_are_ignored (test_hooks.DispatchTest) ... ok
+test_first_json_wins (test_hooks.DispatchTest) ... ok
+test_no_hooks_is_a_quiet_no_op (test_hooks.DispatchTest) ... ok
+test_odd_event_names_do_nothing (test_hooks.DispatchTest) ... ok
+test_dry_run_changes_nothing (test_install.InstallTest) ... ok
+test_running_twice_reports_no_changes (test_install.InstallTest)
+Scenario: Running it twice is safe. ... ok
+test_stays_in_its_lane (test_install.InstallTest)
+Scenario: The install script stays in its lane. ... ok
+test_stops_on_a_bad_hooks_folder (test_install.InstallTest) ... ok
+test_stops_on_a_linked_state_folder (test_install.InstallTest) ... ok
+test_stops_with_nothing_changed_on_the_unexpected (test_install.InstallTest) ... ok
+test_once_and_report (test_install.JobsFileTest) ... ok
+test_rejects_what_it_does_not_expect (test_install.JobsFileTest) ... ok
+test_the_real_file_starts_with_follow (test_install.JobsFileTest) ... ok
+test_refuses_any_path_outside_home (test_install.LaneTest) ... ok
+
+----------------------------------------------------------------------
+Ran 26 tests in 10.476s
+
+OK
+
+# macOS's /usr/bin/python3 writes its own bytecode cache under $HOME/Library/Caches/com.apple.python
+# on start. This cloud machine is Linux, so a stand-in interpreter does the same, then runs Python 3.9:
+#   mkdir -p "$HOME/Library/Caches/com.apple.python/x" && echo c > .../x/c.pyc; exec python3.9 "$@"
+# With PY pointed at the stand-in, before the helpers fix 4 tests failed (the audit's finding):
+$ python3.9 -m unittest discover -s tests -t tests   # old helpers, stand-in interpreter
+FAIL: test_dry_run_changes_nothing (test_install.InstallTest)
+FAIL: test_stays_in_its_lane (test_install.InstallTest)
+FAIL: test_stops_on_a_bad_hooks_folder (test_install.InstallTest)
+FAIL: test_stops_with_nothing_changed_on_the_unexpected (test_install.InstallTest)
+Ran 26 tests in 7.737s
+FAILED (failures=4)
+$ python3.9 -m unittest discover -s tests -t tests   # new helpers, stand-in interpreter
+Ran 26 tests in 8.948s
+OK

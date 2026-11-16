@@ -1,0 +1,4 @@
+Scenario: The per-turn summaries are retired
+row: S3 Focus summaries | verdict: Retire | carrier: JP-108 (replacement); JP-111 (switch off)
+check on a copy where S3 is kept:
+   focus summaries must be retired: docs/inventory/features.md:138 (S3)
