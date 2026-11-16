@@ -1,0 +1,40 @@
+{
+  "_about": "Draft code lists for the ledger (JP-99, docs/design/data-model.md, 'Codes'). Writers refuse a code not listed here. Add a code by adding it here with the date; never rename or reuse one. JP-112 and JP-113 finalise their lists from real rows.",
+  "session_facts": {
+    "josh_messages_answer": "Josh's messages that answered a question the agent asked",
+    "josh_messages_unprompted": "Josh's messages he sent without being asked",
+    "josh_interrupts": "Times Josh stopped the agent mid-step",
+    "failed_commands": "Commands that failed",
+    "repeat_failed_commands": "The same command failing again",
+    "max_reads_of_one_file": "The most times one file was read",
+    "context_first_turn_pct": "How full the context was at the first turn, in percent",
+    "context_exhausted": "Times the context ran out",
+    "compactions": "Compactions in this episode",
+    "seconds_waiting_on_josh": "Time the session waited on Josh",
+    "seconds_working": "Time the session spent working",
+    "u_turns": "U-turns written in STATE.md",
+    "dead_ends": "Dead ends written in STATE.md",
+    "instruction_bytes_loaded": "Size of the instructions the session loaded"
+  },
+  "debrief_ended_how": {
+    "delivered": "The session delivered what it set out to do",
+    "handed-off": "The work continues in another session or run",
+    "blocked": "It stopped on something outside its control",
+    "abandoned": "It stopped with the work unfinished and no hand-off",
+    "question-only": "It answered a question; nothing was to be delivered"
+  },
+  "debrief_kinds": {
+    "josh-corrected": "Josh corrected the agent",
+    "josh-handed-over": "Josh handed over something the agent could have looked up",
+    "rule-restated": "Josh restated a rule that is already written down",
+    "asked-answered-question": "The agent asked a question that already has a recorded answer",
+    "wrong-path": "The agent went down a wrong path and came back",
+    "tool-failure": "A tool or environment failure cost real time",
+    "guidance-missed": "A skill or rule should have applied and did not",
+    "manual-repeat": "A manual step was repeated that a script could do",
+    "false-done": "Work was reported as done and was not"
+  },
+  "_added": {
+    "2026-11-16": "every code above (draft, JP-99)"
+  }
+}
