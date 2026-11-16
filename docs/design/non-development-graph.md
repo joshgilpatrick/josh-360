@@ -24,7 +24,7 @@
 - [Questions for Josh](#questions-for-josh)
 - [Josh's open questions, answered](#joshs-open-questions-answered)
 
-Ticket JP-104. Status: draft for Josh's approval. Josh answered both questions on 16 November 2026 (see [Questions for Josh](#questions-for-josh)). This file is the spec for the non-development graph. The build ticket JP-123 reads it. There are no boards, because the graph has no screen. The draft graph file is `graphs/flows/non-development.yaml`, and it passes the checker (`python3 graphs/tools/check_graph.py`).
+Ticket JP-104. Status: approved by Josh on 16 November 2026. He answered both questions the same day (see [Questions for Josh](#questions-for-josh)). This file is the spec for the non-development graph. The build ticket JP-123 reads it, with its plan `docs/superpowers/plans/2026-11-16-non-development-graph.md`. There are no boards, because the graph has no screen. The draft graph file is `graphs/flows/non-development.yaml`, and it passes the checker (`python3 graphs/tools/check_graph.py`).
 
 Sources: Josh's notes (`docs/source-notes/research-action-item-pipeline.md`), the vision (`docs/vision-and-roadmap.md`, "Agent graphs"), the graph convention (`graphs/CONVENTION.md`), the ticket rules (`conventions/tickets.md`), the inventory (`docs/inventory/features.md`, A27 Email Research Desk and S11/S12), and the desk worker skill that runs today (claude-harness `skills/desk-worker`).
 
