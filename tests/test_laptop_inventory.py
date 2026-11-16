@@ -347,6 +347,50 @@ class LaptopInventoryTest(unittest.TestCase):
             alias.unlink()
             out.unlink(missing_ok=True)
 
+    # The JP-105 laptop job: the same script, run once by the job runner, its JSON on standard output.
+    def test_job_prints_only_json_and_writes_nothing(self):
+        copy = self.tmp / "job-copy"
+        shutil.copytree(ROOT / "scripts", copy, ignore=shutil.ignore_patterns("__pycache__"))
+        (self.home / "Documents").mkdir()
+        (self.home / "Documents/agent-notes").mkdir()
+        before = snapshot(self.tmp)
+        env = {k: v for k, v in os.environ.items() if k != "PYTHONDONTWRITEBYTECODE"}
+        env.update(HOME=str(self.home), PATH="/usr/bin:/bin:/usr/sbin:/sbin")
+        try:
+            run = subprocess.run([sys.executable, str(copy / "laptop_inventory_job.py")], cwd=str(copy),
+                                 capture_output=True, text=True, env=env, timeout=120)
+            self.assertEqual(run.returncode, 0, run.stderr)
+            self.assertEqual(snapshot(self.tmp), before)  # no output file, no bytecode, nothing else
+            report = json.loads(run.stdout)  # all of standard output is the one JSON value
+            self.assertIn("wrote standard output", run.stderr)
+            self.assertNotIn("CANARY", run.stdout)
+            self.assertNotIn("SECRETVALUE", run.stdout)
+            self.assertEqual(laptop_inventory.check_output(report), [])
+            self.assertLess(len(run.stdout.encode("utf-8")), 1_000_000)
+            self.assertEqual(report["stores"]["known"]["~/.claude/atlas"]["bytes"], 2048)
+            onedrive = [k for k in report["stores"]["known"] if k.startswith("~/Library/CloudStorage/")]
+            self.assertEqual([report["stores"]["known"][k] for k in onedrive], [{"skipped": "may prompt"}])
+            self.assertNotIn("~/Documents", report["stores"]["home_folders"])
+        finally:
+            shutil.rmtree(copy)
+            shutil.rmtree(self.home / "Documents")
+
+    def test_the_job_is_listed_once_with_a_report(self):
+        sys.path.insert(0, str(ROOT / "laptop"))
+        import common  # noqa: E402  (JP-105's job list reader)
+        job = next(j for j in common.load_jobs(ROOT) if j["id"] == "inventory")
+        self.assertEqual((job["run"], job["every"], job["report"]), ("scripts/laptop_inventory_job.py", None, True))
+        self.assertLessEqual(laptop_inventory.REPORT_LIMIT, 1_000_000)
+
+    def test_fit_drops_low_value_sections_to_stay_under_the_limit(self):
+        report = {"running_programs": {"programs": {f"p{i}": i for i in range(5000)}},
+                  "stores": {"children": {"x": 1}, "known": {"~/a": {"bytes": 1}}}, "figures": {"sessions": 3}}
+        fitted = laptop_inventory.fit(report, limit=2000)
+        self.assertEqual(fitted["running_programs"], {"trimmed": True})
+        self.assertEqual(fitted["trimmed"], ["running_programs"])
+        self.assertEqual(fitted["figures"], {"sessions": 3})
+        self.assertNotIn("trimmed", laptop_inventory.fit({"figures": {"sessions": 1}}))
+
     def test_default_range_is_twelve_whole_weeks(self):
         since, until = laptop_inventory.default_range(date(2026, 11, 18))
         self.assertEqual((since.isoformat(), until.isoformat()), ("2026-08-24", "2026-11-15"))
