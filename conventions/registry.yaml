@@ -1,0 +1,299 @@
+# System registry (JP-98). Rules: conventions/tickets.md, "Routing a ticket to a space and a parent".
+#
+# One entry per system: the folders and repositories it lives in, its department area of responsibility,
+# where its tickets go, its default parent epic and the priority it falls under. A script answers "where does
+# this folder or repository belong?" from this file alone, with no AI:
+#
+#   python3 scripts/conventions.py lookup --folder ~/Development/active/keystone-platform
+#   python3 scripts/conventions.py lookup --repo eventuswh-apps/keystone-platform
+#
+# A folder or repository no entry lists is Unassigned, and a ticket for it goes to the fallback space (JP)
+# with no parent. Nothing is guessed from a similar name. Check after every edit:
+#
+#   python3 scripts/conventions.py check
+#
+# Fields:
+#   name          The system, spelled as its Jira label (the lowercase repository name). Unique.
+#   description   One line.
+#   repositories  Bare repository names, no owner (owners change during the GitHub org migration).
+#                 Hyphens and underscores count as the same spelling.
+#   folders       Folders on Josh's work laptop. ~ is his home folder. A folder inside another listed
+#                 folder belongs to the deeper entry.
+#   area          The department area of responsibility, from `areas` below. Optional for personal systems.
+#   tracker       jira (work) or linear (personal).
+#   jira_space    Where its tickets go. Never TECH, which holds initiatives only.
+#   linear_team   For tracker: linear.
+#   default_epic  The parent for a new ticket when nothing better is known, in the same space, or null.
+#                 Only an epic with an end belongs here; an open-ended catch-all epic does not.
+#   priority      An id from conventions/priorities.yaml. If priorities.yaml maps the system's area to a
+#                 priority, the two must agree.
+#
+# Seeded on 16 November 2026 from labels and epics in Jira and from paths named in Josh's repositories.
+# Folders were not checked on the laptop; JP-105 (the laptop hookup) can confirm them. Josh confirms the
+# seeded rows at JP-106. Default choices are recorded in docs/decisions.md.
+
+version: 1
+
+fallback:
+  jira_space: JP
+  priority: unassigned
+
+spaces:
+  JP: Josh Projects. Josh's own intake and every DevEx ticket. Work that becomes team work moves to CI or AD.
+  AD: Apps Development. Software work for the clinical team.
+  CI: Clinical Informatics. Operational and clinical work, such as EHR administration and the Athena build.
+  TECH: Technology Projects. Department initiatives only; a ticket never lives here.
+
+# Department areas of responsibility (draft names from the department work convention, held in the
+# department SharePoint; team leads may still rename them). Value: the team that owns the area.
+areas:
+  Reporting and BI delivery: Analytics
+  Analytics applications: Analytics
+  Data platform operations: Data Engineering
+  Source data integration and modeling: Data Engineering
+  Data access governance: Data Engineering
+  EHR administration: Clinical Informatics
+  Clinical data migration and integration: Clinical Informatics
+  Clinical application platform: Clinical Informatics
+  Clinical quality programs: Clinical Informatics
+  Automation and AI enablement: Clinical Informatics
+  Identity and access: Security and IT Ops
+  Security operations and data protection: Security and IT Ops
+  Compliance and risk: Security and IT Ops
+
+systems:
+  # Clinical work
+  - name: keystone-platform
+    description: Keystone (Eventus Connect), the clinical application platform
+    repositories: [keystone-platform]
+    folders: [~/Development/active/keystone-platform]
+    area: Clinical application platform
+    tracker: jira
+    jira_space: AD
+    default_epic: null
+    priority: clinician-tech-stack-ux
+
+  - name: athena-services
+    description: Services that integrate applications with Athena
+    repositories: [athena-services]
+    folders: [~/Development/active/athena_services]
+    area: Clinical data migration and integration
+    tracker: jira
+    jira_space: AD
+    default_epic: null
+    priority: athena
+
+  - name: athena-data-migration
+    description: The ChartPath to Athena data migration
+    repositories: [athena-data-migration]
+    folders: [~/Development/active/josh_projects/athena_data_migration]
+    area: Clinical data migration and integration
+    tracker: jira
+    jira_space: AD
+    default_epic: null
+    priority: athena
+
+  - name: athena_automations
+    description: Automations for Athena build and EHR administration
+    repositories: [athena_automations]
+    folders: [~/Development/active/josh_projects/athena_automations]
+    area: EHR administration
+    tracker: jira
+    jira_space: CI
+    default_epic: null
+    priority: athena
+
+  - name: equip_services
+    description: EQuIP measures, pipeline and payouts
+    repositories: [equip_services]
+    folders: [~/Development/active/equip_services, ~/Development/active/josh_projects/equip]
+    area: Clinical quality programs
+    tracker: jira
+    jira_space: AD
+    default_epic: null
+    priority: equip
+
+  - name: pims_services
+    description: PIMS services
+    repositories: [pims_services]
+    folders: [~/Development/active/pims_services]
+    area: Clinical application platform
+    tracker: jira
+    jira_space: AD
+    default_epic: null
+    priority: pims
+
+  - name: ai_scribing_services
+    description: AI scribing services
+    repositories: [ai_scribing_services]
+    folders: [~/Development/active/ai_scribing_services, ~/Development/active/josh_projects/ai_scribing]
+    area: Clinical application platform
+    tracker: jira
+    jira_space: AD
+    default_epic: null
+    priority: ai-scribing-utilization
+
+  - name: charta_services
+    description: Charta services
+    repositories: [charta_services]
+    area: Clinical application platform
+    tracker: jira
+    jira_space: AD
+    default_epic: null
+    priority: unassigned
+
+  - name: survey-services
+    description: Survey services
+    repositories: [survey-services]
+    area: Clinical application platform
+    tracker: jira
+    jira_space: AD
+    default_epic: null
+    priority: unassigned
+
+  - name: training-services
+    description: Training services
+    repositories: [training-services]
+    area: Clinical application platform
+    tracker: jira
+    jira_space: AD
+    default_epic: null
+    priority: unassigned
+
+  - name: fx-app-apps-services
+    description: Azure Functions app for the clinical applications
+    repositories: [fx-app-apps-services]
+    folders: [~/Development/active/fx-app-apps-services]
+    area: Clinical application platform
+    tracker: jira
+    jira_space: AD
+    default_epic: null
+    priority: unassigned
+
+  - name: fx-app-zus-services
+    description: Zus enrollment and data exchange
+    repositories: [fx-app-zus-services]
+    folders: [~/Development/active/zus_services]
+    area: Clinical data migration and integration
+    tracker: jira
+    jira_space: AD
+    default_epic: null
+    priority: unassigned
+
+  - name: synapse-pipelines
+    description: Azure Synapse pipelines
+    repositories: [synapse-pipelines]
+    folders: [~/Development/active/synapse_pipelines]
+    area: Data platform operations
+    tracker: jira
+    jira_space: AD
+    default_epic: null
+    priority: unassigned
+
+  # DevEx: Josh's own developer experience. Tickets live in JP.
+  - name: josh-360
+    description: Josh 360, the home for Josh's agent workflow
+    repositories: [josh-360]
+    folders: [~/Development/active/josh-360]
+    area: Automation and AI enablement
+    tracker: jira
+    jira_space: JP
+    default_epic: JP-94
+    priority: devex
+
+  - name: josh-projects
+    description: Josh's working repository, including agent_tools (Jira, Outlook and other command-line tools)
+    repositories: [josh-projects]
+    folders: [~/Development/active/josh_projects]
+    area: Automation and AI enablement
+    tracker: jira
+    jira_space: JP
+    default_epic: null
+    priority: devex
+
+  - name: action-triage
+    description: The action-triage desktop app, its orchestrator daemon and the Email Research Desk
+    repositories: [action-triage]
+    folders: [~/Development/active/josh_projects/action-triage, ~/Development/active/action-triage]
+    area: Automation and AI enablement
+    tracker: jira
+    jira_space: JP
+    default_epic: null
+    priority: devex
+
+  - name: claude-360
+    description: Session Atlas, the local index of every Claude Code session
+    repositories: [claude-360]
+    folders: [~/Development/active/claude-360]
+    area: Automation and AI enablement
+    tracker: jira
+    jira_space: JP
+    default_epic: null
+    priority: devex
+
+  - name: claude-harness
+    description: Josh's ~/.claude folder (global rules, skills, agents, hooks)
+    repositories: [claude-harness]
+    folders: [~/.claude]
+    area: Automation and AI enablement
+    tracker: jira
+    jira_space: JP
+    default_epic: null
+    priority: devex
+
+  - name: macbook-automations
+    description: The login job and the background jobs it starts on the work laptop
+    repositories: [macbook-automations]
+    folders: [~/Development/active/josh_projects/macbook_automations]
+    area: Automation and AI enablement
+    tracker: jira
+    jira_space: JP
+    default_epic: null
+    priority: devex
+
+  - name: agent-services
+    description: Josh's agent services (meeting notes, agent tools)
+    repositories: [agent-services]
+    folders: [~/Development/active/agent_services]
+    area: Automation and AI enablement
+    tracker: jira
+    jira_space: JP
+    default_epic: null
+    priority: devex
+
+  - name: fx-app-josh-services
+    description: Azure Functions app for Josh's own services, such as email intake
+    repositories: [fx-app-josh-services]
+    folders: [~/Development/active/fx-app-josh-services]
+    area: Automation and AI enablement
+    tracker: jira
+    jira_space: JP
+    default_epic: null
+    priority: devex
+
+  - name: bifrost-migration
+    description: The Bifrost model gateway that agent sessions run through
+    repositories: [bifrost-migration]
+    folders: [~/Development/active/bifrost-migration]
+    area: Automation and AI enablement
+    tracker: jira
+    jira_space: JP
+    default_epic: null
+    priority: devex
+
+  - name: obsidian-wiki
+    description: The Obsidian wiki that session transcripts are staged into
+    folders: [~/Development/active/obsidian-wiki]
+    area: Automation and AI enablement
+    tracker: jira
+    jira_space: JP
+    default_epic: null
+    priority: devex
+
+  # Personal work: Linear (team GIL) under the using-linear convention, designed further in phase 3.
+  - name: family_os
+    description: Family Hub, the household app
+    repositories: [family_os]
+    tracker: linear
+    linear_team: GIL
+    priority: unassigned
