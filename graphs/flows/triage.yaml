@@ -15,11 +15,11 @@ header:
   jira:
     - status: Not Started
       steps: [read_ticket, ready_check, route, sign_off, check_sign_off, verdict, revise,
-              apply_revision, ask_josh, ask_at_limit, send_back]
+              apply_revision, ask_josh, ask_returned, ask_at_limit, send_back]
     - { status: Ready, steps: [mark_ready] }
   entry_gate: triageable
   exit_gate: no-loose-ends
-  asks_josh: [ask_josh, ask_at_limit]
+  asks_josh: [ask_josh, ask_returned, ask_at_limit]
   ledger: [run, step, outcome, loop_count, session, tier, ticket, started_at, ended_at]
   access:
     read_ticket: read
@@ -31,6 +31,7 @@ header:
     revise: read
     apply_revision: josh
     ask_josh: read
+    ask_returned: read
     ask_at_limit: read
     send_back: josh
     mark_ready: josh
@@ -109,7 +110,9 @@ steps:
     inputs: [author_kind, failures, kept]
     outputs:
       gaps: { type: list, description: "Script failures and kept defects, numbered", contract: send-back }
-    outcomes: [ready, revise, comment]
+    # escalate: the ticket has come back from another graph a third time (rule 10); the
+    # return count lives in the josh360.route record and survives between runs.
+    outcomes: [ready, revise, comment, escalate]
 
   # ---- Own tickets: the drafter fixes, then the checks run again --------------------------------
   - id: revise
@@ -143,6 +146,18 @@ steps:
       choices: [answered, park]
     on:
       answered: { goto: revise, max_loops: 2, at_limit: ask_at_limit }
+      park: end
+
+  - id: ask_returned
+    needs: [verdict]
+    when: { step: verdict, outcome: escalate }
+    ask:
+      question: "{{ inputs.ticket_key }} has come back to triage three times. Every earlier question and answer is on the ticket. What should it do?"
+      choices: [answered, park]
+    on:
+      # Josh's answer is new information, so triage-verdict resets the return count and the
+      # drafter writes the answer into the ticket on the next pass.
+      answered: { goto: read_ticket, max_loops: 1, at_limit: ask_at_limit }
       park: end
 
   - id: ask_at_limit
