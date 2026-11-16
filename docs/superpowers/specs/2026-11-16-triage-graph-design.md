@@ -3,6 +3,7 @@
 ## Contents
 
 - [Summary](#summary)
+- [The flow at a glance](#the-flow-at-a-glance)
 - [Where triage sits](#where-triage-sits)
 - [Who may start a run](#who-may-start-a-run)
 - [The steps](#the-steps)
@@ -32,6 +33,52 @@ Triage takes one drafted ticket in Not Started and ends in one of three ways:
 3. **One question for Josh.** This happens only for his own tickets, and only when the drafter cannot close a gap by quoting a source.
 
 Scripts do most of the work: the Ready checklist, the routing, the defect filter and the only status move. A model judges five things a script cannot, and the model that judges never wrote the ticket. Triage needs no worktree and changes no repository, so nothing it produces can be lost at cleanup.
+
+## The flow at a glance
+
+Where triage sits among the four graphs. The hexagon is where Josh is asked.
+
+```mermaid
+flowchart LR
+  E[Forwarded email, action item, to-do] --> C[Ticket creation JP-102]
+  H[Josh writes a ticket by hand] --> T
+  O[Someone else's ticket, queued by Josh] --> T
+  C --> T[Triage and sign-off: this graph]
+  T -->|development| D[Development graph]
+  T -->|non-development| N[Non-development graph JP-104]
+  D -->|designer question| T
+  N -->|needs code| T
+  T -.->|only when the drafter cannot answer| J{{Josh: Needs you}}
+```
+
+The steps inside triage. Hexagons are where Josh is asked; every other box is a script or an agent.
+
+```mermaid
+flowchart TD
+  IN[triageable: entry gate] --> R[read_ticket]
+  R --> RC[ready_check: the checklist script]
+  RC -->|pass| RT[route: pick one graph]
+  RC -->|gaps| V
+  RT -->|development or non_development| SO[sign_off: separate agent, J1 to J5]
+  RT -->|conflict| V
+  SO --> CS[check_sign_off: drop defects that quote nothing]
+  CS -->|invalid: signer was an author| SO
+  CS -->|ready or gaps| V[verdict]
+  V -->|ready| MR[mark_ready: move to Ready, write the route]
+  MR -->|ticket changed mid-run| R
+  MR -->|moved| X[no-loose-ends: exit gate]
+  V -->|revise: own ticket| RV[revise: ticket drafter]
+  RV -->|revised| AR[apply_revision]
+  AR -->|rounds 1 and 2| R
+  AR -->|after 2 rounds| AL{{ask_at_limit: Josh}}
+  RV -->|needs_josh| AJ{{ask_josh: Josh}}
+  AJ -->|answered| RV
+  AJ -->|park| X
+  AL -->|one more round| RV
+  AL -->|park| X
+  V -->|comment: someone else's ticket| SB[send_back: one comment, no edit]
+  SB --> X
+```
 
 ## Where triage sits
 
