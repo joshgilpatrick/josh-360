@@ -9,7 +9,7 @@ The laptop pushes one small commit to `laptop-status` after each install. Its tr
 
 The commit is built with git plumbing in a throwaway index, so the laptop's working copy is never
 touched. It uses a fixed author, no signing and no hooks, so Josh's own git settings cannot break it.
-A push is skipped when only the time or the counts changed, unless the last push is a day old.
+A push is skipped unless the installed commit, main or the result changed, or the last push is a day old.
 """
 from __future__ import annotations
 
@@ -58,9 +58,9 @@ def _parse_time(text: str) -> datetime.datetime:
 def worth_pushing(previous: Optional[dict], status: dict) -> bool:
     if previous is None:
         return True
-    # The counts and the time are left out: a repeat run of the same install reports changed: 0,
-    # and the first run's counts are the ones worth keeping.
-    strip = lambda s: {k: v for k, v in s.items() if k not in ("time", "counts")}  # noqa: E731
+    # Only what is installed, what main was and the result count. A repeat run of the same install
+    # reports changed: 0 and "already up to date"; the first run's counts and reason are worth keeping.
+    strip = lambda s: {k: s.get(k) for k in ("schema", "commit", "main", "result")}  # noqa: E731
     if strip(previous) != strip(status):
         return True
     try:
