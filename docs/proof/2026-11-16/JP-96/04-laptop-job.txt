@@ -1,11 +1,11 @@
 Part 1. The job on a made-up home (canary transcripts, secret-looking hook and job arguments,
 a Documents folder and the OneDrive store path), started the way the runner starts it: no arguments,
-launchd's short PATH, HOME pointing at the made-up home.
+launchd's short PATH with a brew that leaves a mark if run, HOME pointing at the made-up home.
 
 $ python3 scripts/laptop_inventory_job.py
 stderr: wrote standard output: 2 launchd plists, 2 sessions, 1 repos, 0.0 s
 exit code: 0
-standard output is one JSON value: True - 7533 bytes
+standard output is one JSON value: True - 7593 bytes
 files added, changed or removed: []
 output contains 'CANARY': False
 output contains 'Jane': False
@@ -15,6 +15,9 @@ output contains 'https://': False
 output guard problems: []
 OneDrive store: {'~/Library/CloudStorage/OneDrive-EventusWholeHealth/Development/active/claude_services/skills/task-manager': {'skipped': 'may prompt'}}
 ~/Documents listed: False
+~/.config/twg (a symlink into OneDrive): {'skipped': 'may prompt'}
+skill task-manager (a symlink into OneDrive), last change: None
+brew run: False - {'available': False, 'skipped': 'brew writes its own cache'}
 
 Part 2. The JP-105 chain on a made-up GitHub and a made-up laptop: one runner pass with this
 branch's jobs.yaml, then what a cloud session sees on laptop-status.
