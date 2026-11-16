@@ -1,0 +1,6142 @@
+{
+  "brew_services": {
+    "available": false,
+    "skipped": "brew writes its own cache"
+  },
+  "claude_settings": {
+    ".claude.json": {
+      "mcp_servers": [
+        "claude-design",
+        "seq",
+        "tldraw-local"
+      ],
+      "projects_with_mcp_servers": 6
+    },
+    ".claude/settings.json": {
+      "api_key_helper": [],
+      "disabled_plugins": [
+        "claude-mem@thedotmack",
+        "ralph-loop@claude-plugins-official"
+      ],
+      "enabled_plugins": [
+        "atlassian@claude-plugins-official",
+        "claude-md-management@claude-plugins-official",
+        "feature-dev@claude-plugins-official",
+        "playground@claude-plugins-official",
+        "ponytail@ponytail",
+        "superpowers@claude-plugins-official"
+      ],
+      "hooks": [
+        {
+          "event": "UserPromptSubmit",
+          "matcher": "",
+          "scripts": [
+            "~/.claude/hooks/pr-review-changes-requested-reminder.sh"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "UserPromptSubmit",
+          "matcher": "",
+          "scripts": [
+            "~/.local/bin/agent-deck"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "UserPromptSubmit",
+          "matcher": "*",
+          "scripts": [
+            "~/Development/active/claude-360/hooks/atlas-hook.js"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "UserPromptSubmit",
+          "matcher": "*",
+          "scripts": [],
+          "type": "command"
+        },
+        {
+          "event": "Notification",
+          "matcher": "*",
+          "scripts": [
+            "~/.claude/hooks/claude-remote-notification.sh"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "Notification",
+          "matcher": "(unlisted)",
+          "scripts": [
+            "~/.local/bin/agent-deck"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "Notification",
+          "matcher": "*",
+          "scripts": [],
+          "type": "command"
+        },
+        {
+          "event": "PostToolUse",
+          "matcher": "*",
+          "scripts": [
+            "~/.claude/hooks/claude-remote-post-tool-use.js"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "PostToolUse",
+          "matcher": "Bash",
+          "scripts": [
+            "~/.claude/hooks/secret-redact-post-tool-use.sh"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "PostToolUse",
+          "matcher": "Bash",
+          "scripts": [
+            "~/Development/active/claude-360/hooks/jira-link-hook.sh"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "PostToolUse",
+          "matcher": "*",
+          "scripts": [
+            "~/Development/active/claude-360/hooks/atlas-hook.js"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "PostToolUse",
+          "matcher": "*",
+          "scripts": [],
+          "type": "command"
+        },
+        {
+          "event": "PreToolUse",
+          "matcher": "*",
+          "scripts": [
+            "~/.claude/hooks/claude-remote-pre-tool-use.js"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "PreToolUse",
+          "matcher": "*",
+          "scripts": [
+            "~/.local/share/agent-services-desk/bin/desk_guard.py",
+            "/usr/bin/python3",
+            "~/.local/share/agent-services-desk/bin/desk_guard.py"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "PreToolUse",
+          "matcher": "AskUserQuestion",
+          "scripts": [
+            "~/Development/active/josh_projects/action-triage/.claude/worktrees/claude/console-redesign-spec/node_modules/.bin/tsx",
+            "~/Development/active/josh_projects/action-triage/.claude/worktrees/claude/console-redesign-spec/src/orchestrator/askHook.ts"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "PreToolUse",
+          "matcher": "*",
+          "scripts": [],
+          "type": "command"
+        },
+        {
+          "event": "SessionStart",
+          "matcher": "*",
+          "scripts": [
+            "~/.claude/hooks/claude-remote-session-start.sh"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "SessionStart",
+          "matcher": "compact",
+          "scripts": [
+            "~/.claude/hooks/post-compact-load-handoff.py"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "SessionStart",
+          "matcher": "*",
+          "scripts": [
+            "~/Development/active/claude-360/hooks/atlas-hook.js"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "SessionStart",
+          "matcher": null,
+          "scripts": [
+            "~/.local/bin/agent-deck"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "SessionStart",
+          "matcher": "*",
+          "scripts": [],
+          "type": "command"
+        },
+        {
+          "event": "PreCompact",
+          "matcher": "*",
+          "scripts": [
+            "~/.claude/hooks/precompact_state_refresh.py"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "PreCompact",
+          "matcher": "*",
+          "scripts": [
+            "~/Development/active/claude-360/hooks/atlas-hook.js"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "PreCompact",
+          "matcher": null,
+          "scripts": [
+            "~/.local/bin/agent-deck"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "PreCompact",
+          "matcher": "*",
+          "scripts": [],
+          "type": "command"
+        },
+        {
+          "event": "Stop",
+          "matcher": "*",
+          "scripts": [
+            "~/.claude/hooks/claude-remote-stop.sh"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "Stop",
+          "matcher": "*",
+          "scripts": [
+            "~/Development/active/claude-360/hooks/atlas-hook.js"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "Stop",
+          "matcher": null,
+          "scripts": [
+            "~/.local/bin/agent-deck"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "Stop",
+          "matcher": "*",
+          "scripts": [],
+          "type": "command"
+        },
+        {
+          "event": "StopFailure",
+          "matcher": "*",
+          "scripts": [
+            "~/.claude/hooks/claude-stop-failure-toast.py"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "TaskCreated",
+          "matcher": "*",
+          "scripts": [
+            "~/Development/active/claude-360/hooks/atlas-hook.js"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "SubagentStop",
+          "matcher": "*",
+          "scripts": [
+            "~/Development/active/claude-360/hooks/atlas-hook.js"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "SubagentStop",
+          "matcher": "*",
+          "scripts": [],
+          "type": "command"
+        },
+        {
+          "event": "SessionEnd",
+          "matcher": "*",
+          "scripts": [
+            "~/Development/active/claude-360/hooks/atlas-hook.js"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "SessionEnd",
+          "matcher": null,
+          "scripts": [
+            "~/.local/bin/agent-deck"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "SessionEnd",
+          "matcher": "*",
+          "scripts": [],
+          "type": "command"
+        },
+        {
+          "event": "PermissionRequest",
+          "matcher": null,
+          "scripts": [
+            "~/.local/bin/agent-deck"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "PostCompact",
+          "matcher": "*",
+          "scripts": [
+            "~/.claude/hooks/compaction/save_summary.py"
+          ],
+          "type": "command"
+        },
+        {
+          "event": "PostCompact",
+          "matcher": "*",
+          "scripts": [],
+          "type": "command"
+        }
+      ],
+      "marketplaces": [
+        "builder-skills",
+        "openai-codex",
+        "ponytail",
+        "ui-ux-pro-max-skill"
+      ],
+      "mcp_servers": [],
+      "readable": true,
+      "status_line": []
+    },
+    ".claude/settings.local.json": {
+      "readable": false
+    },
+    "installed_plugins": [
+      "atlassian@claude-plugins-official",
+      "claude-md-management@claude-plugins-official",
+      "claude-mem@thedotmack",
+      "feature-dev@claude-plugins-official",
+      "frontend-design@claude-plugins-official",
+      "playground@claude-plugins-official",
+      "ponytail@ponytail",
+      "ralph-loop@claude-plugins-official",
+      "superpowers@claude-plugins-official"
+    ]
+  },
+  "cron": {
+    "available": false
+  },
+  "definitions": {
+    ".agents/skills": {
+      "paseo": "2026-11-13",
+      "paseo-advisor": "2026-11-13",
+      "paseo-committee": "2026-11-13",
+      "paseo-handoff": "2026-11-13",
+      "paseo-help": "2026-11-13",
+      "paseo-plugin": "2026-11-13",
+      "tailwindadmin-ui": "2026-10-11",
+      "twg": "2026-11-16",
+      "twg-agentic-search": "2026-11-16",
+      "twg-artifacts": "2026-11-16",
+      "twg-code-review": "2026-11-16",
+      "twg-confluence": "2026-11-16",
+      "twg-context-discovery": "2026-11-16",
+      "twg-engineering-work": "2026-11-16",
+      "twg-jira": "2026-11-16",
+      "twg-jira-resolve-merged-work": "2026-11-16",
+      "twg-operational-health": "2026-11-16",
+      "twg-responsibility-routing": "2026-11-16",
+      "twg-setup": "2026-11-16",
+      "twg-space-creation": "2026-11-16",
+      "twg-status-rollups": "2026-11-16"
+    },
+    ".claude/.agents/skills": {
+      "paseo": "2026-11-13",
+      "paseo-advisor": "2026-11-13",
+      "paseo-committee": "2026-11-13",
+      "paseo-handoff": "2026-11-13",
+      "paseo-help": "2026-11-13",
+      "paseo-plugin": "2026-11-13",
+      "tailwindadmin-ui": "2026-10-11",
+      "twg": "2026-11-16",
+      "twg-agentic-search": "2026-11-16",
+      "twg-artifacts": "2026-11-16",
+      "twg-code-review": "2026-11-16",
+      "twg-confluence": "2026-11-16",
+      "twg-context-discovery": "2026-11-16",
+      "twg-engineering-work": "2026-11-16",
+      "twg-jira": "2026-11-16",
+      "twg-jira-resolve-merged-work": "2026-11-16",
+      "twg-operational-health": "2026-11-16",
+      "twg-responsibility-routing": "2026-11-16",
+      "twg-setup": "2026-11-16",
+      "twg-space-creation": "2026-11-16",
+      "twg-status-rollups": "2026-11-16"
+    },
+    ".claude/agents": {
+      "claude-optimizer": "2026-01-19",
+      "code-debugger": "2026-01-03",
+      "code-quality-strike-team": "2026-02-12",
+      "code-simplifier": "2026-04-15",
+      "comment-sicko": "2026-10-11",
+      "data-analyst": "2026-10-02",
+      "docs-researcher": "2026-04-28",
+      "docs-sync-reviewer": "2026-01-03",
+      "email-manager": "2026-11-06",
+      "explorer": "2026-04-28",
+      "foreman-analyst": "2026-11-06",
+      "foreman-scout": "2026-10-02",
+      "foreman-verifier": "2026-10-02",
+      "foreman-worker": "2026-11-06",
+      "hl7-evidence-auditor": "2026-11-06",
+      "issue-tracker": "2026-06-12",
+      "keystone-branch-reviewer": "2026-09-17",
+      "log-searcher": "2026-07-01",
+      "luna-sdd-reviewer": "2026-10-11",
+      "luna-sdd-worker": "2026-09-10",
+      "notion-explorer": "2026-08-11",
+      "official-docs-finder": "2025-12-29",
+      "poteto-agent": "2026-10-11",
+      "pr-high-effort-reviewer": "2026-09-14",
+      "project-folder-organizer": "2026-11-06",
+      "prompt-optimizer": "2025-12-17",
+      "reviewer": "2026-04-28",
+      "security-auditor": "2026-01-04",
+      "signature-standards-design-reviewer": "2026-09-16",
+      "slack-task-updater": "2026-04-06",
+      "smart-brevity-author": "2026-04-15",
+      "smart-brevity-educator": "2026-04-15",
+      "tailwindadmin-ui-engineer": "2026-04-15",
+      "task9-code-reviewer": "2026-09-14",
+      "tdd-testing-orchestrator": "2026-01-03",
+      "ui-ux-critic": "2026-01-03",
+      "web-researcher": "2026-05-17",
+      "word-notion-comparator": "2026-09-13"
+    },
+    ".claude/commands": {
+      "apps": "2026-07-02",
+      "save-session": "2026-05-25",
+      "seq_tool": "2026-04-21"
+    },
+    ".claude/skills": {
+      "action-triage-issue": "2026-10-11",
+      "agent-manager-cli": "2026-10-28",
+      "agent-manager-cli-workspace": "2026-10-11",
+      "agent-manager-code-review": "2026-11-13",
+      "ambience-sftp": "2026-10-11",
+      "archify": "2026-10-11",
+      "architect": "2026-10-11",
+      "arena": "2026-11-13",
+      "athena-api-help": "2026-10-11",
+      "athena-briefing": "2026-11-06",
+      "athena-help": "2026-10-11",
+      "athena-memory": "2026-10-11",
+      "athena-memory-workspace": "2026-10-11",
+      "athena-patient-migration": "2026-11-05",
+      "athena-platform-request": "2026-10-11",
+      "athena-token": "2026-10-11",
+      "athena-ui-chart-review": "2026-11-11",
+      "automate-me": "2026-10-11",
+      "azure-quota-request": "2026-10-11",
+      "azure-quotas": "2026-10-11",
+      "azure-resource-review": "2026-10-11",
+      "benchmark-checklist": "2026-10-11",
+      "bifrost": "2026-10-11",
+      "bifrost-model-management": "2026-10-11",
+      "blast-radius": "2026-10-11",
+      "bro": "2026-10-11",
+      "brutalist-skill": "2026-10-11",
+      "bulk-email-safety": "2026-10-11",
+      "caveman": "2026-10-11",
+      "check-compiler-errors": "2026-10-12",
+      "chime": "2026-10-24",
+      "claude": "2026-10-11",
+      "claude-history-ingest": "2026-10-11",
+      "cleanup-claude": "2026-10-11",
+      "cloud-pr-handoff": "2026-11-06",
+      "control-cli": "2026-11-06",
+      "control-ui": "2026-11-13",
+      "correct": "2026-10-11",
+      "create-verification-skill": "2026-10-11",
+      "create-verification-skill-non-apps": "2026-10-13",
+      "cross-linker": "2026-10-11",
+      "custom-agents": "2026-10-22",
+      "data-ingest": "2026-10-11",
+      "dataview": "2026-10-11",
+      "decision-briefing": "2026-10-12",
+      "define-done": "2026-11-05",
+      "desk-coordinator": "2026-11-06",
+      "desk-worker": "2026-11-06",
+      "deslop": "2026-10-12",
+      "diagnose": "2026-10-11",
+      "diagram-design": "2026-10-11",
+      "e2e": "2026-10-12",
+      "email_tools": "2026-10-11",
+      "equip-pipeline-health": "2026-10-11",
+      "equip-questions": "2026-11-05",
+      "excalidraw-figjam-style": "2026-10-11",
+      "fable-foreman": "2026-11-13",
+      "figure-it-out": "2026-10-11",
+      "file-relay": "2026-11-13",
+      "find-big-storage": "2026-11-06",
+      "find-conversation": "2026-10-11",
+      "find-email": "2026-10-11",
+      "find-meeting": "2026-10-11",
+      "find-my-skills": "2026-10-11",
+      "find-skills": "2026-10-11",
+      "find-tools": "2026-10-11",
+      "fix-ci": "2026-10-12",
+      "fix-merge-conflicts": "2026-10-12",
+      "flow-resubmit": "2026-10-11",
+      "flow_resubmit": "2026-10-11",
+      "focus": "2026-10-11",
+      "get-lacy-messages": "2026-10-11",
+      "get-pr-comments": "2026-10-12",
+      "git-corruption-repair": "2026-10-11",
+      "git-safety": "2026-10-11",
+      "github-issue": "2026-10-11",
+      "github-security-audit": "2026-10-11",
+      "grill-me": "2026-10-11",
+      "grill-with-docs": "2026-10-11",
+      "hand-off": "2026-10-11",
+      "how": "2026-10-11",
+      "humanizer": "2026-10-11",
+      "image-to-code-skill": "2026-10-11",
+      "improve-codebase-architecture": "2026-10-11",
+      "intel": "2026-10-11",
+      "interrogate": "2026-10-11",
+      "issue-routing": "2026-10-11",
+      "jira-session-closeout": "2026-11-06",
+      "just": "2026-10-11",
+      "ketchup": "2026-10-30",
+      "launch-background-session": "2026-11-06",
+      "list-claude-processes": "2026-10-11",
+      "llm-wiki": "2026-10-11",
+      "loop-on-ci": "2026-10-12",
+      "maintain-verification-skill": "2026-10-11",
+      "make-pr-easy-to-review": "2026-10-12",
+      "markdown-grid": "2026-10-11",
+      "minimalist-skill": "2026-10-11",
+      "new-branch-and-pr": "2026-10-12",
+      "no-comments": "2026-10-11",
+      "output-skill": "2026-10-11",
+      "paseo": "2026-11-13",
+      "paseo-advisor": "2026-11-13",
+      "paseo-committee": "2026-11-13",
+      "paseo-handoff": "2026-11-13",
+      "paseo-help": "2026-11-13",
+      "paseo-plugin": "2026-11-13",
+      "playwright-cli": "2026-11-13",
+      "poteto-help": "2026-10-11",
+      "poteto-mode": "2026-11-06",
+      "pr-agent-review": "2026-11-16",
+      "pr-agent-review-workspace": "2026-10-11",
+      "pr-cloud-handoff": "2026-11-13",
+      "pr-proof": "2026-11-13",
+      "pr-review-audit": "2026-10-17",
+      "pr-review-canvas": "2026-11-13",
+      "pr-security-review": "2026-11-13",
+      "pr-summary": "2026-11-13",
+      "principle-attack-the-premise": "2026-10-11",
+      "principle-boundary-discipline": "2026-10-11",
+      "principle-build-the-lever": "2026-10-11",
+      "principle-encode-lessons-in-structure": "2026-10-11",
+      "principle-exhaust-the-design-space": "2026-10-11",
+      "principle-experience-first": "2026-10-11",
+      "principle-explain-the-number": "2026-10-11",
+      "principle-fix-root-causes": "2026-10-11",
+      "principle-foundational-thinking": "2026-10-11",
+      "principle-guard-the-context-window": "2026-10-11",
+      "principle-laziness-protocol": "2026-10-11",
+      "principle-make-operations-idempotent": "2026-10-11",
+      "principle-migrate-callers-then-delete-legacy-apis": "2026-10-11",
+      "principle-minimize-reader-load": "2026-10-11",
+      "principle-model-the-domain": "2026-10-11",
+      "principle-never-block-on-the-human": "2026-10-11",
+      "principle-outcome-oriented-execution": "2026-10-11",
+      "principle-prove-it-works": "2026-10-11",
+      "principle-redesign-from-first-principles": "2026-10-11",
+      "principle-separate-before-serializing-shared-state": "2026-10-11",
+      "principle-sequence-verifiable-units": "2026-10-11",
+      "principle-subtract-before-you-add": "2026-10-11",
+      "principle-test-behavior-not-implementation": "2026-10-11",
+      "principle-type-system-discipline": "2026-10-11",
+      "project-seed": "2026-11-06",
+      "prompt-me": "2026-10-11",
+      "prompt-me-build": "2026-10-11",
+      "pstack-skills": "2026-10-13",
+      "recall": "2026-10-11",
+      "redesign-skill": "2026-10-11",
+      "reflect": "2026-10-11",
+      "repo-readiness": "2026-11-05",
+      "report-harness-block": "2026-10-11",
+      "review-and-ship": "2026-10-12",
+      "run-smoke-tests": "2026-10-12",
+      "scheduler": "2026-10-11",
+      "scheduler-health": "2026-10-11",
+      "schema-diagram": "2026-10-11",
+      "schema-diagram-workspace": "2026-10-11",
+      "secret-safe": "2026-10-11",
+      "secret-scrubber": "2026-10-11",
+      "secret-scrubber-workspace": "2026-10-11",
+      "seq-log": "2026-10-11",
+      "seqcli": "2026-10-11",
+      "session-transplant": "2026-11-05",
+      "setup-matt-pocock-skills": "2026-10-11",
+      "setup-pstack": "2026-10-11",
+      "short": "2026-10-11",
+      "show-me-your-work": "2026-10-11",
+      "skill-creator": "2026-10-11",
+      "soft-skill": "2026-10-11",
+      "solo": "2026-10-11",
+      "sprint": "2026-11-13",
+      "sql-data-model-docs": "2026-10-11",
+      "sql-data-model-docs-workspace": "2026-10-11",
+      "sql-executor": "2026-10-28",
+      "sql-relay": "2026-11-13",
+      "sql-write-safety": "2026-10-28",
+      "sqlcmd": "2026-10-30",
+      "sqlite-postgres-portability": "2026-10-11",
+      "start-work": "2026-10-30",
+      "stitch-skill": "2026-10-11",
+      "summary": "2026-10-11",
+      "summary-workspace": "2026-10-11",
+      "supervising-attestation": "2026-10-11",
+      "swarm": "2026-10-11",
+      "synapse-equip-routine": "2026-10-11",
+      "tag-taxonomy": "2026-10-11",
+      "task-manager": "2026-10-11",
+      "tasks-email": "2026-11-06",
+      "tasks-issue": "2026-10-11",
+      "tasks-todo": "2026-11-06",
+      "taste-skill": "2026-10-11",
+      "tdd": "2026-10-11",
+      "tdd-pstack": "2026-10-11",
+      "teach": "2026-10-11",
+      "technical-writing": "2026-10-11",
+      "thermo-nuclear-code-quality-review": "2026-10-12",
+      "ticket-master": "2026-11-06",
+      "tldr": "2026-10-11",
+      "to-issues": "2026-10-11",
+      "to-prd": "2026-10-11",
+      "transcribe-social-post": "2026-10-12",
+      "triage": "2026-10-11",
+      "twg": "2026-11-16",
+      "twg-agentic-search": "2026-11-16",
+      "twg-artifacts": "2026-11-16",
+      "twg-code-review": "2026-11-16",
+      "twg-confluence": "2026-11-16",
+      "twg-context-discovery": "2026-11-16",
+      "twg-engineering-work": "2026-11-16",
+      "twg-jira": "2026-11-16",
+      "twg-jira-resolve-merged-work": "2026-11-16",
+      "twg-operational-health": "2026-11-16",
+      "twg-responsibility-routing": "2026-11-16",
+      "twg-setup": "2026-11-16",
+      "twg-space-creation": "2026-11-16",
+      "twg-status-rollups": "2026-11-16",
+      "typescript-best-practices": "2026-10-11",
+      "ui-bug-exploration": "2026-10-11",
+      "unslop": "2026-10-11",
+      "update_skill": "2026-10-11",
+      "using-jira": "2026-11-13",
+      "verify-this": "2026-11-13",
+      "weekly-review": "2026-10-12",
+      "what-did-i-get-done": "2026-10-12",
+      "why": "2026-10-11",
+      "wiki-ingest": "2026-10-11",
+      "wiki-lint": "2026-10-11",
+      "wiki-query": "2026-10-11",
+      "wiki-rebuild": "2026-10-11",
+      "wiki-setup": "2026-10-11",
+      "wiki-status": "2026-10-11",
+      "wiki-update": "2026-10-11",
+      "word-doc": "2026-11-06",
+      "workflow-from-chats": "2026-10-12",
+      "worktree-cleanup": "2026-10-11",
+      "write-a-skill": "2026-10-11",
+      "xcaliber-api-help": "2026-10-28",
+      "xcaliber-api-help-workspace": "2026-10-11",
+      "xcaliber-probe": "2026-11-13",
+      "zoom-out": "2026-10-11",
+      "zus-api-help": "2026-10-19"
+    },
+    "plugin_skills": [
+      "agent-cost-report",
+      "babysit",
+      "backup-setup",
+      "brainstorming",
+      "build",
+      "build-and-release",
+      "capture-tasks-from-meeting-notes",
+      "ccs-align",
+      "childhood",
+      "claude-md-improver",
+      "cloud-sync",
+      "design-is",
+      "diagnosing-superpowers",
+      "dispatching-parallel-agents",
+      "do",
+      "executing-plans",
+      "finishing-a-development-branch",
+      "frontend-design",
+      "generate-status-report",
+      "handoff",
+      "how-it-works",
+      "jira-sprint-dashboard",
+      "knowledge-agent",
+      "learn-codebase",
+      "make-plan",
+      "mem-search",
+      "mode-creator",
+      "oh-my-issues",
+      "owner-goals",
+      "pathfinder",
+      "playground",
+      "ponytail",
+      "ponytail-audit",
+      "ponytail-debt",
+      "ponytail-gain",
+      "ponytail-help",
+      "ponytail-review",
+      "receiving-code-review",
+      "release",
+      "request-progress",
+      "requesting-code-review",
+      "screenpipe",
+      "search-company-knowledge",
+      "smart-explore",
+      "spec-to-backlog",
+      "standup",
+      "subagent-driven-development",
+      "systematic-debugging",
+      "test-driven-development",
+      "timeline-report",
+      "triage-issue",
+      "using-git-worktrees",
+      "using-superpowers",
+      "verification-before-completion",
+      "version-bump",
+      "weekly-digests",
+      "what-the",
+      "wowerpoint",
+      "writing-plans",
+      "writing-skills"
+    ]
+  },
+  "figures": {
+    "agent_use": {
+      "Explore": {
+        "last_used": "2026-11-14",
+        "uses": 152
+      },
+      "Plan": {
+        "last_used": "2026-11-06",
+        "uses": 7
+      },
+      "action-triage-emailer": {
+        "last_used": "2026-11-04",
+        "uses": 7
+      },
+      "claude": {
+        "last_used": "2026-10-05",
+        "uses": 1
+      },
+      "claude-code-guide": {
+        "last_used": "2026-10-11",
+        "uses": 3
+      },
+      "claude-optimizer": {
+        "last_used": "2026-10-06",
+        "uses": 2
+      },
+      "code-bug-reviewer": {
+        "last_used": "2026-09-03",
+        "uses": 1
+      },
+      "code-debugger": {
+        "last_used": "2026-11-11",
+        "uses": 21
+      },
+      "code-reviewer": {
+        "last_used": "2026-09-08",
+        "uses": 1
+      },
+      "code-simplifier": {
+        "last_used": "2026-11-06",
+        "uses": 2
+      },
+      "data-analyst": {
+        "last_used": "2026-11-12",
+        "uses": 16
+      },
+      "docs-sync-reviewer": {
+        "last_used": "2026-11-06",
+        "uses": 73
+      },
+      "email-manager": {
+        "last_used": "2026-11-14",
+        "uses": 5
+      },
+      "feature-dev:code-architect": {
+        "last_used": "2026-10-11",
+        "uses": 1
+      },
+      "feature-dev:code-explorer": {
+        "last_used": "2026-10-04",
+        "uses": 3
+      },
+      "feature-dev:code-reviewer": {
+        "last_used": "2026-11-06",
+        "uses": 13
+      },
+      "foreman-analyst": {
+        "last_used": "2026-10-20",
+        "uses": 19
+      },
+      "foreman-scout": {
+        "last_used": "2026-10-18",
+        "uses": 1
+      },
+      "foreman-verifier": {
+        "last_used": "2026-11-06",
+        "uses": 58
+      },
+      "foreman-worker": {
+        "last_used": "2026-10-21",
+        "uses": 40
+      },
+      "fork": {
+        "last_used": "2026-09-30",
+        "uses": 18
+      },
+      "general-purpose": {
+        "last_used": "2026-11-16",
+        "uses": 1102
+      },
+      "log-searcher": {
+        "last_used": "2026-10-31",
+        "uses": 14
+      },
+      "luna-sdd-reviewer": {
+        "last_used": "2026-11-11",
+        "uses": 208
+      },
+      "luna-sdd-worker": {
+        "last_used": "2026-11-16",
+        "uses": 140
+      },
+      "notion-explorer": {
+        "last_used": "2026-11-06",
+        "uses": 21
+      },
+      "official-docs-finder": {
+        "last_used": "2026-10-05",
+        "uses": 2
+      },
+      "pr-high-effort-reviewer": {
+        "last_used": "2026-11-12",
+        "uses": 12
+      },
+      "project-folder-organizer": {
+        "last_used": "2026-10-01",
+        "uses": 1
+      },
+      "security-auditor": {
+        "last_used": "2026-11-11",
+        "uses": 17
+      },
+      "tdd-testing-orchestrator": {
+        "last_used": "2026-10-01",
+        "uses": 2
+      },
+      "web-researcher": {
+        "last_used": "2026-11-09",
+        "uses": 78
+      }
+    },
+    "available": true,
+    "date_range": {
+      "from": "2026-08-24",
+      "to": "2026-11-15"
+    },
+    "josh_messages_by_entrypoint": {
+      "cli": {
+        "max": 617,
+        "mean": 15.97,
+        "median": 4,
+        "p90": 42,
+        "sessions": 479
+      },
+      "sdk-cli": {
+        "max": 11,
+        "mean": 1.19,
+        "median": 1,
+        "p90": 1,
+        "sessions": 243
+      },
+      "sdk-ts": {
+        "max": 11,
+        "mean": 3.4,
+        "median": 2,
+        "p90": 11,
+        "sessions": 5
+      }
+    },
+    "josh_messages_per_session": {
+      "max": 617,
+      "mean": 10.94,
+      "median": 1,
+      "p90": 27,
+      "sessions": 727
+    },
+    "mean_sessions_per_week": 60.58,
+    "sessions": 727,
+    "sessions_per_week": [
+      {
+        "sessions": 2,
+        "week_of": "2026-08-24"
+      },
+      {
+        "sessions": 3,
+        "week_of": "2026-08-31"
+      },
+      {
+        "sessions": 0,
+        "week_of": "2026-09-07"
+      },
+      {
+        "sessions": 2,
+        "week_of": "2026-09-14"
+      },
+      {
+        "sessions": 2,
+        "week_of": "2026-09-21"
+      },
+      {
+        "sessions": 31,
+        "week_of": "2026-09-28"
+      },
+      {
+        "sessions": 94,
+        "week_of": "2026-10-05"
+      },
+      {
+        "sessions": 307,
+        "week_of": "2026-10-12"
+      },
+      {
+        "sessions": 72,
+        "week_of": "2026-10-19"
+      },
+      {
+        "sessions": 81,
+        "week_of": "2026-10-26"
+      },
+      {
+        "sessions": 100,
+        "week_of": "2026-11-02"
+      },
+      {
+        "sessions": 33,
+        "week_of": "2026-11-09"
+      }
+    ],
+    "sessions_with_no_josh_message": 12,
+    "skill_use": {
+      "(other)": {
+        "last_used": "2026-11-06",
+        "uses": 12
+      },
+      "E2E": {
+        "last_used": "2026-09-08",
+        "uses": 1
+      },
+      "add-dir": {
+        "last_used": "2026-11-16",
+        "uses": 17
+      },
+      "agent-manager-cli": {
+        "last_used": "2026-11-16",
+        "uses": 59
+      },
+      "agent-manager-code-review": {
+        "last_used": "2026-10-14",
+        "uses": 5
+      },
+      "ai-scribing-enroll": {
+        "last_used": "2026-10-21",
+        "uses": 1
+      },
+      "apps": {
+        "last_used": "2026-11-06",
+        "uses": 8
+      },
+      "artifact-design": {
+        "last_used": "2026-11-06",
+        "uses": 11
+      },
+      "artifact-diagramming": {
+        "last_used": "2026-10-11",
+        "uses": 2
+      },
+      "athena-api-help": {
+        "last_used": "2026-11-04",
+        "uses": 14
+      },
+      "athena-help": {
+        "last_used": "2026-11-10",
+        "uses": 7
+      },
+      "athena-memory": {
+        "last_used": "2026-11-10",
+        "uses": 2
+      },
+      "athena-patient-migration": {
+        "last_used": "2026-10-23",
+        "uses": 5
+      },
+      "athena-platform-request": {
+        "last_used": "2026-10-29",
+        "uses": 3
+      },
+      "athena-token": {
+        "last_used": "2026-11-10",
+        "uses": 4
+      },
+      "azure-resource-review": {
+        "last_used": "2026-11-06",
+        "uses": 2
+      },
+      "bifrost": {
+        "last_used": "2026-11-11",
+        "uses": 23
+      },
+      "bifrost-model-management": {
+        "last_used": "2026-10-17",
+        "uses": 2
+      },
+      "bro": {
+        "last_used": "2026-11-09",
+        "uses": 41
+      },
+      "changelog-entry": {
+        "last_used": "2026-11-16",
+        "uses": 14
+      },
+      "chime": {
+        "last_used": "2026-11-16",
+        "uses": 6
+      },
+      "claude": {
+        "last_used": "2026-11-08",
+        "uses": 2
+      },
+      "claude-api": {
+        "last_used": "2026-11-11",
+        "uses": 81
+      },
+      "claude-md-management:revise-claude-md": {
+        "last_used": "2026-10-21",
+        "uses": 4
+      },
+      "cleanup-claude": {
+        "last_used": "2026-11-07",
+        "uses": 2
+      },
+      "clear": {
+        "last_used": "2026-11-05",
+        "uses": 21
+      },
+      "cloud-pr-handoff": {
+        "last_used": "2026-11-06",
+        "uses": 2
+      },
+      "code-debugger": {
+        "last_used": "2026-09-04",
+        "uses": 1
+      },
+      "code-review": {
+        "last_used": "2026-10-26",
+        "uses": 84
+      },
+      "compact": {
+        "last_used": "2026-11-11",
+        "uses": 49
+      },
+      "control-ui": {
+        "last_used": "2026-10-12",
+        "uses": 1
+      },
+      "copy": {
+        "last_used": "2026-11-09",
+        "uses": 24
+      },
+      "create-cp-pdf": {
+        "last_used": "2026-10-19",
+        "uses": 2
+      },
+      "create-qa-pdf-packet": {
+        "last_used": "2026-10-12",
+        "uses": 1
+      },
+      "create-verification-skill": {
+        "last_used": "2026-10-22",
+        "uses": 3
+      },
+      "create-verification-skill-non-apps": {
+        "last_used": "2026-10-21",
+        "uses": 3
+      },
+      "custom-agents": {
+        "last_used": "2026-11-16",
+        "uses": 32
+      },
+      "data-migration-dashboard": {
+        "last_used": "2026-10-06",
+        "uses": 2
+      },
+      "dataset-ledger": {
+        "last_used": "2026-11-06",
+        "uses": 7
+      },
+      "dataviz": {
+        "last_used": "2026-10-08",
+        "uses": 2
+      },
+      "decision-briefing": {
+        "last_used": "2026-10-11",
+        "uses": 1
+      },
+      "define-done-skill-probe2": {
+        "last_used": "2026-10-16",
+        "uses": 1
+      },
+      "design-login": {
+        "last_used": "2026-10-26",
+        "uses": 4
+      },
+      "design-sync": {
+        "last_used": "2026-10-07",
+        "uses": 1
+      },
+      "desk-coordinator": {
+        "last_used": "2026-11-16",
+        "uses": 2
+      },
+      "desk-worker": {
+        "last_used": "2026-11-16",
+        "uses": 3
+      },
+      "diagnose": {
+        "last_used": "2026-11-11",
+        "uses": 22
+      },
+      "diagram-design": {
+        "last_used": "2026-10-29",
+        "uses": 4
+      },
+      "e2e": {
+        "last_used": "2026-11-06",
+        "uses": 2
+      },
+      "effort": {
+        "last_used": "2026-11-06",
+        "uses": 25
+      },
+      "elements-of-style:writing-clearly-and-concisely": {
+        "last_used": "2026-10-04",
+        "uses": 1
+      },
+      "email_tools": {
+        "last_used": "2026-11-05",
+        "uses": 6
+      },
+      "equip-pipeline-health": {
+        "last_used": "2026-10-15",
+        "uses": 4
+      },
+      "equip-snapshot-correction": {
+        "last_used": "2026-10-09",
+        "uses": 5
+      },
+      "fable-foreman": {
+        "last_used": "2026-10-22",
+        "uses": 25
+      },
+      "feature-dev:code-explorer": {
+        "last_used": "2026-10-05",
+        "uses": 1
+      },
+      "find-big-storage": {
+        "last_used": "2026-10-30",
+        "uses": 1
+      },
+      "find-conversation": {
+        "last_used": "2026-11-16",
+        "uses": 10
+      },
+      "find-email": {
+        "last_used": "2026-11-16",
+        "uses": 10
+      },
+      "find-meeting": {
+        "last_used": "2026-10-01",
+        "uses": 2
+      },
+      "find-skills": {
+        "last_used": "2026-10-13",
+        "uses": 2
+      },
+      "find-tools": {
+        "last_used": "2026-11-11",
+        "uses": 36
+      },
+      "fix-merge-conflicts": {
+        "last_used": "2026-11-06",
+        "uses": 4
+      },
+      "git-safety": {
+        "last_used": "2026-11-15",
+        "uses": 101
+      },
+      "github-security-audit": {
+        "last_used": "2026-10-11",
+        "uses": 2
+      },
+      "goal": {
+        "last_used": "2026-11-16",
+        "uses": 13
+      },
+      "graphify": {
+        "last_used": "2026-09-08",
+        "uses": 4
+      },
+      "humanizer": {
+        "last_used": "2026-11-04",
+        "uses": 1
+      },
+      "issue-routing": {
+        "last_used": "2026-11-11",
+        "uses": 17
+      },
+      "jira-session-closeout": {
+        "last_used": "2026-11-16",
+        "uses": 16
+      },
+      "just": {
+        "last_used": "2026-10-22",
+        "uses": 1
+      },
+      "ketchup": {
+        "last_used": "2026-11-13",
+        "uses": 72
+      },
+      "large-csv-cleanup": {
+        "last_used": "2026-10-22",
+        "uses": 8
+      },
+      "launch-background-session": {
+        "last_used": "2026-11-09",
+        "uses": 11
+      },
+      "list-claude-processes": {
+        "last_used": "2026-10-17",
+        "uses": 1
+      },
+      "loop": {
+        "last_used": "2026-11-06",
+        "uses": 6
+      },
+      "mcp": {
+        "last_used": "2026-09-17",
+        "uses": 1
+      },
+      "model": {
+        "last_used": "2026-11-16",
+        "uses": 398
+      },
+      "new-branch-and-pr": {
+        "last_used": "2026-11-05",
+        "uses": 2
+      },
+      "paseo-plugin": {
+        "last_used": "2026-11-07",
+        "uses": 1
+      },
+      "pims-go": {
+        "last_used": "2026-10-29",
+        "uses": 2
+      },
+      "pims-qa": {
+        "last_used": "2026-10-30",
+        "uses": 2
+      },
+      "pims-transfer-staging-to-production": {
+        "last_used": "2026-10-30",
+        "uses": 2
+      },
+      "playwright-cli": {
+        "last_used": "2026-11-16",
+        "uses": 55
+      },
+      "pony-tail:ponytail": {
+        "last_used": "2026-11-06",
+        "uses": 1
+      },
+      "ponytail": {
+        "last_used": "2026-10-23",
+        "uses": 1
+      },
+      "ponytail:ponytail": {
+        "last_used": "2026-11-11",
+        "uses": 56
+      },
+      "ponytail:ponytail-review": {
+        "last_used": "2026-10-04",
+        "uses": 1
+      },
+      "poteto-help": {
+        "last_used": "2026-10-30",
+        "uses": 3
+      },
+      "pr-agent-review": {
+        "last_used": "2026-11-16",
+        "uses": 150
+      },
+      "pr-cloud-handoff": {
+        "last_used": "2026-11-06",
+        "uses": 2
+      },
+      "pr-proof": {
+        "last_used": "2026-11-16",
+        "uses": 19
+      },
+      "pr-review-audit": {
+        "last_used": "2026-10-10",
+        "uses": 1
+      },
+      "pr-review-canvas": {
+        "last_used": "2026-11-06",
+        "uses": 1
+      },
+      "pr-security-review": {
+        "last_used": "2026-10-21",
+        "uses": 1
+      },
+      "pr-summary": {
+        "last_used": "2026-11-16",
+        "uses": 35
+      },
+      "project-seed": {
+        "last_used": "2026-11-08",
+        "uses": 1
+      },
+      "pstack-skills": {
+        "last_used": "2026-10-13",
+        "uses": 2
+      },
+      "qa-200-september": {
+        "last_used": "2026-10-13",
+        "uses": 17
+      },
+      "qa-bug-fix": {
+        "last_used": "2026-10-23",
+        "uses": 42
+      },
+      "qa-coordination": {
+        "last_used": "2026-10-23",
+        "uses": 11
+      },
+      "qa-edit-bugs-workbook": {
+        "last_used": "2026-11-11",
+        "uses": 17
+      },
+      "qa-feedback-intake": {
+        "last_used": "2026-11-11",
+        "uses": 4
+      },
+      "qa-friendly-pdf": {
+        "last_used": "2026-10-15",
+        "uses": 3
+      },
+      "qa-jira-for-bugs": {
+        "last_used": "2026-10-23",
+        "uses": 13
+      },
+      "qa-pr-remediation": {
+        "last_used": "2026-10-23",
+        "uses": 31
+      },
+      "qa-pr-review": {
+        "last_used": "2026-10-19",
+        "uses": 8
+      },
+      "reflect": {
+        "last_used": "2026-10-30",
+        "uses": 4
+      },
+      "reload-plugins": {
+        "last_used": "2026-10-22",
+        "uses": 4
+      },
+      "reload-skills": {
+        "last_used": "2026-10-28",
+        "uses": 8
+      },
+      "repo-readiness": {
+        "last_used": "2026-11-06",
+        "uses": 1
+      },
+      "report-harness-block": {
+        "last_used": "2026-10-06",
+        "uses": 1
+      },
+      "resume": {
+        "last_used": "2026-10-26",
+        "uses": 4
+      },
+      "run": {
+        "last_used": "2026-10-01",
+        "uses": 1
+      },
+      "scheduler": {
+        "last_used": "2026-11-06",
+        "uses": 2
+      },
+      "schema-diagram": {
+        "last_used": "2026-10-08",
+        "uses": 2
+      },
+      "secret-safe": {
+        "last_used": "2026-11-06",
+        "uses": 18
+      },
+      "secret-scrubber": {
+        "last_used": "2026-11-11",
+        "uses": 15
+      },
+      "security-review": {
+        "last_used": "2026-09-25",
+        "uses": 2
+      },
+      "seq-log": {
+        "last_used": "2026-11-09",
+        "uses": 1
+      },
+      "seq_tool": {
+        "last_used": "2026-10-29",
+        "uses": 4
+      },
+      "seqcli": {
+        "last_used": "2026-10-05",
+        "uses": 5
+      },
+      "setup-pstack": {
+        "last_used": "2026-10-11",
+        "uses": 2
+      },
+      "short": {
+        "last_used": "2026-11-16",
+        "uses": 58
+      },
+      "skill-creator": {
+        "last_used": "2026-11-10",
+        "uses": 38
+      },
+      "skill-creator:skill-creator": {
+        "last_used": "2026-10-04",
+        "uses": 1
+      },
+      "solo": {
+        "last_used": "2026-10-27",
+        "uses": 6
+      },
+      "sprint": {
+        "last_used": "2026-11-05",
+        "uses": 3
+      },
+      "sql-data-model-docs": {
+        "last_used": "2026-11-01",
+        "uses": 6
+      },
+      "sql-executor": {
+        "last_used": "2026-11-16",
+        "uses": 12
+      },
+      "sql-write-safety": {
+        "last_used": "2026-11-16",
+        "uses": 48
+      },
+      "sqlcmd": {
+        "last_used": "2026-11-10",
+        "uses": 24
+      },
+      "start-work": {
+        "last_used": "2026-11-16",
+        "uses": 15
+      },
+      "subagent-driven-development": {
+        "last_used": "2026-10-13",
+        "uses": 1
+      },
+      "subtask": {
+        "last_used": "2026-10-20",
+        "uses": 1
+      },
+      "summary": {
+        "last_used": "2026-11-05",
+        "uses": 84
+      },
+      "superpowers:brainstorming": {
+        "last_used": "2026-11-16",
+        "uses": 104
+      },
+      "superpowers:dispatching-parallel-agents": {
+        "last_used": "2026-11-06",
+        "uses": 18
+      },
+      "superpowers:executing-plans": {
+        "last_used": "2026-10-21",
+        "uses": 20
+      },
+      "superpowers:finishing-a-development-branch": {
+        "last_used": "2026-11-04",
+        "uses": 15
+      },
+      "superpowers:receiving-code-review": {
+        "last_used": "2026-11-06",
+        "uses": 28
+      },
+      "superpowers:requesting-code-review": {
+        "last_used": "2026-11-06",
+        "uses": 9
+      },
+      "superpowers:subagent-driven-development": {
+        "last_used": "2026-11-16",
+        "uses": 89
+      },
+      "superpowers:systematic-debugging": {
+        "last_used": "2026-11-09",
+        "uses": 63
+      },
+      "superpowers:test-driven-development": {
+        "last_used": "2026-11-11",
+        "uses": 79
+      },
+      "superpowers:using-git-worktrees": {
+        "last_used": "2026-11-11",
+        "uses": 39
+      },
+      "superpowers:using-superpowers": {
+        "last_used": "2026-11-08",
+        "uses": 389
+      },
+      "superpowers:verification-before-completion": {
+        "last_used": "2026-11-06",
+        "uses": 77
+      },
+      "superpowers:writing-plans": {
+        "last_used": "2026-11-16",
+        "uses": 116
+      },
+      "superpowers:writing-skills": {
+        "last_used": "2026-11-06",
+        "uses": 13
+      },
+      "task-manager": {
+        "last_used": "2026-10-01",
+        "uses": 2
+      },
+      "tdd": {
+        "last_used": "2026-11-06",
+        "uses": 4
+      },
+      "tdd-testing-orchestrator": {
+        "last_used": "2026-11-06",
+        "uses": 1
+      },
+      "ticket-master": {
+        "last_used": "2026-11-16",
+        "uses": 15
+      },
+      "tldr": {
+        "last_used": "2026-10-01",
+        "uses": 3
+      },
+      "twg": {
+        "last_used": "2026-11-08",
+        "uses": 1
+      },
+      "twg-jira": {
+        "last_used": "2026-11-08",
+        "uses": 1
+      },
+      "update-config": {
+        "last_used": "2026-11-06",
+        "uses": 5
+      },
+      "update-skill": {
+        "last_used": "2026-10-20",
+        "uses": 1
+      },
+      "update_skill": {
+        "last_used": "2026-11-13",
+        "uses": 27
+      },
+      "using-git-worktrees": {
+        "last_used": "2026-10-11",
+        "uses": 3
+      },
+      "using-jira": {
+        "last_used": "2026-11-16",
+        "uses": 213
+      },
+      "using-superpowers": {
+        "last_used": "2026-09-07",
+        "uses": 2
+      },
+      "workflow-authoring": {
+        "last_used": "2026-09-25",
+        "uses": 3
+      },
+      "worktree-cleanup": {
+        "last_used": "2026-10-29",
+        "uses": 3
+      },
+      "writing-plans": {
+        "last_used": "2026-10-15",
+        "uses": 6
+      },
+      "xcaliber-api-help": {
+        "last_used": "2026-10-22",
+        "uses": 5
+      },
+      "xcaliber-probe": {
+        "last_used": "2026-10-28",
+        "uses": 2
+      },
+      "zus-api-help": {
+        "last_used": "2026-10-19",
+        "uses": 1
+      }
+    },
+    "tied_to_ticket": {
+      "by_branch": 248,
+      "by_branch_or_message": 371,
+      "share_by_branch_or_message": 0.51,
+      "ticket_keys": [
+        "JP",
+        "AD",
+        "CI",
+        "GIL"
+      ]
+    },
+    "transcripts_read": 749,
+    "unreadable_lines": 0,
+    "usage_since": "2026-08-18"
+  },
+  "home": "~",
+  "launchctl": {
+    "available": true,
+    "jobs": {
+      "UBF8T346G9.com.microsoft.entrabroker.EntraIdentityBrokerXPC.Mach": {
+        "last_exit": "0",
+        "running": true
+      },
+      "application.blaze.today.desktop.448039889.448039895": {
+        "last_exit": "0",
+        "running": true
+      },
+      "application.com.anthropic.claudefordesktop.533192688.533192694": {
+        "last_exit": "0",
+        "running": true
+      },
+      "application.com.apple.ActivityMonitor.1152921500311907674.1152921500311907679": {
+        "last_exit": "0",
+        "running": true
+      },
+      "application.com.apple.Preview.1152921500311897666.1152921500311897671": {
+        "last_exit": "0",
+        "running": true
+      },
+      "application.com.apple.Safari.312895.313779": {
+        "last_exit": "0",
+        "running": true
+      },
+      "application.com.apple.TextEdit.1152921500311907224.1152921500311907229": {
+        "last_exit": "0",
+        "running": true
+      },
+      "application.com.apple.keychainaccess.1152921500312078031.1152921500312078036": {
+        "last_exit": "0",
+        "running": true
+      },
+      "application.com.apple.systempreferences.1152921500311902839.1152921500311902844": {
+        "last_exit": "0",
+        "running": true
+      },
+      "application.com.cmuxterm.app.484584485.484584491": {
+        "last_exit": "0",
+        "running": true
+      },
+      "application.com.docker.docker.373203268.373203550": {
+        "last_exit": "0",
+        "running": true
+      },
+      "application.com.electron.wispr-flow.532940381.532940388": {
+        "last_exit": "0",
+        "running": true
+      },
+      "application.com.microsoft.Excel.531589296.531707052": {
+        "last_exit": "0",
+        "running": true
+      },
+      "application.com.microsoft.edgemac.466867131.518980517": {
+        "last_exit": "0",
+        "running": true
+      },
+      "application.com.microsoft.edgemac.app.eoficlgicibekocmfdomjbfnjmehnhcd.186982160.186982170": {
+        "last_exit": "0",
+        "running": true
+      },
+      "application.com.microsoft.rdc.macos.530638426.530638434": {
+        "last_exit": "0",
+        "running": true
+      },
+      "application.com.microsoft.teams2.512014364.512017714": {
+        "last_exit": "0",
+        "running": true
+      },
+      "application.fr.armelin.Magic-Calculator.373152754.373152761": {
+        "last_exit": "0",
+        "running": true
+      },
+      "application.notion.id.504682827.504682833": {
+        "last_exit": "0",
+        "running": true
+      },
+      "application.sh.paseo.desktop.531097808.531097814": {
+        "last_exit": "0",
+        "running": true
+      },
+      "blaze.today.desktop.ShipIt": {
+        "last_exit": "0",
+        "running": true
+      },
+      "com.anthropic.claudefordesktop.ShipIt": {
+        "last_exit": "0",
+        "running": false
+      },
+      "com.atlassian.twg.upkeep": {
+        "last_exit": "0",
+        "running": false
+      },
+      "com.docker.helper": {
+        "last_exit": "0",
+        "running": false
+      },
+      "com.eventus.action-agent": {
+        "last_exit": "1",
+        "running": true
+      },
+      "com.eventus.action-triage": {
+        "last_exit": "0",
+        "running": true
+      },
+      "com.eventus.athena-pipeline": {
+        "last_exit": "2",
+        "running": false
+      },
+      "com.eventus.athena-test-suite-sync": {
+        "last_exit": "1",
+        "running": false
+      },
+      "com.eventus.azure-batch-spend-alert": {
+        "last_exit": "1",
+        "running": false
+      },
+      "com.eventus.claude-atlas": {
+        "last_exit": "-15",
+        "running": true
+      },
+      "com.eventus.desk-watcher": {
+        "last_exit": "0",
+        "running": false
+      },
+      "com.eventus.focus-dashboard": {
+        "last_exit": "-15",
+        "running": true
+      },
+      "com.eventus.meetings-sync": {
+        "last_exit": "0",
+        "running": false
+      },
+      "com.eventus.qa-waker-watchdog": {
+        "last_exit": "1",
+        "running": false
+      },
+      "com.jgilpatrick.agent-manager": {
+        "last_exit": "0",
+        "running": false
+      },
+      "com.jgilpatrick.automations-hub": {
+        "last_exit": "0",
+        "running": true
+      },
+      "com.jgilpatrick.claude-transcript-scrubber": {
+        "last_exit": "0",
+        "running": true
+      },
+      "com.jgilpatrick.idemeum-log-retention": {
+        "last_exit": "0",
+        "running": false
+      },
+      "com.jgilpatrick.josh-360-jobs": {
+        "last_exit": "0",
+        "running": true
+      },
+      "com.jgilpatrick.outlook-receipt-fetcher": {
+        "last_exit": "0",
+        "running": false
+      },
+      "com.jgilpatrick.sprint-waker-sprints": {
+        "last_exit": "0",
+        "running": false
+      },
+      "com.jgilpatrick.startup": {
+        "last_exit": "0",
+        "running": false
+      },
+      "com.jgilpatrick.sync-client-skills": {
+        "last_exit": "0",
+        "running": false
+      },
+      "com.jgilpatrick.sync-opencode-agents": {
+        "last_exit": "0",
+        "running": false
+      },
+      "com.josh.outlook-watchdog": {
+        "last_exit": "0",
+        "running": true
+      },
+      "com.microsoft.OneDriveLauncher": {
+        "last_exit": "0",
+        "running": false
+      },
+      "com.microsoft.OneDriveStandaloneUpdater": {
+        "last_exit": "0",
+        "running": false
+      },
+      "com.microsoft.Powerpoint.WindowDocumentResolverBroker": {
+        "last_exit": "0",
+        "running": false
+      },
+      "com.microsoft.SyncReporter": {
+        "last_exit": "0",
+        "running": false
+      },
+      "com.microsoft.intuneMDMAgent": {
+        "last_exit": "0",
+        "running": true
+      },
+      "com.microsoft.teams2.agent": {
+        "last_exit": "0",
+        "running": true
+      },
+      "com.microsoft.teams2.respawn": {
+        "last_exit": "0",
+        "running": true
+      },
+      "com.microsoft.update.agent": {
+        "last_exit": "0",
+        "running": false
+      },
+      "com.microsoft.wdav.tray": {
+        "last_exit": "0",
+        "running": true
+      },
+      "com.omnara.daemon": {
+        "last_exit": "0",
+        "running": true
+      },
+      "com.openssh.ssh-agent": {
+        "last_exit": "0",
+        "running": true
+      },
+      "connectwisecontrol-7d47b4450602b09f-onlogin": {
+        "last_exit": "0",
+        "running": true
+      },
+      "homebrew.mxcl.postgresql@14": {
+        "last_exit": "0",
+        "running": true
+      },
+      "net.Printix.UI": {
+        "last_exit": "0",
+        "running": true
+      },
+      "notion.id.ShipIt": {
+        "last_exit": "0",
+        "running": true
+      },
+      "sh.paseo.desktop.ShipIt": {
+        "last_exit": "0",
+        "running": false
+      }
+    }
+  },
+  "launchd_plists": [
+    {
+      "calendar": null,
+      "changed": "2026-11-06",
+      "disabled": false,
+      "file": "~/Library/LaunchAgents/com.atlassian.twg.upkeep.plist",
+      "keep_alive": false,
+      "label": "com.atlassian.twg.upkeep",
+      "program": "~/.local/bin/twg",
+      "run_at_load": true,
+      "scripts": [],
+      "start_interval_seconds": 720,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "bytes": 487281,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-15",
+        "path": "/tmp/action-agent.err.log"
+      },
+      "StandardOutPath": {
+        "bytes": 7086944,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-16",
+        "path": "/tmp/action-agent.log"
+      },
+      "calendar": null,
+      "changed": "2026-09-19",
+      "disabled": false,
+      "file": "~/Library/LaunchAgents/com.eventus.action-agent.plist",
+      "keep_alive": true,
+      "label": "com.eventus.action-agent",
+      "program": "/bin/zsh",
+      "run_at_load": true,
+      "scripts": [
+        "~/Development/active/josh_projects/action-triage"
+      ],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "bytes": 158726,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-09",
+        "path": "~/Library/Logs/action-triage/stderr.log"
+      },
+      "StandardOutPath": {
+        "bytes": 0,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-05-22",
+        "path": "~/Library/Logs/action-triage/stdout.log"
+      },
+      "calendar": null,
+      "changed": "2026-08-13",
+      "disabled": false,
+      "file": "~/Library/LaunchAgents/com.eventus.action-triage.plist",
+      "keep_alive": true,
+      "label": "com.eventus.action-triage",
+      "program": "~/Development/active/josh_projects/action-triage/scripts/with-bifrost-key.sh",
+      "run_at_load": true,
+      "scripts": [
+        "~/Development/active/josh_projects/action-triage/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron",
+        "~/Development/active/josh_projects/action-triage/out/main/index.js"
+      ],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "bytes": 1512,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-16",
+        "path": "/tmp/athena-pipeline.log"
+      },
+      "StandardOutPath": {
+        "bytes": 1512,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-16",
+        "path": "/tmp/athena-pipeline.log"
+      },
+      "calendar": [
+        "Hour=2,Minute=0"
+      ],
+      "changed": "2026-04-17",
+      "disabled": false,
+      "file": "~/Library/LaunchAgents/com.eventus.athena-pipeline.plist",
+      "keep_alive": false,
+      "label": "com.eventus.athena-pipeline",
+      "program": "/usr/bin/python3",
+      "run_at_load": false,
+      "scripts": [
+        "~/Development/active/josh_projects/projects/athena_transition/agent_tools/athena_pm_cli.py"
+      ],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "bytes": 11454,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-16",
+        "path": "/tmp/athena-test-suite-sync.log"
+      },
+      "StandardOutPath": {
+        "bytes": 11454,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-16",
+        "path": "/tmp/athena-test-suite-sync.log"
+      },
+      "calendar": null,
+      "changed": "2026-09-21",
+      "disabled": false,
+      "file": "~/Library/LaunchAgents/com.eventus.athena-test-suite-sync.plist",
+      "keep_alive": false,
+      "label": "com.eventus.athena-test-suite-sync",
+      "program": "~/venv/agent_tools/bin/python3",
+      "run_at_load": false,
+      "scripts": [
+        "~/Development/active/josh_projects/agent_tools/athena_test_suite_sync.py"
+      ],
+      "start_interval_seconds": 3600,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "bytes": 9233,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-16",
+        "path": "/tmp/azure-batch-spend-alert.err"
+      },
+      "StandardOutPath": {
+        "bytes": 0,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-15",
+        "path": "/tmp/azure-batch-spend-alert.log"
+      },
+      "calendar": [
+        "Hour=8,Minute=0"
+      ],
+      "changed": "2026-06-04",
+      "disabled": false,
+      "file": "~/Library/LaunchAgents/com.eventus.azure-batch-spend-alert.plist",
+      "keep_alive": false,
+      "label": "com.eventus.azure-batch-spend-alert",
+      "program": "~/venv/azure-governance/bin/python",
+      "run_at_load": false,
+      "scripts": [
+        "~/Development/active/josh_projects/azure/scripts/batch_spend_alert.py"
+      ],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "bytes": 2511,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-10-01",
+        "path": "~/.claude/atlas/launchd.err.log"
+      },
+      "StandardOutPath": {
+        "bytes": 0,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-20",
+        "path": "~/.claude/atlas/launchd.out.log"
+      },
+      "calendar": null,
+      "changed": "2026-11-16",
+      "disabled": false,
+      "file": "~/Library/LaunchAgents/com.eventus.claude-atlas.plist",
+      "keep_alive": true,
+      "label": "com.eventus.claude-atlas",
+      "program": "~/.nvm/versions/node/v22.19.0/bin/node",
+      "run_at_load": true,
+      "scripts": [
+        "~/Development/active/claude-360/src/service/main.ts"
+      ],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "exists": false,
+        "path": "/tmp/clickup-notion-sync.log"
+      },
+      "StandardOutPath": {
+        "exists": false,
+        "path": "/tmp/clickup-notion-sync.log"
+      },
+      "calendar": null,
+      "changed": "2026-08-20",
+      "disabled": false,
+      "file": "~/Library/LaunchAgents/com.eventus.clickup-notion-sync.plist",
+      "keep_alive": false,
+      "label": "com.eventus.clickup-notion-sync",
+      "program": "~/venv/agent_tools/bin/python3",
+      "run_at_load": false,
+      "scripts": [
+        "~/Development/active/josh_projects/agent_tools/clickup_notion_sync.py"
+      ],
+      "start_interval_seconds": 3600,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "bytes": 0,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-05",
+        "path": "~/Library/Logs/desk-watcher.log"
+      },
+      "StandardOutPath": {
+        "bytes": 0,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-05",
+        "path": "~/Library/Logs/desk-watcher.log"
+      },
+      "calendar": null,
+      "changed": "2026-11-11",
+      "disabled": false,
+      "file": "~/Library/LaunchAgents/com.eventus.desk-watcher.plist",
+      "keep_alive": false,
+      "label": "com.eventus.desk-watcher",
+      "program": "/usr/bin/python3",
+      "run_at_load": true,
+      "scripts": [
+        "~/.local/share/agent-services-desk/bin/desk_watcher.py"
+      ],
+      "start_interval_seconds": 60,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "exists": false,
+        "path": "/tmp/focus-dashboard.log"
+      },
+      "StandardOutPath": {
+        "exists": false,
+        "path": "/tmp/focus-dashboard.log"
+      },
+      "calendar": null,
+      "changed": "2026-07-18",
+      "disabled": false,
+      "file": "~/Library/LaunchAgents/com.eventus.focus-dashboard.plist",
+      "keep_alive": true,
+      "label": "com.eventus.focus-dashboard",
+      "program": "/opt/homebrew/opt/python@3.11/bin/python3.11",
+      "run_at_load": true,
+      "scripts": [
+        "~/.claude/tools/session-dashboard-server.py"
+      ],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "bytes": 426343,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-16",
+        "path": "/tmp/meetings-sync.log"
+      },
+      "StandardOutPath": {
+        "bytes": 426343,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-16",
+        "path": "/tmp/meetings-sync.log"
+      },
+      "calendar": null,
+      "changed": "2026-11-09",
+      "disabled": false,
+      "file": "~/Library/LaunchAgents/com.eventus.meetings-sync.plist",
+      "keep_alive": false,
+      "label": "com.eventus.meetings-sync",
+      "program": "~/venv/agent_tools/bin/python3",
+      "run_at_load": false,
+      "scripts": [
+        "~/Development/active/josh_projects/agent_command_center/server/data/meetings/refresh.py"
+      ],
+      "start_interval_seconds": 900,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "bytes": 303,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-10-15",
+        "path": "~/Development/active/josh_projects/athena_data_migration/deliverables/coordination/waker/watchdog.out"
+      },
+      "StandardOutPath": {
+        "bytes": 303,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-10-15",
+        "path": "~/Development/active/josh_projects/athena_data_migration/deliverables/coordination/waker/watchdog.out"
+      },
+      "calendar": null,
+      "changed": "2026-10-22",
+      "disabled": false,
+      "file": "~/Library/LaunchAgents/com.eventus.qa-waker-watchdog.plist",
+      "keep_alive": false,
+      "label": "com.eventus.qa-waker-watchdog",
+      "program": "/opt/homebrew/bin/python3",
+      "run_at_load": true,
+      "scripts": [
+        "~/Development/active/josh_projects/athena_data_migration/.claude/skills/qa-coordination/scripts/waker.py",
+        "~/Development/active/josh_projects/athena_data_migration"
+      ],
+      "start_interval_seconds": 300,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "bytes": 0,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-08",
+        "path": "~/.claude/sprint-state/sprints/waker/watchdog.out"
+      },
+      "StandardOutPath": {
+        "bytes": 0,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-08",
+        "path": "~/.claude/sprint-state/sprints/waker/watchdog.out"
+      },
+      "calendar": null,
+      "changed": "2026-10-28",
+      "disabled": false,
+      "file": "~/Library/LaunchAgents/com.jgilpatrick.sprint-waker-sprints.plist",
+      "keep_alive": false,
+      "label": "com.jgilpatrick.sprint-waker-sprints",
+      "program": "/opt/homebrew/bin/python3",
+      "run_at_load": true,
+      "scripts": [
+        "~/.claude/skills/sprint/scripts/waker.py"
+      ],
+      "start_interval_seconds": 300,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "exists": false,
+        "path": "/tmp/startup.err"
+      },
+      "StandardOutPath": {
+        "exists": false,
+        "path": "/tmp/startup.log"
+      },
+      "calendar": null,
+      "changed": "2026-10-15",
+      "disabled": false,
+      "file": "~/Library/LaunchAgents/com.jgilpatrick.startup.plist",
+      "keep_alive": false,
+      "label": "com.jgilpatrick.startup",
+      "program": "/bin/bash",
+      "run_at_load": true,
+      "scripts": [
+        "~/Development/active/josh_projects/macbook_automations/scripts/startup.sh"
+      ],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "bytes": 551364,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-16",
+        "path": "~/Library/Logs/sync-client-skills.log"
+      },
+      "StandardOutPath": {
+        "bytes": 551364,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-16",
+        "path": "~/Library/Logs/sync-client-skills.log"
+      },
+      "calendar": null,
+      "changed": "2026-10-11",
+      "disabled": false,
+      "file": "~/Library/LaunchAgents/com.jgilpatrick.sync-client-skills.plist",
+      "keep_alive": false,
+      "label": "com.jgilpatrick.sync-client-skills",
+      "program": "/usr/bin/python3",
+      "run_at_load": true,
+      "scripts": [
+        "~/.claude/scripts/sync_client_skills.py"
+      ],
+      "start_interval_seconds": 900,
+      "watch_paths": 1
+    },
+    {
+      "StandardErrorPath": {
+        "exists": false,
+        "path": "/tmp/outlook-watchdog.log"
+      },
+      "StandardOutPath": {
+        "exists": false,
+        "path": "/tmp/outlook-watchdog.log"
+      },
+      "calendar": null,
+      "changed": "2026-04-10",
+      "disabled": false,
+      "file": "~/Library/LaunchAgents/com.josh.outlook-watchdog.plist",
+      "keep_alive": true,
+      "label": "com.josh.outlook-watchdog",
+      "program": "/bin/bash",
+      "run_at_load": true,
+      "scripts": [
+        "~/Development/active/josh_projects/josh_toolbox/outlook_watchdog.sh"
+      ],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "bytes": 5760511,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-16",
+        "path": "~/.omnara/logs/daemon/daemon.log"
+      },
+      "StandardOutPath": {
+        "bytes": 5760511,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-16",
+        "path": "~/.omnara/logs/daemon/daemon.log"
+      },
+      "calendar": null,
+      "changed": "2026-04-08",
+      "disabled": false,
+      "file": "~/Library/LaunchAgents/com.omnara.daemon.plist",
+      "keep_alive": true,
+      "label": "com.omnara.daemon",
+      "program": "~/.omnara/Omnara.app/Contents/MacOS/omnara",
+      "run_at_load": true,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "bytes": 45904,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-09",
+        "path": "/opt/homebrew/var/log/postgresql@14.log"
+      },
+      "StandardOutPath": {
+        "bytes": 45904,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-09",
+        "path": "/opt/homebrew/var/log/postgresql@14.log"
+      },
+      "calendar": null,
+      "changed": "2026-03-15",
+      "disabled": false,
+      "file": "~/Library/LaunchAgents/homebrew.mxcl.postgresql@14.plist",
+      "keep_alive": true,
+      "label": "homebrew.mxcl.postgresql@14",
+      "program": "/opt/homebrew/opt/postgresql@14/bin/postgres",
+      "run_at_load": true,
+      "scripts": [
+        "/opt/homebrew/var/postgresql@14"
+      ],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "calendar": null,
+      "changed": "2025-10-15",
+      "disabled": false,
+      "file": "~/Library/LaunchAgents/us.zoom.updater.gui.501.login.check.plist",
+      "keep_alive": false,
+      "label": "us.zoom.updater.gui.501.login.check",
+      "program": "~/Applications/zoom.us.app/Contents/Library/LaunchAgents/ZoomUpdater.app/Contents/MacOS/ZoomUpdater",
+      "run_at_load": true,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "calendar": [
+        "Hour=9,Minute=24",
+        "Hour=21,Minute=24"
+      ],
+      "changed": "2025-10-15",
+      "disabled": false,
+      "file": "~/Library/LaunchAgents/us.zoom.updater.gui.501.plist",
+      "keep_alive": false,
+      "label": "us.zoom.updater.gui.501",
+      "program": "~/Applications/zoom.us.app/Contents/Library/LaunchAgents/ZoomUpdater.app/Contents/MacOS/ZoomUpdater",
+      "run_at_load": false,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "calendar": null,
+      "changed": "2026-01-17",
+      "disabled": false,
+      "file": "/Library/LaunchAgents/com.google.keystone.agent.plist",
+      "keep_alive": false,
+      "label": null,
+      "program": null,
+      "run_at_load": false,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "calendar": null,
+      "changed": "2026-01-17",
+      "disabled": false,
+      "file": "/Library/LaunchAgents/com.google.keystone.xpcservice.plist",
+      "keep_alive": false,
+      "label": null,
+      "program": null,
+      "run_at_load": false,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "calendar": null,
+      "changed": "2026-05-22",
+      "disabled": false,
+      "file": "/Library/LaunchAgents/com.idemeum.idemeum-cpoverlay.plist",
+      "keep_alive": true,
+      "label": "com.idemeum.idemeum-cpoverlay",
+      "program": "/Library/PrivilegedHelperTools/idemeum-cpoverlay.app/Contents/MacOS/idemeum-cpoverlay",
+      "run_at_load": false,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "calendar": null,
+      "changed": "2026-11-09",
+      "disabled": false,
+      "file": "/Library/LaunchAgents/com.microsoft.OneDriveStandaloneUpdater.plist",
+      "keep_alive": false,
+      "label": "com.microsoft.OneDriveStandaloneUpdater",
+      "program": "/Applications/OneDrive.app/Contents/StandaloneUpdater.app/Contents/MacOS/OneDriveStandaloneUpdater",
+      "run_at_load": true,
+      "scripts": [],
+      "start_interval_seconds": 86400,
+      "watch_paths": 0
+    },
+    {
+      "calendar": [
+        "Hour=22,Minute=40"
+      ],
+      "changed": "2026-11-09",
+      "disabled": false,
+      "file": "/Library/LaunchAgents/com.microsoft.SyncReporter.plist",
+      "keep_alive": false,
+      "label": "com.microsoft.SyncReporter",
+      "program": "/Applications/OneDrive.app/Contents/SyncReporter.app/Contents/MacOS/SyncReporter",
+      "run_at_load": false,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "bytes": 54326,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-16",
+        "path": "/tmp/com.microsoft.entraidentitybrokerxpc.err.log"
+      },
+      "StandardOutPath": {
+        "exists": false,
+        "path": "/tmp/com.microsoft.entraidentitybrokerxpc.out.log"
+      },
+      "calendar": null,
+      "changed": "2026-11-11",
+      "disabled": false,
+      "file": "/Library/LaunchAgents/com.microsoft.entraidentitybrokerxpc.plist",
+      "keep_alive": true,
+      "label": "UBF8T346G9.com.microsoft.entrabroker.EntraIdentityBrokerXPC.Mach",
+      "program": "/Applications/Company Portal.app/Contents/XPCServices/Microsoft Single Sign on for Mac.xpc/Contents/MacOS/Microsoft Single Sign on for Mac",
+      "run_at_load": true,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "calendar": null,
+      "changed": "2026-10-20",
+      "disabled": false,
+      "file": "/Library/LaunchAgents/com.microsoft.intuneMDMAgent.plist",
+      "keep_alive": true,
+      "label": "com.microsoft.intuneMDMAgent",
+      "program": "/Library/Intune/Microsoft Intune Agent.app/Contents/MacOS/IntuneMdmAgent",
+      "run_at_load": false,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "calendar": null,
+      "changed": "2026-11-16",
+      "disabled": false,
+      "file": "/Library/LaunchAgents/com.microsoft.update.agent.plist",
+      "keep_alive": false,
+      "label": "com.microsoft.update.agent",
+      "program": "/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/Microsoft Update Assistant.app/Contents/MacOS/Microsoft Update Assistant",
+      "run_at_load": true,
+      "scripts": [],
+      "start_interval_seconds": 3600,
+      "watch_paths": 0
+    },
+    {
+      "calendar": null,
+      "changed": "2026-11-04",
+      "disabled": false,
+      "file": "/Library/LaunchAgents/com.microsoft.wdav.tray.plist",
+      "keep_alive": true,
+      "label": "com.microsoft.wdav.tray",
+      "program": "/Applications/Microsoft Defender.app/Contents/MacOS/Microsoft Defender Helper.app/Contents/MacOS/Microsoft Defender Helper",
+      "run_at_load": true,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "calendar": null,
+      "changed": "2026-10-23",
+      "disabled": false,
+      "file": "/Library/LaunchAgents/connectwisecontrol-7d47b4450602b09f-onlogin.plist",
+      "keep_alive": true,
+      "label": "connectwisecontrol-7d47b4450602b09f-onlogin",
+      "program": "/Applications/connectwisecontrol-7d47b4450602b09f.app/Contents/MacOS/ScreenConnect",
+      "run_at_load": false,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "calendar": null,
+      "changed": "2026-10-23",
+      "disabled": false,
+      "file": "/Library/LaunchAgents/connectwisecontrol-7d47b4450602b09f-prelogin.plist",
+      "keep_alive": true,
+      "label": "connectwisecontrol-7d47b4450602b09f-prelogin",
+      "program": "/Applications/connectwisecontrol-7d47b4450602b09f.app/Contents/MacOS/ScreenConnect",
+      "run_at_load": false,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "calendar": null,
+      "changed": "2026-05-22",
+      "disabled": false,
+      "file": "/Library/LaunchAgents/idemeum-helper-agent.plist",
+      "keep_alive": true,
+      "label": "corg.idemeum.daemon-helper-agent",
+      "program": "/usr/local/bin/idemeum-helper.app/Contents/MacOS/idemeum-helper",
+      "run_at_load": true,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "calendar": null,
+      "changed": "2026-08-29",
+      "disabled": false,
+      "file": "/Library/LaunchAgents/net.Printix.UI.plist",
+      "keep_alive": true,
+      "label": "net.Printix.UI",
+      "program": "/Applications/Printix Client.app/Contents/MacOS/Printix Client",
+      "run_at_load": true,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "calendar": null,
+      "changed": "2025-12-31",
+      "disabled": false,
+      "file": "/Library/LaunchDaemons/com.docker.socket.plist",
+      "keep_alive": false,
+      "label": "com.docker.socket",
+      "program": "/Library/PrivilegedHelperTools/com.docker.socket",
+      "run_at_load": true,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "calendar": null,
+      "changed": "2025-12-31",
+      "disabled": false,
+      "file": "/Library/LaunchDaemons/com.docker.vmnetd.plist",
+      "keep_alive": false,
+      "label": "com.docker.vmnetd",
+      "program": "/Library/PrivilegedHelperTools/com.docker.vmnetd",
+      "run_at_load": true,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "calendar": null,
+      "changed": "2026-01-14",
+      "disabled": false,
+      "file": "/Library/LaunchDaemons/com.microsoft.EdgeUpdater.wake.system.plist",
+      "keep_alive": false,
+      "label": "com.microsoft.EdgeUpdater.wake.system",
+      "program": "/Library/Application Support/Microsoft/EdgeUpdater/Current/EdgeUpdater.app/Contents/MacOS/EdgeUpdater",
+      "run_at_load": false,
+      "scripts": [],
+      "start_interval_seconds": 3600,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "bytes": 372861,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-16",
+        "path": "/Library/Logs/Microsoft/OneDrive/OneDriveStandaloneUpdaterDaemon.log"
+      },
+      "StandardOutPath": {
+        "bytes": 372861,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-16",
+        "path": "/Library/Logs/Microsoft/OneDrive/OneDriveStandaloneUpdaterDaemon.log"
+      },
+      "calendar": null,
+      "changed": "2026-11-09",
+      "disabled": false,
+      "file": "/Library/LaunchDaemons/com.microsoft.OneDriveStandaloneUpdaterDaemon.plist",
+      "keep_alive": false,
+      "label": "com.microsoft.OneDriveStandaloneUpdaterDaemon",
+      "program": "/Applications/OneDrive.app/Contents/StandaloneUpdaterDaemon.xpc/Contents/MacOS/StandaloneUpdaterDaemon",
+      "run_at_load": false,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "bytes": 58974,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-09",
+        "path": "/Library/Logs/Microsoft/OneDrive/OneDriveUpdaterDaemon.log"
+      },
+      "StandardOutPath": {
+        "bytes": 58974,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-09",
+        "path": "/Library/Logs/Microsoft/OneDrive/OneDriveUpdaterDaemon.log"
+      },
+      "calendar": null,
+      "changed": "2026-11-09",
+      "disabled": false,
+      "file": "/Library/LaunchDaemons/com.microsoft.OneDriveUpdaterDaemon.plist",
+      "keep_alive": false,
+      "label": "com.microsoft.OneDriveUpdaterDaemon",
+      "program": "/Applications/OneDrive.app/Contents/OneDriveUpdaterDaemon.xpc/Contents/MacOS/OneDriveUpdaterDaemon",
+      "run_at_load": false,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "calendar": null,
+      "changed": "2026-11-16",
+      "disabled": false,
+      "file": "/Library/LaunchDaemons/com.microsoft.autoupdate.helper.plist",
+      "keep_alive": false,
+      "label": "com.microsoft.autoupdate.helper",
+      "program": "/Library/PrivilegedHelperTools/com.microsoft.autoupdate.helper",
+      "run_at_load": false,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "exists": false,
+        "path": "/Library/Logs/Microsoft/DLP/install_monitor.stderr"
+      },
+      "StandardOutPath": {
+        "exists": false,
+        "path": "/Library/Logs/Microsoft/DLP/install_monitor.stdout"
+      },
+      "calendar": null,
+      "changed": "2026-11-04",
+      "disabled": false,
+      "file": "/Library/LaunchDaemons/com.microsoft.dlp.install_monitor.plist",
+      "keep_alive": false,
+      "label": "com.microsoft.dlp.install_monitor",
+      "program": "/Library/Application Support/Microsoft/DLP/scripts/install_helper",
+      "run_at_load": false,
+      "scripts": [
+        "/Library/Application Support/Microsoft/DLP/scripts/install_monitor"
+      ],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "calendar": null,
+      "changed": "2026-11-04",
+      "disabled": false,
+      "file": "/Library/LaunchDaemons/com.microsoft.fresno.plist",
+      "keep_alive": true,
+      "label": "com.microsoft.fresno",
+      "program": "/Applications/Microsoft Defender.app/Contents/MacOS/wdavdaemon",
+      "run_at_load": true,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "bytes": 6336,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-04",
+        "path": "/Library/Logs/Microsoft/mdatp/uninstall.log"
+      },
+      "StandardOutPath": {
+        "bytes": 6336,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-04",
+        "path": "/Library/Logs/Microsoft/mdatp/uninstall.log"
+      },
+      "calendar": null,
+      "changed": "2026-11-04",
+      "disabled": false,
+      "file": "/Library/LaunchDaemons/com.microsoft.fresno.uninstall.plist",
+      "keep_alive": false,
+      "label": "com.microsoft.fresno.uninstall",
+      "program": "/Library/Application Support/Microsoft/Defender/uninstall/install_helper",
+      "run_at_load": false,
+      "scripts": [
+        "/Library/Application Support/Microsoft/Defender/uninstall/uninstall"
+      ],
+      "start_interval_seconds": null,
+      "watch_paths": 1
+    },
+    {
+      "calendar": null,
+      "changed": "2026-10-20",
+      "disabled": false,
+      "file": "/Library/LaunchDaemons/com.microsoft.intuneMDMAgent.daemon.plist",
+      "keep_alive": true,
+      "label": "com.microsoft.intuneMDMAgent.daemon",
+      "program": "/Library/Intune/Microsoft Intune Agent.app/Contents/MacOS/IntuneMdmDaemon",
+      "run_at_load": false,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "calendar": null,
+      "changed": "2026-11-02",
+      "disabled": false,
+      "file": "/Library/LaunchDaemons/com.microsoft.office.licensingV2.helper.plist",
+      "keep_alive": false,
+      "label": "com.microsoft.office.licensingV2.helper",
+      "program": "/Library/PrivilegedHelperTools/com.microsoft.office.licensingV2.helper",
+      "run_at_load": false,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "calendar": null,
+      "changed": "2026-10-23",
+      "disabled": false,
+      "file": "/Library/LaunchDaemons/com.microsoft.office.licensingV3.helper.plist",
+      "keep_alive": false,
+      "label": "com.microsoft.office.licensingV3.helper",
+      "program": "/Library/PrivilegedHelperTools/com.microsoft.office.licensingV3.helper",
+      "run_at_load": false,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "exists": false,
+        "path": "/Library/Logs/Microsoft/DLP/dlp_processor/dlp_processor_install_monitor_err.log"
+      },
+      "StandardOutPath": {
+        "exists": false,
+        "path": "/Library/Logs/Microsoft/DLP/dlp_processor/dlp_processor_install_monitor.log"
+      },
+      "calendar": null,
+      "changed": "2026-11-04",
+      "disabled": false,
+      "file": "/Library/LaunchDaemons/com.microsoft.wdav.dlp_processor_install_monitor.plist",
+      "keep_alive": false,
+      "label": "com.microsoft.wdav.dlp_processor_install_monitor",
+      "program": "/Library/Application Support/Microsoft/Defender/uninstall/install_helper",
+      "run_at_load": false,
+      "scripts": [
+        "/Library/Application Support/Microsoft/Defender/dlp_scripts/dlp_processor_install_monitor.sh"
+      ],
+      "start_interval_seconds": null,
+      "watch_paths": 1
+    },
+    {
+      "StandardErrorPath": {
+        "exists": false,
+        "path": "/Library/Logs/Microsoft/DLP/tracer/tracer_install_monitor_err.log"
+      },
+      "StandardOutPath": {
+        "exists": false,
+        "path": "/Library/Logs/Microsoft/DLP/tracer/tracer_install_monitor.log"
+      },
+      "calendar": null,
+      "changed": "2026-11-04",
+      "disabled": false,
+      "file": "/Library/LaunchDaemons/com.microsoft.wdav.tracer_install_monitor.plist",
+      "keep_alive": false,
+      "label": "com.microsoft.wdav.tracer_install_monitor",
+      "program": "/Library/Application Support/Microsoft/Defender/uninstall/install_helper",
+      "run_at_load": false,
+      "scripts": [
+        "/Library/Application Support/Microsoft/Defender/dlp_scripts/tracer_install_monitor.sh"
+      ],
+      "start_interval_seconds": null,
+      "watch_paths": 1
+    },
+    {
+      "calendar": null,
+      "changed": "2026-10-23",
+      "disabled": false,
+      "file": "/Library/LaunchDaemons/connectwisecontrol-7d47b4450602b09f.plist",
+      "keep_alive": true,
+      "label": "connectwisecontrol-7d47b4450602b09f",
+      "program": "/Applications/connectwisecontrol-7d47b4450602b09f.app/Contents/MacOS/ScreenConnect",
+      "run_at_load": false,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "calendar": null,
+      "changed": "2026-08-29",
+      "disabled": false,
+      "file": "/Library/LaunchDaemons/net.Printix.Service.plist",
+      "keep_alive": true,
+      "label": "net.Printix.Service",
+      "program": "/Users/Shared/.Printix.net/Service/Printix Service.app/Contents/MacOS/Printix Service",
+      "run_at_load": true,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    },
+    {
+      "StandardErrorPath": {
+        "bytes": 35504,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-09",
+        "path": "/var/log/Tunnelblick/tunnelblickd.log"
+      },
+      "calendar": null,
+      "changed": "2025-08-18",
+      "disabled": false,
+      "file": "/Library/LaunchDaemons/net.tunnelblick.tunnelblick.tunnelblickd.plist",
+      "keep_alive": false,
+      "label": "net.tunnelblick.tunnelblick.tunnelblickd",
+      "program": "/Library/Application Support/Tunnelblick/Tunnelblick.app/Contents/Resources/tunnelblickd",
+      "run_at_load": true,
+      "scripts": [],
+      "start_interval_seconds": null,
+      "watch_paths": 0
+    }
+  ],
+  "listening_ports": {
+    "available": true,
+    "ports": {
+      "Electron": [
+        47600
+      ],
+      "Microsoft Edge": [
+        9222,
+        9340
+      ],
+      "Notion": [
+        49527
+      ],
+      "OneDrive Sync Service": [
+        42050
+      ],
+      "Paseo Helper": [
+        6767,
+        53064,
+        53880,
+        53893,
+        64048
+      ],
+      "Python": [
+        8765
+      ],
+      "Text Blaze": [
+        49184
+      ],
+      "com.docker.backend": [
+        11433,
+        15432
+      ],
+      "node": [
+        8770
+      ],
+      "omnara": [
+        36673
+      ],
+      "opencode": [
+        47601,
+        53907,
+        65315
+      ],
+      "postgres": [
+        5432
+      ]
+    }
+  },
+  "loose_ends": {
+    "local_loose_ends": 974,
+    "repos": [
+      {
+        "branches": 26,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 1,
+        "branches_without_remote": 19,
+        "extra_worktrees": 10,
+        "path": "~/.claude",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/.artifacts/claude-harness/phi-hotfix-athena-data-migration",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/action-triage-docs-safe",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/agent-native",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 4,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 3,
+        "extra_worktrees": 3,
+        "path": "~/Development/active/agent_services",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 21,
+        "branches_ahead_of_remote": 2,
+        "branches_whose_remote_is_gone": 6,
+        "branches_without_remote": 6,
+        "extra_worktrees": 6,
+        "path": "~/Development/active/ai_scribing_services",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 3,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 1,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/ambience_cost_sharing",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 57,
+        "branches_ahead_of_remote": 4,
+        "branches_whose_remote_is_gone": 2,
+        "branches_without_remote": 37,
+        "extra_worktrees": 40,
+        "path": "~/Development/active/athena_services",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/azure-openai-proxy",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 11,
+        "branches_ahead_of_remote": 2,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 4,
+        "extra_worktrees": 4,
+        "path": "~/Development/active/bifrost-migration",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 3,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 1,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/bifrost_migration",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 2,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 1,
+        "extra_worktrees": 1,
+        "path": "~/Development/active/bot_services",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 15,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 14,
+        "extra_worktrees": 6,
+        "path": "~/Development/active/charta_services",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 24,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 2,
+        "branches_without_remote": 7,
+        "extra_worktrees": 8,
+        "path": "~/Development/active/claude-360",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 3,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 2,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/claude_360",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 10,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 5,
+        "extra_worktrees": 4,
+        "path": "~/Development/active/claude_eventus_mcp",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 4,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 2,
+        "extra_worktrees": 1,
+        "path": "~/Development/active/cqm_edge_extension/my-ehr-sidecar-extension",
+        "readable": true,
+        "stashes": 2
+      },
+      {
+        "branches": 51,
+        "branches_ahead_of_remote": 7,
+        "branches_whose_remote_is_gone": 4,
+        "branches_without_remote": 25,
+        "extra_worktrees": 19,
+        "path": "~/Development/active/data_services",
+        "readable": true,
+        "stashes": 1
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 1,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/deliverables/2026-09-27/agent-deck-security-audit",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/dify-official",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/dotsuki",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/equip/equip_chatbot",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 3,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 1,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/equip/equip_chatbot_v2",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 2,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/equip/equip_pbi_dashboard",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/equip-optimization",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 5,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 1,
+        "branches_without_remote": 3,
+        "extra_worktrees": 1,
+        "path": "~/Development/active/equip_services",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/eventus-connect-data-platform",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 6,
+        "branches_ahead_of_remote": 2,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 1,
+        "extra_worktrees": 3,
+        "path": "~/Development/active/fx-app-apps-services",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 5,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 1,
+        "extra_worktrees": 1,
+        "path": "~/Development/active/fx-app-josh-services",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 2,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 1,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/fx-app-template",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 2,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 1,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/fx_app_josh_services",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 38,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 32,
+        "extra_worktrees": 3,
+        "path": "~/Development/active/fx_app_zus_services",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/general_data_analysis",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 7,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 4,
+        "extra_worktrees": 1,
+        "path": "~/Development/active/inbox-zero",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/josh-360",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 14,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 13,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/josh_360",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/josh_misc/projects/shadcn-ui-kit-dashboard",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 43,
+        "branches_ahead_of_remote": 2,
+        "branches_whose_remote_is_gone": 11,
+        "branches_without_remote": 23,
+        "extra_worktrees": 23,
+        "path": "~/Development/active/josh_projects",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/josh_sandbox",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 168,
+        "branches_ahead_of_remote": 10,
+        "branches_whose_remote_is_gone": 54,
+        "branches_without_remote": 68,
+        "extra_worktrees": 70,
+        "path": "~/Development/active/keystone-platform",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 166,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 147,
+        "extra_worktrees": 17,
+        "path": "~/Development/active/keystone_platform",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 2,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 1,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/macbook_automations",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/macbook_automations.standalone-backup-20260909",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/muxy",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 2,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 1,
+        "extra_worktrees": 1,
+        "path": "~/Development/active/obsidian-wiki",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/paseo-plugins",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 18,
+        "branches_ahead_of_remote": 3,
+        "branches_whose_remote_is_gone": 2,
+        "branches_without_remote": 6,
+        "extra_worktrees": 9,
+        "path": "~/Development/active/pims_services",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/seq_mcp",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "path": "~/Development/active/survey_services",
+        "readable": false
+      },
+      {
+        "branches": 2,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 1,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/survey_services_eventuswh_apps",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 122,
+        "branches_ahead_of_remote": 9,
+        "branches_whose_remote_is_gone": 28,
+        "branches_without_remote": 42,
+        "extra_worktrees": 40,
+        "path": "~/Development/active/synapse_pipelines",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 10,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 5,
+        "extra_worktrees": 4,
+        "path": "~/Development/active/training_services",
+        "readable": true,
+        "stashes": 1
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/training_services-css-fix",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 2,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 1,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/wiki_services",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/zus_adt/zus_google_auth",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/zus_adt/zus_m2m_handler",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/active/zus_adt/zushook_ADT",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 2,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 1,
+        "path": "~/Development/active/zus_adt/zushook_process_queue",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 26,
+        "branches_ahead_of_remote": 4,
+        "branches_whose_remote_is_gone": 1,
+        "branches_without_remote": 10,
+        "extra_worktrees": 16,
+        "path": "~/Development/active/zus_services",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/ambience_azure_services",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/apps_services-archived-2026-04-27",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/bug-defense-fleet-wars",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 0,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/cost_share_changes",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 2,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/cqm_azure_services",
+        "readable": true,
+        "stashes": 1
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/dataverse_table",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/dataverse_transfer",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 0,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/equip_encyclopedia-archived-2026-06-30",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 0,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/finn_coding_experiments",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/fix_och_table_v1/fix_och_table_v1",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/fx-app-apps-services-corrupt-2026-04-27",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/och_eligibility_review",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/och_outcome_comms",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 2,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 1,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/och_reports",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/other/Microsoft-Test",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/other/limoDataCorrection",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/pims_services_legacy/pims_services",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/test_repository",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/vbcm/vbcm_categorize",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/vbcm/vbcm_matplotlib",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/vbcm/vbcm_quickchart",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/vbcm/vbcm_table",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/zensai_monday_sync",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/zensai_poc",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 0,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/zus-processes",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/zus_chartpath_patient_upload",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 3,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 1,
+        "extra_worktrees": 0,
+        "path": "~/Development/inactive/zus_integration_service 2",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 1,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/local-tools/tldraw",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 3,
+        "branches_ahead_of_remote": 1,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 2,
+        "extra_worktrees": 2,
+        "path": "~/Development/master_dev_docs",
+        "readable": true,
+        "stashes": 0
+      },
+      {
+        "branches": 2,
+        "branches_ahead_of_remote": 0,
+        "branches_whose_remote_is_gone": 0,
+        "branches_without_remote": 0,
+        "extra_worktrees": 0,
+        "path": "~/Development/pharmacy/med_prior_authorization",
+        "readable": true,
+        "stashes": 0
+      }
+    ],
+    "repos_found": 89,
+    "roots": [
+      "~/Development",
+      "~/.claude"
+    ],
+    "totals": {
+      "branches_ahead_of_remote": 74,
+      "branches_whose_remote_is_gone": 112,
+      "branches_without_remote": 494,
+      "extra_worktrees": 294,
+      "stashes": 5
+    }
+  },
+  "run_on": "2026-11-16",
+  "running_programs": {
+    "available": true,
+    "programs": {
+      "(unlisted 1)": 2,
+      "-zsh": 1,
+      "AMPDeviceDiscoveryAgent": 1,
+      "AccessibilityUIServer": 1,
+      "Activity Monitor": 1,
+      "AirPlayUIAgent": 1,
+      "AirPlayXPCHelper": 1,
+      "AppSSOAgent": 1,
+      "AppSSODaemon": 1,
+      "AppleIDSettings": 1,
+      "AppleSpell": 1,
+      "AudioComponentRegistrar": 1,
+      "AuthenticationServicesAgent": 1,
+      "AutofillExtensionMacOS": 1,
+      "BiomeAgent": 1,
+      "Bluetooth": 1,
+      "CMFSyncAgent": 1,
+      "CVMServer": 1,
+      "CalendarWidgetExtension": 1,
+      "ClassroomSettings": 1,
+      "Claude": 1,
+      "Claude Helper": 7,
+      "Claude Helper (Renderer)": 4,
+      "CloudTelemetryService": 2,
+      "CommCenter": 1,
+      "ContextStoreAgent": 1,
+      "ContinuityCaptureAgent": 1,
+      "ControlCenter": 1,
+      "Core Audio Driver (ParrotAudioPlugin.driver)": 1,
+      "CoreLocationAgent": 1,
+      "CoreServicesUIAgent": 1,
+      "CrashReporterSupportHelper": 1,
+      "CursorUIViewService": 1,
+      "DiskUnmountWatcher": 1,
+      "DisplayControls": 1,
+      "Dock": 1,
+      "Docker Desktop": 1,
+      "Docker Desktop Helper": 1,
+      "Docker Desktop Helper (GPU)": 1,
+      "Docker Desktop Helper (Renderer)": 1,
+      "Electron": 1,
+      "Electron Helper": 1,
+      "Electron Helper (GPU)": 1,
+      "Electron Helper (Renderer)": 1,
+      "FamilySettings": 1,
+      "Finder": 1,
+      "FollowUpSettingsExtension": 1,
+      "HeadphoneSettingsExtension": 1,
+      "HostInferenceProviderService": 1,
+      "IMAutomaticHistoryDeletionAgent": 1,
+      "IOMFB_bics_daemon": 1,
+      "IOUserBluetoothSerialDriver": 3,
+      "IntuneMdmAgent": 1,
+      "IntuneMdmDaemon": 1,
+      "KernelEventAgent": 1,
+      "Keychain Access": 1,
+      "Keychain Circle Notification": 1,
+      "MSTeams": 1,
+      "Magic Calculator": 1,
+      "MessagesBlastDoorService": 1,
+      "Microsoft Defender Helper": 1,
+      "Microsoft Edge": 2,
+      "Microsoft Edge Helper (Aperitif Renderer)": 45,
+      "Microsoft Edge Helper (Aperitif)": 8,
+      "Microsoft Excel": 1,
+      "Microsoft Single Sign on for Mac": 1,
+      "Microsoft Teams ModuleHost": 1,
+      "Microsoft Teams WebView": 1,
+      "Microsoft Teams WebView Helper": 5,
+      "Microsoft Teams WebView Helper (Renderer)": 1,
+      "MobileDeviceUpdater": 1,
+      "MobileTimerIntents": 1,
+      "Network": 1,
+      "NewsTag": 1,
+      "NotificationCenter": 1,
+      "Notion": 1,
+      "Notion Helper": 5,
+      "Notion Helper (Renderer)": 8,
+      "OneDrive Sync Service": 1,
+      "PAH_Extension": 1,
+      "ParentalControls": 1,
+      "Paseo": 1,
+      "Paseo Daemon": 1,
+      "Paseo Helper": 21,
+      "Paseo Helper (Renderer)": 1,
+      "Paseo Supervisor": 1,
+      "PasswordManagerBrowserExtensionHelper": 1,
+      "PerfPowerServices": 1,
+      "PhotosReliveWidget": 1,
+      "PlugInLibraryService": 1,
+      "PowerChime": 1,
+      "Preview": 1,
+      "Printix Client": 1,
+      "Printix Service": 1,
+      "Python": 6,
+      "QLPreviewGenerationExtension": 2,
+      "RecordWidgetExtension": 1,
+      "Safari": 1,
+      "SafariBookmarksSyncAgent": 1,
+      "ScopedBookmarkAgent": 1,
+      "ScreenConnect": 2,
+      "ScreenTimeWidgetExtension": 1,
+      "ScreenTimeWidgetIntentsExtension": 1,
+      "ShipIt": 2,
+      "Spotlight": 1,
+      "StandaloneUpdaterDaemon": 1,
+      "StatusKitAgent": 1,
+      "SubmitDiagInfo": 1,
+      "System Settings": 1,
+      "SystemUIServer": 1,
+      "TeamsWidgetExtension": 1,
+      "Text Blaze": 1,
+      "Text Blaze Helper": 3,
+      "Text Blaze Helper (Renderer)": 6,
+      "TextEdit": 1,
+      "TextInputMenuAgent": 1,
+      "ThemeWidgetControlViewService": 5,
+      "UVCAssistant": 1,
+      "UsageTrackingAgent": 1,
+      "UserEventAgent": 2,
+      "UserNotificationCenter": 1,
+      "VPN": 2,
+      "ViewBridgeAuxiliary": 1,
+      "VoiceMemosSettingsWidgetExtension": 1,
+      "WallpaperAerialsExtension": 1,
+      "WallpaperAgent": 1,
+      "WeatherWidget": 1,
+      "Wi-Fi": 1,
+      "WiFiAgent": 1,
+      "WindowManager": 1,
+      "WindowServer": 1,
+      "Windows App": 1,
+      "WirelessRadioManagerd": 1,
+      "Wispr Flow": 2,
+      "Wispr Flow Helper": 4,
+      "Wispr Flow Helper (Renderer)": 5,
+      "WorldClockWidget": 1,
+      "XProtectBridgeService": 1,
+      "accountsd": 1,
+      "agent-manager": 19,
+      "airportd": 1,
+      "akd": 1,
+      "amfid": 1,
+      "analyticsd": 1,
+      "aned": 1,
+      "apfsd": 1,
+      "app_mode_loader": 1,
+      "appleeventsd": 1,
+      "appleh16camerad": 1,
+      "appstored": 1,
+      "apsd": 1,
+      "assessmentagent": 1,
+      "audioaccessoryd": 1,
+      "audioanalyticsd": 1,
+      "audioclocksyncd": 1,
+      "audiomxd": 1,
+      "authd": 1,
+      "autofsd": 1,
+      "automountd": 1,
+      "avconferenced": 1,
+      "backupd": 1,
+      "bash": 1,
+      "biomed": 1,
+      "bluetoothd": 1,
+      "businessservicesd": 1,
+      "caffeinate": 1,
+      "cagent": 1,
+      "calaccessd": 1,
+      "callservicesd": 1,
+      "cameracaptured": 1,
+      "cfprefsd": 2,
+      "chrome-native-host": 1,
+      "chrome_crashpad_handler": 3,
+      "chronod": 1,
+      "claude": 19,
+      "cloudd": 1,
+      "cmux": 1,
+      "cmux-paste-text-worker": 1,
+      "com.apple.AppleUserHIDDrivers": 1,
+      "com.apple.AuthenticationServices.Helper": 3,
+      "com.apple.CodeSigningHelper": 1,
+      "com.apple.DriverKit-AppleBCMWLAN": 1,
+      "com.apple.DriverKit-IOUserDockChannelSerial": 1,
+      "com.apple.Safari.History": 1,
+      "com.apple.Safari.SearchHelper": 1,
+      "com.apple.SafariPlatformSupport.Helper": 10,
+      "com.apple.Virtualization.VirtualMachine": 1,
+      "com.apple.WebKit.GPU": 2,
+      "com.apple.WebKit.Networking": 3,
+      "com.apple.WebKit.WebContent": 3,
+      "com.apple.accessibility.mediaaccessibilityd": 1,
+      "com.apple.appkit.xpc.openAndSavePanelService": 1,
+      "com.apple.cmio.registerassistantservice": 1,
+      "com.apple.cmio.videodriverkithostextension": 1,
+      "com.apple.dock.external.extra.arm64": 2,
+      "com.apple.dock.extra": 1,
+      "com.apple.geod": 1,
+      "com.apple.hiservices-xpcservice": 1,
+      "com.docker.backend": 3,
+      "com.docker.build": 1,
+      "com.docker.virtualization": 1,
+      "com.docker.vmnetd": 1,
+      "com.idemeum.securityextension": 1,
+      "com.microsoft.teams2.agent": 1,
+      "com.microsoft.teams2.notificationcenter": 1,
+      "com.microsoft.teams2.respawn": 1,
+      "commerce": 1,
+      "configd": 1,
+      "containermanagerd": 1,
+      "containermanagerd_system": 1,
+      "contextstored": 1,
+      "coreaudiod": 1,
+      "coreautha": 1,
+      "coreauthd": 2,
+      "corebrightnessd": 1,
+      "coreduetd": 1,
+      "corerepaird": 1,
+      "coreservicesd": 1,
+      "corespeechd": 1,
+      "corespeechd_system": 1,
+      "corespotlightd": 1,
+      "countryd": 1,
+      "ctkahp": 2,
+      "ctkd": 2,
+      "dasd": 1,
+      "diagnostics_agent": 1,
+      "diskarbitrationd": 1,
+      "distnoted": 22,
+      "donotdisturbd": 1,
+      "ecosystemanalyticsd": 1,
+      "ecosystemd": 1,
+      "eligibilityd": 1,
+      "esbuild": 1,
+      "exchangesyncd": 1,
+      "extensionkitservice": 1,
+      "fairplayd": 1,
+      "familycircled": 1,
+      "feedbackd": 1,
+      "filecoordinationd": 1,
+      "fileproviderd": 1,
+      "fontd": 1,
+      "fontworker": 1,
+      "fseventsd": 1,
+      "gamecontrolleragentd": 1,
+      "gamecontrollerd": 1,
+      "gamepolicyd": 1,
+      "gh": 1,
+      "gitleaks": 1,
+      "homed": 1,
+      "icdd": 1,
+      "identityservicesd": 1,
+      "imagent": 1,
+      "imklaunchagent": 1,
+      "index.ts": 1,
+      "intelligenceflowd": 1,
+      "ioupsd": 1,
+      "kdc": 1,
+      "kernelmanagerd": 1,
+      "launchd": 1,
+      "launchservicesd": 1,
+      "linkd": 1,
+      "locationd": 1,
+      "logd": 1,
+      "login": 2,
+      "logind": 1,
+      "loginwindow": 1,
+      "lsd": 2,
+      "mDNSResponder": 1,
+      "mDNSResponderHelper": 1,
+      "maild": 1,
+      "managedappdistributionagent": 1,
+      "managedappdistributiond": 1,
+      "mbuseragent": 1,
+      "mcxalr": 2,
+      "mdbulkimport": 1,
+      "mdmclient": 1,
+      "mds": 1,
+      "mds_stores": 1,
+      "mdworker_shared": 9,
+      "mdwrite": 1,
+      "mediaremoteagent": 1,
+      "mediaremoted": 1,
+      "mobileactivationd": 1,
+      "mobileassetd": 1,
+      "modelmanagerd": 1,
+      "mscamerad-xpc": 1,
+      "msedge_crashpad_handler": 3,
+      "msedgewebview2_crashpad_handler": 1,
+      "naturallanguaged": 1,
+      "neagent": 1,
+      "nearbyd": 1,
+      "nehelper": 1,
+      "nesessionmanager": 1,
+      "netbiosd": 1,
+      "networkserviceproxy": 1,
+      "node": 6,
+      "notifyd": 1,
+      "nsurlsessiond": 2,
+      "oahd": 1,
+      "omnara": 1,
+      "online-auth-agent": 1,
+      "opencode": 4,
+      "opendirectoryd": 1,
+      "ospredictiond": 1,
+      "parentalcontrolsd": 1,
+      "passd": 1,
+      "pboard": 1,
+      "pbs": 1,
+      "perl": 1,
+      "photolibraryd": 1,
+      "pkd": 1,
+      "postgres": 1,
+      "postgres: autovacuum launcher": 1,
+      "postgres: background writer": 1,
+      "postgres: checkpointer": 1,
+      "postgres: logical replication launcher": 1,
+      "postgres: stats collector": 1,
+      "postgres: walwriter": 1,
+      "powerd": 1,
+      "proactived": 1,
+      "ps": 1,
+      "ptpcamerad": 1,
+      "rapportd": 1,
+      "remoted": 1,
+      "remotepairingd": 1,
+      "replayd": 1,
+      "revisiond": 1,
+      "runningboardd": 1,
+      "sandboxd": 1,
+      "searchpartyd": 1,
+      "searchpartyuseragent": 1,
+      "secd": 1,
+      "secinitd": 1,
+      "securityd": 1,
+      "sh": 18,
+      "sharedfilelistd": 2,
+      "sharingd": 1,
+      "siriactionsd": 1,
+      "sleep": 2,
+      "smd": 1,
+      "socketfilterfw": 1,
+      "softwareupdated": 1,
+      "spotlightknowledged": 2,
+      "ssh-agent": 1,
+      "studentd": 1,
+      "suggestd": 1,
+      "suhelperd": 1,
+      "symptomsd": 1,
+      "syncdefaultsd": 1,
+      "sysextd": 1,
+      "syslogd": 1,
+      "sysmond": 1,
+      "syspolicyd": 1,
+      "systemsoundserverd": 1,
+      "systemstats": 2,
+      "taskgated": 1,
+      "tccd": 2,
+      "thermalmonitord": 1,
+      "timed": 1,
+      "tmux": 4,
+      "trustd": 3,
+      "trustdFileHelper": 1,
+      "universalAccessAuthWarn": 1,
+      "universalaccessd": 1,
+      "usbmuxd": 1,
+      "useractivityd": 1,
+      "usermanagerd": 1,
+      "usernoted": 1,
+      "usernotificationsd": 1,
+      "watchdogd": 1,
+      "wdavdaemon": 1,
+      "wdavdaemon_enterprise": 1,
+      "wdavdaemon_unprivileged": 1,
+      "webinspectord": 1,
+      "wifianalyticsd": 1,
+      "wifivelocityd": 1,
+      "xprotectd": 1,
+      "zsh": 3
+    }
+  },
+  "schema": "josh-360/laptop-inventory/1",
+  "seconds": 88.7,
+  "stores": {
+    "children": {
+      "~/.claude": {
+        ".DS_Store": {
+          "bytes": 14340,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-10-28"
+        },
+        ".agents": {
+          "bytes": 123543,
+          "count_capped": false,
+          "exists": true,
+          "files": 54,
+          "newest_change": "2026-11-13"
+        },
+        ".claude": {
+          "bytes": 238282096,
+          "count_capped": false,
+          "exists": true,
+          "files": 13925,
+          "newest_change": "2026-11-07"
+        },
+        ".claude.json": {
+          "bytes": 423,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-09-10"
+        },
+        ".credentials.json": {
+          "bytes": 730,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-09-27"
+        },
+        ".git": {
+          "bytes": 184351914,
+          "count_capped": false,
+          "exists": true,
+          "files": 7576,
+          "newest_change": "2026-11-16"
+        },
+        ".gitignore": {
+          "bytes": 1315,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-13"
+        },
+        ".last-cleanup": {
+          "bytes": 24,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-16"
+        },
+        ".last-update-result.json": {
+          "bytes": 161,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-13"
+        },
+        ".openclaude-profile.json": {
+          "bytes": 283,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-05-06"
+        },
+        ".planning": {
+          "bytes": 7039,
+          "count_capped": false,
+          "exists": true,
+          "files": 2,
+          "newest_change": "2026-09-29"
+        },
+        ".playwright-cli": {
+          "bytes": 130852,
+          "count_capped": false,
+          "exists": true,
+          "files": 13,
+          "newest_change": "2026-07-24"
+        },
+        ".pytest_cache": {
+          "bytes": 92728,
+          "count_capped": false,
+          "exists": true,
+          "files": 5,
+          "newest_change": "2026-11-13"
+        },
+        ".superpowers": {
+          "bytes": 3029207,
+          "count_capped": false,
+          "exists": true,
+          "files": 120,
+          "newest_change": "2026-11-07"
+        },
+        "AGENTS.md": {
+          "bytes": 21070,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-13"
+        },
+        "CLAUDE.bak-20260902": {
+          "bytes": 16227,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-09-02"
+        },
+        "CLAUDE.bak-20260927": {
+          "bytes": 9817,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-09-27"
+        },
+        "CLAUDE.md.bak": {
+          "bytes": 36151,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-07-06"
+        },
+        "CLAUDE.md.bak 20260810.md": {
+          "bytes": 29064,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-07-30"
+        },
+        "CLAUDE.md.bak-20260718-141700": {
+          "bytes": 28034,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-07-18"
+        },
+        "CLAUDE.md.bak-20260721-154312": {
+          "bytes": 39206,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-07-21"
+        },
+        "agent-memory": {
+          "bytes": 12864,
+          "count_capped": false,
+          "exists": true,
+          "files": 3,
+          "newest_change": "2026-09-29"
+        },
+        "agents": {
+          "bytes": 231507,
+          "count_capped": false,
+          "exists": true,
+          "files": 38,
+          "newest_change": "2026-11-06"
+        },
+        "atlas": {
+          "bytes": 1691620014,
+          "count_capped": false,
+          "exists": true,
+          "files": 2524,
+          "newest_change": "2026-11-16"
+        },
+        "backups": {
+          "bytes": 2818137,
+          "count_capped": false,
+          "exists": true,
+          "files": 5,
+          "newest_change": "2026-11-16"
+        },
+        "bin": {
+          "bytes": 8810,
+          "count_capped": false,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-05-06"
+        },
+        "cache": {
+          "bytes": 1256047,
+          "count_capped": false,
+          "exists": true,
+          "files": 4,
+          "newest_change": "2026-11-16"
+        },
+        "ccusage": {
+          "bytes": 323476,
+          "count_capped": false,
+          "exists": true,
+          "files": 7,
+          "newest_change": "2026-04-13"
+        },
+        "chrome": {
+          "bytes": 180,
+          "count_capped": false,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-07-17"
+        },
+        "commands": {
+          "bytes": 6566,
+          "count_capped": false,
+          "exists": true,
+          "files": 3,
+          "newest_change": "2026-07-02"
+        },
+        "compaction-architecture.html": {
+          "bytes": 813542,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-10-01"
+        },
+        "compaction-architecture.json": {
+          "bytes": 5564,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-10-01"
+        },
+        "compaction-architecture.visual-check.json": {
+          "bytes": 1552,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-09-29"
+        },
+        "config": {
+          "bytes": 0,
+          "count_capped": false,
+          "exists": true,
+          "files": 0,
+          "newest_change": null
+        },
+        "context-mode": {
+          "bytes": 4334000,
+          "count_capped": false,
+          "exists": true,
+          "files": 123,
+          "newest_change": "2026-11-08"
+        },
+        "cost-ledger": {
+          "bytes": 3419803648,
+          "count_capped": false,
+          "exists": true,
+          "files": 16,
+          "newest_change": "2026-11-16"
+        },
+        "current.sh": {
+          "bytes": 583,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-07"
+        },
+        "daemon": {
+          "bytes": 44363,
+          "count_capped": false,
+          "exists": true,
+          "files": 5,
+          "newest_change": "2026-10-21"
+        },
+        "daemon-auth-cooldown": {
+          "bytes": 13,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-07-18"
+        },
+        "daemon-auth-status.json": {
+          "bytes": 48,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-07-18"
+        },
+        "daemon.log": {
+          "bytes": 960296,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-10-21"
+        },
+        "debug": {
+          "bytes": 73,
+          "count_capped": false,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-09-22"
+        },
+        "deliverables": {
+          "bytes": 26687970,
+          "count_capped": false,
+          "exists": true,
+          "files": 1596,
+          "newest_change": "2026-11-06"
+        },
+        "docs": {
+          "bytes": 803320,
+          "count_capped": false,
+          "exists": true,
+          "files": 37,
+          "newest_change": "2026-11-13"
+        },
+        "downloads": {
+          "bytes": 0,
+          "count_capped": false,
+          "exists": true,
+          "files": 0,
+          "newest_change": null
+        },
+        "feedback": {
+          "bytes": 0,
+          "count_capped": false,
+          "exists": true,
+          "files": 0,
+          "newest_change": null
+        },
+        "file-history": {
+          "bytes": 118343047,
+          "count_capped": false,
+          "exists": true,
+          "files": 5665,
+          "newest_change": "2026-11-16"
+        },
+        "gh-pr-status-cache.json": {
+          "bytes": 6029,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-10-13"
+        },
+        "history.jsonl": {
+          "bytes": 17717888,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-16"
+        },
+        "hooks": {
+          "bytes": 260664,
+          "count_capped": false,
+          "exists": true,
+          "files": 57,
+          "newest_change": "2026-11-11"
+        },
+        "ide": {
+          "bytes": 0,
+          "count_capped": false,
+          "exists": true,
+          "files": 0,
+          "newest_change": null
+        },
+        "jobs": {
+          "bytes": 2034014189,
+          "count_capped": false,
+          "exists": true,
+          "files": 25116,
+          "newest_change": "2026-10-30"
+        },
+        "local": {
+          "bytes": 25133497,
+          "count_capped": false,
+          "exists": true,
+          "files": 259,
+          "newest_change": "2026-10-11"
+        },
+        "mcp-needs-auth-cache.json": {
+          "bytes": 90,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-04"
+        },
+        "package.json": {
+          "bytes": 20,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-03-13"
+        },
+        "paste-cache": {
+          "bytes": 5630213,
+          "count_capped": false,
+          "exists": true,
+          "files": 2109,
+          "newest_change": "2026-11-16"
+        },
+        "plans": {
+          "bytes": 117759,
+          "count_capped": false,
+          "exists": true,
+          "files": 13,
+          "newest_change": "2026-11-16"
+        },
+        "plugins": {
+          "bytes": 16480540089,
+          "count_capped": false,
+          "exists": true,
+          "files": 163712,
+          "newest_change": "2026-11-16"
+        },
+        "policy-limits.json": {
+          "bytes": 284,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-16"
+        },
+        "policy-limits.json.signature-iat.json": {
+          "bytes": 130,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-16"
+        },
+        "policy-limits.json.signature.json": {
+          "bytes": 3006,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-16"
+        },
+        "policy-limits.json.stamp.json": {
+          "bytes": 225,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-16"
+        },
+        "project-config.json": {
+          "bytes": 211,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-03-25"
+        },
+        "projects": {
+          "bytes": 9313114604,
+          "count_capped": false,
+          "exists": true,
+          "files": 7512,
+          "newest_change": "2026-11-16"
+        },
+        "pytest.ini": {
+          "bytes": 1193,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-10-11"
+        },
+        "refs": {
+          "bytes": 12277,
+          "count_capped": false,
+          "exists": true,
+          "files": 4,
+          "newest_change": "2026-11-06"
+        },
+        "remote-settings.json": {
+          "bytes": 2,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-09-09"
+        },
+        "scheduled-tasks": {
+          "bytes": 7062,
+          "count_capped": false,
+          "exists": true,
+          "files": 4,
+          "newest_change": "2026-05-26"
+        },
+        "scratch": {
+          "bytes": 0,
+          "count_capped": false,
+          "exists": true,
+          "files": 0,
+          "newest_change": null
+        },
+        "scripts": {
+          "bytes": 14037,
+          "count_capped": false,
+          "exists": true,
+          "files": 3,
+          "newest_change": "2026-10-11"
+        },
+        "security_warnings_state_15e0e251-54b8-489c-9729-dad029ccf074.json": {
+          "bytes": 174,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-03-02"
+        },
+        "security_warnings_state_42455151-0afc-4f80-81f5-b25e9bb445dd.json": {
+          "bytes": 170,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-03-06"
+        },
+        "security_warnings_state_48696432-7802-48f9-888d-ed6c5947a458.json": {
+          "bytes": 156,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-03-15"
+        },
+        "security_warnings_state_4f60085c-3569-4d52-89f4-3f2fd1a365dc.json": {
+          "bytes": 254,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-03-15"
+        },
+        "security_warnings_state_5b47de10-67e9-43b3-8789-1b3c641ccf62.json": {
+          "bytes": 153,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-03-12"
+        },
+        "security_warnings_state_5c7a87ba-39aa-4c87-a6bd-f65d1ea567f5.json": {
+          "bytes": 335,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-03-03"
+        },
+        "security_warnings_state_641232da-8b5b-4d99-9afc-9e9b05c8bfbc.json": {
+          "bytes": 139,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-03-12"
+        },
+        "security_warnings_state_7f91970b-c767-4475-a3c0-c2630c6268d8.json": {
+          "bytes": 158,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-03-06"
+        },
+        "security_warnings_state_d969f54a-0859-4095-9ff0-d69800cf3558.json": {
+          "bytes": 134,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-03-11"
+        },
+        "session-env": {
+          "bytes": 2064388,
+          "count_capped": false,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-09-27"
+        },
+        "session-focus": {
+          "bytes": 0,
+          "count_capped": false,
+          "exists": true,
+          "files": 0,
+          "newest_change": null
+        },
+        "session-state": {
+          "bytes": 17527462,
+          "count_capped": false,
+          "exists": true,
+          "files": 920,
+          "newest_change": "2026-11-16"
+        },
+        "sessions": {
+          "bytes": 14075,
+          "count_capped": false,
+          "exists": true,
+          "files": 38,
+          "newest_change": "2026-11-16"
+        },
+        "settings.example.json": {
+          "bytes": 5232,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-05"
+        },
+        "settings.json": {
+          "bytes": 15171,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-16"
+        },
+        "settings.json.bak": {
+          "bytes": 9141,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-09-27"
+        },
+        "settings.json.bak-1783281913": {
+          "bytes": 4051,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-07-05"
+        },
+        "settings.json.bak-1783381337": {
+          "bytes": 4545,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-07-06"
+        },
+        "settings.json.bak-1789907644931": {
+          "bytes": 7078,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-09-20"
+        },
+        "settings.json.bak-2026-11-06T22-34-04.196Z": {
+          "bytes": 11949,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-06"
+        },
+        "settings.json.bak-20260718-141700": {
+          "bytes": 4492,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-07-18"
+        },
+        "settings.json.bak-josh-360": {
+          "bytes": 12483,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-16"
+        },
+        "settings.json.bak-task2-1785444154": {
+          "bytes": 5984,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-07-30"
+        },
+        "settings.json.bak.20260414-112913": {
+          "bytes": 5983,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-04-14"
+        },
+        "settings.json.muxy-backup": {
+          "bytes": 5060,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-04-26"
+        },
+        "settings.json.orig": {
+          "bytes": 9156,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-09-27"
+        },
+        "settings.json.pre-agentmemory": {
+          "bytes": 2330,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-04-08"
+        },
+        "settings.json.pre-dismantle-1783395493": {
+          "bytes": 4766,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-07-06"
+        },
+        "settings.json.pre-gsd-removal": {
+          "bytes": 4918,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-04-27"
+        },
+        "shell-snapshots": {
+          "bytes": 86211766,
+          "count_capped": false,
+          "exists": true,
+          "files": 584,
+          "newest_change": "2026-11-16"
+        },
+        "skill-data": {
+          "bytes": 40643961,
+          "count_capped": false,
+          "exists": true,
+          "files": 177,
+          "newest_change": "2026-09-28"
+        },
+        "skill-source-archive": {
+          "bytes": 57802356,
+          "count_capped": false,
+          "exists": true,
+          "files": 1514,
+          "newest_change": "2026-09-28"
+        },
+        "skills": {
+          "bytes": 16456364,
+          "count_capped": false,
+          "exists": true,
+          "files": 1131,
+          "newest_change": "2026-11-16"
+        },
+        "sprint-state": {
+          "bytes": 360358,
+          "count_capped": false,
+          "exists": true,
+          "files": 62,
+          "newest_change": "2026-11-16"
+        },
+        "state": {
+          "bytes": 2,
+          "count_capped": false,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-15"
+        },
+        "stats-cache.json": {
+          "bytes": 50418,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-09-09"
+        },
+        "tasks": {
+          "bytes": 571029,
+          "count_capped": false,
+          "exists": true,
+          "files": 58,
+          "newest_change": "2026-10-30"
+        },
+        "teams": {
+          "bytes": 530808,
+          "count_capped": false,
+          "exists": true,
+          "files": 125,
+          "newest_change": "2026-11-16"
+        },
+        "telemetry": {
+          "bytes": 6383509,
+          "count_capped": false,
+          "exists": true,
+          "files": 83,
+          "newest_change": "2026-11-13"
+        },
+        "test-results": {
+          "bytes": 45,
+          "count_capped": false,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-08-06"
+        },
+        "tmp": {
+          "bytes": 429394285,
+          "count_capped": false,
+          "exists": true,
+          "files": 10363,
+          "newest_change": "2026-11-16"
+        },
+        "tools": {
+          "bytes": 384157,
+          "count_capped": false,
+          "exists": true,
+          "files": 18,
+          "newest_change": "2026-11-11"
+        },
+        "trapped.sh": {
+          "bytes": 629,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-07"
+        },
+        "usage-data": {
+          "bytes": 6148,
+          "count_capped": false,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-05-26"
+        },
+        "worktrees": {
+          "bytes": 81635944,
+          "count_capped": false,
+          "exists": true,
+          "files": 4113,
+          "newest_change": "2026-11-01"
+        }
+      },
+      "~/.claude/atlas": {
+        "atlas.db": {
+          "bytes": 621359104,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-16"
+        },
+        "atlas.db-shm": {
+          "bytes": 32768,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-16"
+        },
+        "atlas.db-wal": {
+          "bytes": 5261272,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-16"
+        },
+        "atlas.db.ledger-preflight.json": {
+          "bytes": 686,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-10-08"
+        },
+        "atlas.db.pre-migration8-20261008.bak": {
+          "bytes": 215764992,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-10-08"
+        },
+        "atlas.db.pre-migration8-20261008.bak-shm": {
+          "bytes": 32768,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-08"
+        },
+        "atlas.db.pre-migration8-20261008.bak-wal": {
+          "bytes": 0,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-10-08"
+        },
+        "atlas.db.pre-title-cost-backfill-20260925T190531.sqlite": {
+          "bytes": 71569408,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-09-25"
+        },
+        "atlas.db.pre-title-cost-backfill-20260925T190531.sqlite-shm": {
+          "bytes": 32768,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-08"
+        },
+        "atlas.db.pre-title-cost-backfill-20260925T190531.sqlite-wal": {
+          "bytes": 0,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-08"
+        },
+        "atlas.log": {
+          "bytes": 463594,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-16"
+        },
+        "atlas.log.1": {
+          "bytes": 331920467,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-15"
+        },
+        "backups": {
+          "bytes": 443318272,
+          "count_capped": false,
+          "exists": true,
+          "files": 5,
+          "newest_change": "2026-11-08"
+        },
+        "launchd.err.log": {
+          "bytes": 2511,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-10-01"
+        },
+        "launchd.out.log": {
+          "bytes": 0,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-09-20"
+        },
+        "spool": {
+          "bytes": 1861404,
+          "count_capped": false,
+          "exists": true,
+          "files": 2505,
+          "newest_change": "2026-11-09"
+        }
+      },
+      "~/.claude/cost-ledger": {
+        "backups": {
+          "bytes": 1713733632,
+          "count_capped": false,
+          "exists": true,
+          "files": 7,
+          "newest_change": "2026-11-13"
+        },
+        "ledger.db": {
+          "bytes": 634638336,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-16"
+        },
+        "ledger.db-shm": {
+          "bytes": 32768,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-16"
+        },
+        "ledger.db-wal": {
+          "bytes": 0,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-16"
+        },
+        "ledger.db.bak-gpt-6.1-sol-2026-10-17": {
+          "bytes": 535666688,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-10-17"
+        },
+        "ledger.db.bak-gpt-6.1-sol-2026-10-17-shm": {
+          "bytes": 32768,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-08"
+        },
+        "ledger.db.bak-gpt-6.1-sol-2026-10-17-wal": {
+          "bytes": 0,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-10-17"
+        },
+        "ledger.db.dryrun-gpt-6.1-sol-2026-10-17": {
+          "bytes": 535666688,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-10-17"
+        },
+        "ledger.db.dryrun-gpt-6.1-sol-2026-10-17-shm": {
+          "bytes": 32768,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-08"
+        },
+        "ledger.db.dryrun-gpt-6.1-sol-2026-10-17-wal": {
+          "bytes": 0,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-08"
+        }
+      },
+      "~/Library/Application Support/action-agent": {
+        "questions": {
+          "bytes": 44716,
+          "count_capped": false,
+          "exists": true,
+          "files": 21,
+          "newest_change": "2026-11-16"
+        },
+        "session-files": {
+          "bytes": 113340616,
+          "count_capped": false,
+          "exists": true,
+          "files": 1724,
+          "newest_change": "2026-10-06"
+        },
+        "state.json": {
+          "bytes": 833423,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-11-16"
+        },
+        "state.json.bak.1780030127": {
+          "bytes": 4685,
+          "exists": true,
+          "files": 1,
+          "newest_change": "2026-05-29"
+        }
+      }
+    },
+    "home_folders": {
+      "~/.agent-browser": {
+        "bytes": 5,
+        "count_capped": false,
+        "exists": true,
+        "files": 2,
+        "newest_change": "2026-03-20"
+      },
+      "~/.agentmemory": {
+        "bytes": 356,
+        "count_capped": false,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-04-13"
+      },
+      "~/.agents.pre-switch": {
+        "bytes": 16806983,
+        "count_capped": false,
+        "exists": true,
+        "files": 1677,
+        "newest_change": "2026-10-04"
+      },
+      "~/.atlas-test-F87mTf": {
+        "bytes": 5,
+        "count_capped": false,
+        "exists": true,
+        "files": 2,
+        "newest_change": "2026-10-11"
+      },
+      "~/.atlas-test-QClu5V": {
+        "bytes": 5,
+        "count_capped": false,
+        "exists": true,
+        "files": 2,
+        "newest_change": "2026-10-11"
+      },
+      "~/.atlas-test-tMOr4T": {
+        "bytes": 5,
+        "count_capped": false,
+        "exists": true,
+        "files": 2,
+        "newest_change": "2026-10-11"
+      },
+      "~/.cagent": {
+        "bytes": 174238,
+        "count_capped": false,
+        "exists": true,
+        "files": 23,
+        "newest_change": "2026-03-27"
+      },
+      "~/.claude-code-ui": {
+        "bytes": 26643606,
+        "count_capped": false,
+        "exists": true,
+        "files": 299,
+        "newest_change": "2026-03-21"
+      },
+      "~/.claude-mem": {
+        "bytes": 4485757351,
+        "count_capped": false,
+        "exists": true,
+        "files": 170,
+        "newest_change": "2026-09-28"
+      },
+      "~/.claude-monitor": {
+        "bytes": 6337,
+        "count_capped": false,
+        "exists": true,
+        "files": 2,
+        "newest_change": "2026-05-26"
+      },
+      "~/.claude-server-commander": {
+        "bytes": 316101,
+        "count_capped": false,
+        "exists": true,
+        "files": 4,
+        "newest_change": "2026-02-24"
+      },
+      "~/.claude-squad": {
+        "bytes": 19863515,
+        "count_capped": false,
+        "exists": true,
+        "files": 1542,
+        "newest_change": "2026-03-14"
+      },
+      "~/.claude-worktrees": {
+        "bytes": 12296,
+        "count_capped": false,
+        "exists": true,
+        "files": 2,
+        "newest_change": "2026-05-26"
+      },
+      "~/.claude.json": {
+        "bytes": 563185,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-16"
+      },
+      "~/.claude.json.backup": {
+        "bytes": 281711,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-05-19"
+      },
+      "~/.claude.json.bak-20260728-114532": {
+        "bytes": 358099,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-07-28"
+      },
+      "~/.claude.json.tmp.18041.19382e1d449e": {
+        "bytes": 0,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-09"
+      },
+      "~/.claude.json.tmp.19280.5a457ddcf795": {
+        "bytes": 421671,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-09"
+      },
+      "~/.claude.json.tmp.1970.39b4f242ed5d": {
+        "bytes": 420029,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-09"
+      },
+      "~/.claude.json.tmp.22095.669112e394cb": {
+        "bytes": 407535,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-08-21"
+      },
+      "~/.claude.json.tmp.26748.fa895785cc3a": {
+        "bytes": 418534,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-09"
+      },
+      "~/.claude.json.tmp.28652.0b0851eb6335": {
+        "bytes": 413330,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-03"
+      },
+      "~/.claude.json.tmp.28831.7dc52579772d": {
+        "bytes": 419326,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-09"
+      },
+      "~/.claude.json.tmp.29246.48463c98ef7f": {
+        "bytes": 0,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-09"
+      },
+      "~/.claude.json.tmp.30628.ed45090ce9b9": {
+        "bytes": 420402,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-09"
+      },
+      "~/.claude.json.tmp.31880.9d5601975aef": {
+        "bytes": 0,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-07-21"
+      },
+      "~/.claude.json.tmp.35607.201f8ab05725": {
+        "bytes": 0,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-05"
+      },
+      "~/.claude.json.tmp.35661.bdab034b979b": {
+        "bytes": 410943,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-05"
+      },
+      "~/.claude.json.tmp.41358.663047b2ab4d": {
+        "bytes": 419016,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-09"
+      },
+      "~/.claude.json.tmp.4451.50cec1afb24e": {
+        "bytes": 0,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-08-27"
+      },
+      "~/.claude.json.tmp.4880.9d38ba697264": {
+        "bytes": 421879,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-09"
+      },
+      "~/.claude.json.tmp.56574.66b5221abc3a": {
+        "bytes": 413352,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-03"
+      },
+      "~/.claude.json.tmp.56732.b32d62d07519": {
+        "bytes": 421707,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-09"
+      },
+      "~/.claude.json.tmp.57994.65f0e1121bac": {
+        "bytes": 0,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-09"
+      },
+      "~/.claude.json.tmp.60630.5bc463cf57cc": {
+        "bytes": 0,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-09"
+      },
+      "~/.claude.json.tmp.64245.c43e72c87ff8": {
+        "bytes": 406074,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-08-11"
+      },
+      "~/.claude.json.tmp.64463.fd5c7fa00486": {
+        "bytes": 362144,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-07-24"
+      },
+      "~/.claude.json.tmp.64587.776801cfc557": {
+        "bytes": 406074,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-08-11"
+      },
+      "~/.claude.json.tmp.67509.6271ba37793b": {
+        "bytes": 402928,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-08-27"
+      },
+      "~/.claude.json.tmp.73316.df6e2a99b9f7": {
+        "bytes": 421879,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-09"
+      },
+      "~/.claude.json.tmp.73463.02ccc4f29231": {
+        "bytes": 411741,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-03"
+      },
+      "~/.claude.json.tmp.73774.90356fcaf8a6": {
+        "bytes": 0,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-09"
+      },
+      "~/.claude.json.tmp.76250.2922b1eec51e": {
+        "bytes": 420423,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-09"
+      },
+      "~/.claude.json.tmp.77461.48fbd0c0f3a2": {
+        "bytes": 420414,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-09"
+      },
+      "~/.claude.json.tmp.79999.d77cd12d1075": {
+        "bytes": 0,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-09"
+      },
+      "~/.claude.json.tmp.81694.02b9c3df5bc4": {
+        "bytes": 0,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-09"
+      },
+      "~/.claude.json.tmp.84675.276b8c451cc4": {
+        "bytes": 413312,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-03"
+      },
+      "~/.claude.json.tmp.88548.589b890ca18e": {
+        "bytes": 421879,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-09"
+      },
+      "~/.claude.json.tmp.89517.288bfa6ecce3": {
+        "bytes": 421671,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-09"
+      },
+      "~/.claude.json.tmp.90766.8c1a22e662c0": {
+        "bytes": 406045,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-08-11"
+      },
+      "~/.claude.json.tmp.92302.59c8022ca569": {
+        "bytes": 0,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-03"
+      },
+      "~/.claude.json.tmp.97261.b67ca9fe0eff": {
+        "bytes": 421672,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-09"
+      },
+      "~/.codeagentswarm": {
+        "bytes": 428549,
+        "count_capped": false,
+        "exists": true,
+        "files": 21,
+        "newest_change": "2026-09-27"
+      },
+      "~/.obsidian-wiki": {
+        "bytes": 143,
+        "count_capped": false,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-04-08"
+      },
+      "~/.omnara": {
+        "bytes": 483233361,
+        "count_capped": false,
+        "exists": true,
+        "files": 70,
+        "newest_change": "2026-11-16"
+      },
+      "~/.opencode": {
+        "bytes": 237626293,
+        "count_capped": false,
+        "exists": true,
+        "files": 3439,
+        "newest_change": "2026-10-18"
+      },
+      "~/Claude": {
+        "bytes": 34072,
+        "count_capped": false,
+        "exists": true,
+        "files": 5,
+        "newest_change": "2026-08-28"
+      },
+      "~/Postman Agent": {
+        "bytes": 0,
+        "count_capped": false,
+        "exists": true,
+        "files": 0,
+        "newest_change": null
+      },
+      "~/agent-manager-freeze-watch.txt": {
+        "bytes": 218656,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-10-11"
+      },
+      "~/agentmemory": {
+        "bytes": 571383502,
+        "count_capped": false,
+        "exists": true,
+        "files": 12035,
+        "newest_change": "2026-05-26"
+      },
+      "~/opencode-plugin-backup-20261018": {
+        "bytes": 35530,
+        "count_capped": false,
+        "exists": true,
+        "files": 4,
+        "newest_change": "2026-10-09"
+      }
+    },
+    "known": {
+      "~/.claude-mem": {
+        "bytes": 4485757351,
+        "count_capped": false,
+        "exists": true,
+        "files": 170,
+        "newest_change": "2026-09-28"
+      },
+      "~/.claude/.agents/memory": {
+        "bytes": 626,
+        "count_capped": false,
+        "exists": true,
+        "files": 4,
+        "newest_change": "2026-11-08"
+      },
+      "~/.claude/.planning": {
+        "bytes": 7039,
+        "count_capped": false,
+        "exists": true,
+        "files": 2,
+        "newest_change": "2026-09-29"
+      },
+      "~/.claude/agent-memory": {
+        "bytes": 12864,
+        "count_capped": false,
+        "exists": true,
+        "files": 3,
+        "newest_change": "2026-09-29"
+      },
+      "~/.claude/artifact-output": {
+        "exists": false
+      },
+      "~/.claude/atlas": {
+        "bytes": 1691620014,
+        "count_capped": false,
+        "exists": true,
+        "files": 2524,
+        "newest_change": "2026-11-16"
+      },
+      "~/.claude/context-mode": {
+        "bytes": 4334000,
+        "count_capped": false,
+        "exists": true,
+        "files": 123,
+        "newest_change": "2026-11-08"
+      },
+      "~/.claude/cost-ledger": {
+        "bytes": 3419803648,
+        "count_capped": false,
+        "exists": true,
+        "files": 16,
+        "newest_change": "2026-11-16"
+      },
+      "~/.claude/daemon": {
+        "bytes": 44363,
+        "count_capped": false,
+        "exists": true,
+        "files": 5,
+        "newest_change": "2026-10-21"
+      },
+      "~/.claude/deliverables": {
+        "bytes": 26687970,
+        "count_capped": false,
+        "exists": true,
+        "files": 1596,
+        "newest_change": "2026-11-06"
+      },
+      "~/.claude/file-history": {
+        "bytes": 118343047,
+        "count_capped": false,
+        "exists": true,
+        "files": 5665,
+        "newest_change": "2026-11-16"
+      },
+      "~/.claude/history.jsonl": {
+        "bytes": 17717888,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-16"
+      },
+      "~/.claude/jobs": {
+        "bytes": 2034014189,
+        "count_capped": false,
+        "exists": true,
+        "files": 25116,
+        "newest_change": "2026-10-30"
+      },
+      "~/.claude/plugins": {
+        "bytes": 16480540089,
+        "count_capped": false,
+        "exists": true,
+        "files": 163712,
+        "newest_change": "2026-11-16"
+      },
+      "~/.claude/plugins/cache": {
+        "bytes": 16181259141,
+        "count_capped": false,
+        "exists": true,
+        "files": 150330,
+        "newest_change": "2026-11-16"
+      },
+      "~/.claude/projects": {
+        "bytes": 9313114604,
+        "count_capped": false,
+        "exists": true,
+        "files": 7512,
+        "newest_change": "2026-11-16"
+      },
+      "~/.claude/session-focus": {
+        "bytes": 0,
+        "count_capped": false,
+        "exists": true,
+        "files": 0,
+        "newest_change": null
+      },
+      "~/.claude/session-state": {
+        "bytes": 17527462,
+        "count_capped": false,
+        "exists": true,
+        "files": 920,
+        "newest_change": "2026-11-16"
+      },
+      "~/.claude/sprint-state": {
+        "bytes": 360358,
+        "count_capped": false,
+        "exists": true,
+        "files": 62,
+        "newest_change": "2026-11-16"
+      },
+      "~/.claude/tmp/pr-agent-review": {
+        "bytes": 126776,
+        "count_capped": false,
+        "exists": true,
+        "files": 125,
+        "newest_change": "2026-11-16"
+      },
+      "~/.config/free-claude-code": {
+        "exists": false
+      },
+      "~/.config/opencode": {
+        "bytes": 51262702,
+        "count_capped": false,
+        "exists": true,
+        "files": 3505,
+        "newest_change": "2026-11-16"
+      },
+      "~/.config/twg": {
+        "bytes": 675270,
+        "count_capped": false,
+        "exists": true,
+        "files": 96,
+        "newest_change": "2026-11-16"
+      },
+      "~/.local/share/agent-services-desk": {
+        "bytes": 67886,
+        "count_capped": false,
+        "exists": true,
+        "files": 7,
+        "newest_change": "2026-11-11"
+      },
+      "~/.local/share/opencode": {
+        "bytes": 824389702,
+        "count_capped": false,
+        "exists": true,
+        "files": 3538,
+        "newest_change": "2026-11-16"
+      },
+      "~/.obsidian-wiki": {
+        "bytes": 143,
+        "count_capped": false,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-04-08"
+      },
+      "~/.omnara": {
+        "bytes": 483233361,
+        "count_capped": false,
+        "exists": true,
+        "files": 70,
+        "newest_change": "2026-11-16"
+      },
+      "~/.pi/agent/sessions": {
+        "bytes": 26546784,
+        "count_capped": false,
+        "exists": true,
+        "files": 32,
+        "newest_change": "2026-10-09"
+      },
+      "~/Development/active/josh_projects/agent_command_center/server/data/meetings": {
+        "bytes": 17264968,
+        "count_capped": false,
+        "exists": true,
+        "files": 914,
+        "newest_change": "2026-11-16"
+      },
+      "~/Development/active/obsidian-wiki/raw/claude-sessions": {
+        "bytes": 1101493251,
+        "count_capped": false,
+        "exists": true,
+        "files": 616,
+        "newest_change": "2026-05-05"
+      },
+      "~/Library/Application Support/Action Triage": {
+        "exists": false
+      },
+      "~/Library/Application Support/action-agent": {
+        "bytes": 114223440,
+        "count_capped": false,
+        "exists": true,
+        "files": 1747,
+        "newest_change": "2026-11-16"
+      },
+      "~/Library/Application Support/action-triage": {
+        "bytes": 59186700,
+        "count_capped": false,
+        "exists": true,
+        "files": 904,
+        "newest_change": "2026-11-16"
+      },
+      "~/Library/Application Support/agent-manager": {
+        "bytes": 100735303,
+        "count_capped": false,
+        "exists": true,
+        "files": 405,
+        "newest_change": "2026-11-16"
+      },
+      "~/Library/Application Support/agent-services-desk": {
+        "bytes": 113882,
+        "count_capped": false,
+        "exists": true,
+        "files": 8,
+        "newest_change": "2026-11-16"
+      },
+      "~/Library/Application Support/com.jgilpatrick.claude-transcript-scrubber": {
+        "bytes": 1283590,
+        "count_capped": false,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-13"
+      },
+      "~/Library/CloudStorage/OneDrive-EventusWholeHealth/Development/active/claude_services/skills/task-manager": {
+        "skipped": "may prompt"
+      },
+      "~/Library/Logs/action-triage": {
+        "bytes": 9611301,
+        "count_capped": false,
+        "exists": true,
+        "files": 4,
+        "newest_change": "2026-11-16"
+      }
+    },
+    "sqlite_files": {
+      "~/.claude-mem/backups/claude-mem-pre-12.4.3-2026-05-06T04-40-56-907Z.db": {
+        "bytes": 221184,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-05-06"
+      },
+      "~/.claude-mem/backups/pre-bifrost-repair-20260909-172727/claude-mem.db": {
+        "bytes": 414068736,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-09"
+      },
+      "~/.claude-mem/chroma/chroma.sqlite3": {
+        "bytes": 709935104,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-14"
+      },
+      "~/.claude-mem/claude-mem.db": {
+        "bytes": 701247488,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-14"
+      },
+      "~/.claude/atlas/atlas.db": {
+        "bytes": 621359104,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-16"
+      },
+      "~/.claude/atlas/atlas.db.pre-title-cost-backfill-20260925T190531.sqlite": {
+        "bytes": 71569408,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-25"
+      },
+      "~/.claude/atlas/backups/atlas-post-cutover-2026-10-01T17-26-26-642Z.db": {
+        "bytes": 129015808,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-10-01"
+      },
+      "~/.claude/atlas/backups/atlas-preflight-1790823715702-49c48b92-7f63-4cd2-a611-aa2f6a3ca097.db": {
+        "bytes": 113319936,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-09-30"
+      },
+      "~/.claude/atlas/backups/atlas-preflight-1791464984926-c8889c46-f05d-4160-b84e-2246a25d6b12.db": {
+        "bytes": 200949760,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-10-08"
+      },
+      "~/.claude/context-mode/sessions/04fabb0af1f5361b__04fabb0a.db": {
+        "bytes": 65536,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-21"
+      },
+      "~/.claude/context-mode/sessions/11fe14a563f7aed6.db": {
+        "bytes": 57344,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-20"
+      },
+      "~/.claude/context-mode/sessions/282a9534f1817a10__282a9534.db": {
+        "bytes": 69632,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-21"
+      },
+      "~/.claude/context-mode/sessions/386f0ad700c8f2ac.db": {
+        "bytes": 155648,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-23"
+      },
+      "~/.claude/context-mode/sessions/386f0ad700c8f2ac__6bbd6478.db": {
+        "bytes": 40960,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-19"
+      },
+      "~/.claude/context-mode/sessions/386f0ad700c8f2ac__a0970f71.db": {
+        "bytes": 61440,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-20"
+      },
+      "~/.claude/context-mode/sessions/3da2fbe4829f7b6f.db": {
+        "bytes": 143360,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-23"
+      },
+      "~/.claude/context-mode/sessions/3da2fbe4829f7b6f__282a9534.db": {
+        "bytes": 40960,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-22"
+      },
+      "~/.claude/context-mode/sessions/3da2fbe4829f7b6f__86defcea.db": {
+        "bytes": 40960,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-21"
+      },
+      "~/.claude/context-mode/sessions/3da2fbe4829f7b6f__db24d9f9.db": {
+        "bytes": 40960,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-21"
+      },
+      "~/.claude/context-mode/sessions/3da2fbe4829f7b6f__e7c1b767.db": {
+        "bytes": 40960,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-21"
+      },
+      "~/.claude/context-mode/sessions/42e2a3067d154c36.db": {
+        "bytes": 81920,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-22"
+      },
+      "~/.claude/context-mode/sessions/4a4415de8f6e067a__4a4415de.db": {
+        "bytes": 69632,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-21"
+      },
+      "~/.claude/context-mode/sessions/4d139226829407a6__4d139226.db": {
+        "bytes": 253952,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-23"
+      },
+      "~/.claude/context-mode/sessions/543bea563120ae3e__543bea56.db": {
+        "bytes": 57344,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-22"
+      },
+      "~/.claude/context-mode/sessions/6907aab70e7ac413__6907aab7.db": {
+        "bytes": 57344,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-21"
+      },
+      "~/.claude/context-mode/sessions/75c4eb2eeb67a08a.db": {
+        "bytes": 114688,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-19"
+      },
+      "~/.claude/context-mode/sessions/75dd82b5358cd3dd__75dd82b5.db": {
+        "bytes": 65536,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-21"
+      },
+      "~/.claude/context-mode/sessions/8096134524f7a2de.db": {
+        "bytes": 176128,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-23"
+      },
+      "~/.claude/context-mode/sessions/8096134524f7a2de__1d1981c9.db": {
+        "bytes": 40960,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-19"
+      },
+      "~/.claude/context-mode/sessions/837d3032f02ee39f__00aef0e1.db": {
+        "bytes": 53248,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-21"
+      },
+      "~/.claude/context-mode/sessions/837d3032f02ee39f__05ca2df1.db": {
+        "bytes": 69632,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-21"
+      },
+      "~/.claude/context-mode/sessions/837d3032f02ee39f__762c0caa.db": {
+        "bytes": 49152,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-21"
+      },
+      "~/.claude/context-mode/sessions/837d3032f02ee39f__837d3032.db": {
+        "bytes": 487424,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-21"
+      },
+      "~/.claude/context-mode/sessions/837d3032f02ee39f__932dfc07.db": {
+        "bytes": 40960,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-21"
+      },
+      "~/.claude/context-mode/sessions/86defceac70e96fb__86defcea.db": {
+        "bytes": 40960,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-21"
+      },
+      "~/.claude/context-mode/sessions/9d625585e00f4240.db": {
+        "bytes": 57344,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-21"
+      },
+      "~/.claude/context-mode/sessions/a2c9f5c4bf9b9c9d.db": {
+        "bytes": 110592,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-23"
+      },
+      "~/.claude/context-mode/sessions/a70403ac60687972.db": {
+        "bytes": 110592,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-22"
+      },
+      "~/.claude/context-mode/sessions/b13614fe5a1db0fe.db": {
+        "bytes": 204800,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-23"
+      },
+      "~/.claude/context-mode/sessions/b13614fe5a1db0fe__7c7a807b.db": {
+        "bytes": 40960,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-22"
+      },
+      "~/.claude/context-mode/sessions/b13614fe5a1db0fe__8d0609cf.db": {
+        "bytes": 57344,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-22"
+      },
+      "~/.claude/context-mode/sessions/e2172c8f745e7383.db": {
+        "bytes": 69632,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-20"
+      },
+      "~/.claude/context-mode/sessions/eb51eb138bc97744.db": {
+        "bytes": 57344,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-20"
+      },
+      "~/.claude/context-mode/sessions/f4584f21402e2a1d__f4584f21.db": {
+        "bytes": 61440,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-03-22"
+      },
+      "~/.claude/cost-ledger/backups/ledger-pre-haiku55-20261007.db": {
+        "bytes": 462385152,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-10-07"
+      },
+      "~/.claude/cost-ledger/backups/ledger-pre-opencode-cache-import-2026-11-13.db": {
+        "bytes": 631119872,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-13"
+      },
+      "~/.claude/cost-ledger/backups/ledger-pre-sonnet55-cacheread-2026-11-09.db": {
+        "bytes": 620163072,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-09"
+      },
+      "~/.claude/cost-ledger/ledger.db": {
+        "bytes": 634638336,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-16"
+      },
+      "~/.local/share/opencode/opencode.db": {
+        "bytes": 504426496,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-16"
+      },
+      "~/Library/Application Support/agent-manager/state.db": {
+        "bytes": 3883008,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-16"
+      },
+      "~/Library/Application Support/agent-services-desk/desk.db": {
+        "bytes": 53248,
+        "exists": true,
+        "files": 1,
+        "newest_change": "2026-11-16"
+      }
+    }
+  }
+}
