@@ -44,7 +44,9 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 
 ## Commands
 
+- Install once: `pip install -r requirements.txt` (PyYAML).
 - Checks and tests: `python3 scripts/check.py` (add `--fast` to skip `tests/`).
+- Conventions: `python3 scripts/conventions.py check`, and `python3 scripts/conventions.py lookup --folder <path>` or `--repo <name>` to find where work belongs.
 - What the laptop has installed: `python3 laptop/status.py show` (reads the `laptop-status` branch).
 - Install: merging to `main` installs on the laptop on its own (JP-105). Code that runs on the laptop uses Python 3.9 and the standard library only. A new background job is an entry in `jobs.yaml`; a new Claude Code hook is an executable file in `hooks/<Event>/`; a new install step goes in `STEPS` in `laptop/install.py`.
 - Pause the laptop from the cloud: push a branch named `laptop-pause`; delete it to resume.
@@ -55,7 +57,8 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - `apps/`: runnable parts (moved in from Session Atlas and action-triage later).
 - `ledger/`: the ledger, the local record of every agent session.
 - `graphs/`: the agent graphs and the walker.
-- `conventions/`: ticket conventions, the system registry and the standing priorities.
+- `conventions/`: ticket conventions (`tickets.md`), the system registry (`registry.yaml`) and the standing priorities (`priorities.yaml`). Ticket rules for all of Josh's work start here.
+- `docs/surface-map.md`: every surface Josh works through, and where its configuration lives.
 - `docs/vision-and-roadmap.md`: the approved vision and roadmap (the requirements source).
 - `docs/decisions.md`: decisions from the question round, and default choices made while building.
 - `docs/source-notes/`: Josh's notes for the four graphs and the brainstorm, unchanged.
@@ -66,6 +69,7 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - `docs/proof/`: proof for each ticket, by date and key.
 - `.claude/`: workflow values, skills, commands and subagents.
 - `scripts/check.py`: the repo's checks, run by CI as the `suite` job.
+- `scripts/conventions.py`: checks and reads the registry and the priorities file.
 - `tests/`: the tests (stdlib unittest), run by `scripts/check.py`.
 - `jobs.yaml`: Josh 360's background jobs on the laptop.
 - `laptop/`: how the laptop follows `main`: the install script, the job runner, the `follow` job, the status branch and the pause switch.

@@ -21,6 +21,7 @@ The requirements are in [`docs/vision-and-roadmap.md`](docs/vision-and-roadmap.m
 | `ledger/` | The ledger and its data model. |
 | `graphs/` | The agent graphs and the walker. |
 | `conventions/` | Ticket conventions, the system registry and the standing priorities. |
+| `docs/surface-map.md` | Every surface Josh works through, and where its configuration lives. |
 | `docs/vision-and-roadmap.md` | The approved vision and roadmap. |
 | `docs/decisions.md` | Josh's decisions and the default choices made while building. |
 | `docs/source-notes/` | Josh's original notes, unchanged. |
@@ -31,6 +32,7 @@ The requirements are in [`docs/vision-and-roadmap.md`](docs/vision-and-roadmap.m
 | `docs/proof/` | Proof for each ticket, by date and key. |
 | `.claude/` | Workflow values, skills, commands and subagents. |
 | `scripts/check.py` | The repository's checks, run by CI as the `suite` job. |
+| `scripts/conventions.py` | Checks and reads the registry and the priorities file. |
 | `tests/` | The tests, run by `scripts/check.py`. |
 | `jobs.yaml` | Josh 360's background jobs on the laptop. |
 | `laptop/` | How the laptop follows `main`: install script, job runner, status branch, pause switch. |
@@ -38,4 +40,4 @@ The requirements are in [`docs/vision-and-roadmap.md`](docs/vision-and-roadmap.m
 
 ## How work is done
 
-Every change runs through a JP ticket, a pull request, a review by a separate agent and a green `suite` check. The rules are in [`docs/WORKFLOW.md`](docs/WORKFLOW.md). Run the checks with `python3 scripts/check.py`.
+Every change runs through a JP ticket, a pull request, a review by a separate agent and a green `suite` check. The rules are in [`docs/WORKFLOW.md`](docs/WORKFLOW.md). Run the checks with `python3 scripts/check.py` after `pip install -r requirements.txt`.
