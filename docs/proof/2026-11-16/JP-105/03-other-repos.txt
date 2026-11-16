@@ -1,0 +1,9 @@
+# JP-105 proof 03: the tests in the two other pull requests
+
+$ (macbook-automations) python -m pytest -q tests/test_josh_360_jobs.py tests/test_start_agent_manager.py
+..................                                                       [100%]
+18 passed in 1.93s
+
+$ (claude-harness) python -m pytest -q hooks/tests/test_add_josh_360_hooks.py
+..........                                                               [100%]
+10 passed in 0.05s

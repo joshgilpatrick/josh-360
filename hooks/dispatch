@@ -1,0 +1,69 @@
+#!/bin/bash
+# hooks/dispatch <Event>  (JP-105)
+#
+# Claude Code calls this once per hook event, from the laptop's copy (~/.josh-360/repo), through one
+# entry per event in the claude-harness settings. It runs every executable file in hooks/<Event>/ in
+# name order, each with the same input. A new hook is a new file here; the harness never changes.
+#
+# - No folder or no executable files: exit 0 at once.
+# - A hook that exits 2 blocks, as in Claude Code: its message goes to stderr and this exits 2.
+# - A hook that fails any other way is logged and skipped (fail open).
+# - Plain text output is passed on. If several hooks print JSON, the first one wins and the
+#   rest are logged.
+set -u
+event="${1:-}"
+case "$event" in ''|*/*|.*) cat >/dev/null; exit 0 ;; esac
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+dir="${here}/${event}"
+if [ ! -d "$dir" ]; then cat >/dev/null; exit 0; fi
+
+hooks=()
+for f in "$dir"/*; do
+  [ -f "$f" ] && [ -x "$f" ] && hooks+=("$f")
+done
+if [ "${#hooks[@]}" -eq 0 ]; then cat >/dev/null; exit 0; fi
+
+log_dir="${JOSH360_HOME:-$HOME/.josh-360}/logs"
+log() {
+  mkdir -p "$log_dir" 2>/dev/null && printf '%s %s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$event" "$1" >>"$log_dir/hooks.log"
+}
+
+input="$(cat)"
+json_out=""
+text_out=""
+err_file="$(mktemp -t josh360-hook.XXXXXX)"
+trap 'rm -f "$err_file"' EXIT
+
+for hook in "${hooks[@]}"; do
+  name="$(basename "$hook")"
+  out="$(printf '%s' "$input" | "$hook" 2>"$err_file")"
+  code=$?
+  if [ "$code" -eq 2 ]; then
+    cat "$err_file" >&2
+    log "$name blocked (exit 2)"
+    exit 2
+  fi
+  if [ "$code" -ne 0 ]; then
+    log "$name failed (exit $code), skipped"
+    continue
+  fi
+  [ -z "$out" ] && continue
+  trimmed="${out#"${out%%[![:space:]]*}"}"
+  if [ "${trimmed:0:1}" = "{" ]; then
+    if [ -z "$json_out" ]; then
+      json_out="$out"
+    else
+      log "$name printed JSON after another hook did; ignored"
+    fi
+  else
+    text_out="${text_out}${out}"$'\n'
+  fi
+done
+
+if [ -n "$json_out" ]; then
+  [ -n "$text_out" ] && log "plain text from other hooks dropped because a hook printed JSON"
+  printf '%s\n' "$json_out"
+elif [ -n "$text_out" ]; then
+  printf '%s' "$text_out"
+fi
+exit 0

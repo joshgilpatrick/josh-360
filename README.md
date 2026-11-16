@@ -33,7 +33,10 @@ The requirements are in [`docs/vision-and-roadmap.md`](docs/vision-and-roadmap.m
 | `.claude/` | Workflow values, skills, commands and subagents. |
 | `scripts/check.py` | The repository's checks, run by CI as the `suite` job. |
 | `scripts/conventions.py` | Checks and reads the registry and the priorities file. |
-| `tests/` | Unit tests. |
+| `tests/` | The tests, run by `scripts/check.py`. |
+| `jobs.yaml` | Josh 360's background jobs on the laptop. |
+| `laptop/` | How the laptop follows `main`: install script, job runner, status branch, pause switch. |
+| `hooks/` | Claude Code hooks, loaded on the laptop through `hooks/dispatch`. |
 
 ## How work is done
 

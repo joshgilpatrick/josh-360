@@ -14,15 +14,21 @@ Checks:
   6. The feature list from JP-97 (docs/inventory/features.md): every row has one verdict, a reason and a carrier
      ticket, every retired row says what replaces it, and the Session Atlas focus summaries are retired.
   7. The conventions files from JP-98 exist and pass scripts/conventions.py (needs PyYAML, requirements.txt).
-  8. JP-96 inventory: every row of a table with Verdict and Reason columns in docs/inventory/ (except
-     features.md) has exactly one verdict of keep, migrate, build new or dismantle, and a reason; every row of a table with Date range and
-     Produced by columns states both; a table of items (a "What it is" column) must have Verdict and
-     Reason columns; and laptop.md and starting-figures.md must exist.
+  8. The laptop side from JP-105: its files exist, hooks/dispatch is executable and parses as bash, and every
+     Python file that runs on the laptop (including JP-96's two laptop scripts) parses as Python 3.9 (the
+     laptop's /usr/bin/python3).
+  9. The tests in tests/ (skipped with --fast).
+ 10. JP-96 inventory: every row of a table with Verdict and Reason columns in docs/inventory/ (except
+     features.md) has exactly one verdict of keep, migrate, build new or dismantle, and a reason; every row
+     of a table with Date range and Produced by columns states both; a table of items (a "What it is"
+     column) must have Verdict and Reason columns; and laptop.md and starting-figures.md must exist.
 
 Tickets that add code add their own checks here or beside it. Exit 0 when everything passes, 1 otherwise.
 """
 from __future__ import annotations
 
+import ast
+import os
 import re
 import subprocess
 import sys
@@ -66,6 +72,44 @@ CONVENTIONS = [
     "tests/test_conventions.py",
     "requirements.txt",
 ]
+
+
+# JP-105: the laptop follows josh-360.
+LAPTOP = [
+    "jobs.yaml", "hooks/dispatch", "hooks/README.md", "laptop/README.md",
+    "docs/superpowers/specs/2026-11-16-laptop-follows-josh-360-design.md",
+] + [f"laptop/{m}.py" for m in ("common", "install", "run_jobs", "follow", "status", "pause")]
+
+
+def laptop_problems() -> list[str]:
+    problems = []
+    for rel in LAPTOP:
+        if not (ROOT / rel).is_file():
+            problems.append(f"missing: {rel}")
+    dispatch = ROOT / "hooks/dispatch"
+    if dispatch.is_file():
+        if not os.access(dispatch, os.X_OK):
+            problems.append("not executable: hooks/dispatch")
+        if subprocess.run(["bash", "-n", str(dispatch)]).returncode != 0:
+            problems.append("does not parse as bash: hooks/dispatch")
+    jp96 = [ROOT / "scripts/laptop_inventory.py", ROOT / "scripts/laptop_figures.py"]  # run by hand on the laptop
+    for py in sorted((ROOT / "laptop").glob("*.py")) + sorted((ROOT / "hooks").rglob("*.py")) + jp96:
+        try:
+            ast.parse(py.read_text(encoding="utf-8"), filename=str(py), feature_version=(3, 9))
+        except SyntaxError as e:
+            problems.append(f"not Python 3.9: {py.relative_to(ROOT)}:{e.lineno}: {e.msg}")
+    return problems
+
+
+def test_problems() -> list[str]:
+    result = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-t", "tests"],
+                            cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    print(result.stdout.strip().splitlines()[-1] if result.stdout.strip() else "tests: no output")
+    if result.returncode != 0:
+        print(result.stdout)
+        return ["tests failed (python3 -m unittest discover -s tests -t tests)"]
+    return []
+
 
 # A status marker, not the ordinary verb: "Proposed:", "(Proposed)", "**Proposed**", "| Proposed |".
 PROPOSED_MARKER = re.compile(r"(\*\*Proposed\*\*|\(Proposed\)|\bProposed:|\|\s*Proposed\s*\|)")
@@ -289,6 +333,9 @@ def main() -> int:
         if not (ROOT / rel).is_file():
             problems.append(f"missing: {rel}")
     problems += conventions_problems()
+    problems += laptop_problems()
+    if "--fast" not in sys.argv[1:]:
+        problems += test_problems()
 
     for name in ("laptop.md", "starting-figures.md"):
         if not (ROOT / "docs/inventory" / name).is_file():

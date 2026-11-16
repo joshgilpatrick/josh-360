@@ -1,0 +1,67 @@
+# JP-105 proof 02: the whole chain, end to end, against a made-up GitHub and a made-up laptop home
+# Covers @e2e: A merge reaches the laptop on its own. Uses the real macbook-automations wrapper
+# (scripts/josh-360-jobs.sh on its PR branch) and this branch's laptop/ code, run with Python 3.9.
+# Script: the steps below are printed as they run; temp paths are shown as <tmp>.
+
+# Laptop Python for this run: Python 3.9.25
+## 1. Josh's sitting: launchd loads com.jgilpatrick.josh-360-jobs (RunAtLoad) -> the wrapper
+
+$ bash /home/claude/macbook-automations/scripts/josh-360-jobs.sh
+=== 2026-11-16T18:05:54Z josh-360 jobs
+First run: cloning josh-360 (main) into <tmp>/home/.josh-360/repo
+follow: exit 0
+## 2. What a cloud session reads
+
+$ bash -c cd <tmp>/home/.josh-360/repo && python3 laptop/status.py show
+{
+  "commit": "32efd7b3de11742f9e6d9ab869c298a615102116",
+  "counts": {
+    "changed": 1,
+    "problems": 0,
+    "unchanged": 3
+  },
+  "main": "32efd7b3de11742f9e6d9ab869c298a615102116",
+  "reason": "installed",
+  "result": "passed",
+  "schema": 1,
+  "time": "2026-11-16T18:05:54Z"
+}
+
+$ git --git-dir=<tmp>/josh-360.git ls-tree -r --name-only laptop-status
+status.json
+## 3. A pull request merges to main; nobody touches the laptop; the next launchd pass (10 minutes later)
+
+$ bash /home/claude/macbook-automations/scripts/josh-360-jobs.sh
+=== 2026-11-16T18:05:54Z josh-360 jobs
+follow: exit 0
+
+$ git --git-dir=<tmp>/josh-360.git log --format=%s main -1
+a merged change
+
+$ bash -c cd <tmp>/home/.josh-360/repo && git log --format='%s' -1 && ls docs/merged-later.md
+a merged change
+docs/merged-later.md
+## 4. Install run again by hand: no changes
+
+$ python3.9 <tmp>/home/.josh-360/repo/laptop/install.py
+unchanged home folders
+unchanged jobs file
+unchanged hooks
+unchanged installed commit
+install: passed (changed: 0, unchanged: 4, problems: 0)
+## 5. Pause, merge, pass: not installed
+
+$ python3.9 <tmp>/home/.josh-360/repo/laptop/pause.py on
+paused: the laptop will not install new changes until you run 'pause.py off'
+
+$ python3.9 <tmp>/home/.josh-360/repo/laptop/follow.py
+follow: paused (paused by the local switch (the PAUSED file in the Josh 360 folder)), commit 06f8b1195d15
+status: pushed
+
+$ bash -c cd <tmp>/home/.josh-360/repo && git log --format='%s' -1; ls docs/paused.md
+a merged change
+ls: cannot access 'docs/paused.md': No such file or directory
+## 6. Files outside ~/.josh-360 in the laptop HOME after all of this
+
+$ bash -c cd <tmp>/home && find . -path ./.josh-360 -prune -o -print
+.

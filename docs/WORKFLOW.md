@@ -54,7 +54,7 @@ The owner is Josh. Values such as the tracker, statuses and models are in `.clau
 ## 5. Merge and deploy
 
 1. In josh-360, the publishing thread merges its own PR once the whole ceremony is done and `suite` is green: the build thread for features, the fix thread for bugs. It then moves the ticket to Done and comments on it. No sign-off from Josh is needed. A bug that needs a design call goes to Josh first. PRs to Josh's other repositories wait for the phase close.
-2. josh-360 has no deploy. When something is deployed later, merging deploys it: the deploy workflow runs after tests pass on `main`, and threads never deploy by hand for something about to merge.
+2. Merging to `main` is the install: within about 10 minutes the laptop moves its copy to `main`, runs `laptop/install.py` and reports on the `laptop-status` branch (JP-105). Read it with `python3 laptop/status.py show` and check it after merging anything that runs on the laptop. Threads never install by hand. To stop installs, push a branch named `laptop-pause`.
 3. These need Josh's confirmation in the thread each time: a permanent deletion (files, branches with unmerged work, tickets, data) and a write to a shared database or an app other people use. Permanent deletions wait in one list per phase. Never write a passphrase or secret anywhere.
 4. Never a test or deploy target: any Eventus production database or shared app.
 

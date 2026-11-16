@@ -45,10 +45,12 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 ## Commands
 
 - Install once: `pip install -r requirements.txt` (PyYAML).
-- Checks: `python3 scripts/check.py`. Full suite: `python3 scripts/check.py && python3 -m unittest discover -s tests`.
+- Checks and tests: `python3 scripts/check.py` (add `--fast` to skip `tests/`).
 - Conventions: `python3 scripts/conventions.py check`, and `python3 scripts/conventions.py lookup --folder <path>` or `--repo <name>` to find where work belongs.
 - Laptop inventory (JP-96, run on the laptop only, read-only, standard library only): `python3 scripts/laptop_inventory.py --out ~/josh-360-inventory.json`
-- There is no app or build step yet. The ticket that adds one adds its command here and in `.claude/workflow.config.md`.
+- What the laptop has installed: `python3 laptop/status.py show` (reads the `laptop-status` branch).
+- Install: merging to `main` installs on the laptop on its own (JP-105). Code that runs on the laptop uses Python 3.9 and the standard library only. A new background job is an entry in `jobs.yaml`; a new Claude Code hook is an executable file in `hooks/<Event>/`; a new install step goes in `STEPS` in `laptop/install.py`.
+- Pause the laptop from the cloud: push a branch named `laptop-pause`; delete it to resume.
 
 ## Layout
 
@@ -69,8 +71,11 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - `.claude/`: workflow values, skills, commands and subagents.
 - `scripts/check.py`: the repo's checks, run by CI as the `suite` job.
 - `scripts/conventions.py`: checks and reads the registry and the priorities file.
-- `scripts/laptop_inventory.py`, `scripts/laptop_figures.py`: the read-only laptop inventory and starting figures (JP-96).
-- `tests/`: unit tests (`python3 -m unittest discover -s tests`).
+- `scripts/laptop_inventory.py`, `scripts/laptop_figures.py`: the read-only laptop inventory and starting figures (JP-96), run by hand once, not installed.
+- `tests/`: the tests (stdlib unittest), run by `scripts/check.py`.
+- `jobs.yaml`: Josh 360's background jobs on the laptop.
+- `laptop/`: how the laptop follows `main`: the install script, the job runner, the `follow` job, the status branch and the pause switch.
+- `hooks/`: Claude Code hooks, loaded on the laptop through `hooks/dispatch`.
 
 ## Product
 

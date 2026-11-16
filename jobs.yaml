@@ -1,0 +1,22 @@
+# Josh 360's background jobs on the laptop (JP-105).
+#
+# laptop/run_jobs.py reads this file every 5 minutes and runs each job that is due, in this order.
+# It is started by one entry in the macbook-automations startup list, so a new job here needs no
+# change anywhere else: merge it, and the laptop picks it up on its next pass.
+#
+# Shape (the reader is strict and stops on anything else):
+#   - id: a lower-case name
+#     run: a .py file in this repo
+#     every: 10m, 1h, 1d, or once (once: runs until it succeeds one time)
+#     timeout: optional, default 15m
+#     report: optional, true means the job prints JSON, which goes to laptop-status as reports/<id>.json
+#     description: optional
+#
+# The first job must be follow.
+
+jobs:
+  - id: follow
+    run: laptop/follow.py
+    every: 10m
+    timeout: 10m
+    description: Move the laptop's copy to main, run the install script, report on laptop-status.
