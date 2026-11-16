@@ -142,11 +142,11 @@ end_states:
   decide_review.stop: needs-josh
 ```
 
-*The checker refuses a graph with no `end_states`, an end that is not named (it reports it as unclassified), a name that is not an end of the graph, and a score other than the three above.* A loop (`goto`) and an outcome that only moves on are not ends. A run whose exit gate refuses is not one of these ends: it never finished, and it scores `needs-josh` whatever the graph says, because the loose end is for Josh to close.
+*The checker refuses a graph with no `end_states`, an end that is not named (it reports it as unclassified), a name that is not an end of the graph, and a score other than the three above.* A loop (`goto`) and an outcome that only moves on are not ends. A run whose exit gate refuses never finished, so it is not `finished`. It ends as `exit_refused`, a name reserved for every graph: it always scores `needs-josh`, because the loose end is for Josh to close, and it is never written in `end_states` (the checker refuses it there).
 
 Exit gates are scripts, and a graph file does not list their outcomes, so the checker cannot see more than one way for the exit gate to pass. A graph that needs two scores for a finished run ends them in two steps, each with an `on: end` outcome, before the exit gate.
 
-The walker (JP-114) writes the end a run reached, as one of these names, and the data model (JP-99) stores it. The score for a name comes from the header of the graph version the run used, so a later change to a score does not rewrite the old runs. Which measures are built from these fields, and how they are shown, is JP-130.
+The walker (JP-114) writes the end a run reached, as one of these names or `exit_refused`, and the data model (JP-99) stores it. The score for a name comes from the header of the graph version the run used, so a later change to a score does not rewrite the old runs. Which measures are built from these fields, and how they are shown, is JP-130.
 
 ## Steps
 

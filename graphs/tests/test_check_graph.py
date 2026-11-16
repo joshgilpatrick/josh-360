@@ -339,6 +339,15 @@ class Rules(unittest.TestCase):
         data["header"]["end_states"] = ["finished"]
         self.assertProblem(data, "header.end_states: needs a mapping of each end to success, neutral, needs-josh")
 
+    def test_exit_refused_is_reserved_and_not_written_in_end_states(self):
+        for value in ("needs-josh", "success"):
+            with self.subTest(value):
+                data = valid_data()
+                data["header"]["end_states"]["exit_refused"] = value
+                found = self.problems(data)
+                self.assertEqual(found, ["header.end_states: 'exit_refused' is reserved: its score is "
+                                         "always needs-josh, so it is never written here"])
+
     def test_a_class_that_is_not_text_is_refused(self):
         data = valid_data()
         data["header"]["end_states"]["finished"] = None

@@ -31,6 +31,7 @@ EFFORTS = ("low", "medium", "high")
 HEADER_FIELDS = ("jira", "entry_gate", "exit_gate", "asks_josh", "ledger", "access", "end_states")
 END_CLASSES = ("success", "neutral", "needs-josh")  # how a run's end is scored (JP-140)
 FINISHED = "finished"  # the end of a run that runs out of steps and passes the exit gate
+EXIT_REFUSED = "exit_refused"  # the end of a run whose exit gate refuses; always needs-josh, never written in end_states
 
 # Keys that belong to one runner. They are refused by name, so the message says where they go instead.
 ORCHESTRATOR_KEYS = {
@@ -401,9 +402,13 @@ def _check_end_states(end_states, steps, outcomes) -> list[str]:
     if not isinstance(end_states, dict):
         return [f"header.end_states: needs a mapping of each end to {', '.join(END_CLASSES)}"]
     ends = graph_ends(steps, outcomes)
-    out = [f"header.end_states: end '{e}' is unclassified" for e in ends if e not in end_states]
+    out = []
+    if EXIT_REFUSED in end_states:
+        out.append(f"header.end_states: '{EXIT_REFUSED}' is reserved: its score is always needs-josh, "
+                   "so it is never written here")
+    out += [f"header.end_states: end '{e}' is unclassified" for e in ends if e not in end_states]
     out += [f"header.end_states: '{e}' is not an end of this graph (its ends are {', '.join(ends)})"
-            for e in end_states if e not in ends]
+            for e in end_states if e not in ends and e != EXIT_REFUSED]
     out += [f"header.end_states.{e}: '{v}' must be one of {', '.join(END_CLASSES)}"
             for e, v in end_states.items() if e in ends and v not in END_CLASSES]
     return out
