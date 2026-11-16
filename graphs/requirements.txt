@@ -1,0 +1,2 @@
+# The graph checker reads YAML. Install: pip install -r graphs/requirements.txt
+PyYAML==6.0.3
