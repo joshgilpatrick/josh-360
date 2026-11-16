@@ -37,26 +37,71 @@ PRIORITY_KEYS = {"id", "name", "kind", "rank", "shown_to", "covers", "notes"}
 COVER_KEYS = {"areas", "initiatives", "epics"}
 
 
+class ConventionsFileError(Exception):
+    """A conventions file that cannot be read or is not valid YAML. The message names the file."""
+
+
 def load(path: Path) -> dict:
-    with open(path, encoding="utf-8") as handle:
-        data = yaml.safe_load(handle)
-    return data if isinstance(data, dict) else {}
+    try:
+        with open(path, encoding="utf-8") as handle:
+            data = yaml.safe_load(handle)
+    except OSError as exc:
+        raise ConventionsFileError(f"{Path(path).name}: cannot be read ({exc.strerror or exc})") from exc
+    except yaml.YAMLError as exc:
+        mark = getattr(exc, "problem_mark", None)
+        at = f" at line {mark.line + 1}" if mark is not None else ""
+        reason = getattr(exc, "problem", None) or exc
+        raise ConventionsFileError(f"{Path(path).name}: not valid YAML{at} ({reason})") from exc
+    if data is None:
+        return {}
+    if not isinstance(data, dict):
+        raise ConventionsFileError(f"{Path(path).name}: the top level must be a mapping, not a {type(data).__name__}")
+    return data
 
 
 def _list(value) -> list:
     return value if isinstance(value, list) else []
 
 
+def _covers(prio: dict) -> dict:
+    return prio.get("covers") if isinstance(prio.get("covers"), dict) else {}
+
+
+def _type_problems(entry: dict, where: str, strings: tuple, lists: tuple = (), mappings: tuple = ()) -> list[str]:
+    """One line per field whose value has the wrong type. A missing or null field is left to the other checks."""
+    problems = []
+    for key in strings:
+        if entry.get(key) is not None and not isinstance(entry.get(key), str):
+            problems.append(f"{where}: {key} must be text, not a {type(entry.get(key)).__name__}")
+    for key in lists:
+        value = entry.get(key)
+        if value is not None and not (isinstance(value, list) and all(isinstance(v, str) for v in value)):
+            problems.append(f"{where}: {key} must be a list of text")
+    for key in mappings:
+        if entry.get(key) is not None and not isinstance(entry.get(key), dict):
+            problems.append(f"{where}: {key} must be a mapping, not a {type(entry.get(key)).__name__}")
+    return problems
+
+
 def validate(registry: dict, priorities: dict) -> list[str]:
-    """Every problem in the two files, one line each, naming the entry. An empty list means both pass."""
+    """Every problem in the two files, one line each, naming the entry. An empty list means both pass. A
+    malformed entry (a list where a mapping belongs, a number where text belongs) is reported by name, never
+    raised."""
     problems: list[str] = []
     prios = _list(priorities.get("priorities"))
-    prio_ids = [p.get("id") for p in prios if isinstance(p, dict)]
+    prio_ids = [p.get("id") for p in prios if isinstance(p, dict) and isinstance(p.get("id"), str)]
     spaces = registry.get("spaces") if isinstance(registry.get("spaces"), dict) else {}
     areas = registry.get("areas") if isinstance(registry.get("areas"), dict) else {}
     ticket_spaces = {s for s in spaces if s != INITIATIVE_SPACE}
     area_priority = {a: p.get("id") for p in prios if isinstance(p, dict)
-                     for a in _list((p.get("covers") or {}).get("areas")) if isinstance(p.get("covers"), dict)}
+                     for a in _list(_covers(p).get("areas")) if isinstance(a, str)}
+    for section in ("spaces", "areas", "fallback"):
+        if registry.get(section) is not None and not isinstance(registry.get(section), dict):
+            problems.append(f"registry: {section} must be a mapping, not a {type(registry.get(section)).__name__}")
+    for section, value in (("registry: systems", registry.get("systems")),
+                           ("priorities: priorities", priorities.get("priorities"))):
+        if value is not None and not isinstance(value, list):
+            problems.append(f"{section} must be a list, not a {type(value).__name__}")
 
     if not spaces:
         problems.append("registry: no spaces listed")
@@ -76,78 +121,97 @@ def validate(registry: dict, priorities: dict) -> list[str]:
         if not isinstance(system, dict):
             problems.append(f"registry system #{n}: not a mapping")
             continue
-        name = system.get("name") or f"#{n}"
+        name = system.get("name") if isinstance(system.get("name"), str) else None
+        name = name or f"#{n}"
         where = f"registry system {name}"
-        for key in sorted(set(system) - SYSTEM_KEYS):
-            problems.append(f"{where}: unknown field {key!r}")
-        if not system.get("name"):
-            problems.append(f"{where}: no name")
-        elif not LABEL.match(name):
-            problems.append(f"{where}: name must be the lowercase repository-style label")
-        if name in seen_names:
-            problems.append(f"{where}: name listed more than once")
-        seen_names.add(name)
-        if not system.get("description"):
-            problems.append(f"{where}: no description")
-
-        repos = _list(system.get("repositories"))
-        folders = _list(system.get("folders"))
-        if not repos and not folders:
-            problems.append(f"{where}: lists no repositories and no folders, so nothing can resolve to it")
-        for repo in repos:
-            key = _repo_name(str(repo))
-            if not key or "/" in str(repo):
-                problems.append(f"{where}: repository {repo!r} must be a bare repository name")
-            elif key in repo_owner:
-                problems.append(f"{where}: repository {repo!r} is already listed by {repo_owner[key]}")
-            else:
-                repo_owner[key] = name
-        for folder in folders:
-            text = str(folder)
-            if not (text.startswith("~/") or text.startswith("/")):
-                problems.append(f"{where}: folder {text!r} must start with ~/ or /")
-                continue
-            norm = _norm(text, home="~")
-            if norm in folder_owner:
-                problems.append(f"{where}: folder {text!r} is already listed by {folder_owner[norm]}")
-            else:
-                folder_owner[norm] = name
-
-        tracker = system.get("tracker")
-        if tracker not in TRACKERS:
-            problems.append(f"{where}: tracker must be one of {sorted(TRACKERS)}, not {tracker!r}")
-        if tracker == "jira":
-            space = system.get("jira_space")
-            if not space:
-                problems.append(f"{where}: no jira_space")
-            elif space == INITIATIVE_SPACE:
-                problems.append(f"{where}: jira_space {INITIATIVE_SPACE} holds initiatives only, never tickets")
-            elif space not in ticket_spaces:
-                problems.append(f"{where}: jira_space {space!r} is not listed under spaces")
-            epic = system.get("default_epic")
-            if epic is not None:
-                if not KEY.match(str(epic)):
-                    problems.append(f"{where}: default_epic {epic!r} is not a Jira key")
-                elif space and not str(epic).startswith(f"{space}-"):
-                    problems.append(f"{where}: default_epic {epic} is not in its jira_space {space} "
-                                    "(a parent must be in the same space)")
-            if not system.get("area"):
-                problems.append(f"{where}: no area")
-        if tracker == "linear":
-            if not system.get("linear_team"):
-                problems.append(f"{where}: no linear_team")
-            if system.get("jira_space") or system.get("default_epic"):
-                problems.append(f"{where}: a Linear system has no jira_space or default_epic")
-        area = system.get("area")
-        if area and area not in areas:
-            problems.append(f"{where}: area {area!r} is not listed under areas")
-        if system.get("priority") not in prio_ids:
-            problems.append(f"{where}: priority {system.get('priority')!r} is not in priorities.yaml")
-        elif area and area_priority.get(area) and area_priority[area] != system.get("priority"):
-            problems.append(f"{where}: priority {system.get('priority')!r} disagrees with its area {area!r}, "
-                            f"which priorities.yaml puts under {area_priority[area]!r}")
+        typed = _type_problems(system, where, strings=("name", "description", "area", "tracker", "jira_space",
+                                                       "linear_team", "default_epic", "priority", "notes"),
+                               lists=("repositories", "folders"))
+        if typed:
+            problems += typed
+            continue
+        try:
+            problems += _system_problems(system, name, where, n, seen_names, folder_owner, repo_owner,
+                                         ticket_spaces, areas, prio_ids, area_priority)
+        except (TypeError, AttributeError, ValueError) as exc:
+            problems.append(f"{where}: malformed ({exc})")
 
     problems += _validate_priorities(prios, areas)
+    return problems
+
+
+def _system_problems(system: dict, name: str, where: str, n: int, seen_names: set, folder_owner: dict,
+                 repo_owner: dict, ticket_spaces: set, areas: dict, prio_ids: list,
+                 area_priority: dict) -> list[str]:
+    problems: list[str] = []
+    for key in sorted(str(k) for k in set(system) - SYSTEM_KEYS):
+        problems.append(f"{where}: unknown field {key!r}")
+    if not system.get("name"):
+        problems.append(f"{where}: no name")
+    elif not LABEL.match(name):
+        problems.append(f"{where}: name must be the lowercase repository-style label")
+    if name in seen_names:
+        problems.append(f"{where}: name listed more than once")
+    seen_names.add(name)
+    if not system.get("description"):
+        problems.append(f"{where}: no description")
+
+    repos = _list(system.get("repositories"))
+    folders = _list(system.get("folders"))
+    if not repos and not folders:
+        problems.append(f"{where}: lists no repositories and no folders, so nothing can resolve to it")
+    for repo in repos:
+        key = _repo_name(str(repo))
+        if not key or "/" in str(repo):
+            problems.append(f"{where}: repository {repo!r} must be a bare repository name")
+        elif key in repo_owner:
+            problems.append(f"{where}: repository {repo!r} is already listed by {repo_owner[key]}")
+        else:
+            repo_owner[key] = name
+    for folder in folders:
+        text = str(folder)
+        if not (text.startswith("~/") or text.startswith("/")):
+            problems.append(f"{where}: folder {text!r} must start with ~/ or /")
+            continue
+        norm = _norm(text, home="~")
+        if norm in folder_owner:
+            problems.append(f"{where}: folder {text!r} is already listed by {folder_owner[norm]}")
+        else:
+            folder_owner[norm] = name
+
+    tracker = system.get("tracker")
+    if tracker not in TRACKERS:
+        problems.append(f"{where}: tracker must be one of {sorted(TRACKERS)}, not {tracker!r}")
+    if tracker == "jira":
+        space = system.get("jira_space")
+        if not space:
+            problems.append(f"{where}: no jira_space")
+        elif space == INITIATIVE_SPACE:
+            problems.append(f"{where}: jira_space {INITIATIVE_SPACE} holds initiatives only, never tickets")
+        elif space not in ticket_spaces:
+            problems.append(f"{where}: jira_space {space!r} is not listed under spaces")
+        epic = system.get("default_epic")
+        if epic is not None:
+            if not KEY.match(str(epic)):
+                problems.append(f"{where}: default_epic {epic!r} is not a Jira key")
+            elif space and not str(epic).startswith(f"{space}-"):
+                problems.append(f"{where}: default_epic {epic} is not in its jira_space {space} "
+                                "(a parent must be in the same space)")
+        if not system.get("area"):
+            problems.append(f"{where}: no area")
+    if tracker == "linear":
+        if not system.get("linear_team"):
+            problems.append(f"{where}: no linear_team")
+        if system.get("jira_space") or system.get("default_epic"):
+            problems.append(f"{where}: a Linear system has no jira_space or default_epic")
+    area = system.get("area")
+    if area and area not in areas:
+        problems.append(f"{where}: area {area!r} is not listed under areas")
+    if system.get("priority") not in prio_ids:
+        problems.append(f"{where}: priority {system.get('priority')!r} is not in priorities.yaml")
+    elif area and area_priority.get(area) and area_priority[area] != system.get("priority"):
+        problems.append(f"{where}: priority {system.get('priority')!r} disagrees with its area {area!r}, "
+                        f"which priorities.yaml puts under {area_priority[area]!r}")
     return problems
 
 
@@ -161,36 +225,61 @@ def _validate_priorities(prios: list, areas: dict) -> list[str]:
         if not isinstance(prio, dict):
             problems.append(f"priorities #{n}: not a mapping")
             continue
-        pid = prio.get("id") or f"#{n}"
+        pid = prio.get("id") if isinstance(prio.get("id"), str) else None
+        pid = pid or f"#{n}"
         where = f"priority {pid}"
         ids.append(pid)
-        for key in sorted(set(prio) - PRIORITY_KEYS):
-            problems.append(f"{where}: unknown field {key!r}")
-        if not prio.get("name"):
-            problems.append(f"{where}: no name")
-        kind = prio.get("kind")
-        if kind not in KINDS:
-            problems.append(f"{where}: kind must be one of {sorted(KINDS)}, not {kind!r}")
-        if kind == "standing" and pid not in STANDING_IDS:
-            problems.append(f"{where}: is not one of the six standing priorities {list(STANDING_IDS)}")
-        covers = prio.get("covers") if isinstance(prio.get("covers"), dict) else {}
-        for key in sorted(set(covers) - COVER_KEYS):
-            problems.append(f"{where}: covers has unknown field {key!r}")
-        if kind == "unassigned" and any(_list(covers.get(k)) for k in COVER_KEYS):
-            problems.append(f"{where}: unassigned covers nothing; it is what is left over")
+        typed = _type_problems(prio, where, strings=("id", "name", "kind", "notes"), mappings=("covers",))
+        covers = _covers(prio)
         for key in sorted(COVER_KEYS):
-            for item in _list(covers.get(key)):
-                if key in ("initiatives", "epics") and not KEY.match(str(item)):
-                    problems.append(f"{where}: {key} entry {item!r} is not a Jira key")
-                if key == "initiatives" and KEY.match(str(item)) and not str(item).startswith(f"{INITIATIVE_SPACE}-"):
-                    problems.append(f"{where}: initiative {item} is not in the {INITIATIVE_SPACE} space")
-                if key == "areas" and item not in areas:
-                    problems.append(f"{where}: area {item!r} is not listed under areas in registry.yaml")
-                if (key, item) in claimed:
-                    problems.append(f"{where}: {item} is already covered by {claimed[(key, item)]}; "
-                                    "one link may point at one priority only")
-                else:
-                    claimed[(key, item)] = pid
+            value = covers.get(key)
+            if value is not None and not (isinstance(value, list) and all(isinstance(v, str) for v in value)):
+                typed.append(f"{where}: covers {key} must be a list of text")
+        if typed:
+            problems += typed
+            continue
+        try:
+            problems += _priority_problems(prio, pid, where, areas, claimed)
+        except (TypeError, AttributeError, ValueError) as exc:
+            problems.append(f"{where}: malformed ({exc})")
+    problems += _priority_set_problems(prios, ids)
+    return problems
+
+
+def _priority_problems(prio: dict, pid: str, where: str, areas: dict, claimed: dict) -> list[str]:
+    problems: list[str] = []
+    for key in sorted(str(k) for k in set(prio) - PRIORITY_KEYS):
+        problems.append(f"{where}: unknown field {key!r}")
+    if not prio.get("name"):
+        problems.append(f"{where}: no name")
+    kind = prio.get("kind")
+    if kind not in KINDS:
+        problems.append(f"{where}: kind must be one of {sorted(KINDS)}, not {kind!r}")
+    if kind == "standing" and pid not in STANDING_IDS:
+        problems.append(f"{where}: is not one of the six standing priorities {list(STANDING_IDS)}")
+    covers = _covers(prio)
+    for key in sorted(str(k) for k in set(covers) - COVER_KEYS):
+        problems.append(f"{where}: covers has unknown field {key!r}")
+    if kind == "unassigned" and any(_list(covers.get(k)) for k in COVER_KEYS):
+        problems.append(f"{where}: unassigned covers nothing; it is what is left over")
+    for key in sorted(COVER_KEYS):
+        for item in _list(covers.get(key)):
+            if key in ("initiatives", "epics") and not KEY.match(str(item)):
+                problems.append(f"{where}: {key} entry {item!r} is not a Jira key")
+            if key == "initiatives" and KEY.match(str(item)) and not str(item).startswith(f"{INITIATIVE_SPACE}-"):
+                problems.append(f"{where}: initiative {item} is not in the {INITIATIVE_SPACE} space")
+            if key == "areas" and item not in areas:
+                problems.append(f"{where}: area {item!r} is not listed under areas in registry.yaml")
+            if (key, item) in claimed:
+                problems.append(f"{where}: {item} is already covered by {claimed[(key, item)]}; "
+                                "one link may point at one priority only")
+            else:
+                claimed[(key, item)] = pid
+    return problems
+
+
+def _priority_set_problems(prios: list, ids: list) -> list[str]:
+    problems: list[str] = []
     for pid in STANDING_IDS:
         if ids.count(pid) != 1:
             problems.append(f"priority {pid}: the standing priority must appear exactly once")
@@ -242,7 +331,10 @@ def lookup_folder(registry: dict, folder: str, home: str | None = None) -> dict:
     """The system whose listed folder holds this folder; the deepest listed folder wins. Containment is by
     whole path parts, so `.../app-old` never matches `.../app`. No match is Unassigned."""
     home = home or str(Path.home())
-    target = _norm(folder, home)
+    text = str(folder)
+    if not (text == "~" or text.startswith("~/") or os.path.isabs(text)):
+        text = os.path.abspath(text)  # a relative folder, such as `.`, is relative to where the command runs
+    target = _norm(text, home)
     best, best_folder = None, None
     for system in _list(registry.get("systems")):
         for listed in _list(system.get("folders")):
@@ -292,7 +384,16 @@ def main(argv: list[str] | None = None) -> int:
     prio.add_argument("--initiative")
     prio.add_argument("--area")
     args = parser.parse_args(argv)
+    try:
+        return _run(args)
+    except ConventionsFileError as exc:
+        print(exc)
+        if args.command == "check":
+            print("conventions: FAILED (1 problem(s))")
+        return 1
 
+
+def _run(args: argparse.Namespace) -> int:
     if args.command == "check":
         found = validate(load(args.registry), load(args.priorities))
         for line in found:
