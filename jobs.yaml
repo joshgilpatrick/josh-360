@@ -20,3 +20,10 @@ jobs:
     every: 10m
     timeout: 10m
     description: Move the laptop's copy to main, run the install script, report on laptop-status.
+
+  - id: inventory
+    run: scripts/laptop_inventory_job.py
+    every: once
+    timeout: 30m
+    report: true
+    description: JP-96's read-only laptop inventory, once. Names, paths, sizes and counts only.
