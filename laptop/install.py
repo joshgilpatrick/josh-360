@@ -25,7 +25,7 @@ from typing import Callable, List, Tuple
 sys.dont_write_bytecode = True  # keep the laptop's copy clean
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import (REPO_ROOT, Lane, Unexpected, dump_json, git, home, load_jobs, logs_dir,  # noqa: E402
-                    read_json, state_dir)
+                    read_json, require_laptop_copy, state_dir)
 
 HOOK_EVENTS = {
     "SessionStart", "SessionEnd", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Notification",
@@ -44,7 +44,9 @@ def step_home() -> Plan:
     if root.is_symlink():
         return [], ["{} is a link; expected a real folder".format(root)]
     for folder in (root, state_dir(), logs_dir()):
-        if folder.exists() and not folder.is_dir():
+        if folder.is_symlink():
+            problems.append("{} is a link; expected a real folder".format(folder))
+        elif folder.exists() and not folder.is_dir():
             problems.append("{} exists but is not a folder".format(folder))
         elif not folder.exists():
             actions.append(("create folder {}".format(folder), lambda lane, f=folder: lane.mkdir(f)))
@@ -131,6 +133,12 @@ def run(dry_run: bool = False) -> dict:
 
 def main(argv: List[str]) -> int:
     dry_run = "--dry-run" in argv
+    if not dry_run:
+        try:
+            require_laptop_copy()
+        except Unexpected as e:
+            print("install: stopped: {} (use --dry-run to preview from any clone)".format(e))
+            return 3
     summary = run(dry_run=dry_run)
     for line in summary["lines"]:
         print(line)
