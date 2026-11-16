@@ -211,15 +211,34 @@ class LaptopInventoryTest(unittest.TestCase):
         self.assertNotIn("CANARY", json.dumps(report))
         self.assertEqual(report["loose_ends"]["repos_found"], 1)
 
+    def test_non_utf8_command_output_does_not_stop_the_run(self):
+        # The real commands are swapped for one that prints invalid UTF-8, keeping the script's own decoding
+        # arguments, so this holds on any file system (macOS refuses a non-UTF-8 branch name).
+        real_run = subprocess.run
+        bad = [sys.executable, "-c", "import sys; sys.stdout.buffer.write(b'caf\\xe9\\tx\\n')"]
+
+        def fake_run(argv, **kwargs):
+            return real_run(bad, **kwargs)
+
+        with mock.patch.object(laptop_figures.subprocess, "run", side_effect=fake_run):
+            self.assertEqual(laptop_figures._git(self.home, "branches"), ["caf\ufffd\tx"])
+        with mock.patch.object(laptop_inventory.subprocess, "run", side_effect=fake_run), \
+                mock.patch.object(laptop_inventory.shutil, "which", return_value="/bin/true"):
+            self.assertEqual(laptop_inventory.run_read_only("launchctl"), ["caf\ufffd\tx"])
+
     def test_non_utf8_branch_name_does_not_stop_git(self):
         repo = self.tmp / "bytes-repo"
         repo.mkdir()
-        git(repo, "init", "-q", "-b", "main")
-        git(repo, "commit", "-q", "--allow-empty", "-m", "one")
-        subprocess.run([b"git", b"-C", os.fsencode(repo), b"branch", b"JP-9-caf\xe9"], check=True,
-                       capture_output=True)
-        self.assertEqual(laptop_figures.repo_loose_ends(repo)["branches_without_remote"], 1)  # main is not counted
-        shutil.rmtree(repo)
+        try:
+            git(repo, "init", "-q", "-b", "main")
+            git(repo, "commit", "-q", "--allow-empty", "-m", "one")
+            made = subprocess.run([b"git", b"-C", os.fsencode(repo), b"branch", b"JP-9-caf\xe9"],
+                                  capture_output=True)
+            if made.returncode != 0:
+                self.skipTest("this file system refuses a non-UTF-8 branch name (macOS APFS)")
+            self.assertEqual(laptop_figures.repo_loose_ends(repo)["branches_without_remote"], 1)  # main is not counted
+        finally:
+            shutil.rmtree(repo)
 
     # Review of PR #7, fix 3: importing the sibling module writes no __pycache__ beside the script.
     def test_script_run_writes_no_bytecode(self):
