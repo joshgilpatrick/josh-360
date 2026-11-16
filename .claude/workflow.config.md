@@ -17,7 +17,7 @@ The per-project values the workflow skills read. The rules themselves are in `do
 | Merges | features: the build thread, after the full review ceremony and a green `suite` check; bugs with no design call: the fix thread, the same way. This covers josh-360 only; PRs to Josh's other repos wait for the phase close. |
 | Proof surfaces | None yet: josh-360 has no UI until phase 3 (JP-130, JP-131). Until then, proof is test or command output saved under `docs/proof/`. Add surfaces here (for example desktop 1440×900) when the dashboard lands. |
 | Run the app | Nothing to run yet. The ticket that adds the first runnable piece adds its command here. |
-| Tests | full: `python3 scripts/check.py`; fast: `python3 scripts/check.py`. Tickets that add code add their test commands here and to `.github/workflows/test.yml`. |
+| Tests | full: `python3 scripts/check.py && python3 -m unittest discover -s tests -v`; fast: `python3 scripts/check.py`. Tickets that add code add their test commands here and to `.github/workflows/test.yml`. |
 | CI setup | none (Python 3 on `ubuntu-latest`) |
 | Boards | `docs/design/views/<view>/` with a README |
 | Proof files | `docs/proof/YYYY-MM-DD/JP-<n>/` (not `deliverables/`, which Josh's global rules retire) |
