@@ -144,7 +144,7 @@ class AKnownFolderResolves(unittest.TestCase):
     def test_the_cli_prints_the_answer_as_json(self):
         out = io.StringIO()
         with redirect_stdout(out):
-            code = conventions.main(["lookup", "--folder", "~/Development/active/josh-360", "--home", HOME])
+            code = conventions.main(["lookup", "--folder", "~/Development/active/josh_360/.claude/worktrees/x", "--home", HOME])
         self.assertEqual(code, 0)
         answer = json.loads(out.getvalue())
         self.assertEqual(answer["system"], "josh-360")
