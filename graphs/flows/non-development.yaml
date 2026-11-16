@@ -194,7 +194,7 @@ steps:
 
   - id: decide_stuck
     ask:
-      question: "{{ inputs.ticket_key }} went round its loop twice without a usable deliverable. Try once more, or stop and leave it with me?"
+      question: "{{ inputs.ticket_key }} has used its work runs (three per run) without a usable deliverable. Allow one more run, or stop and leave it with me?"
       choices: [retry, stop]
       on_limit_only: true
     on:
