@@ -12,20 +12,20 @@
 
 The numbers later change is measured against (JP-96). Each figure states its date range and the command or query that produced it. Counts only: no message text, file contents or patient data.
 
-Two figures need the laptop, because the session history lives only there. They come from the one read-only laptop script, `scripts/laptop_inventory.py`, which the laptop runs once on its own as the JP-105 job `inventory`; its report comes back on the `laptop-status` branch as `reports/inventory.json`. Until then those rows say "waiting for the laptop run". The cloud figures are filled in now.
+Two figures need the laptop, because the session history lives only there. They come from the one read-only laptop script, `scripts/laptop_inventory.py`, which the laptop ran once on its own as the JP-105 job `inventory` on 16 November 2026; its report is on the `laptop-status` branch as `reports/inventory.json`. The cloud figures were counted the same day.
 
 ## The figures
 
 | Figure | Value | Date range | Produced by |
 | --- | --- | --- | --- |
-| Sessions per week (mean) | waiting for the laptop run | the 12 whole weeks (Monday to Sunday) before the run | `laptop_inventory.py`, field `figures.mean_sessions_per_week`; the week-by-week counts are in `figures.sessions_per_week` |
-| Josh's messages per session (median, mean, 90th percentile) | waiting for the laptop run | the same 12 weeks | `figures.josh_messages_per_session`; split by how the session was started in `figures.josh_messages_by_entrypoint` |
-| Share of sessions tied to a ticket | waiting for the laptop run | the same 12 weeks | `figures.tied_to_ticket.share_by_branch_or_message` (keys JP, AD, CI, GIL); the branch-only count is `figures.tied_to_ticket.by_branch` |
-| Open loose ends on the laptop (git) | waiting for the laptop run | the moment of the run | `loose_ends.local_loose_ends`, the sum of branches with no remote, branches ahead of their remote, branches whose remote is gone, and extra worktrees, over every repository under `~/Development` and `~/.claude` |
+| Sessions per week (mean) | 60.6 over all 12 weeks (727 sessions); 102.6 over the last 7 weeks, from 28 September, which have full records (see Limits). Weekly counts: 2, 3, 0, 2, 2, 31, 94, 307, 72, 81, 100, 33 | the 12 whole weeks (Monday to Sunday) from 2026-08-24 to 2026-11-15 | `laptop_inventory.py`, field `figures.mean_sessions_per_week`; the week-by-week counts are in `figures.sessions_per_week` |
+| Josh's messages per session (median, mean, 90th percentile) | Interactive sessions (`cli`, 479): median 4, mean 16.0, 90th percentile 42. All 727 sessions: median 1, mean 10.9, 90th percentile 27, because 243 headless sessions started by a daemon (`sdk-cli`) count only their opening prompt. 12 sessions had no message from Josh | the same 12 weeks | `figures.josh_messages_per_session`; split by how the session was started in `figures.josh_messages_by_entrypoint` |
+| Share of sessions tied to a ticket | 51% (371 of 727) by branch or by Josh's words; 34% (248) by branch alone | the same 12 weeks | `figures.tied_to_ticket.share_by_branch_or_message` (keys JP, AD, CI, GIL); the branch-only count is `figures.tied_to_ticket.by_branch` |
+| Open loose ends on the laptop (git) | 974 across 89 repositories: 494 branches with no remote, 74 ahead of their remote, 112 whose remote is gone, 294 extra worktrees (5 stashes reported, not counted) | the moment of the run, 2026-11-16 | `loose_ends.local_loose_ends`, the sum of branches with no remote, branches ahead of their remote, branches whose remote is gone, and extra worktrees, over every repository under `~/Development` and `~/.claude` |
 | Open pull requests authored by Josh | 18, in 13 repositories, opened between 2026-06-19 and 2026-11-16 | open on 2026-11-16 | `gh api -X GET search/issues -f q='is:pr is:open author:joshgilpatrick'` (repositories this GitHub access can see) |
 | Tickets in flight (JP and AD, not Done) | 19 | in flight on 2026-11-16 | Jira: `project in (JP, AD) AND status in ("In Progress", "Code Review", "Validation", "Design/Planning") AND (assignee = currentUser() OR assignee is EMPTY)` |
 
-The total of open loose ends is the laptop's git count plus the two cloud counts above. It is written here once the laptop run returns.
+The total of open loose ends is the laptop's git count plus the two cloud counts above: **1,011** (974 + 18 + 19) on 16 November 2026.
 
 ## How each figure is counted
 
@@ -47,6 +47,6 @@ Options: `--out -` prints the report instead of writing a file, `--skip-promptin
 
 ## Limits
 
-- Transcripts older than Claude Code's own clean-up period are gone, so a long range can undercount.
+- Transcripts older than Claude Code's own clean-up period are gone, so a long range can undercount. In this run, only 9 sessions survive from the five weeks before 28 September, against 31 to 307 a week afterwards, so the 12-week mean undercounts; the 7-week mean is the better baseline. The week of 12 October (307) was unusually busy.
 - The ticket share misses sessions that worked a ticket without naming it in the branch or in Josh's words.
 - The pull request count covers only the repositories this cloud session's GitHub access can see.
