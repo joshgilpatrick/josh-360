@@ -250,7 +250,7 @@ Every gate script in the draft is a stub that refuses to run, so nothing can pas
 
 ## How to tell it's working
 
-Every number comes from the ledger rows the walker writes for each step (run, step, outcome, loop count, session, tier, ticket, start and end), joined to the session facts (cost, model) and to later runs on the same ticket. No model is needed to compute any of them.
+Every number comes from the ledger rows the walker writes for each step (run, step, outcome, loop count, session, tier, ticket, start and end), joined to the session facts (cost) and to later runs on the same ticket. No model is needed to compute any of them.
 
 | Question | Measure | Good direction |
 | --- | --- | --- |
@@ -260,9 +260,9 @@ Every number comes from the ledger rows the walker writes for each step (run, st
 | What does a deliverable cost? (efficient) | Model cost and `mid` step runs per closed ticket, split by short and full path and by kind | Down |
 | How long does it take? (efficient) | Time from Ready to delivered, with the time waiting on Josh shown separately | Down |
 
-How each run ends: `close` or `close_emailed` is success. `return_early` or `return_late` is a routing miss, which counts against triage's "Does Ready mean ready?". A stop at `decide_stuck` is a failure. A revise, or a reopen by reply, counts as sent back.
+How each run ends is scored in the graph file's `end_states` (JP-140): `finished` (through `close`) and `close_emailed.closed` are `success`; `return_early.returned` and `return_late.returned` are `neutral`, a routing miss that counts against triage's "Does Ready mean ready?"; `decide_stuck.stop` is `needs-josh`, and so is `exit_refused`, a run whose `no-loose-ends` gate refused. A revise, or a reopen by reply, counts as sent back.
 
-To compare the graph before and after a change, each run must record the version of the graph file it ran, and each step the model that actually answered. The convention's ledger field list does not have either yet. JP-103 has raised the same need with the coordinator, so both graphs get it from one change.
+To compare the graph before and after a change, each run records the version of the graph file it ran (`graph_version`) and each step the model that actually answered (`model`). Both are in the graph's `ledger` list, from JP-140.
 
 ## Rules
 
