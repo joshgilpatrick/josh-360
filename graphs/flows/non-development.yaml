@@ -101,11 +101,11 @@ steps:
 
   - id: find_precedent
     role: jira-searcher
-    brief: "Find tickets that already answered the question on {{ inputs.ticket_key }}: closed ones with a resolution comment first, then open ones."
+    brief: "Search JP for tickets that already answered the question on {{ inputs.ticket_key }}. A match is a ticket asking the same question; list closed ones with a Resolution comment first, then open ones."
     needs: [start_run]
     inputs: [ticket_key, search_terms]
     outputs:
-      candidates: { type: list, description: "Up to five tickets: key, status, one line on why it matches" }
+      candidates: { type: list, description: "The role's JSON list of {key, summary, status, is_match, why}, best first" }
     outcomes: [found, none]
 
   - id: judge_precedent
