@@ -311,6 +311,7 @@ The intake record and the proposal refer to the source by pointer, never by quot
 10. No patient data in the record, the proposal or any ticket. Sources are named by pointer.
 11. Every loop has a limit: two rounds at the drafter from the checker, from Josh's answers and from his changes; one retry of the write. Each limit ends at Josh.
 12. Every created ticket is read back, and the key is written back to the source item.
+13. The cross-graph loop rules in the triage design (`docs/design/triage-graph.md`, "How every loop ends", JP-103) apply here too. The comment this graph posts on an open match, and the tickets it creates, never start a run of this graph: its inputs are intake items, never Jira events, and the comment carries `josh360.authors` and its fixed opening words. Each loop counter belongs to its arrow and never resets during a run. A gate script that fails (crashes or prints no outcome) stops the run. `partial` from `create-tickets` is not a failure. It is a declared outcome with one safe retry, because the script searches before it creates.
 
 ## Acceptance criteria
 
