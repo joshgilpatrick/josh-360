@@ -170,7 +170,7 @@ Josh wants no unnecessary loops on the costlier models (16 November 2026, JP-139
 loop check_review -> build (outcome 'rework') would run step 'review' 3 times (max_loops 2 + 1) against a gate cap of 2
 ```
 
-The steps a loop runs again are the target and every step that depends on it (`needs`, directly or further down), except the steps that depend on the loop's own step, because those cannot have run yet. A step that is skipped by its `when` is still counted: the check is an upper bound. The checker also refuses a `tiers.yaml` where a tier has no `max_runs`, where one is not a whole number of 1 or more, or where `max_runs` names something that is not a tier. A `goto` that reruns only `gate` steps can have a `max_loops` of 1 at most, because the gate cap is 2.
+The steps a loop runs again are the target and every step that depends on it (`needs`, directly or further down), except the steps that depend on the loop's own step, because those cannot have run yet. A step that is skipped by its `when` is still counted, so for a single loop the check is an upper bound. The checker also refuses a `tiers.yaml` where a tier has no `max_runs`, where one is not a whole number of 1 or more, or where `max_runs` names something that is not a tier. A `goto` that reruns any role step of the `gate` tier can have a `max_loops` of 1 at most, because the gate cap is 2. (The `gate` tier is the Opus tier; script gates, the `gate` step kind, have no cap.)
 
 **What the walker holds** (JP-114 builds this; this section is its rule):
 

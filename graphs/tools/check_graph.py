@@ -580,8 +580,9 @@ def check_graph_data(data, name: str, parts: Parts) -> list[str]:
                     and then["max_loops"] >= 1:
                 runs = then["max_loops"] + 1
                 for rid in sorted(_reruns(steps, sid, then["goto"])):
-                    rerun_role = parts.roles.get(steps[rid]["role"]) if kind.get(rid) == "role" \
-                        and isinstance(steps[rid].get("role"), str) else None
+                    if kind.get(rid) != "role":  # only a role step has a tier (a tier on any other step is reported above)
+                        continue
+                    rerun_role = parts.roles.get(steps[rid]["role"]) if isinstance(steps[rid].get("role"), str) else None
                     tier = steps[rid].get("tier") if steps[rid].get("tier") in TIERS else \
                         (rerun_role or {}).get("tier")
                     cap = parts.max_runs.get(tier) if tier in TIERS else None

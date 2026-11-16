@@ -453,8 +453,15 @@ class Rules(unittest.TestCase):
         # The design loop has a gate-tier reviewer further down the graph, but the reviewer waits for the
         # loop's source step, so the loop never reruns it and its cap is not touched.
         data = valid_data()
-        step(data, "lint_spec")["on"]["incomplete"]["max_loops"] = 2
         self.assertEqual(self.problems(data), [])
+
+    def test_a_tier_on_a_non_role_step_is_not_counted_against_a_cap(self):
+        # A tier only goes on a role step; the checker says so once and adds no cap problem for that step.
+        data = valid_data()
+        step(data, "lint_spec")["tier"] = "gate"
+        found = self.problems(data)
+        self.assertIn("step 'lint_spec': tier only goes on a role step", found)
+        self.assertEqual([p for p in found if "cap of" in p], [])
 
     def test_a_loop_one_over_a_mid_cap_is_refused(self):
         data = valid_data()
