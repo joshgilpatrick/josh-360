@@ -1,0 +1,49 @@
+# Patient data (PHI). Ignores any file or folder whose name ends in "phi", in any case, at any depth.
+# No trailing slash, so a symlinked .phi folder is ignored too. Put PHI only in folders named .phi.
+*[Pp][Hh][Ii]
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Spreadsheets and PDFs stay out unless checked by hand and added with `git add -f`.
+*.csv
+*.xlsx
+*.xls
+*.pdf
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+dist/
+out/
+coverage/
+*.log
+
+# Local databases
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Claude Code: local settings and worktrees
+.claude/settings.local.json
+.claude/worktrees/
