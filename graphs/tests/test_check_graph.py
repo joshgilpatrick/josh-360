@@ -23,6 +23,7 @@ import check_graph  # noqa: E402
 
 PARTS = HERE / "fixtures" / "parts"
 BAD = HERE / "fixtures" / "bad"
+BAD_TIERS = HERE / "fixtures" / "bad-tiers"
 VALID = PARTS / "flows" / "valid.yaml"
 CHECKER = GRAPHS / "tools" / "check_graph.py"
 
@@ -508,6 +509,40 @@ class Parts(unittest.TestCase):
     def test_tiers_must_define_all_three(self):
         (self.root / "tiers.yaml").write_text("convention: 1\ntiers:\n  cheap: [a]\n  mid: [b]\n")
         self.assertProblem("tiers.yaml: tier 'gate' is missing")
+
+    def run_with_tiers(self, fixture: Path):
+        shutil.copyfile(fixture, self.root / "tiers.yaml")
+        return run_cli("--root", str(self.root))
+
+    def test_an_entry_with_no_effort_is_refused(self):  # JP-138 scenario 1
+        result = self.run_with_tiers(BAD_TIERS / "bare-model-name.yaml")
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("tiers.mid[0] is missing an effort", result.stdout)
+
+    def test_a_fallback_with_no_effort_is_refused(self):  # JP-138 scenario 2
+        result = self.run_with_tiers(BAD_TIERS / "fallback-without-effort.yaml")
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("tiers.cheap[1] is missing an effort", result.stdout)
+        self.assertNotIn("tiers.cheap[0]", result.stdout)
+
+    def test_every_bad_tiers_sample_fails(self):
+        for path in sorted(BAD_TIERS.glob("*.yaml")):
+            with self.subTest(path.name):
+                self.assertEqual(self.run_with_tiers(path).returncode, 1)
+
+    def test_an_effort_outside_the_levels_is_refused(self):
+        (self.root / "tiers.yaml").write_text(
+            "convention: 1\ntiers:\n  cheap: [a]\n  mid: [{model: b, effort: max}]\n  gate: [c]\n")
+        self.assertProblem("tiers.mid[0].effort must be one of low, medium, high")
+
+    def test_the_repository_tiers_file_names_a_model_and_an_effort_everywhere(self):  # JP-138 scenario 3
+        data = check_graph.load_yaml(GRAPHS / "tiers.yaml")
+        for tier, entries in data["tiers"].items():
+            for i, entry in enumerate(entries):
+                with self.subTest(f"{tier}[{i}]"):
+                    self.assertIsInstance(entry, dict)
+                    self.assertTrue(entry.get("model"))
+                    self.assertIn(entry.get("effort"), check_graph.EFFORTS)
 
     def test_tier_entry_shape(self):
         (self.root / "tiers.yaml").write_text(

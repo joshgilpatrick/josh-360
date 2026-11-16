@@ -1,0 +1,6 @@
+# Bad on purpose: the mid tier lists a bare model name, which has no effort.
+convention: 1
+tiers:
+  cheap: [{model: sample-small-model, effort: high}]
+  mid: [claude-sonnet-5-5]
+  gate: [{model: sample-large-model, effort: high}]
