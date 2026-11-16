@@ -1,0 +1,463 @@
+"""Tests for graphs/tools/check_graph.py (JP-101).
+
+The first four tests are the ticket's Gherkin scenarios, by name. The rest cover every other rule in
+graphs/CONVENTION.md. Each failing case starts from the valid sample graph and breaks one thing.
+
+Run: python3 -m unittest discover -s graphs/tests   (from the repository root)
+"""
+from __future__ import annotations
+
+import copy
+import shutil
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+GRAPHS = HERE.parent
+sys.path.insert(0, str(GRAPHS / "tools"))
+
+import check_graph  # noqa: E402
+
+PARTS = HERE / "fixtures" / "parts"
+BAD = HERE / "fixtures" / "bad"
+VALID = PARTS / "flows" / "valid.yaml"
+CHECKER = GRAPHS / "tools" / "check_graph.py"
+
+
+def run_cli(*args: str) -> subprocess.CompletedProcess:
+    return subprocess.run([sys.executable, str(CHECKER), *args], capture_output=True, text=True)
+
+
+def valid_data() -> dict:
+    return check_graph.load_yaml(VALID)
+
+
+def step(data: dict, step_id: str) -> dict:
+    return next(s for s in data["steps"] if s["id"] == step_id)
+
+
+class Scenarios(unittest.TestCase):
+    """The four scenarios on JP-101, run through the command line as an agent would."""
+
+    def test_a_valid_sample_graph_passes(self):
+        result = run_cli("--root", str(PARTS), str(VALID))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("ok", result.stdout)
+
+    def test_a_shared_write_needs_an_approval_step(self):
+        result = run_cli("--root", str(PARTS), str(BAD / "shared-write-no-approval.yaml"))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("step 'post_note' writes something shared and no approval step comes before it",
+                      result.stdout)
+
+    def test_a_loop_must_end_at_a_human(self):
+        result = run_cli("--root", str(PARTS), str(BAD / "loop-without-limit.yaml"))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("loop lint_spec -> design (outcome 'incomplete') has no max_loops", result.stdout)
+        self.assertIn("loop lint_spec -> design (outcome 'incomplete') has no at_limit", result.stdout)
+
+    def test_the_file_stays_neutral(self):
+        result = run_cli("--root", str(PARTS), str(BAD / "orchestrator-key.yaml"))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("steps.build.mode: key 'mode' belongs to one orchestrator", result.stdout)
+
+
+class CommandLine(unittest.TestCase):
+    def test_unknown_role_is_named(self):
+        result = run_cli("--root", str(PARTS), str(BAD / "unknown-role.yaml"))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("step 'publish' names unknown role 'releaser'", result.stdout)
+
+    def test_unknown_gate_is_named(self):
+        result = run_cli("--root", str(PARTS), str(BAD / "unknown-gate.yaml"))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("step 'lint_spec' names unknown gate 'lint-the-spec'", result.stdout)
+
+    def test_missing_header_field_is_named(self):
+        result = run_cli("--root", str(PARTS), str(BAD / "missing-header-field.yaml"))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("header: missing field 'exit_gate'", result.stdout)
+
+    def test_every_bad_sample_fails(self):
+        for path in sorted(BAD.glob("*.yaml")):
+            with self.subTest(path.name):
+                self.assertEqual(run_cli("--root", str(PARTS), str(path)).returncode, 1)
+
+    def test_default_run_checks_every_flow_under_root(self):
+        result = run_cli("--root", str(PARTS))
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("1 graph(s)", result.stdout)
+
+    def test_the_repository_graphs_folder_passes(self):
+        result = run_cli()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_missing_root_cannot_run(self):
+        result = run_cli("--root", str(HERE / "no-such-folder"))
+        self.assertEqual(result.returncode, 2)
+
+    def test_missing_file_cannot_run(self):
+        result = run_cli("--root", str(PARTS), str(HERE / "no-such-graph.yaml"))
+        self.assertEqual(result.returncode, 2)
+
+
+class Yaml(unittest.TestCase):
+    def _load(self, text: str):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "g.yaml"
+            path.write_text(text)
+            return check_graph.load_yaml(path)
+
+    def test_on_yes_no_stay_words(self):
+        data = self._load("on: {yes: 1, no: 2, off: 3}\n")
+        self.assertEqual(data, {"on": {"yes": 1, "no": 2, "off": 3}})
+
+    def test_true_false_stay_booleans(self):
+        self.assertEqual(self._load("a: true\nb: false\n"), {"a": True, "b": False})
+
+    def test_duplicate_key_is_refused(self):
+        with self.assertRaises(check_graph.GraphYamlError) as caught:
+            self._load("steps: []\nsteps: []\n")
+        self.assertIn("'steps' appears twice", str(caught.exception))
+
+
+class Rules(unittest.TestCase):
+    """Each test breaks one rule of the valid graph and expects the checker to name it."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.parts = check_graph.load_parts(PARTS)
+
+    def problems(self, data: dict, name: str = "valid") -> list[str]:
+        return check_graph.check_graph_data(data, name, self.parts)
+
+    def assertProblem(self, data: dict, text: str, name: str = "valid"):
+        found = self.problems(data, name)
+        self.assertTrue(any(text in p for p in found), f"{text!r} not in {found}")
+
+    def test_valid_has_no_problems(self):
+        self.assertEqual(self.problems(valid_data()), [])
+
+    def test_valid_parts_have_no_problems(self):
+        self.assertEqual(self.parts.problems, [])
+
+    # Schema and neutrality
+    def test_unknown_key_is_outside_the_schema(self):
+        data = valid_data()
+        step(data, "design")["colour"] = "blue"
+        self.assertProblem(data, "steps.design.colour: key 'colour' is not in the convention's schema")
+
+    def test_top_level_orchestrator_key(self):
+        data = valid_data()
+        data["isolation"] = "worktree"
+        self.assertProblem(data, "isolation: key 'isolation' belongs to one orchestrator")
+
+    def test_model_in_a_graph_is_refused(self):
+        data = valid_data()
+        step(data, "review")["model"] = "some-model"
+        self.assertProblem(data, "steps.review.model: key 'model' belongs to one orchestrator")
+
+    def test_graph_id_must_match_file_name(self):
+        self.assertProblem(valid_data(), "graph 'valid' does not match the file name 'other'", name="other")
+
+    def test_convention_version(self):
+        data = valid_data()
+        data["convention"] = 2
+        self.assertProblem(data, "convention must be 1")
+
+    def test_step_needs_exactly_one_kind(self):
+        data = valid_data()
+        step(data, "design")["gate"] = "lint-spec"
+        self.assertProblem(data, "step 'design' must have exactly one of role, gate or ask")
+
+    def test_duplicate_step_id(self):
+        data = valid_data()
+        data["steps"].append(copy.deepcopy(step(data, "post_note")))
+        self.assertProblem(data, "step id 'post_note' is used twice")
+
+    # Header
+    def test_access_must_cover_every_step(self):
+        data = valid_data()
+        del data["header"]["access"]["review"]
+        self.assertProblem(data, "header.access: step 'review' has no access")
+
+    def test_access_names_unknown_step(self):
+        data = valid_data()
+        data["header"]["access"]["ghost"] = "read"
+        self.assertProblem(data, "header.access: unknown step 'ghost'")
+
+    def test_access_value(self):
+        data = valid_data()
+        data["header"]["access"]["design"] = "everyone"
+        self.assertProblem(data, "header.access.design: 'everyone' is not one of read, josh, shared")
+
+    def test_jira_stretch_misses_a_step(self):
+        data = valid_data()
+        data["header"]["jira"][1]["steps"] = []
+        self.assertProblem(data, "header.jira: step 'build' is in no stretch")
+
+    def test_jira_stretch_repeats_a_step(self):
+        data = valid_data()
+        data["header"]["jira"][1]["steps"] = ["build", "design"]
+        self.assertProblem(data, "header.jira: step 'design' is in more than one stretch")
+
+    def test_asks_josh_must_list_every_ask(self):
+        data = valid_data()
+        data["header"]["asks_josh"].remove("approve_note")
+        self.assertProblem(data, "header.asks_josh: ask step 'approve_note' is not listed")
+
+    def test_asks_josh_lists_only_asks(self):
+        data = valid_data()
+        data["header"]["asks_josh"].append("build")
+        self.assertProblem(data, "header.asks_josh: 'build' is not an ask step")
+
+    def test_ledger_vocabulary(self):
+        data = valid_data()
+        data["header"]["ledger"].append("transcript")
+        self.assertProblem(data, "header.ledger: 'transcript' is not one of")
+
+    def test_entry_gate_must_exist(self):
+        data = valid_data()
+        data["header"]["entry_gate"] = "nope"
+        self.assertProblem(data, "header.entry_gate names unknown gate 'nope'")
+
+    # References
+    def test_needs_unknown_step(self):
+        data = valid_data()
+        step(data, "build")["needs"] = ["ghost"]
+        self.assertProblem(data, "step 'build' needs unknown step 'ghost'")
+
+    def test_needs_cycle(self):
+        data = valid_data()
+        step(data, "design")["needs"] = ["post_note"]
+        self.assertProblem(data, "needs form a cycle")
+
+    def test_on_outcome_not_declared(self):
+        data = valid_data()
+        step(data, "lint_spec")["on"]["broken"] = "end"
+        self.assertProblem(data, "step 'lint_spec': on 'broken' is not one of its outcomes")
+
+    def test_when_unknown_outcome(self):
+        data = valid_data()
+        step(data, "build")["when"]["outcome"] = "maybe"
+        self.assertProblem(data, "step 'build': when names outcome 'maybe', which step 'approve_spec' "
+                                 "does not have")
+
+    def test_goto_unknown_step(self):
+        data = valid_data()
+        step(data, "lint_spec")["on"]["incomplete"]["goto"] = "ghost"
+        self.assertProblem(data, "loop lint_spec -> ghost (outcome 'incomplete') goes to unknown step 'ghost'")
+
+    def test_unknown_agent(self):
+        data = valid_data()
+        step(data, "build")["agent"] = "nobody"
+        self.assertProblem(data, "step 'build' names unknown agent 'nobody'")
+
+    def test_agent_must_fill_the_role(self):
+        data = valid_data()
+        step(data, "publish")["agent"] = "sample-builder"
+        self.assertProblem(data, "step 'publish': agent 'sample-builder' fills role 'builder', not 'publisher'")
+
+    def test_agent_rule_must_read_a_graph_input(self):
+        data = valid_data()
+        step(data, "build")["agent"]["by"] = "colour"
+        self.assertProblem(data, "step 'build': agent rule reads 'colour', which is not a graph input")
+
+    def test_unknown_contract(self):
+        data = valid_data()
+        step(data, "design")["outputs"]["spec_path"]["contract"] = "novel"
+        self.assertProblem(data, "step 'design' output 'spec_path' names unknown contract 'novel'")
+
+    # Loops end at a human
+    def test_at_limit_must_be_an_ask(self):
+        data = valid_data()
+        step(data, "lint_spec")["on"]["incomplete"]["at_limit"] = "build"
+        self.assertProblem(data, "loop lint_spec -> design (outcome 'incomplete'): at_limit 'build' is not "
+                                 "an ask step, so the loop does not end at a human")
+
+    def test_max_loops_must_be_positive(self):
+        data = valid_data()
+        step(data, "lint_spec")["on"]["incomplete"]["max_loops"] = 0
+        self.assertProblem(data, "loop lint_spec -> design (outcome 'incomplete'): max_loops must be a "
+                                 "whole number of 1 or more")
+
+    def test_on_limit_only_ask_must_be_a_limit(self):
+        data = valid_data()
+        step(data, "check_review")["on"]["rework"]["at_limit"] = "approve_spec"
+        step(data, "decide_review")["on"]["retry"]["at_limit"] = "approve_spec"
+        self.assertProblem(data, "ask step 'decide_review' is on_limit_only but no loop ends at it")
+
+    def test_on_limit_only_ask_has_no_needs(self):
+        data = valid_data()
+        step(data, "decide_review")["needs"] = ["review"]
+        self.assertProblem(data, "ask step 'decide_review' is on_limit_only, so it takes no needs or when")
+
+    # Shared writes
+    def test_approval_must_come_before_the_write(self):
+        data = valid_data()
+        step(data, "approve_note")["needs"] = ["post_note"]
+        step(data, "post_note")["needs"] = ["to_validation"]
+        del step(data, "post_note")["when"]
+        self.assertProblem(data, "step 'post_note' writes something shared and no approval step comes before it")
+
+    def test_approves_unknown_step(self):
+        data = valid_data()
+        step(data, "approve_note")["ask"]["approves"].append("ghost")
+        self.assertProblem(data, "ask step 'approve_note' approves unknown step 'ghost'")
+
+    # Habits
+    def test_only_scripts_set_labels_and_move_tickets(self):
+        data = valid_data()
+        step(data, "publish")["effects"] = ["set_label"]
+        self.assertProblem(data, "step 'publish': only a gate script may have effects (set labels, move tickets)")
+
+    def test_effects_vocabulary(self):
+        data = valid_data()
+        step(data, "to_validation")["effects"] = ["send_email"]
+        self.assertProblem(data, "step 'to_validation': effect 'send_email' is not one of move_ticket, set_label")
+
+    def test_step_tier_may_not_exceed_role_tier(self):
+        data = valid_data()
+        step(data, "publish")["tier"] = "mid"
+        self.assertProblem(data, "step 'publish': tier 'mid' is above its role's tier 'cheap'")
+
+    def test_read_only_role_cannot_write(self):
+        data = valid_data()
+        data["header"]["access"]["review"] = "josh"
+        self.assertProblem(data, "step 'review' writes (access 'josh') but role 'code-reviewer' may not change things")
+
+    def test_reviewer_needs_a_citation_gate(self):
+        data = valid_data()
+        step(data, "check_review")["needs"] = ["build"]
+        self.assertProblem(data, "step 'review' uses reviewer role 'code-reviewer' but no gate step needs it "
+                                 "to drop defects that do not cite the plan")
+
+
+class WrongTypes(unittest.TestCase):
+    """A value of the wrong type is reported, never a crash."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.parts = check_graph.load_parts(PARTS)
+
+    def assertReported(self, data: dict, text: str):
+        found = check_graph.check_graph_data(data, "valid", self.parts)
+        self.assertTrue(any(text in p for p in found), f"{text!r} not in {found}")
+
+    def test_role_as_a_mapping(self):
+        data = valid_data()
+        step(data, "design")["role"] = {"name": "designer"}
+        self.assertReported(data, "step 'design': role must be a name")
+
+    def test_gate_as_a_list(self):
+        data = valid_data()
+        step(data, "lint_spec")["gate"] = ["lint-spec"]
+        self.assertReported(data, "step 'lint_spec': gate must be a name")
+
+    def test_goto_and_at_limit_as_mappings(self):
+        data = valid_data()
+        step(data, "lint_spec")["on"]["incomplete"] = {"goto": {"x": 1}, "max_loops": 2, "at_limit": {"y": 2}}
+        self.assertReported(data, "step 'lint_spec': on 'incomplete': goto and at_limit must be step ids")
+
+    def test_header_gate_as_a_mapping(self):
+        data = valid_data()
+        data["header"]["entry_gate"] = {"run": "ready"}
+        self.assertReported(data, "header.entry_gate names unknown gate")
+
+    def test_approves_as_text_is_not_a_substring_match(self):
+        data = valid_data()
+        step(data, "approve_note")["ask"]["approves"] = "post_note_and_more"
+        self.assertReported(data, "ask step 'approve_note': approves must be a list of step ids")
+        self.assertReported(data, "step 'post_note' writes something shared and no approval step comes before it")
+
+    def test_agent_map_value_as_a_mapping(self):
+        data = valid_data()
+        step(data, "build")["agent"]["map"]["sample"] = {"name": "sample-builder"}
+        self.assertReported(data, "step 'build': agent rule map values must be agent names")
+
+    def test_no_wrong_typed_value_anywhere_crashes_the_checker(self):
+        base = valid_data()
+        paths: list[list] = []
+
+        def walk(node, path):
+            paths.append(path)
+            items = node.items() if isinstance(node, dict) else enumerate(node) if isinstance(node, list) else []
+            for key, value in items:
+                walk(value, path + [key])
+
+        walk(base, [])
+        for path in paths[1:]:
+            for replacement in ({"x": 1}, ["x"], [{"a": 1}], 5, None, "x", True, ""):
+                data = copy.deepcopy(base)
+                node = data
+                for key in path[:-1]:
+                    node = node[key]
+                node[path[-1]] = replacement
+                try:
+                    check_graph.check_graph_data(data, "valid", self.parts)
+                except Exception as exc:  # noqa: BLE001 - any crash is the failure
+                    self.fail(f"{path} = {replacement!r} crashed the checker: {exc!r}")
+
+    def test_joshs_original_pipeline_file_is_refused_cleanly(self):
+        source = GRAPHS.parent / "docs/source-notes/jira-ticket-pipeline.yaml"
+        with tempfile.TemporaryDirectory() as tmp:
+            copy_path = Path(tmp) / "jira-ticket-pipeline.yaml"
+            shutil.copy(source, copy_path)
+            result = run_cli(str(copy_path))
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertNotIn("Traceback", result.stdout + result.stderr)
+        self.assertIn("key 'manager' belongs to one orchestrator", result.stdout)
+
+
+class Parts(unittest.TestCase):
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.root = self.tmp / "parts"
+        shutil.copytree(PARTS, self.root)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp)
+
+    def problems(self) -> list[str]:
+        return check_graph.load_parts(self.root).problems
+
+    def assertProblem(self, text: str):
+        found = self.problems()
+        self.assertTrue(any(text in p for p in found), f"{text!r} not in {found}")
+
+    def test_tiers_must_define_all_three(self):
+        (self.root / "tiers.yaml").write_text("convention: 1\ntiers:\n  cheap: [a]\n  mid: [b]\n")
+        self.assertProblem("tiers.yaml: tier 'gate' is missing")
+
+    def test_tier_entry_shape(self):
+        (self.root / "tiers.yaml").write_text(
+            "convention: 1\ntiers:\n  cheap: [a]\n  mid: [b]\n  gate: [{model: c, speed: 9}]\n")
+        self.assertProblem("tiers.yaml: tiers.gate[0].speed: key 'speed' is not in the convention's schema")
+
+    def test_role_needs_instructions(self):
+        (self.root / "roles/designer/instructions.md").unlink()
+        self.assertProblem("roles/designer: instructions.md is missing or empty")
+
+    def test_role_fields(self):
+        (self.root / "roles/designer/role.yaml").write_text("title: Designer\ntier: mid\n")
+        self.assertProblem("roles/designer/role.yaml: missing field 'may_change'")
+
+    def test_gate_tier_only_for_a_role_that_only_reads(self):
+        (self.root / "roles/builder/role.yaml").write_text("title: Builder\nmay_change: true\ntier: gate\n")
+        self.assertProblem("roles/builder/role.yaml: the gate tier is for roles that only read and judge")
+
+    def test_agent_fills_unknown_role(self):
+        (self.root / "agents/sample-builder/agent.yaml").write_text("title: X\nfills: astronaut\n")
+        self.assertProblem("agents/sample-builder/agent.yaml: fills unknown role 'astronaut'")
+
+    def test_role_with_a_model_is_refused(self):
+        (self.root / "roles/designer/role.yaml").write_text(
+            "title: Designer\nmay_change: true\ntier: mid\nmodel: some-model\n")
+        self.assertProblem("roles/designer/role.yaml: model: key 'model' belongs to one orchestrator")
+
+
+if __name__ == "__main__":
+    unittest.main()
