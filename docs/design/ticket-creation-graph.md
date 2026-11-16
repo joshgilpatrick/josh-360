@@ -111,7 +111,7 @@ How the steps carry Josh's eight steps:
 
 Steps 1 and 2 share one model call: the reader classifies while it reads, which is what action-triage's prefill already does. The system itself is never a model's choice. The model names a repository only from the registry's list, and the script looks it up.
 
-**The header.** Every step sits in one Jira stretch, Not Started, because the graph creates tickets in that status and never moves one. The entry gate `intake-admitted` admits an item that exists, is not dismissed and has no ticket key yet. The exit gate `intake-closed` passes when the item ended in one of three ways: its tickets exist and are linked from the source, the open match was commented on, or Josh dropped it. The ledger gets every field the convention offers. Access is `read` everywhere except `write`, which is `shared` because AD and CI are team spaces, and `link_source`, which writes back to Josh's own to-do, desk thread or session record.
+**The header.** Every step sits in one Jira stretch, Not Started, because the graph creates tickets in that status and never moves one. The entry gate `intake-admitted` admits an item that exists, is not dismissed and has no ticket key yet. The exit gate `intake-closed` passes when the item ended in one of three ways: its tickets exist and are linked from the source, the open match was commented on, or Josh dropped it. The ledger gets every field the convention offers, including the graph file's version and the model that answered. The `end_states` header scores each way a run can end (see [How to tell it's working](#how-to-tell-its-working)). Access is `read` everywhere except `write`, which is `shared` because AD and CI are team spaces, and `link_source`, which writes back to Josh's own to-do, desk thread or session record.
 
 ## The parts
 
@@ -297,9 +297,19 @@ Every number comes from the ledger rows the walker writes for each step (the run
 | Does it spare Josh? (effective) | Share of runs that reach `ask_gap` or `stuck` (asks beyond the card), and how long a run waits on him | Down |
 | What does a ticket cost? (efficient) | Model cost per created ticket, and `draft` runs per run (1 is the target, 3 the cap) | Down |
 
-How each run ends: `created` or `commented` is success. `dropped` is neutral, but it is counted per source, so a source whose items Josh mostly drops shows up in the weekly review. Reaching `stuck` or `write_failed` counts as needing Josh.
+How each run ends, as the graph file's `end_states` header scores it (`graphs/CONVENTION.md`, "Scoring a run"):
 
-To compare the graph before and after a change, each run must record the version of the graph file it ran, and each step must record the model that actually answered. The convention's ledger fields do not have either yet. The triage design raises the same gap (JP-103), and one fix serves all the graphs.
+| End | Score | When |
+| --- | --- | --- |
+| `finished` | success | The tickets were created and linked from the source, or the open match was commented on. |
+| `route.personal` | neutral | Personal work, which waits for phase 3. |
+| `ask_gap.drop`, `approve.drop` | neutral | Josh dropped the item. Drops are counted per source, so a source whose items he mostly drops shows up in the weekly review. |
+| `stuck.drop` | needs-josh | Josh dropped it only after the drafting limit was reached. |
+| `exit_refused` | needs-josh | The exit gate found a ticket missing or unlinked. The name is reserved for every graph. |
+
+A run can also need Josh and still finish: one that reached `stuck` and went on, or one whose write Jira did not confirm (`write_failed`). Those are counted from the step rows, not from the end score. If Josh finishes the missing tickets by hand the exit gate passes; if not, the run ends as `exit_refused`.
+
+To compare the graph before and after a change, each run records the version of the graph file it ran (`graph_version`), and each step records the model that actually answered (`model`). The convention gained both ledger fields in JP-140, and this graph's header lists them.
 
 ## What the graph hands to triage
 
