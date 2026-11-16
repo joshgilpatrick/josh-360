@@ -1,0 +1,9 @@
+# Scenario 3: the global instruction file did not grow
+$ git show origin/main:AGENTS.md | wc -l
+192
+$ wc -l AGENTS.md (this branch)
+192
+$ git diff origin/main --stat -- AGENTS.md CLAUDE.md
+(no output: unchanged. The file has no /focus, Operating Loop or session-focus text to remove: grep below)
+$ grep -c -i "operating loop\|/focus\|session-focus" AGENTS.md
+0

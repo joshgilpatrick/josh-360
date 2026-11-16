@@ -1,0 +1,9 @@
+# Scenario 1 simulation: a session at the context-meter warning, with a made-up HOME that has NO focus file
+meter exit 0
+{"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": "Context meter: 250k of 269k. Compaction is close. Your next action, before any other tool call, is to bring /tmp/tmp.gxu2D5V2At/.claude/session-state/11111111-2222-3333-4444-555555555555/STATE.md up to date with targeted changes: preserve useful journey/history, update current status and 'Exact next step', and retain the Plans, Tasks, and Timeline sections. Then carry on; it comes back to you after compaction."}}
+
+--- files under the made-up ~/.claude after the run:
+.claude/session-state/11111111-2222-3333-4444-555555555555/STATE.md
+.claude/session-state/11111111-2222-3333-4444-555555555555/marks.json
+--- session-focus exists?
+ls: cannot access '/tmp/tmp.gxu2D5V2At/.claude/session-focus': No such file or directory
