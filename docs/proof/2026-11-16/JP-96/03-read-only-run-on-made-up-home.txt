@@ -1,23 +1,42 @@
 Made-up home folder: transcripts holding a canary sentence, a settings file with a secret-looking
-hook argument, skills, agents, an Atlas db, a claude-mem db, a launchd plist and a git repository.
+hook argument, skills, agents, an Atlas db, a claude-mem db, two launchd plists (one whose whole
+command is a shell string holding a token, a bearer header and a URL) and a git repository.
+The script runs from a copy of scripts/ inside the snapshot, so a __pycache__ folder would show.
 
-$ python3 scripts/laptop_inventory.py --out <tmp>/out/inventory.json --home <tmp>/home --since 2026-11-02 --until 2026-11-15
-wrote /tmp/tmpxqiupkpy/out/inventory.json: 1 launchd plists, 2 sessions, 1 repos, 0.0 s
+$ python3 <tmp>/scripts/laptop_inventory.py --out <tmp>/out/inventory.json --home <tmp>/home --since 2026-11-02 --until 2026-11-15
+wrote <tmp>/out/inventory.json: 2 launchd plists, 2 sessions, 1 repos, 0.1 s
 exit code: 0
 files added: ['out/inventory.json']
 files changed: []
 files removed: []
+__pycache__ beside the script: False
 output contains 'CANARY': False
 output contains 'Jane': False
 output contains 'SECRETVALUE': False
+output contains 'Bearer': False
+output contains 'https://': False
+output contains 'TOKEN=': False
 output contains 'second message': False
 output guard problems: []
 
 Figures from the output (counts only):
 {
+ "agent_use": {
+  "Explore": {
+   "last_used": "2026-11-03",
+   "uses": 1
+  }
+ },
  "date_range": {
   "from": "2026-11-02",
   "to": "2026-11-15"
+ },
+ "josh_messages_per_session": {
+  "max": 2,
+  "mean": 1.5,
+  "median": 1.5,
+  "p90": 2,
+  "sessions": 2
  },
  "sessions": 2,
  "sessions_per_week": [
@@ -30,24 +49,6 @@ Figures from the output (counts only):
    "week_of": "2026-11-09"
   }
  ],
- "josh_messages_per_session": {
-  "max": 2,
-  "mean": 1.5,
-  "median": 1.5,
-  "p90": 2,
-  "sessions": 2
- },
- "tied_to_ticket": {
-  "by_branch": 1,
-  "by_branch_or_message": 2,
-  "share_by_branch_or_message": 1.0,
-  "ticket_keys": [
-   "JP",
-   "AD",
-   "CI",
-   "GIL"
-  ]
- },
  "skill_use": {
   "focus": {
    "last_used": "2026-11-03",
@@ -62,17 +63,23 @@ Figures from the output (counts only):
    "uses": 1
   }
  },
- "agent_use": {
-  "Explore": {
-   "last_used": "2026-11-03",
-   "uses": 1
-  }
+ "tied_to_ticket": {
+  "by_branch": 1,
+  "by_branch_or_message": 2,
+  "share_by_branch_or_message": 1.0,
+  "ticket_keys": [
+   "JP",
+   "AD",
+   "CI",
+   "GIL"
+  ]
  }
 }
 
-Loose ends: {"branches_ahead_of_remote": 0, "branches_whose_remote_is_gone": 0, "branches_without_remote": 3, "extra_worktrees": 1, "stashes": 0} local_loose_ends = 4
+Loose ends: {"branches": 4, "branches_ahead_of_remote": 0, "branches_whose_remote_is_gone": 0, "branches_without_remote": 3, "extra_worktrees": 1, "readable": true, "stashes": 0} local_loose_ends = 4
 Hooks: [{"event": "Stop", "matcher": "", "scripts": ["~/.claude/hooks/stage.py"], "type": "command"}]
-Launchd: {"label": "com.example.job", "program": "/usr/bin/python3", "scripts": ["~/jobs/run.py"], "start_interval_seconds": 3600}
+Launchd: {"label": "com.example.job", "program": "/usr/bin/python3", "scripts": ["~/jobs/run.py"]}
+Launchd: {"label": "com.example.shell", "program": "/bin/sh", "scripts": ["~/jobs", "~/jobs/two.py"]}
 
 Second run onto the same file:
 exit code: 2
