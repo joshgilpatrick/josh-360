@@ -59,6 +59,10 @@ class LaptopCase(unittest.TestCase):
             "GIT_AUTHOR_NAME": "Test", "GIT_AUTHOR_EMAIL": "test@example.invalid",
             "GIT_COMMITTER_NAME": "Test", "GIT_COMMITTER_EMAIL": "test@example.invalid",
             "LANG": "C.UTF-8",
+            # macOS's /usr/bin/python3 caches bytecode under $HOME/Library/Caches/com.apple.python on
+            # start. Keep the interpreter's own files out of the made-up home folder.
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONPYCACHEPREFIX": str(self.tmp / "pycache"),
         }
         if os.environ.get("TMPDIR"):
             self.env["TMPDIR"] = os.environ["TMPDIR"]
@@ -126,10 +130,16 @@ class LaptopCase(unittest.TestCase):
     def laptop_head(self):
         return run(["git", "rev-parse", "HEAD"], self.laptop_repo, self.env).stdout.strip()
 
+    # The interpreter's own cache on macOS (written by Python itself, never by Josh 360's code).
+    INTERPRETER_CACHE = Path("Library") / "Caches" / "com.apple.python"
+
     def snapshot(self, root: Path, skip=None):
-        """Every file under root (except under skip) with its bytes and mode."""
+        """Every file under root (except under skip, and the interpreter's own cache) with its bytes and mode."""
         seen = {}
+        cache = root / self.INTERPRETER_CACHE
         for dirpath, dirnames, filenames in os.walk(str(root)):
+            if Path(dirpath) == cache.parent:
+                dirnames[:] = [d for d in dirnames if d != cache.name]
             if skip and Path(dirpath) == skip.parent:
                 dirnames[:] = [d for d in dirnames if d != skip.name]
             for name in filenames:
@@ -138,5 +148,8 @@ class LaptopCase(unittest.TestCase):
                     continue
                 seen[str(p.relative_to(root))] = (p.read_bytes(), p.stat().st_mode)
             for name in dirnames:
-                seen[str((Path(dirpath) / name).relative_to(root)) + "/"] = None
+                rel = (Path(dirpath) / name).relative_to(root)
+                if rel in (Path("Library"), Path("Library") / "Caches") and cache.exists():
+                    continue  # only there because of the interpreter's cache
+                seen[str(rel) + "/"] = None
         return seen
