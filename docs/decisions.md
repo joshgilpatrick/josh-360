@@ -28,6 +28,7 @@ Decided by Josh on 15 November 2026.
 | Design questions are batched | Collected with a recommendation each and put to Josh once per phase. Builds that do not wait on an answer carry on. |
 | Undoable build-time choices | The agent takes its recommended option, records it in this file and carries on. Only a permanent deletion or a write to something shared stops the work. |
 | What waits for the close of a phase | Merges to Josh's other repositories, deletion lists and proof pages. |
+| PR review is Josh's laptop audit (16 November 2026) | A thread labels its PR `review:needs-agent-audit` and Josh's laptop automation (the action-triage PR audit) audits it and comments. No cloud review thread and no PR review watcher; the rest of the ceremony stands (`docs/WORKFLOW.md` §4). This answers question 1 in `docs/inventory/features.md`. |
 | Instruction files | Written as `AGENTS.md`. |
 
 ## The question round
