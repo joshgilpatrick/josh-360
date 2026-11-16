@@ -44,8 +44,10 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 
 ## Commands
 
-- Checks (the whole suite for now): `python3 scripts/check.py`
-- There is no app, build or install step yet. The ticket that adds one adds its command here and in `.claude/workflow.config.md`.
+- Checks and tests: `python3 scripts/check.py` (add `--fast` to skip `tests/`).
+- What the laptop has installed: `python3 laptop/status.py show` (reads the `laptop-status` branch).
+- Install: merging to `main` installs on the laptop on its own (JP-105). Code that runs on the laptop uses Python 3.9 and the standard library only. A new background job is an entry in `jobs.yaml`; a new Claude Code hook is an executable file in `hooks/<Event>/`; a new install step goes in `STEPS` in `laptop/install.py`.
+- Pause the laptop from the cloud: push a branch named `laptop-pause`; delete it to resume.
 
 ## Layout
 
@@ -64,6 +66,10 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - `docs/proof/`: proof for each ticket, by date and key.
 - `.claude/`: workflow values, skills, commands and subagents.
 - `scripts/check.py`: the repo's checks, run by CI as the `suite` job.
+- `tests/`: the tests (stdlib unittest), run by `scripts/check.py`.
+- `jobs.yaml`: Josh 360's background jobs on the laptop.
+- `laptop/`: how the laptop follows `main`: the install script, the job runner, the `follow` job, the status branch and the pause switch.
+- `hooks/`: Claude Code hooks, loaded on the laptop through `hooks/dispatch`.
 
 ## Product
 
