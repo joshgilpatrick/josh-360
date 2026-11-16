@@ -216,7 +216,11 @@ def load_parts(root: Path) -> Parts:
                     effort = entry.get("effort") if isinstance(entry, dict) else None
                     if not _is_text(model):
                         parts.problems.append(f"tiers.yaml: tiers.{tier}[{i}] needs a model name")
-                    if effort is not None and effort not in EFFORTS:
+                    if effort is None:
+                        parts.problems.append(
+                            f"tiers.yaml: tiers.{tier}[{i}] is missing an effort (one of {', '.join(EFFORTS)}); "
+                            f"every entry is {{model: <name>, effort: <level>}}")
+                    elif effort not in EFFORTS:
                         parts.problems.append(f"tiers.yaml: tiers.{tier}[{i}].effort must be one of {', '.join(EFFORTS)}")
 
     for folder in sorted(p for p in (root / "roles").glob("*") if p.is_dir()):
