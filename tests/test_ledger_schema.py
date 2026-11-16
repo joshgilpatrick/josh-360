@@ -30,6 +30,7 @@ FORBIDDEN_COLUMN = re.compile(r"(transcript_text|message|content|body|prompt|exc
 def ledger() -> sqlite3.Connection:
     db = sqlite3.connect(":memory:")
     db.execute("PRAGMA foreign_keys = ON")
+    db.execute("PRAGMA recursive_triggers = ON")  # so INSERT OR REPLACE fires the delete trigger
     db.executescript(SCHEMA.read_text(encoding="utf-8"))
     return db
 
@@ -93,6 +94,14 @@ class AppendOnly(LedgerTest):
             db.execute("UPDATE session_episodes SET title = 'changed'")
         with self.assertRaisesRegex(sqlite3.DatabaseError, "append-only"):
             db.execute("DELETE FROM sessions")
+
+    def test_insert_or_replace_cannot_remove_a_row(self):
+        db = self.ledger()
+        seed(db)
+        with self.assertRaisesRegex(sqlite3.DatabaseError, "append-only"):
+            db.execute("""INSERT OR REPLACE INTO session_episodes (session_uid, episode, began_at, last_activity_at,
+                          quiet_at, end_reason, recorded_at, recorded_by) VALUES (?, 1, ?, ?, ?, 'quiet', ?, 'test')""",
+                       (S1, T, T, T, T))
 
     def test_a_resumed_session_adds_rows_and_keeps_the_old_ones(self):
         db = self.ledger()
