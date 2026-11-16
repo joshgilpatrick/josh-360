@@ -1,33 +1,40 @@
 $ python3 -m unittest discover -s tests -v   (Python 3.13)
 test_figure_needs_range_and_command (test_check_inventory.InventoryCheckTest.test_figure_needs_range_and_command) ... ok
 test_good_row_passes (test_check_inventory.InventoryCheckTest.test_good_row_passes) ... ok
+test_item_table_without_verdict_column_fails (test_check_inventory.InventoryCheckTest.test_item_table_without_verdict_column_fails) ... ok
 test_missing_reason_fails (test_check_inventory.InventoryCheckTest.test_missing_reason_fails) ... ok
 test_repo_inventory_passes (test_check_inventory.InventoryCheckTest.test_repo_inventory_passes) ... ok
 test_two_verdicts_fail (test_check_inventory.InventoryCheckTest.test_two_verdicts_fail) ... ok
 test_unknown_verdict_fails (test_check_inventory.InventoryCheckTest.test_unknown_verdict_fails) ... ok
+wrote <tmp>/out/inventory.json: 2 launchd plists, 2 sessions, 1 repos, 0.1 s
 test_default_range_is_twelve_whole_weeks (test_laptop_inventory.LaptopInventoryTest.test_default_range_is_twelve_whole_weeks) ... ok
+test_failing_section_is_recorded_and_the_rest_runs (test_laptop_inventory.LaptopInventoryTest.test_failing_section_is_recorded_and_the_rest_runs) ... ok
 test_guard_refuses_text (test_laptop_inventory.LaptopInventoryTest.test_guard_refuses_text) ... ok
 test_lists_jobs_hooks_plugins_and_stores (test_laptop_inventory.LaptopInventoryTest.test_lists_jobs_hooks_plugins_and_stores) ... ok
 test_loose_ends (test_laptop_inventory.LaptopInventoryTest.test_loose_ends) ... ok
+test_non_utf8_branch_name_does_not_stop_git (test_laptop_inventory.LaptopInventoryTest.test_non_utf8_branch_name_does_not_stop_git) ... ok
 test_only_read_only_commands (test_laptop_inventory.LaptopInventoryTest.test_only_read_only_commands) ... ok
 test_output_holds_no_file_contents (test_laptop_inventory.LaptopInventoryTest.test_output_holds_no_file_contents) ... ok
-test_refuses_to_overwrite (test_laptop_inventory.LaptopInventoryTest.test_refuses_to_overwrite) ... refusing to overwrite /tmp/tmp50rzl_i9/out/inventory.json
+test_paths_through_a_symlink_stay_home_relative (test_laptop_inventory.LaptopInventoryTest.test_paths_through_a_symlink_stay_home_relative) ... ok
+test_refuses_to_overwrite (test_laptop_inventory.LaptopInventoryTest.test_refuses_to_overwrite) ... refusing to overwrite <tmp>/out/inventory.json
 ok
 test_runs_on_python_39_syntax (test_laptop_inventory.LaptopInventoryTest.test_runs_on_python_39_syntax) ... ok
+test_script_run_writes_no_bytecode (test_laptop_inventory.LaptopInventoryTest.test_script_run_writes_no_bytecode) ... ok
 test_session_figures (test_laptop_inventory.LaptopInventoryTest.test_session_figures) ... ok
+test_shell_string_job_keeps_only_path_words (test_laptop_inventory.LaptopInventoryTest.test_shell_string_job_keeps_only_path_words) ... ok
+test_symlinked_home_run_keeps_home_relative_paths (test_laptop_inventory.LaptopInventoryTest.test_symlinked_home_run_keeps_home_relative_paths) ... wrote <tmp>/out/via-alias.json: 2 launchd plists, 2 sessions, 1 repos, 0.0 s
+ok
+test_unreadable_store_is_reported_not_fatal (test_laptop_inventory.LaptopInventoryTest.test_unreadable_store_is_reported_not_fatal) ... ok
+test_use_is_dated_by_the_call_not_the_session_start (test_laptop_inventory.LaptopInventoryTest.test_use_is_dated_by_the_call_not_the_session_start) ... ok
 test_writes_nothing_but_its_output_file (test_laptop_inventory.LaptopInventoryTest.test_writes_nothing_but_its_output_file) ... ok
 
 ----------------------------------------------------------------------
-Ran 16 tests in 0.133s
+Ran 25 tests in 0.396s
 
 OK
 
-$ uv run --python 3.9 python -m unittest discover -s tests   (macOS system Python version)
-warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
-......wrote /tmp/tmp1ee62w47/out/inventory.json: 1 launchd plists, 2 sessions, 1 repos, 0.0 s
-......refusing to overwrite /tmp/tmp1ee62w47/out/inventory.json
-....
+$ uv run --python 3.9 --no-project python -m unittest discover -s tests   (Python 3.9, as on macOS)
 ----------------------------------------------------------------------
-Ran 16 tests in 0.193s
+Ran 25 tests in 0.356s
 
 OK
