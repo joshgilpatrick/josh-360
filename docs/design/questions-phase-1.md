@@ -68,10 +68,11 @@ The order is by how much work each answer unblocks: the ledger first (JP-107 blo
 
 | Option | What happens | Risk |
 | --- | --- | --- |
-| **A. One category per asking step (recommended).** | `triage/ask_josh` is one category. You promote "the triage questions" in one move. A lookup still only uses past answers for the same system and type of work. | You cannot promote it for josh-360 while keeping it at stage 1 for Athena. |
+| A. One category per asking step. | `triage/ask_josh` is one category. You promote "the triage questions" in one move. A lookup still only uses past answers for the same system and type of work. | You cannot promote it for josh-360 while keeping it at stage 1 for Athena. It also lumps together the approval card's categories, which the approved ticket creation design splits by system, ticket type, shape and action. |
 | B. One category per asking step and system. | `triage/ask_josh` for Athena and for josh-360 are separate. | Many more categories to manage; each needs your own move. |
+| **C. One category per asking step, split further where the step says so (recommended).** | By default a step is one category, as in A. A step may name the details that split it: the approval card splits by system, ticket type, shape and action, as its approved design (JP-102) already says. | A step's split is written in its graph file, so changing it is a small graph change. |
 
-**Recommendation: A.** Fewer moves for you; the per-system lookup already stops an Athena answer being reused for josh-360.
+**Recommendation: C** (added 16 November after Josh asked what Q4 covers, because A conflicts with the approved approval-card design). Few moves for you where a step's questions are alike, and finer control where a wrong guess is costly, such as tickets on team boards.
 
 ### Q5. Which of your six do these systems fall under?
 
