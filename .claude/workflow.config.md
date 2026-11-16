@@ -16,12 +16,12 @@ The per-project values the workflow skills read. The rules themselves are in `do
 | Models | design and planning `claude-opus-5-5`; code and review `claude-sonnet-5-5` |
 | Merges | features: the build thread, after the full review ceremony and a green `suite` check; bugs with no design call: the fix thread, the same way. This covers josh-360 only; PRs to Josh's other repos wait for the phase close. |
 | Proof surfaces | None yet: josh-360 has no UI until phase 3 (JP-130, JP-131). Until then, proof is test or command output saved under `docs/proof/`. Add surfaces here (for example desktop 1440×900) when the dashboard lands. |
-| Run the app | Nothing to run yet. The ticket that adds the first runnable piece adds its command here. |
-| Tests | full: `python3 scripts/check.py`; fast: `python3 scripts/check.py`. Tickets that add code add their test commands here and to `.github/workflows/test.yml`. |
+| Run the app | Nothing with a screen yet. The laptop side (JP-105): `python3 laptop/install.py --dry-run`, `python3 laptop/run_jobs.py --list`, and `python3 laptop/status.py show` to read what the laptop has installed. |
+| Tests | full: `python3 scripts/check.py` (runs `tests/` with stdlib unittest); fast: `python3 scripts/check.py --fast`. Tickets that add code add tests under `tests/`; `.github/workflows/test.yml` already runs both. |
 | CI setup | none (Python 3 on `ubuntu-latest`) |
 | Boards | `docs/design/views/<view>/` with a README |
 | Proof files | `docs/proof/YYYY-MM-DD/JP-<n>/` (not `deliverables/`, which Josh's global rules retire) |
 | Decisions | Choices that can be undone take the recommended option and go in `docs/decisions.md`. Design questions are batched to Josh once per phase (JP-106 for phase 1). |
 | Needs Josh's confirmation in the thread | a permanent deletion (files, branches with unmerged work, tickets, data); a write to a shared database or to an app other people use |
 | Never a test or deploy target | any Eventus production database or shared app (Synapse, Apps SQL, Bifrost logs, Snowflake, Jira automation, other people's repos); tests use made-up sample data |
-| Deploy | None. josh-360 has nothing deployed; laptop installs come through JP-105 and JP-119. |
+| Deploy | Merging to `main` installs on the laptop within about 10 minutes (JP-105): the `follow` job moves `~/.josh-360/repo` to `main`, runs `laptop/install.py`, and reports on the `laptop-status` branch. Pause with a `laptop-pause` branch, or `laptop/pause.py on` on the laptop. Laptop-side code must run on Python 3.9 with the standard library only. |
