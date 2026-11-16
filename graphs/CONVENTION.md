@@ -121,13 +121,13 @@ Every step has an `id` and exactly one of `role`, `gate` or `ask`.
 | `role` | role step | the role's name |
 | `agent` | role step, optional | an agent's name, or a rule `{by: <graph input>, map: {<value>: <agent>}, default: <agent>}`. Every agent named must fill the step's role. |
 | `tier` | role step, optional | a tier lower than the role's own, when this use of the role is simpler. Never higher. |
-| `brief` | role step, optional | one or two sentences this step adds to the role's instructions. `{{ inputs.<name> }}` stands for an input's value. |
+| `brief` | role step, optional | one or two sentences this step adds to the role's instructions. `{{ inputs.<name> }}` stands for a graph input's value, and must name one (the same holds in an ask's `question`). |
 | `gate` | gate step | the gate script's name |
-| `effects` | gate step, optional | what the script changes outside the run: `move_ticket`, `set_label` |
-| `ask` | ask step | `{question, choices, approves, on_limit_only}`. `choices` is a list of answers, which are the step's outcomes. `approves` (optional) lists the steps this answer approves. `on_limit_only: true` marks an ask that runs only when a loop reaches its limit; it takes no `needs` or `when`, and at least one loop's `at_limit` must name it. |
+| `effects` | gate step, optional | what the script changes outside the run: `move_ticket`, `set_label`. A step with effects is never `read` in the header's `access`. |
+| `ask` | ask step | `{question, choices, approves, approves_on, on_limit_only}`. `choices` is a list of answers, which are the step's outcomes. `approves` (optional) lists the steps this ask approves, and then `approves_on` lists the choices that mean yes: some of the choices, never all, so Josh can always say no. `on_limit_only: true` marks an ask that runs only when a loop reaches its limit; it takes no `needs` or `when`, and at least one loop's `at_limit` must name it. |
 | `needs` | all, optional | steps that must finish first |
 | `when` | all, optional | `{step: <id>, outcome: <outcome or list>}`: run only if that step ended with that outcome; otherwise skip |
-| `inputs` | role and gate steps, optional | graph inputs or earlier outputs the step reads |
+| `inputs` | role and gate steps, optional | a list of names the step reads: graph inputs, or outputs of steps it `needs` (directly or further up) |
 | `outputs` | role and gate steps, optional | name to `{type, description, contract}` |
 | `outcomes` | role and gate steps | the outcomes the step can end with; an ask step's outcomes are its `choices` |
 | `on` | all, optional | what an outcome does, when it does more than move on: `end`, or `{goto: <step>, max_loops: <n>, at_limit: <ask step>}` |
@@ -151,7 +151,7 @@ These are the habits from Josh's drafted pipeline. Each line says how it is held
 3. **Each step uses the cheapest tier that can do it.** *The checker refuses a step tier above its role's tier, and the `gate` tier on a role that may change things: the dearest tier judges, it never builds.*
 4. **Every loop has a limit that ends at a human.** *The checker refuses a `goto` without `max_loops`, or whose `at_limit` is not an ask step.*
 5. **A reviewer can only cite the plan.** *The checker refuses a step whose role is a reviewer unless a gate step directly `needs` it: that gate deletes any defect that does not quote the spec.*
-6. **A shared write needs Josh's approval first.** *The checker refuses a `shared` step unless an ask step that `approves` it comes before it through `needs`.*
+6. **A shared write runs only on Josh's yes.** *The checker refuses a `shared` step unless an ask step that `approves` it comes before it through `needs`, and the shared step's `when` names that ask with only `approves_on` choices. The approving ask takes no `when` and is never `on_limit_only`, because a skipped approval is not a yes.*
 7. **A role that only reads only reads.** *The checker refuses a step whose access is `josh` or `shared` when its role has `may_change: false`.*
 
 ## The checker
