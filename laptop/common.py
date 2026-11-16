@@ -48,6 +48,17 @@ def now_utc() -> str:
     return datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
+def laptop_copy() -> Path:
+    return home() / "repo"
+
+
+def require_laptop_copy() -> None:
+    """follow, run_jobs and a real install act on the copy they run from. They only ever run from the
+    laptop's own copy, so a clone Josh works in is never moved or recorded as installed."""
+    if REPO_ROOT.resolve() != laptop_copy().resolve():
+        raise Unexpected("this runs only from the laptop's copy at {}, not from {}".format(laptop_copy(), REPO_ROOT))
+
+
 class Lane:
     """Every write by the install script and the runner goes through here."""
 
