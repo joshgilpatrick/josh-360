@@ -49,6 +49,15 @@ class InstallTest(LaptopCase):
         self.assertIn("stopped: nothing was changed", result.stdout)
         self.assertEqual(before, self.snapshot(self.home))
 
+    def test_stops_on_a_linked_state_folder(self):
+        elsewhere = self.tmp / "elsewhere"
+        elsewhere.mkdir()
+        self.j360.joinpath("state").symlink_to(elsewhere)
+        result = self.laptop("install.py")
+        self.assertEqual(result.returncode, 3)
+        self.assertIn("is a link", result.stdout)
+        self.assertEqual(list(elsewhere.iterdir()), [])
+
     def test_stops_on_a_bad_hooks_folder(self):
         (self.laptop_repo / "hooks" / "NotAnEvent").mkdir()
         before = self.snapshot(self.home)
