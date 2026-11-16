@@ -44,12 +44,11 @@ The owner is Josh. Values such as the tracker, statuses and models are in `.clau
 
 ## 4. Review ceremony
 
-1. When a PR comes out of draft, the publishing thread adds the label `review:needs-agent-audit`, subscribes to the PR's activity, and in the same step asks the coordinator for a review thread (PR number, title, head sha, ticket, its own thread link). The ticket moves to `Code Review`.
-2. The review thread runs `/code-review` on the PR against the ticket, spec, plan and boards, and posts **one** PR comment that starts `Fixes required: N`. Each fix gives file:line, the bug and a suggested fix. Spec-faithful behaviour and optional tidy-ups go under "Not required" and do not count. The reviewer never pushes, labels or merges.
-3. The publishing thread applies the fixes. N > 3: it adds `review:needs-agent-audit` again and asks for another review. N ≤ 3 (including 0): it adds `review:ready-for-human`, removes the other label, and moves the ticket to `Validation`.
+1. When a PR comes out of draft, the publishing thread adds the label `review:needs-agent-audit`, subscribes to the PR's activity, and moves the ticket to `Code Review`. That label is the whole request: Josh's laptop automation (the action-triage PR audit) finds labelled PRs, audits them and comments. No review thread is started, and the coordinator is not asked for one.
+2. The audit swaps the label to `review:audit-in-progress`, then posts **one** PR comment with its vetted findings and sets a verdict label: `review:changes-requested` or `review:ready-for-human`. `review:audit-blocked` means it needs Josh. N is the number of findings in that comment; anything the comment marks optional does not count.
+3. The publishing thread applies the fixes and replies on the PR (a finding it declines still counts toward N, with the reason stated). N > 3: it adds `review:needs-agent-audit` again for another round. N ≤ 3 (including 0): it removes the other review labels, adds `review:ready-for-human` if the audit did not, and moves the ticket to `Validation`.
 4. `review:ready-for-human` starts the PR's CI run. Merge only when the `suite` check is green. On a red run, the publishing thread removes the label, fixes and pushes. Any code push after `ready-for-human` goes back to `needs-agent-audit`.
-5. A watcher polls hourly for the `needs-agent-audit` label as a backup, and never asks twice for the same PR and head sha.
-6. The review comment posts under Josh's GitHub account, so it may not wake the publishing thread. The coordinator tells it when the review lands.
+5. The audit runs only while Josh's laptop is on, so it can take hours. A PR still carrying `review:needs-agent-audit` after 4 hours goes on the Project Manager's list for Josh; nobody starts a cloud review thread in its place unless Josh asks (the `ceremony-reviewer` subagent is that fallback).
 
 ## 5. Merge and deploy
 
@@ -62,7 +61,7 @@ The owner is Josh. Values such as the tracker, statuses and models are in `.clau
 
 1. Every thread keeps a visible checklist and replies only with a result, a blocker or a question.
 2. A thread that waits for Josh is a stalled thread. Do what can be undone and say what you did. Ask only for steps that cannot be undone and for real product choices, once, with a recommendation and a free-text route.
-3. Models: design and planning on `claude-opus-5-5`; code, fixes, reviews and watchers on `claude-sonnet-5-5`. The coordinator passes the model when it starts a thread.
+3. Models: design and planning on `claude-opus-5-5`; code, fixes and watchers on `claude-sonnet-5-5`. The coordinator passes the model when it starts a thread.
 4. Watchers are silent unless they act. Each keeps its rules, a handled list and a short run log in one memory file, pruned to stay small.
 5. Durable facts go to project memory in the turn they are learned: one file per subject, indexed in `MEMORY.md`. Rules go here, in this file, not only in memory.
 6. CI spend: PR CI runs only at `review:ready-for-human` (once per PR) and on pushes to `main`. Docs and Markdown changes run it too, because the suite checks them.
