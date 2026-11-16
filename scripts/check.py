@@ -11,6 +11,8 @@ Checks:
      file, using GitHub's anchor rule (lower case, spaces to hyphens, punctuation dropped, underscores kept).
   5. The repository layout from JP-95: the starting folders each have a README, README.md and the docs it
      names exist, nothing in the vision is still marked Proposed, and git ignores a file inside a .phi folder.
+  6. The feature list from JP-97 (docs/inventory/features.md): every row has one verdict, a reason and a carrier
+     ticket, every retired row says what replaces it, and the Session Atlas focus summaries are retired.
 
 Tickets that add code add their own checks here or beside it. Exit 0 when everything passes, 1 otherwise.
 """
@@ -108,6 +110,54 @@ def anchors_in(text: str) -> set[str]:
     return result
 
 
+FEATURES = "docs/inventory/features.md"
+VERDICTS = ("Keep as is", "Keep, move onto the ledger", "Merge with ", "Retire")
+CARRIER = re.compile(r"\bJP-\d+\b|None needed")
+FEATURE_ROW = re.compile(r"^\|\s*([AS]\d+)\s*\|")
+
+
+def feature_list_problems(text: str) -> list[str]:
+    """JP-97: every feature row has one verdict, a reason and a carrier; a retired row says what replaces it;
+    the Session Atlas focus summaries are retired. Rows are the 7-column tables (ID first); the short
+    "retired" summary table at the top has 3 columns and is not a feature row."""
+    problems: list[str] = []
+    seen: set[str] = set()
+    section = ""
+    for n, line in enumerate(text.splitlines(), 1):
+        if line.startswith("## "):
+            section = line[3:].strip()
+        m = FEATURE_ROW.match(line)
+        if not m or section.startswith("Answers"):
+            continue  # the short summary table of retired features sits under "Answers to ..."
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) != 7:
+            problems.append(f"feature row does not have 7 columns: {FEATURES}:{n} ({m.group(1)})")
+            continue
+        fid, feature, _what, _data, verdict, reason, carrier = cells
+        where = f"{FEATURES}:{n} ({fid})"
+        if fid in seen:
+            problems.append(f"duplicate feature id: {where}")
+        seen.add(fid)
+        matches = [v for v in VERDICTS if verdict.startswith(v)]
+        if len(matches) != 1 or (verdict.startswith("Keep as is") and verdict != "Keep as is"):
+            problems.append(f"verdict is not exactly one of {VERDICTS}: {where}: {verdict}")
+        if not reason:
+            problems.append(f"no reason: {where}")
+        if not CARRIER.search(carrier):
+            problems.append(f"no carrier ticket or 'None needed': {where}")
+        if verdict.startswith("Retire") and not re.search(r"Replaced by|Nothing replaces", reason):
+            problems.append(f"retired without saying what replaces it: {where}")
+        if fid.startswith("S") and feature == "Focus summaries" and verdict != "Retire":
+            problems.append(f"focus summaries must be retired: {where}")
+    if not seen:
+        problems.append(f"no feature rows found in {FEATURES}")
+    if not any(fid.startswith("S") for fid in seen) or not any(fid.startswith("A") for fid in seen):
+        problems.append(f"{FEATURES} needs rows for both action-triage (A) and Session Atlas (S)")
+    if "| Focus summaries |" not in text:
+        problems.append(f"no Focus summaries row in {FEATURES}")
+    return problems
+
+
 def main() -> int:
     problems: list[str] = []
 
@@ -155,6 +205,12 @@ def main() -> int:
                 problems.append(f"still marked Proposed: docs/vision-and-roadmap.md:{n}: {line.strip()}")
     if (ROOT / ".git").exists() and not phi_is_ignored():
         problems.append("not ignored: a file inside a .phi folder (.gitignore needs *[Pp][Hh][Ii])")
+
+    features = ROOT / FEATURES
+    if features.is_file():
+        problems += feature_list_problems(features.read_text(encoding="utf-8"))
+    else:
+        problems.append(f"missing: {FEATURES}")
 
     for p in problems:
         print(p)
