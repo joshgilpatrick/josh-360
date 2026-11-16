@@ -7,6 +7,7 @@
 - [The portable parts](#the-portable-parts)
 - [The graph file](#the-graph-file)
 - [The header](#the-header)
+- [Scoring a run](#scoring-a-run)
 - [Steps](#steps)
 - [How a graph runs](#how-a-graph-runs)
 - [The rules](#the-rules)
@@ -101,7 +102,7 @@ Any other key, at any depth, is refused. A key that belongs to one runner (`mode
 
 ## The header
 
-Every graph file carries a `header` with all six fields:
+Every graph file carries a `header` with all seven fields:
 
 | Field | What it says |
 | --- | --- |
@@ -109,8 +110,43 @@ Every graph file carries a `header` with all six fields:
 | `entry_gate` | The gate script that admits a ticket (for most graphs, `ready`). |
 | `exit_gate` | The gate script that closes a run (for most graphs, `no-loose-ends`). |
 | `asks_josh` | Every step where Josh is asked: exactly the graph's `ask` steps. |
-| `ledger` | What the walker writes to the ledger for each step, from: `run`, `step`, `outcome`, `loop_count`, `session`, `tier`, `ticket`, `started_at`, `ended_at`. |
+| `ledger` | What the walker writes to the ledger for each step, from: `run`, `step`, `outcome`, `loop_count`, `session`, `tier`, `ticket`, `started_at`, `ended_at`, `graph_version`, `model`. |
 | `access` | For every step, what it touches: `read` (only reads), `josh` (writes something of Josh's, such as his repository or his JP ticket) or `shared` (writes something other people use). |
+| `end_states` | Every way a run can end, scored as `success`, `neutral` or `needs-josh`. See [Scoring a run](#scoring-a-run). |
+
+## Scoring a run
+
+Josh wants to judge any graph the same way, on whether it works (effectiveness) and what it costs (efficiency) (16 November 2026, JP-140). Three things make that possible: two ledger fields, and a score for each way a run can end.
+
+**`graph_version`** is the commit of the graph file the run used: the last commit that changed `graphs/flows/<graph>.yaml`. Two runs with the same value ran the same graph file, so a change to a graph can be compared before and after. It does not cover a change to a role, an agent or a gate script the graph names; those are separate files and a separate version if that ever matters.
+
+**`model`** is the model that actually answered the step. It is not the tier's first choice: when a fallback answers, the fallback is named, which is what makes cost per step computable. A gate or ask step has no model and leaves it empty. The run cap still counts by tier (see [The run cap](#the-run-cap)); `model` changes nothing there.
+
+**`end_states`** names every way a run of this graph can end, and scores each one. Every graph uses the same three scores:
+
+| Score | Meaning |
+| --- | --- |
+| `success` | The run did what the graph is for. |
+| `neutral` | The run ended with nothing wrong and nothing gained, such as a ticket Josh dropped or sent back. |
+| `needs-josh` | The run could not finish without him, or ended in a state he must look at. |
+
+The ends of a graph are:
+
+- `finished`: the run ran out of steps and passed the exit gate. Every graph has it.
+- `<step>.<outcome>`: one for each outcome whose `on` is `end`, such as `decide_review.stop`.
+
+```yaml
+end_states:
+  finished: success
+  approve_spec.drop: neutral
+  decide_review.stop: needs-josh
+```
+
+*The checker refuses a graph with no `end_states`, an end that is not named (it reports it as unclassified), a name that is not an end of the graph, and a score other than the three above.* A loop (`goto`) and an outcome that only moves on are not ends. A run whose exit gate refuses never finished, so it is not `finished`. It ends as `exit_refused`, a name reserved for every graph: it always scores `needs-josh`, because the loose end is for Josh to close, and it is never written in `end_states` (the checker refuses it there).
+
+Exit gates are scripts, and a graph file does not list their outcomes, so the checker cannot see more than one way for the exit gate to pass. A graph that needs two scores for a finished run ends them in two steps, each with an `on: end` outcome, before the exit gate.
+
+The walker (JP-114) writes the end a run reached, as one of these names or `exit_refused`, and the data model (JP-99) stores it. The score for a name comes from the header of the graph version the run used, so a later change to a score does not rewrite the old runs. Which measures are built from these fields, and how they are shown, is JP-130.
 
 ## Steps
 
@@ -141,7 +177,7 @@ The walker (a later ticket) holds this logic; a runner only starts the step the 
 2. A step is ready when every step in its `needs` has finished or been skipped, and its `when` matches. A step whose `when` does not match is skipped.
 3. When a step ends, its outcome is looked up in `on`. `end` ends the run. `goto` sends the run back to that step, which runs again with every step that depends on it, and counts one loop. When the count reaches `max_loops`, the run goes to the `at_limit` ask step instead, so Josh decides. The run cap (rule 8) is a second limit, counted per role step across every loop. No entry means the run moves on. An `on_limit_only` ask step never runs in the normal flow.
 4. When no step is left, the exit gate runs. The run is finished only if it passes.
-5. The walker writes the header's `ledger` fields for every step.
+5. The walker writes the header's `ledger` fields for every step, and the end the run reached (see [Scoring a run](#scoring-a-run)).
 
 ## The rules
 
