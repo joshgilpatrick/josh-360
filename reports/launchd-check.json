@@ -1,0 +1,39 @@
+{
+  "differences": [
+    {
+      "detail": "JP-111, job retire-session-atlas and still installed (not loaded)",
+      "kind": "retired but present",
+      "label": "com.eventus.claude-atlas"
+    },
+    {
+      "detail": "JP-119, job retire-leftover-jobs (Josh's answer to question 4, 16 November) and still installed (not loaded)",
+      "kind": "retired but present",
+      "label": "com.omnara.daemon"
+    }
+  ],
+  "job": "launchd-check",
+  "josh360_jobs": {
+    "last_run_failed": [
+      "retire-session-atlas",
+      "retire-leftover-jobs"
+    ],
+    "listed": 15,
+    "never_run": [
+      "launchd-check"
+    ]
+  },
+  "known_gaps": [],
+  "ok": false,
+  "on_list": [
+    "com.jgilpatrick.agent-manager",
+    "com.jgilpatrick.automations-hub",
+    "com.jgilpatrick.claude-transcript-scrubber",
+    "com.jgilpatrick.idemeum-log-retention",
+    "com.jgilpatrick.josh-360-jobs",
+    "com.jgilpatrick.outlook-receipt-fetcher",
+    "com.jgilpatrick.sync-opencode-agents"
+  ],
+  "startup_repo_found": true,
+  "time": "2026-11-17T21:34:35Z",
+  "unknown": []
+}
