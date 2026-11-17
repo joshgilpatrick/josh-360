@@ -24,3 +24,4 @@
 - `page-06-points.png`: three points the picture raises, each with a recommendation.
 - `page-07-parts-dark.png`: the layers in the dark theme.
 - `page-08-phone.png`: the top of the page at 400 px wide.
+- `contact-1.png`, `contact-2.png`: the eight screenshots tiled four to a sheet, for the PR comment.
