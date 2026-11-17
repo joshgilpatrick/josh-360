@@ -160,10 +160,28 @@ class Ask(LedgerCase):
         _, by_repo, _ = self.call(["changes", "--repo", "o/josh-360"])
         self.assertEqual(len(by_repo["rows"]), 2)
 
-    def test_changes_live_says_not_built_yet(self):
+    def test_changes_live_adds_ticket_status_and_pull_request_state(self):
+        from loose_helpers import fake_live  # noqa: PLC0415
+        with_pr = self.seed_session("sess-0001", commit=False, pr="https://example.test/o/r/pull/9", ticket="JP-900")
+        live = fake_live(tickets={"JP-900": ("Validation", False)}, prs={"https://example.test/o/r/pull/9": "MERGED"})
+        out = io.StringIO()
+        code = ask.main(["changes", "--system", "josh-360", "--live"], out=out, path=self.path, live=live)
+        row = json.loads(out.getvalue())["rows"][0]
+        self.assertEqual((code, row["session_uid"]), (0, with_pr))
+        self.assertEqual((row["ticket_status"], row["pull_request_state"]), ("Validation", "MERGED"))
+
+    def test_changes_live_says_unknown_when_it_cannot_read(self):
+        from loose_helpers import fake_live  # noqa: PLC0415
+        self.seed_session("sess-0001", commit=False, pr="https://example.test/o/r/pull/9", ticket="JP-900")
+        out = io.StringIO()
+        ask.main(["changes", "--system", "josh-360", "--live"], out=out, path=self.path, live=fake_live())
+        row = json.loads(out.getvalue())["rows"][0]
+        self.assertEqual((row["ticket_status"], row["pull_request_state"]), ("unknown", "unknown"))
+
+    def test_changes_without_live_never_reads_the_network(self):
         self.seed_session()
-        _, body, _ = self.call(["changes", "--system", "josh-360", "--live"])
-        self.assertEqual(body["live"], "not built yet (JP-109)")
+        _, body, _ = self.call(["changes", "--system", "josh-360"])
+        self.assertNotIn("ticket_status", body["rows"][0])
 
     # -- limits and the shape of every answer ------------------------------------------------------------------
 
