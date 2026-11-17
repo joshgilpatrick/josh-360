@@ -162,7 +162,7 @@ class CommandLine(unittest.TestCase):
     def test_default_run_checks_every_flow_under_root(self):
         result = run_cli("--root", str(PARTS))
         self.assertEqual(result.returncode, 0, result.stdout)
-        self.assertIn("1 graph(s)", result.stdout)
+        self.assertIn("2 graph(s)", result.stdout)
 
     def test_the_repository_graphs_folder_passes(self):
         result = run_cli()
@@ -175,6 +175,37 @@ class CommandLine(unittest.TestCase):
     def test_missing_file_cannot_run(self):
         result = run_cli("--root", str(PARTS), str(HERE / "no-such-graph.yaml"))
         self.assertEqual(result.returncode, 2)
+
+
+class WaitSteps(unittest.TestCase):
+    """A wait step (JP-115): a read-only script that answers pending, or one of its outcomes."""
+
+    WAITS = PARTS / "flows" / "waits.yaml"
+
+    def refused(self, name: str) -> str:
+        result = run_cli("--root", str(PARTS), str(BAD / f"{name}.yaml"))
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("step 'hold'", result.stdout)
+        return result.stdout
+
+    def test_wait_step_passes(self):
+        result = run_cli("--root", str(PARTS), str(self.WAITS))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_wait_with_effects_refused(self):
+        self.assertIn("a wait may not have effects", self.refused("wait-with-effects"))
+
+    def test_wait_must_be_read(self):
+        self.assertIn("a wait only reads, so its access must be read", self.refused("wait-not-read"))
+
+    def test_wait_may_not_declare_pending(self):
+        self.assertIn("'pending' is what a wait answers while it waits", self.refused("wait-declares-pending"))
+
+    def test_wait_unknown_gate_refused(self):
+        self.assertIn("names unknown gate 'no-such-wait'", self.refused("wait-unknown-gate"))
+
+    def test_wait_and_gate_on_one_step_refused(self):
+        self.assertIn("must have exactly one of role, gate, ask or wait", self.refused("wait-and-gate"))
 
 
 class Yaml(unittest.TestCase):
@@ -248,7 +279,7 @@ class Rules(unittest.TestCase):
     def test_step_needs_exactly_one_kind(self):
         data = valid_data()
         step(data, "design")["gate"] = "lint-spec"
-        self.assertProblem(data, "step 'design' must have exactly one of role, gate or ask")
+        self.assertProblem(data, "step 'design' must have exactly one of role, gate, ask or wait")
 
     def test_duplicate_step_id(self):
         data = valid_data()
