@@ -16,6 +16,8 @@ The ledger: the local, append-only record of every agent session, graph run and 
 | `text.py` | Cuts and screens short text before it is written; text that fails the patient-data screen is withheld. |
 | `spool.py` | The hook spool: hooks only append here, and the recorder reads it. |
 | `sessions.py`, `transcript.py`, `record.py` | The recorder: the `sessions` row at start, then episodes from transcript metadata (never message text), git and the spool. The `ledger-record` job runs it every 5 minutes. |
+| `friction.py`, `friction_write.py` | Friction facts (JP-112): counts of Josh's messages, interrupts, failed commands, repeated reads, context at the first turn, time waiting on Josh against time working, and the skills, agents, tools and MCP servers used, written with each episode by the recorder. No model, no network, no message text. `friction_write.py` is also the one-time `ledger-friction-catchup` job for episodes recorded before. |
+| `measures.py` | The measures as stored queries (JP-112): Josh's messages per finished ticket beside the first-time sign-off share, spend and time per ticket, the size of the instructions a session loads, and what was loaded and never used. For Josh and his own scripts; working agents are never given it. |
 | `homes.py`, `jira_read.py` | Where a session belongs, worked out with no model: ticket key, ticket links, registry, else unassigned. One read-only Jira call. |
 | `costs.py`, `state_notes.py` | Copy cost, ticket links and titles from the cost ledger, and the notes in STATE.md. Nothing is copied from a `.phi` folder. |
 | `ask.py` | The one read command for working agents: six queries, read-only, at most 20 rows and 4096 bytes. |
@@ -28,4 +30,4 @@ The design, with what each table is for, where today's stores go and the questio
 
 ## Status
 
-Built (JP-107, 17 November 2026): the database and its migrations, the recorder, homes, costs and notes, the read command, backup, redaction and the backfill. Proof: `docs/proof/2026-11-17/JP-107/README.md`. The design was amended by JP-148 and JP-149 (the JP-146 review's fixes, Josh's patient-data rule, local sessions only). Later tickets add the writers for the other tables (`docs/design/data-model.md`, "Who writes what"); the Azure copy of the backups is JP-150. No patient data in any file here.
+Built (JP-107, 17 November 2026): the database and its migrations, the recorder, homes, costs and notes, the read command, backup, redaction and the backfill. Proof: `docs/proof/2026-11-17/JP-107/README.md`. The design was amended by JP-148 and JP-149 (the JP-146 review's fixes, Josh's patient-data rule, local sessions only). JP-112 added the friction facts and the measures (`docs/proof/2026-11-17/JP-112/README.md`). Later tickets add the writers for the other tables (`docs/design/data-model.md`, "Who writes what"); the Azure copy of the backups is JP-150. No patient data in any file here.
