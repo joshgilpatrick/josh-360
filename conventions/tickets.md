@@ -23,7 +23,7 @@ The rules every agent and script follows for tickets, for all of Josh's work and
 Two data files sit beside this one:
 
 - `conventions/registry.yaml`: every system, with its folders, repositories, area, Jira space, default parent epic and priority.
-- `conventions/priorities.yaml`: Josh's six standing priorities, plus DevEx and Unassigned, and what each covers in Jira.
+- `conventions/priorities.yaml`: Josh's seven standing priorities (the six from the leadership forum and Internal Systems & Applications), plus DevEx and Unassigned, and what each covers in Jira.
 
 `scripts/conventions.py` reads both (see [Checking the conventions files](#checking-the-conventions-files)). josh-360's own build workflow (`docs/WORKFLOW.md`) applies these rules to JP-94 and adds its own steps, such as the review ceremony.
 
