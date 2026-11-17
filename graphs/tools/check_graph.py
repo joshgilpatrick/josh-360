@@ -62,7 +62,7 @@ OUTPUT = {"type": LEAF, "description": LEAF, "contract": LEAF}
 GOTO = {"goto": LEAF, "max_loops": LEAF, "at_limit": LEAF}
 STEP = {
     "id": LEAF, "role": LEAF, "agent": EITHER({"by": LEAF, "map": MAP(LEAF), "default": LEAF}),
-    "tier": LEAF, "brief": LEAF, "gate": LEAF, "effects": LEAF,
+    "tier": LEAF, "brief": LEAF, "gate": LEAF, "wait": LEAF, "effects": LEAF,
     "ask": {"question": LEAF, "choices": LEAF, "approves": LEAF, "approves_on": LEAF, "on_limit_only": LEAF,
             "split": LEAF},
     # inputs is a list of names; a mapping is wrong, and every key in it is reported (EITHER of no keys).
@@ -450,9 +450,9 @@ def check_graph_data(data, name: str, parts: Parts) -> list[str]:
     kind: dict[str, str] = {}
     outcomes: dict[str, list] = {}
     for sid, s in steps.items():
-        kinds = [k for k in ("role", "gate", "ask") if k in s]
+        kinds = [k for k in ("role", "gate", "ask", "wait") if k in s]
         if len(kinds) != 1:
-            out.append(f"step '{sid}' must have exactly one of role, gate or ask")
+            out.append(f"step '{sid}' must have exactly one of role, gate, ask or wait")
             continue
         kind[sid] = kinds[0]
         if kinds[0] == "ask":
@@ -475,7 +475,9 @@ def check_graph_data(data, name: str, parts: Parts) -> list[str]:
         for key in ("agent", "tier", "brief"):
             if key in s and k != "role":
                 out.append(f"step '{sid}': {key} only goes on a role step")
-        if "effects" in s and k != "gate":
+        if "effects" in s and k == "wait":
+            out.append(f"step '{sid}': a wait may not have effects (it only reads)")
+        elif "effects" in s and k != "gate":
             out.append(f"step '{sid}': only a gate script may have effects (set labels, move tickets)")
         if k == "role":
             role_name = s["role"] if isinstance(s["role"], str) else None
@@ -518,6 +520,13 @@ def check_graph_data(data, name: str, parts: Parts) -> list[str]:
                 out.append(f"step '{sid}': effects must be a list")
             else:
                 out += [f"step '{sid}': effect '{e}' is not one of {', '.join(EFFECTS)}" for e in effects if e not in EFFECTS]
+        elif k == "wait":
+            if not isinstance(s["wait"], str):
+                out.append(f"step '{sid}': wait must be a name")
+            elif s["wait"] not in parts.gates:
+                out.append(f"step '{sid}' names unknown gate '{s['wait']}'")
+            if "pending" in outcomes.get(sid, []):
+                out.append(f"step '{sid}': 'pending' is what a wait answers while it waits, so it is not an outcome")
         elif k == "ask":
             ask = s["ask"] if isinstance(s["ask"], dict) else {}
             approves = ask.get("approves", [])
@@ -651,6 +660,8 @@ def check_graph_data(data, name: str, parts: Parts) -> list[str]:
             if not cited:
                 out.append(f"step '{sid}' uses reviewer role '{s['role']}' but no gate step needs it to drop defects "
                            "that do not cite the plan")
+        if kind.get(sid) == "wait" and sid in access and access[sid] != "read":
+            out.append(f"step '{sid}': a wait only reads, so its access must be read")
         if kind.get(sid) == "gate" and _names(s.get("effects")) and access.get(sid) == "read":
             out.append(f"step '{sid}' has effects, so its access cannot be read")
         if above is not None and _str_list(s.get("inputs")):
