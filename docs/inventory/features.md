@@ -47,7 +47,7 @@ IDs are stable: `A` rows are action-triage, `S` rows are Session Atlas. Josh rev
 
 Six of these (A3, A6, A10, A12, A13, A14) were already planned for removal in action-triage's own Jira roadmap (phase 8) and the console redesign approved on 6 November 2026. Josh 360 only confirms them.
 
-**Which features duplicate each other across the two apps, and which copy survives?** Six pairs, each settled in [Where the two apps overlap](#where-the-two-apps-overlap): the session record (Atlas's index survives, as the ledger), session titles (one title set on the ledger), session-to-ticket links (ledger links), the files a session made (Atlas's artifact manager), Send to Background (Atlas's `claude --bg --resume`), and the transcript list (Atlas's index feeds action-triage's Sessions view). The seven ideas of a task collapse to the Jira ticket for work, Linear for personal work, and intake records that become tickets.
+**Which features duplicate each other across the two apps, and which copy survives?** Six pairs, each settled in [Where the two apps overlap](#where-the-two-apps-overlap): the session record (Atlas's index survives, as the ledger), session titles (one title set on the ledger), session-to-ticket links (ledger links), the files a session made (Atlas's artifact manager), Send to Background (both copies retired in Josh's review, JP-145, since every session lives in Agent Manager), and the transcript list (Atlas's index feeds action-triage's Sessions view). The seven ideas of a task collapse to the Jira ticket for work, Linear for personal work, and intake records that become tickets.
 
 **Is any part of action-triage's older GitHub-issue path still in use?** Yes, but only as a drain, and it should retire on action-triage's own schedule.
 
@@ -160,7 +160,7 @@ So: keep the issue path running until action-triage's phase 7 turns Jira pickup 
 | Session titles | Atlas's title choice (S2) and the cost ledger's `session_labels` (S8) | One title on the ledger session, using S2's order (custom title first). |
 | Session to ticket | Atlas's Jira session links (S10), the daemon's `__tickets__` records (A9) and the desk ledger's ticket column (A27) | The ledger's session links (JP-107). |
 | Files a session made | action-triage's file list and `session-files/` archive (A24), Atlas's older file list (S14) and artifact manager (S11) | The artifact manager (S11), with the durable output folder (S12). |
-| Send to Background | action-triage writes a supervisor job file (A20); Atlas runs `claude --bg --resume` (S7) | S7, recorded in `docs/decisions.md`. |
+| Send to Background | action-triage writes a supervisor job file (A20); Atlas runs `claude --bg --resume` (S7) | None: both retired in Josh's review (JP-145, A20 and S7). |
 | What a session is doing now | Atlas's focus summary (S3), the harness's `/focus` file (JP-96, JP-100) and STATE.md | STATE.md while it runs; five summary lines once it goes quiet (JP-108). |
 | Where Josh is asked | Needs you (A23), issue comments with `status:blocked` (A10), Atlas's Needs attention (S6) | Needs you plus a Jira flag on the ticket, as Josh decided. Needs attention stays as system health, recorded in `docs/decisions.md`. |
 | Who reviews a PR | The action-triage audit (A21) only (`docs/WORKFLOW.md` §4) | Answered: [question 1](#questions-for-josh). |
