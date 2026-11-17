@@ -178,7 +178,7 @@ So however the loops add up, one run uses at most three Sonnet work runs and thr
 
 **Between runs.** A new run starts with fresh counts, so two rules bound repeats across runs:
 
-- Only a new Ready ticket, or Josh's own reply to an emailed ask, starts a run. The graph's own comments and edits never do (rule 16).
+- Only a ticket that is Ready and not in the backlog (Josh has moved it into a sprint), or Josh's own reply to an emailed ask, starts a run. Ready alone does not. The graph's own comments and edits never do (rule 16).
 - A "needs code" or "not workable here" return is counted by triage, which takes a ticket back at most twice. The third return goes straight to Josh (rule 17).
 
 **Inside a step.** A role session that never ends, or a gate script that keeps failing, is the binding's job. Every role step gets a turn cap and a time cap, and a failing gate stops the run instead of being retried (rule 19).
@@ -266,7 +266,7 @@ To compare the graph before and after a change, each run records the version of 
 
 ## Rules
 
-1. The graph starts only from a Ready JP ticket routed `non-development` (entry gate `ready`).
+1. The graph starts only from a JP ticket routed `non-development` that is Ready and not in the backlog (entry gate `ready`; the start rule is the triage spec's, "Ready is not started").
 2. It does no intake, classification or duplicate check. It reads the ticket.
 3. A ping fires only on a signal a script can observe, never on a model's stated confidence.
 4. Every ping is answerable in one sentence and lands on the ticket as a comment.
@@ -281,7 +281,7 @@ To compare the graph before and after a change, each run records the version of 
 13. Work that needs code goes back to triage. This graph never starts another graph.
 14. Only gate scripts move the ticket.
 15. The closing resolution comment uses a fixed shape, so the next run's lookup can find it.
-16. The graph's own comments and edits never start a run. Only Josh's reply to an emailed ask (through the desk watcher) or a new Ready ticket does. This follows the triage spec (JP-103), "How every loop ends".
+16. The graph's own comments and edits never start a run. Only Josh's reply to an emailed ask (through the desk watcher) or a ticket that is Ready and not in the backlog does: Ready alone does not, because Josh moves a ticket out of the backlog into a sprint when he wants it worked (his answer to the JP-146 review's question 3, 17 November 2026). This follows the triage spec (JP-103), "Ready is not started" and "How every loop ends".
 17. A ticket sent back by `return-to-triage` is counted by triage, not here. Triage takes a ticket back at most twice, and the third return goes straight to Josh (JP-103).
 18. A loop counter belongs to its arrow and never resets during a run, so `max_loops` really bounds `do_work` (rule for the walker, JP-114).
 19. Each role step gets a turn and time cap in the runner's binding, and a gate script that fails stops the run rather than being retried (JP-103; bindings in JP-117).

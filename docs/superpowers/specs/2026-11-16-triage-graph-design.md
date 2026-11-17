@@ -108,7 +108,9 @@ Every reason takes the same path through the graph. A returned ticket now has an
 | Josh's Needs you queue | One question, only through the two ask steps |
 | The ticket's author | One comment listing the gaps (someone else's ticket) |
 
-Ready is not started. A Ready ticket waits for Josh to queue it, because prioritising stays with Josh. Two kinds of ticket are already queued and start when Ready: someone else's ticket that Josh handed in, and a returned ticket, which resumes the run that sent it back.
+Ready is not started. A run starts for a ticket that is Ready **and not in the backlog** (Josh, 17 November 2026, his answer to the JP-146 review's question 3, written in by JP-149): tickets wait in the backlog once Ready, and Josh moves them out of the backlog into a sprint, because prioritising stays with Josh. Ready alone starts nothing, and that includes someone else's ticket that Josh handed in. In Jira this is `status = Ready AND sprint in openSprints()`; a ticket in a future sprint waits until that sprint starts. The runner (JP-117) is the one place that reads this rule. The one exception is a returned ticket, which is not a new start: it resumes the run that sent it back.
+
+JP's board had no sprints and no backlog when this was written (checked 17 November 2026), so no JP ticket starts a run until sprints are turned on for JP.
 
 ## Who may start a run
 

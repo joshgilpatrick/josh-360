@@ -33,7 +33,7 @@ INITIATIVE_SPACE = "TECH"  # holds initiatives only; never a ticket's space or a
 KEY = re.compile(r"^[A-Z][A-Z0-9]+-[1-9][0-9]*$")
 LABEL = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 SYSTEM_KEYS = {"name", "description", "repositories", "folders", "area", "tracker", "jira_space",
-               "linear_team", "default_epic", "priority", "patient_data", "notes"}
+               "linear_team", "default_epic", "priority", "notes"}
 PRIORITY_KEYS = {"id", "name", "kind", "rank", "shown_to", "covers", "notes"}
 COVER_KEYS = {"areas", "initiatives", "epics"}
 
@@ -156,8 +156,6 @@ def _system_problems(system: dict, name: str, where: str, n: int, seen_names: se
     seen_names.add(name)
     if not system.get("description"):
         problems.append(f"{where}: no description")
-    if not isinstance(system.get("patient_data"), bool):
-        problems.append(f"{where}: patient_data must be true or false (true when in doubt)")
 
     repos = _list(system.get("repositories"))
     folders = _list(system.get("folders"))
@@ -323,11 +321,11 @@ def _answer(registry: dict, system: dict | None, matched: str | None) -> dict:
     if system is None:
         return {"system": None, "area": None, "tracker": "jira", "jira_space": fallback.get("jira_space"),
                 "linear_team": None, "default_epic": None, "priority": fallback.get("priority"),
-                "patient_data": True, "unassigned": True, "matched": None}
+                "unassigned": True, "matched": None}
     return {"system": system["name"], "area": system.get("area"), "tracker": system.get("tracker"),
             "jira_space": system.get("jira_space"), "linear_team": system.get("linear_team"),
             "default_epic": system.get("default_epic"), "priority": system.get("priority"),
-            "patient_data": system.get("patient_data") is not False, "unassigned": False, "matched": matched}
+            "unassigned": False, "matched": matched}
 
 
 def lookup_folder(registry: dict, folder: str, home: str | None = None) -> dict:

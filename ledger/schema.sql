@@ -121,8 +121,8 @@ CREATE TABLE session_lineage (
 
 -- One row each time a session goes quiet. A resumed session that goes quiet again gets episode 2, and so on, so
 -- nothing about the earlier stretch is rewritten. A withdrawn episode row is replaced by version 2 of the same
--- episode. title is empty, with title_source 'withheld', when the patient-data rule keeps the session's words out
--- (a system the registry flags, a session with no home, or a .phi folder; design, "Patient data").
+-- episode. title is empty, with title_source 'withheld', when the patient-data screen stops the title, or when the
+-- session's folder is inside a .phi folder (design, "Patient data"). The system a session belongs to never withholds it.
 CREATE TABLE session_episodes (
   id                INTEGER PRIMARY KEY,
   session_uid       TEXT    NOT NULL REFERENCES sessions (session_uid),
@@ -178,8 +178,7 @@ CREATE TABLE ticket_links (
 
 -- Where a session belongs, worked out with no model (design, "How a session finds its home"). Written when the
 -- session goes quiet and again whenever the answer changes (a ticket moved epic, the registry changed). The newest
--- row wins. patient_data is 1 when the home's system is flagged `patient_data: true` in conventions/registry.yaml,
--- when the system is not known, and always for a session with no home: such a session stores none of its own words.
+-- row wins. A home says nothing about patient data: every system may hold it (design, "Patient data", JP-149).
 CREATE TABLE session_homes (
   id                   INTEGER PRIMARY KEY,
   session_uid          TEXT    NOT NULL REFERENCES sessions (session_uid),
@@ -195,13 +194,11 @@ CREATE TABLE session_homes (
   evidence             TEXT    NOT NULL CHECK (length(evidence) <= 300),   -- the branch, the link id or the folder used
   conventions_version  TEXT    NOT NULL,   -- commit of conventions/ the answer was read from
   jira_read            TEXT    NOT NULL CHECK (jira_read IN ('ok', 'failed', 'not-needed')),
-  patient_data         INTEGER NOT NULL CHECK (patient_data IN (0, 1)),
   derived_at           TEXT    NOT NULL,
   recorded_by          TEXT    NOT NULL,
   CHECK (method NOT IN ('branch', 'ticket-link') OR ticket_key IS NOT NULL),
   CHECK (method <> 'registry' OR (system IS NOT NULL AND ticket_key IS NULL)),
-  CHECK (method <> 'unassigned' OR (priority = 'unassigned' AND ticket_key IS NULL AND system IS NULL)),
-  CHECK (system IS NOT NULL OR patient_data = 1)
+  CHECK (method <> 'unassigned' OR (priority = 'unassigned' AND ticket_key IS NULL AND system IS NULL))
 );
 
 -- Cost per session and model, copied from the cost import when the session goes quiet, and again after a
@@ -238,8 +235,9 @@ CREATE TABLE model_calls (
 );
 
 -- About five lines that say what the session was about and how it ended (JP-108). One per episode (the newest
--- version not withdrawn). For a session the patient-data rule covers, the lines are built only from the ledger's own
--- keys and counts (ticket, branch, pull request, turns), never from the session's words (design, "Patient data").
+-- version not withdrawn). Each line passes the patient-data screen first; a line that fails is not stored and is
+-- counted in lines_withheld. A session in a .phi folder gets lines built only from the ledger's own keys and counts
+-- (design, "Patient data").
 CREATE TABLE session_summaries (
   id             INTEGER PRIMARY KEY,
   session_uid    TEXT    NOT NULL REFERENCES sessions (session_uid),
@@ -256,8 +254,8 @@ CREATE TABLE session_summaries (
   CHECK (method <> 'model' OR model_call_id IS NOT NULL)
 );
 
--- The U-turns, dead ends and untold findings copied from the session's STATE.md before its 30-day clean-up. None is
--- copied for a session the patient-data rule covers.
+-- The U-turns, dead ends and untold findings copied from the session's STATE.md before its 30-day clean-up, each after
+-- the patient-data screen. None is copied for a session in a .phi folder.
 CREATE TABLE session_state_notes (
   id           INTEGER PRIMARY KEY,
   session_uid  TEXT    NOT NULL REFERENCES sessions (session_uid),
