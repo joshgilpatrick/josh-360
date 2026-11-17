@@ -1,5 +1,4 @@
-# DRAFT (JP-103). Designed, not built: every gate script it names is a stub that refuses to run
-# until JP-122 builds it. Design: docs/superpowers/specs/2026-11-16-triage-graph-design.md.
+# Built in JP-122. Design: docs/superpowers/specs/2026-11-16-triage-graph-design.md.
 convention: 1
 graph: triage
 title: Ticket triage and sign-off
@@ -15,7 +14,7 @@ header:
   jira:
     - status: Not Started
       steps: [read_ticket, ready_check, route, sign_off, check_sign_off, verdict, revise,
-              apply_revision, ask_josh, ask_returned, ask_at_limit, send_back]
+              apply_revision, post_question, ask_josh, ask_returned, ask_at_limit, send_back]
     - { status: Ready, steps: [mark_ready] }
   entry_gate: triageable
   exit_gate: no-loose-ends
@@ -37,6 +36,7 @@ header:
     verdict: read
     revise: read
     apply_revision: josh
+    post_question: josh
     ask_josh: read
     ask_returned: read
     ask_at_limit: read
@@ -86,6 +86,7 @@ steps:
       graph: { type: string, contract: route-record }
       system: { type: string, contract: route-record }
       space: { type: string, contract: route-record }
+      route_reason: { type: string, description: "When the outcome is conflict: the sentence saying why no single graph fits" }
     outcomes: [development, non_development, conflict]
 
   # ---- Judgment, only where a script cannot decide ----------------------------------------------
@@ -102,6 +103,7 @@ steps:
   - id: check_sign_off
     gate: check-sign-off
     needs: [sign_off]
+    when: { step: sign_off, outcome: [ready, defects] }
     inputs: [ticket_key, defects, version, authors]
     outputs:
       kept: { type: list, contract: sign-off-defects }
@@ -114,14 +116,16 @@ steps:
   - id: verdict
     gate: triage-verdict
     needs: [read_ticket, ready_check, route, check_sign_off]
-    inputs: [author_kind, failures, kept]
+    inputs: [ticket_key, author_kind, failures, kept, graph, route_reason]
     outputs:
       gaps: { type: list, description: "Script failures and kept defects, numbered", contract: send-back }
     # escalate: an own ticket has come back from another graph a third time (rule 10); the
     # return count lives in the josh360.route record and survives between runs. Someone
     # else's ticket never escalates: a third return gets a comment like any other gap.
     # revise is own tickets only; comment is someone else's tickets only.
-    outcomes: [ready, revise, comment, escalate]
+    # exhausted: an own ticket still has gaps after two drafter rounds in this run (three once Josh chose one more
+    # round). The drafter does not run a third time; Josh is asked through ask_at_limit.
+    outcomes: [ready, revise, comment, escalate, exhausted]
 
   # ---- Own tickets: the drafter fixes, then the checks run again --------------------------------
   - id: revise
@@ -147,9 +151,17 @@ steps:
       applied: { goto: read_ticket, max_loops: 2, at_limit: ask_at_limit }
       changed: { goto: read_ticket, max_loops: 2, at_limit: ask_at_limit }
 
-  - id: ask_josh
+  # The one question goes on the ticket before Josh is asked, so the ticket carries every question.
+  - id: post_question
+    gate: post-question
     needs: [revise]
     when: { step: revise, outcome: needs_josh }
+    inputs: [ticket_key, proposal]
+    outcomes: [posted]
+
+  - id: ask_josh
+    needs: [post_question]
+    when: { step: post_question, outcome: posted }
     ask:
       question: "{{ inputs.ticket_key }} needs one answer from you before it can be Ready. The question is on the ticket."
       choices: [answered, park]
@@ -169,11 +181,14 @@ steps:
       answered: { goto: read_ticket, max_loops: 1, at_limit: ask_at_limit }
       park: end
 
+  # Reached two ways: the verdict says exhausted (two drafter rounds used, three after each "one more round"), or any
+  # loop above hits its limit and the walker sends the run here.
   - id: ask_at_limit
+    needs: [verdict]
+    when: { step: verdict, outcome: exhausted }
     ask:
       question: "{{ inputs.ticket_key }} is still not Ready after the rounds allowed. Its remaining gaps are on the ticket."
       choices: [one_more_round, park]
-      on_limit_only: true
     on:
       # One more round re-reads and re-checks the ticket. The drafter runs again only if the
       # verdict says revise, which it never does for someone else's ticket (rule 7).
