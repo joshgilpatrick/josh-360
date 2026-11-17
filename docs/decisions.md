@@ -5,6 +5,7 @@
 - [How to use this file](#how-to-use-this-file)
 - [How the build runs](#how-the-build-runs)
 - [The question round](#the-question-round)
+- [The phase 1 sitting](#the-phase-1-sitting)
 - [The nine items once marked Proposed](#the-nine-items-once-marked-proposed)
 - [Default choices made while building](#default-choices-made-while-building)
 
@@ -49,6 +50,28 @@ Josh settled every open question on 15 November 2026.
 | How do work and personal stay separate across two machines? | Each machine keeps its own ledger for now. The rest is designed in phase 3. |
 | What does the dashboard show? | Deferred to the phase 3 design ticket. |
 | How does the system improve itself? | As written in the vision's "How the system measures and improves itself": model-free facts per session, one small debrief call per session that earns one, a weekly review of the ledger that looks for repeats, and threshold scripts Josh can edit. The system may make itself better without Josh, and may never reduce his oversight without him. |
+
+## The phase 1 sitting
+
+Josh answered the fourteen phase 1 design questions on 16 November 2026 (JP-106, `docs/design/questions-phase-1.md`). Each answer is also written into the design it came from.
+
+| Date | Ticket | Question | Option taken | How to undo |
+| --- | --- | --- | --- | --- |
+| 2026-11-16 | JP-106 | One ledger file or two? (Josh's answer, Q1) | Two: `ledger.db` for facts, `cache.db` for rebuildable working tables. | Merge the cache tables into `ledger.db` before JP-107 merges. |
+| 2026-11-16 | JP-106 | May the ledger keep any of Josh's own words? (Josh's answer, Q2) | Yes, one line: a session summary may copy the first line of the first message, 160 characters at most, after the patient-data check. This overrides JP-99's "no message text" criterion for that one line. | Drop the copied line and write it with the model call instead. |
+| 2026-11-16 | JP-106 | Backups and retention (Josh's answer, Q3) | `ledger.db` kept for ever; 14 daily and 8 weekly compressed backups; per-message cost rows removed 90 days after copying. Each backup also goes to an Azure blob storage container, not OneDrive. | Stop the upload; the laptop copies remain. |
+| 2026-11-16 | JP-106 | What is one category of question? (Josh's answer, Q4) | The asking step (`<graph>/<step>`) by default, split further on the details a step names; the approval card splits by system, ticket type, shape and action. | Collapse to one category per step. |
+| 2026-11-16 | JP-106 | Which priority do the unassigned systems fall under? (Josh's answer, Q5) | `charta_services` under EQuIP; `fx-app-apps-services` and `fx-app-zus-services` under a new seventh standing priority, Internal Systems & Applications; `survey-services`, `training-services` and `synapse-pipelines` stay Unassigned. | Edit `priority` in `conventions/registry.yaml`, or remove the seventh priority from `conventions/priorities.yaml` and `STANDING_IDS` in `scripts/conventions.py`. |
+| 2026-11-16 | JP-106 | What do PIMS, M&A clinical data transfer and AI scribing cover in Jira? (Josh's answer, Q6) | New epics in CI. Creating them waits for Josh's yes on the list in the JP-106 thread, since CI is a team board. | Leave their covers lists empty. |
+| 2026-11-16 | JP-106 | Does the daemon start the walker's headless sessions? (Josh's answer, Q7) | Yes. A daemon watches Jira for tickets in a given state and launches the graph when the conditions are met (for example a Ready ticket not in the backlog goes through triage). | Run the walker from Agent Manager only. |
+| 2026-11-16 | JP-106 | Which new tickets come to Josh on the approval card? (Josh's answer, Q8) | Every input gets one card at first; the card relaxes by category through the three stages. | Option 2 or 3 in `docs/design/ticket-creation-graph.md`. |
+| 2026-11-16 | JP-106 | Where do meeting action items go? (Josh's answer, Q9) | The Calendar tab stays (Josh has not agreed to retire it); items also become proposed tickets through the ticket creation graph once JP-121 is built. | Retire the tab after JP-121. |
+| 2026-11-16 | JP-106 | Keep the Obsidian wiki? (Josh's answer, Q10) | Archive the wiki and its skills. | Restore them from the archive. |
+| 2026-11-16 | JP-106 | Does Josh still use OpenCode? (Josh's answer, Q11) | Yes. The agent sync stays, moves to Bifrost model names, and runs when `~/.claude/agents` changes instead of hourly. | Go back to the hourly schedule. |
+| 2026-11-16 | JP-106 | Retire the leftover tools? (Josh's answer, Q12) | Omnara disconnected; Tactic Remote hooks and the task-manager queue retire; QuickTasks is already gone ("quick tickets" noted as an idea); agent-deck decided in the feature-tree review. | Switch any of them back on before the phase-close deletion list. |
+| 2026-11-16 | JP-106 | Bring back the rclone backup? (Josh's answer, Q13) | No. | Reinstall its job. |
+| 2026-11-16 | JP-106 | Archive the 131 unused skills? (Josh's answer, Q14) | Josh picked the keepers on a picker page: 67 kept (his 64, plus `control-cli`, `deslop` and `grill-with-docs`, which kept skills name), 64 archived at the phase close. The lists are in `docs/inventory/laptop.md`, appendix. | Restore from the archive. |
+| 2026-11-16 | JP-106 | How do action-triage, claude-360 and the MacBook automations relate to josh-360? (Josh, Q12 note) | They are melded into one application: kept features are extracted and rebuilt in josh-360 with one consistent look and codebase, not linked or nested. | Not expected to change. |
 
 ## The nine items once marked Proposed
 

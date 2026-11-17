@@ -24,8 +24,9 @@ ROOT = Path(__file__).resolve().parent.parent
 REGISTRY = ROOT / "conventions/registry.yaml"
 PRIORITIES = ROOT / "conventions/priorities.yaml"
 
+# Josh added the seventh, Internal Systems & Applications, at the JP-106 sitting (16 November 2026).
 STANDING_IDS = ("athena", "equip", "pims", "ma-clinical-data-transfer", "clinician-tech-stack-ux",
-                "ai-scribing-utilization")
+                "ai-scribing-utilization", "internal-systems-applications")
 KINDS = {"standing", "devex", "unassigned"}
 TRACKERS = {"jira", "linear"}
 INITIATIVE_SPACE = "TECH"  # holds initiatives only; never a ticket's space or a system's
@@ -256,7 +257,7 @@ def _priority_problems(prio: dict, pid: str, where: str, areas: dict, claimed: d
     if kind not in KINDS:
         problems.append(f"{where}: kind must be one of {sorted(KINDS)}, not {kind!r}")
     if kind == "standing" and pid not in STANDING_IDS:
-        problems.append(f"{where}: is not one of the six standing priorities {list(STANDING_IDS)}")
+        problems.append(f"{where}: is not one of the standing priorities {list(STANDING_IDS)}")
     covers = _covers(prio)
     for key in sorted(str(k) for k in set(covers) - COVER_KEYS):
         problems.append(f"{where}: covers has unknown field {key!r}")

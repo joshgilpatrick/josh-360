@@ -43,11 +43,11 @@ Thirty-one tables in all. Twenty-five answer six groups of questions:
 
 Six more keep the rest honest: `machines`, `schema_migrations`, `corrections` and `redactions`, and two that record Josh's own marks, `ticket_offers` and `branch_marks`.
 
-Nothing here stores transcript text, message text or file contents, and nothing stores a loose end. Tickets stay in Jira and Linear; the ledger holds only their keys.
+Nothing here stores transcript text or file contents, and nothing stores a loose end. The only message text is one summary line, the first line of a session's first message (160 characters at most), which Josh chose at JP-106. Tickets stay in Jira and Linear; the ledger holds only their keys.
 
 ## The ticket's four questions, answered
 
-**One database file, or one per concern?** Two files, one schema. `ledger.db` holds the facts and is append-only. `cache.db` holds working tables that can be rebuilt from the transcripts and the repository: the cost importer's per-message rows and prices, scan marks, and Session Atlas's file catalog. One file per concern (sessions, runs, decisions, cost) was rejected: nearly every useful question joins two of them, and the vision asks for one ledger. One file for everything was rejected too: the cost import alone is 635 MB and re-prices rows in place, which an append-only file cannot do, and a daily backup of it would be large. This is [question 1](#questions-for-josh).
+**One database file, or one per concern?** Two files, one schema. `ledger.db` holds the facts and is append-only. `cache.db` holds working tables that can be rebuilt from the transcripts and the repository: the cost importer's per-message rows and prices, scan marks, and Session Atlas's file catalog. One file per concern (sessions, runs, decisions, cost) was rejected: nearly every useful question joins two of them, and the vision asks for one ledger. One file for everything was rejected too: the cost import alone is 635 MB and re-prices rows in place, which an append-only file cannot do, and a daily backup of it would be large. Josh confirmed two files at JP-106 ([question 1](#questions-for-josh)).
 
 **Which fields of Session Atlas's session index and cost records carry over unchanged?**
 
@@ -66,12 +66,12 @@ Nothing here stores transcript text, message text or file contents, and nothing 
 | Holds | Facts: sessions, homes, cost per session, summaries, friction, runs, decisions | The cost import's per-message rows and prices, scan marks, the file catalog, Atlas's job queues |
 | Rule | Append-only, enforced by triggers | Ordinary tables; may be deleted and rebuilt |
 | Location | `~/.josh-360/state/ledger.db` | `~/.josh-360/state/cache.db` (JP-111 moves Atlas's and the cost ledger's files here; until then the recorder reads `~/.claude/cost-ledger/ledger.db` read-only) |
-| Backup | Daily, compressed, kept locally: 14 daily and 8 weekly copies in `~/.josh-360/backups/` | None: it is rebuilt from transcripts and the repository |
+| Backup | Daily, compressed: 14 daily and 8 weekly copies in `~/.josh-360/backups/`, plus a copy of each in an Azure blob storage container | None: it is rebuilt from transcripts and the repository |
 | Kept | For ever (see [Expected size and retention](#expected-size-and-retention)) | Per-message rows for 90 days after their session's cost is copied into the ledger |
 
 **Engine.** SQLite, through Python 3.9's standard `sqlite3` module, because laptop code runs on `/usr/bin/python3` with the standard library only (`.claude/workflow.config.md`, Deploy). It needs no server, no install and no network. The schema uses nothing newer than SQLite 3.31: no `STRICT` tables and no `RETURNING`. Every connection turns on `PRAGMA foreign_keys` and `PRAGMA recursive_triggers` (without the second, `INSERT OR REPLACE` removes the old row without firing its delete trigger, a hole in the append-only rule), uses write-ahead logging (`journal_mode = WAL`) so the walker and the recorder can write at the same time, and waits up to five seconds for a lock (`busy_timeout`).
 
-**Backup.** A daily job, `ledger-backup` in `jobs.yaml`, copies the live database with SQLite's own backup call (safe while others write), runs `PRAGMA integrity_check` on the copy, compresses it with gzip and keeps the newest 14 daily and 8 weekly copies. To restore: stop the jobs with `laptop/pause.py on`, unzip the chosen copy over `ledger.db`, and resume. Copies stay on the laptop, like the ledger; an off-laptop copy is [question 3](#questions-for-josh).
+**Backup.** A daily job, `ledger-backup` in `jobs.yaml`, copies the live database with SQLite's own backup call (safe while others write), runs `PRAGMA integrity_check` on the copy, compresses it with gzip and keeps the newest 14 daily and 8 weekly copies. To restore: stop the jobs with `laptop/pause.py on`, unzip the chosen copy over `ledger.db`, and resume. Josh also wants a copy off the laptop, in an Azure blob storage container and not OneDrive (JP-106, question 3). The same job uploads each new copy there; which container, and how the laptop signs in to it without a stored secret, is settled when that upload is built. The ledger holds no patient data, so the copy holds none either.
 
 **Schema versions.** `PRAGMA user_version` holds the version, and `schema_migrations` lists every migration applied. `ledger/schema.sql` builds a new database at the current version. Each later change is a numbered file, `ledger/migrations/NNNN-<name>.sql`, applied in order by the install script (JP-105's `laptop/install.py`) after a backup. A migration may only add: new tables, new columns with a default, new views, new indexes, new codes. It never rewrites rows. A change that needs different rows gets a new table and a view that joins old and new.
 
@@ -168,6 +168,8 @@ How the vision's four memory rules land:
 - *An overruled decision is marked superseded and never used again.* The `current_decisions` view leaves out any decision with an `overruled` or `superseded` event, or a newer decision that supersedes it.
 - *A question Josh answers that had a usable precedent is a miss.* A `miss` event on the new decision, pointing at the precedent.
 - *An answer given several times becomes a written rule.* A `promoted-to-rule` event with the rule's file in josh-360.
+
+**What a category is** (JP-106, question 4, Josh chose C). By default a category is the asking step, `<graph>/<step>`, so Josh promotes "the triage questions" as one. An asking step may name details that split it further, and then the category carries them: JP-102's approval card names system, ticket type, shape and action, so a card for a single JP task in josh-360 is a different category from a parent with children in AD. A step that names no details stays one category. Where a step declares its split is settled by the decision command (JP-116) and the walker (JP-114).
 
 Lookup is exact: same `question_key`, same `system`, same `work_type`. An open question is an ask with no decision (`open_asks`). A run parks on an open ask and resumes when the decision is written, so a parked run survives a closed terminal (JP-114). The `questions/` folder action-triage's Needs you tab uses stays as the way a question reaches Josh and his answer comes back; the ledger is the record of both.
 
@@ -312,7 +314,7 @@ No patient data in the ledger (vision, Standing rules). The design keeps it out 
 2. **Short text only, capped.** Twelve columns hold free text, and each has a length cap in the schema: a session's title (120 characters), its summary (five lines, 800 characters), a STATE.md note (300), a gate's one-line note (200), an ask's question, choices and suggested answer and a decision's answer (500 each), a stage change's reason and a branch mark's note (200), a home's evidence (300) and a machine's label (60). The test lists exactly these and fails if another free-text column appears or one loses its cap.
 3. **Checked before it is written.** Every writer passes those columns through one patient-data check, `graphs/gates/lib/patient_data.py` (the helper JP-102's plan names; whichever ticket lands first creates it). A line that fails is not stored: a summary line becomes `withheld: patient data` and is counted in `lines_withheld`. A run marked `phi` stores no question, note or answer text at all, only codes and paths. A session whose folder is inside a `.phi` folder stores no title, summary or notes.
 
-The summary is the one place a session's own words could reach the ledger, because the vision builds it from the title, the first message and STATE.md. JP-99's acceptance criteria say no field stores message text. This design follows the criteria: no line is copied from a message; the one small model call, made only when the title and STATE.md are too thin, writes the "what was asked" line in its own words and passes the same check. This is [question 2](#questions-for-josh).
+The summary is the one place a session's own words could reach the ledger, because the vision builds it from the title, the first message and STATE.md. JP-99's acceptance criteria say no field stores message text. Josh chose at JP-106 (question 2) to keep a little of his own words: the summary's "what was asked" line copies the first line of the first message, 160 characters at most, after the same patient-data check. A line that fails the check is withheld like any other. This describes question-only sessions well with no model call; the one small model call is left for sessions whose first line is empty or withheld and whose title and STATE.md are too thin.
 
 If patient data is found in the ledger anyway, Josh runs `ledger/redact.py` ([The append-only rule](#the-append-only-rule), rule 4).
 
@@ -399,7 +401,7 @@ Transcripts are pointed at, not kept. When Claude Code's own clean-up removes a 
 2. Every table is append-only, enforced by triggers. A wrong row is withdrawn with a `corrections` row. The only overwrite is Josh's patient-data redaction.
 3. Every session, run and machine has a text key that is unique across machines.
 4. Hooks write spool lines; scripts write the database; working agents never write it.
-5. No column holds transcript text, message text, command output or file contents. Free text lives only in the twelve capped columns, after the patient-data check.
+5. No column holds transcript text, message text, command output or file contents. Free text lives only in the twelve capped columns, after the patient-data check. The one exception Josh chose (JP-106): a summary line may copy the first line of a session's first message, 160 characters at most.
 6. No table of loose ends. They are computed when asked.
 7. Tickets stay in their trackers; the ledger stores tracker and key.
 8. A session's home is worked out with no model, in the order branch, ticket links, registry, Unassigned, and each answer records its method and evidence.
@@ -425,6 +427,7 @@ Feature: One data model
   Scenario: Patient data has no home
     Given the schema
     Then no field stores transcript text, message text or file contents
+      except one summary line copying the first line of the first message (160 characters at most; Josh, JP-106)
     And a summary is limited to about five lines
 
   Scenario: Loose ends are not stored
@@ -465,9 +468,9 @@ Choices that can be undone, taken on the recommended option and recorded in `doc
 
 ## Questions for Josh
 
-For the phase 1 question sitting (JP-106). Each has a recommendation; JP-107 can start on the recommended options and change course cheaply until it merges.
+Josh answered all four at the phase 1 sitting on 16 November 2026 (JP-106, `docs/design/questions-phase-1.md`, recorded in `docs/decisions.md`).
 
-1. **One file or two?** *Recommendation: two.* `ledger.db` holds the facts, append-only, small, backed up daily and kept for ever. `cache.db` holds the large working tables that can be rebuilt: the cost import's per-message rows and the file catalog. *Other route:* one file for everything, which makes backups ten times larger and needs an exception to the append-only rule for the cost import's re-pricing.
-2. **May the ledger hold any of Josh's own words?** The vision builds the summary from the title, the first message and STATE.md; the ticket's acceptance criteria say no field stores message text. *Recommendation: follow the criteria.* No line is copied from a message; the summary comes from the title and STATE.md, and the one small model call, made only when those are too thin, writes the "what was asked" line in its own words. Every short text passes the patient-data check and has a length cap. *Other route:* copy the first line of the first message (160 characters at most) after the same check, which describes question-only sessions better with no model call.
-3. **Backups and retention.** *Recommendation:* keep `ledger.db` for ever; 14 daily and 8 weekly compressed backups, on the laptop only; remove the cost import's per-message rows from `cache.db` 90 days after each session's cost is copied into the ledger. *Other routes:* also copy backups off the laptop (OneDrive), which the vision defers to "moving data off the laptop"; or keep the per-message rows for ever (about 0.6 GB now, growing).
-4. **What is a "category" of question for the three stages?** *Recommendation: one category per asking step,* `<graph>/<step>` (for example `triage/ask_josh`), so Josh promotes "the triage questions" as one; lookup still needs the same system and type of work. *Other route:* one category per step and system, so Josh can promote a question for one system before another, at the cost of many more categories to manage.
+1. **One file or two?** Two: `ledger.db` for the facts and `cache.db` for the rebuildable working tables.
+2. **May the ledger hold any of Josh's own words?** Yes, a little: the summary may copy the first line of the first message, 160 characters at most, after the patient-data check ([Patient data](#patient-data)).
+3. **Backups and retention.** As recommended (keep `ledger.db` for ever, 14 daily and 8 weekly backups, per-message cost rows removed after 90 days), plus a copy of each backup in an Azure blob storage container, not OneDrive ([Storage](#storage)).
+4. **What is a category?** The asking step by default, split further on the details a step names ([Decisions](#decisions)).

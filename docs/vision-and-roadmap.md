@@ -81,8 +81,9 @@ Work sits in three layers, and Josh 360 only adds the top one. The middle layer 
 4. M&A: clinical data transfer
 5. Clinician tech stack and UX
 6. AI scribing utilization
+7. Internal Systems & Applications (added by Josh at the phase 1 question sitting, JP-106, 16 November 2026)
 
-They do not line up one-to-one with the department's areas of responsibility, and they do not need to. Each priority points at the areas or initiatives it covers, and Jira stays the source of truth underneath. Two more homes sit beside the six:
+They do not line up one-to-one with the department's areas of responsibility, and they do not need to. Each priority points at the areas or initiatives it covers, and Jira stays the source of truth underneath. Two more homes sit beside the seven:
 
 - **DevEx** is a real priority that only Josh 360 shows. Josh would not list it in front of the department.
 - **Unassigned** is left honest. Nothing is forced into a bucket, so distractions can be counted.
@@ -349,7 +350,7 @@ The system may make itself better without Josh. It may never reduce Josh's overs
 | A flood of suggestions that feels like debt | A cap on open improvement tickets, set at five. New patterns wait in the ledger until one closes. |
 | The harness grows with every fix | A size budget for what a session loads. A change that adds instructions must stay inside it or remove something. A script is preferred to more instructions, and unused items are proposed for retirement as readily as new ones are proposed. |
 | Paying a model to watch | No model runs per turn. There is one small call for a session that earns it and one run a week, and both appear in the cost records, so what improving costs can be set against what it saves. The Atlas per-turn summary worker is retired. The inventory decides whether claude-mem and the Obsidian transcript staging are replaced too, so that this is not a fourth thing reading transcripts. |
-| It turns into a critic of Josh | Every kind of friction on the list is a way the system let Josh down. Nothing rates his choices. Time spent outside the six priorities shows on his own view and feeds no ticket. |
+| It turns into a critic of Josh | Every kind of friction on the list is a way the system let Josh down. Nothing rates his choices. Time spent outside the seven priorities shows on his own view and feeds no ticket. |
 | An agent grades its own work | The working agent never writes its debrief, and the agent that drafts a change never judges it. The ledger does, from facts. |
 | Patient data reaches the ledger | The debrief stores codes and pointers, never quoted text, and the model that writes it has no tools. |
 | A transcript carries text meant to steer the reviewer | Transcripts are treated as data. The debrief can only fill in its form, and any change still passes the Ready gate and a separate reviewer. |
@@ -446,7 +447,7 @@ The gate to phase 3: a forwarded email becomes a signed-off deliverable in one r
 
 ### Phase 3: reflection
 
-- The dashboard: last week at a glance, with work shown under the six priorities, DevEx and Unassigned.
+- The dashboard: last week at a glance, with work shown under the seven priorities, DevEx and Unassigned.
 - Weekly priorities.
 - The personal side: Linear and Family Hub.
 

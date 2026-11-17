@@ -75,7 +75,8 @@ SAMPLE_REGISTRY = {
     ],
 }
 
-STANDING = ["athena", "equip", "pims", "ma-clinical-data-transfer", "clinician-tech-stack-ux", "ai-scribing-utilization"]
+STANDING = ["athena", "equip", "pims", "ma-clinical-data-transfer", "clinician-tech-stack-ux", "ai-scribing-utilization",
+            "internal-systems-applications"]
 
 SAMPLE_PRIORITIES = {
     "version": 1,
@@ -318,7 +319,7 @@ class TheCheckerRefusesABadRegistry(unittest.TestCase):
         def bad_key(p): p["priorities"][0]["covers"]["initiatives"] = ["tech 1"]
         def area_unknown(p): p["priorities"][2]["covers"]["areas"] = ["Nowhere"]
         def seventh_standing(p): p["priorities"].append(
-            {"id": "extra", "name": "Extra", "kind": "standing", "rank": 7, "covers": {}})
+            {"id": "extra", "name": "Extra", "kind": "standing", "rank": 8, "covers": {}})
         self.refused(missing_standing, "pims", target="priorities")
         self.refused(no_unassigned, "unassigned", target="priorities")
         self.refused(unassigned_covers, "unassigned", "covers", target="priorities")

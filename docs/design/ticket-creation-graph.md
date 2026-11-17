@@ -175,7 +175,7 @@ The Jira searcher runs on the cheap tier, as Josh decided. It searches JP, AD an
 - **A Done or Cancelled match**: a new ticket, linked to the old one with Relates, with the old key in **Parent or related**.
 - **No match**: a new ticket on the light or the full path.
 
-The open-match comment still goes through the approval card, because at first every write does (see [Question for Josh](#question-for-josh)). The searcher's misses are counted: when Josh drops a new ticket at the card as a duplicate, or cancels one later as a duplicate, the ledger records a miss against the searcher. Josh's notes set the rule for those numbers: if the cheap tier misses matches, this one step moves to mid.
+The open-match comment still goes through the approval card, because at first every write does (Josh's answer, see [Question for Josh](#question-for-josh)). The searcher's misses are counted: when Josh drops a new ticket at the card as a duplicate, or cancels one later as a duplicate, the ledger records a miss against the searcher. Josh's notes set the rule for those numbers: if the cheap tier misses matches, this one step moves to mid.
 
 ## What the agent may infer
 
@@ -487,7 +487,7 @@ The four questions are answered in [What the agent may infer](#what-the-agent-ma
 
 ## Question for Josh
 
-One question, for the JP-106 sitting. The design works on the recommended option until Josh answers.
+Josh answered at the JP-106 sitting on 16 November 2026: **option 1, every input gets one card at first** (recorded in `docs/decisions.md`). The table is kept for the reasoning.
 
 **Which new tickets should come to Josh on the approval card?**
 
