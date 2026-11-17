@@ -1,0 +1,7 @@
+test_enough_material_means_no_model (test_ledger_summary.Summaries.test_enough_material_means_no_model)
+JP-108 scenario 1, with the first line copied. ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.073s
+
+OK
