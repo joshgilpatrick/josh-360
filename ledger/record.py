@@ -7,6 +7,7 @@ the one network read (a ticket's epic in Jira) is the injected `jira` callable.
     runs (step runs, asks, ticket links) have something to point at.
   - A session has "gone quiet" when its `SessionEnd` fired or its transcript has not grown for 30 minutes. Then, and
     only then, the episode is written: its times, folder, branch, title, turns, refs, ticket link and home.
+  - A `TicketOffer` spool line (JP-110) writes a `ticket_offers` row, and for a yes a `ticket_links` row (ledger/offer.py).
   - A resumed session that goes quiet again gets the next episode. Rows already written are never touched.
   - Each session is written in its own transaction, so one bad session never stops the others.
   - A session whose folder is inside a `.phi` folder stores no title. Any other title is stored after the screen.
@@ -29,7 +30,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from ledger import _repo  # noqa: E402,F401
 from laptop import common  # noqa: E402
-from ledger import costs, db, homes, sessions, spool, state_notes, transcript  # noqa: E402
+from ledger import costs, db, homes, offer, sessions, spool, state_notes, transcript  # noqa: E402
 from ledger.text import short_text  # noqa: E402
 
 BY = "ledger/record.py"
@@ -124,11 +125,19 @@ def _ensure(conn, counts, *, sid, now, by, started_at, started_by, folder=None, 
     return uid
 
 
-def _read_spool(conn, state, spool_dir: Path, now: str, counts) -> None:
+def _read_spool(conn, state, spool_dir: Path, now: str, counts, registry: Optional[dict] = None) -> None:
     lines, new_mark = spool.read_since(spool_dir, state["spool"])
     for line in lines:
         sid = line.get("session_id")
         if not isinstance(sid, str) or not sid:
+            continue
+        if line.get("event") == offer.EVENT:  # the ticket offer and Josh's answer (JP-110)
+            try:
+                with db.transaction(conn):
+                    counts["offers"] += offer.write_offer(conn, line, now, registry or {}, by=BY)
+            except Exception as e:  # noqa: BLE001
+                _log("could not write a ticket offer line: {}".format(type(e).__name__))
+                counts["skipped"] += 1
             continue
         info = _info(state, sid)
         if line.get("transcript_path"):
@@ -320,9 +329,9 @@ def record_pass(conn, *, now: str, spool: Path, projects: Path, git: GitRun, jir
     `cost_db` is the cost ledger opened read-only (None when it is missing); `claude_home` is where STATE.md files
     are read from (default ~/.claude)."""
     state = state if state is not None else _new_state()
-    counts = {"sessions": 0, "episodes": 0, "refs": 0, "homes": 0, "skipped": 0, "costs": 0, "notes": 0}
+    counts = {"sessions": 0, "episodes": 0, "refs": 0, "homes": 0, "skipped": 0, "costs": 0, "notes": 0, "offers": 0}
     now_epoch = _epoch(now)
-    _read_spool(conn, state, spool, now, counts)
+    _read_spool(conn, state, spool, now, counts, conventions.get("registry"))
     paths = _find_transcripts(projects, now_epoch)
     for sid, info in list(state["sessions"].items()):  # a transcript the spool named, wherever it is
         named = info.get("transcript")
