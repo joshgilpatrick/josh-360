@@ -18,14 +18,17 @@ The ledger: the local, append-only record of every agent session, graph run and 
 | `sessions.py`, `transcript.py`, `record.py` | The recorder: the `sessions` row at start, then episodes from transcript metadata (never message text), git and the spool. The `ledger-record` job runs it every 5 minutes. |
 | `homes.py`, `jira_read.py` | Where a session belongs, worked out with no model: ticket key, ticket links, registry, else unassigned. One read-only Jira call. |
 | `costs.py`, `state_notes.py` | Copy cost, ticket links and titles from the cost ledger, and the notes in STATE.md. Nothing is copied from a `.phi` folder. |
-| `ask.py` | The one read command for working agents: six queries, read-only, at most 20 rows and 4096 bytes. |
+| `ask.py` | The one read command for working agents: six queries, read-only, at most 20 rows and 4096 bytes. `changes --live` adds each row's ticket status and pull request state, read from Jira and GitHub now. |
 | `correct.py` | Withdraws a row with a correction row (and can undo it once); rows are never edited or deleted. |
 | `backup.py`, `redact.py` | A daily verified gzip backup (14 daily, 8 weekly; the Azure copy is JP-150), and the one way to overwrite patient data found in a cell. Josh runs `redact.py` at a terminal. |
 | `backfill.py` | The one-time backfill of history from Session Atlas and old transcripts (the `ledger-backfill` job). |
+| `loose_ends.py`, `closeout.py`, `live.py` | Loose ends, worked out when asked (JP-109): six kinds checked live against git, GitHub and Jira, nothing stored; `keep` marks a branch kept on purpose; `closeout.py` proposes an action per item and, with `--apply`, does only the reversible ones. `live.py` reads a ticket's status and a pull request's state, or "unknown". |
 | `codes.json` | The code lists that grow over time: friction facts, debrief kinds and endings, and the ordered rules that say who started a session (`started_by_env`). Writers refuse a code not listed here. |
 
 The design, with what each table is for, where today's stores go and the questions for Josh: `docs/design/data-model.md`. The build plan: `docs/superpowers/plans/2026-11-16-ledger.md` (JP-107).
 
 ## Status
+
+Loose ends and the closeout agent (JP-109, 17 November 2026): `python3 ledger/loose_ends.py` lists them, `/closeout` calls the agent. Proof: `docs/proof/2026-11-17/JP-109/README.md`.
 
 Built (JP-107, 17 November 2026): the database and its migrations, the recorder, homes, costs and notes, the read command, backup, redaction and the backfill. Proof: `docs/proof/2026-11-17/JP-107/README.md`. The design was amended by JP-148 and JP-149 (the JP-146 review's fixes, Josh's patient-data rule, local sessions only). Later tickets add the writers for the other tables (`docs/design/data-model.md`, "Who writes what"); the Azure copy of the backups is JP-150. No patient data in any file here.

@@ -1,0 +1,6 @@
+test_skipping_the_system_costs_nothing (tests.test_loose_ends.Scenarios.test_skipping_the_system_costs_nothing) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.453s
+
+OK

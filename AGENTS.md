@@ -13,7 +13,7 @@
 
 ## Workflow
 
-This repo follows `docs/WORKFLOW.md` (tickets, design gate, proof, review ceremony, merge). Values: `.claude/workflow.config.md`. Skills in `.claude/skills/`: `ticket-lifecycle`, `design-handoff`, `pr-proof`, `review-ceremony`, `workflow-roles`. Commands: `/design`, `/build`, `/fix`, `/review-pr`, `/ship`, `/session-end`.
+This repo follows `docs/WORKFLOW.md` (tickets, design gate, proof, review ceremony, merge). Values: `.claude/workflow.config.md`. Skills in `.claude/skills/`: `ticket-lifecycle`, `design-handoff`, `pr-proof`, `review-ceremony`, `workflow-roles`. Commands: `/design`, `/build`, `/fix`, `/review-pr`, `/ship`, `/session-end`, `/closeout`.
 
 Status and history live in Jira (project `JP`, epic JP-94, label `josh-360`). There is no status file in the repo.
 
@@ -50,6 +50,7 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - Laptop inventory (JP-96, run on the laptop only, read-only, standard library only): `python3 scripts/laptop_inventory.py --out ~/josh-360-inventory.json`
 - What the laptop has installed: `python3 laptop/status.py show` (reads the `laptop-status` branch).
 - Install: merging to `main` installs on the laptop on its own (JP-105). Code that runs on the laptop uses Python 3.9 and the standard library only. A new background job is an entry in `jobs.yaml`; a new Claude Code hook is an executable file in `hooks/<Event>/`; a new install step goes in `STEPS` in `laptop/install.py`.
+- Loose ends (JP-109, laptop only; read-only apart from `keep`): `python3 ledger/loose_ends.py` (add `--session <id>`, `--json`, `--fetch`); mark a branch kept on purpose with `python3 ledger/loose_ends.py keep --folder <path> --branch <name>`; `python3 ledger/closeout.py` proposes, `--apply` does the reversible ones; `/closeout` calls the closeout agent.
 - Pause the laptop from the cloud: push a branch named `laptop-pause`; delete it to resume.
 - Feature tree (JP-143): `python3 scripts/feature_tree.py check`, and `build` after editing `docs/design/feature-tree/tree.yaml`.
 - Architecture page (JP-144): `python3 scripts/architecture_page.py check`, and `build` after editing the feature tree or anything in `docs/design/architecture/`.
