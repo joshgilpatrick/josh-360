@@ -59,8 +59,12 @@ def real_port(environ=None) -> JiraPort:
 
 
 def _outlook_tool(environ) -> Path:
+    """The draft tool: the one JOSH360_OUTLOOK_TOOL names, else the first default that exists under the given HOME."""
     named = environ.get("JOSH360_OUTLOOK_TOOL")
-    for candidate in ([named] if named else []) + list(OUTLOOK_TOOLS):
+    home = environ.get("HOME")
+    candidates = [named] if named else [
+        (str(Path(home) / c[2:]) if home and c.startswith("~/") else c) for c in OUTLOOK_TOOLS]
+    for candidate in candidates:
         path = Path(candidate).expanduser()
         if path.is_file():
             return path

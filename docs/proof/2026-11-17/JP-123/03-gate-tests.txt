@@ -4,6 +4,6 @@ test_return_comments_moves_and_flags (test_nondev_ticket_gates.ReturnToTriage.te
 test_run_again_does_not_repeat_the_comment (test_nondev_ticket_gates.ReturnToTriage.test_run_again_does_not_repeat_the_comment) ... ok
 
 ----------------------------------------------------------------------
-Ran 96 tests in 0.132s
+Ran 98 tests in 0.154s
 
 OK

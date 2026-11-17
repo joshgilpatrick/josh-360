@@ -196,6 +196,21 @@ class OutlookDraft(Case):
         with self.assertRaises(GateError):
             ticket_port.outlook_draft("a@b.co", "s", self.root / "x.md", {"JOSH360_OUTLOOK_TOOL": "/nope", "HOME": "/nope"})
 
+    def test_a_named_tool_that_is_missing_does_not_fall_back_to_the_defaults(self):
+        home = self.root / "home"
+        (home / "Development/active/agent_services/agent_tools").mkdir(parents=True)
+        (home / "Development/active/agent_services/agent_tools/outlook_tool.py").write_text("")
+        env = {"JOSH360_OUTLOOK_TOOL": str(self.root / "missing.py"), "HOME": str(home)}
+        with self.assertRaises(GateError):
+            ticket_port.outlook_draft("a@b.co", "s", self.root / "x.md", env)
+
+    def test_the_default_tool_is_looked_for_under_the_given_home(self):
+        home = self.root / "home"
+        (home / "Development/active/agent_services/agent_tools").mkdir(parents=True)
+        tool = home / "Development/active/agent_services/agent_tools/outlook_tool.py"
+        tool.write_text("")
+        self.assertEqual(ticket_port._outlook_tool({"HOME": str(home)}), tool)
+
     def test_a_failed_tool_raises(self):
         body = self.root / "JP-1-answer.md"
         body.write_text("x")
