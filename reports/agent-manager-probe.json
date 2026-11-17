@@ -69,7 +69,37 @@
   },
   "database": {
     "exists": true,
-    "probe_session": null,
+    "probe_session": {
+      "filled_columns": [
+        "id",
+        "name",
+        "tool",
+        "cwd",
+        "status",
+        "archived",
+        "created_at",
+        "last_status_at",
+        "agent_session_id",
+        "pending_inputs",
+        "pending_claimed",
+        "launch_prompt",
+        "sort_order",
+        "acked",
+        "agent_launched_at",
+        "tmux_socket",
+        "after_turn_at",
+        "opened_without_session",
+        "released_launch"
+      ],
+      "row": {
+        "archived": 0,
+        "created_at": 1794959293931468000,
+        "group_name": "",
+        "last_status_at": 1794959293931468000,
+        "status": "starting",
+        "tool": "claude"
+      }
+    },
     "session_statuses": [
       "dead",
       "finished",
@@ -139,11 +169,31 @@
     "survived": true
   },
   "env_names": [],
-  "job": "agent-manager-probe",
-  "path": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
-  "spawn": {
+  "first_spawn": {
     "attempt": 2,
     "code": 1,
     "error": "agent-manager: claude is not installed; install it with: curl -fsSL https://claude.ai/install.sh | bash"
+  },
+  "job": "agent-manager-probe",
+  "path": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+  "spawn": {
+    "attempt": 1,
+    "code": 0,
+    "error": "",
+    "fields": [
+      "agent_session_id",
+      "archived",
+      "directory",
+      "group",
+      "id",
+      "name",
+      "running",
+      "self",
+      "status",
+      "tool"
+    ],
+    "json": true,
+    "path_first": "/Users/jgilpatrick/.local/bin",
+    "session_id": "af9a048b"
   }
 }
