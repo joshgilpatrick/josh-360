@@ -1,0 +1,20 @@
+{
+  "actions": [
+    "not loaded; nothing to bootout",
+    "moved the plist to /Users/jgilpatrick/Archive/josh-360-retired/2026-11-16/focus-dashboard"
+  ],
+  "archived_to": "/Users/jgilpatrick/Archive/josh-360-retired/2026-11-16/focus-dashboard",
+  "dry_run": false,
+  "job": "retire-focus-dashboard",
+  "label": "com.eventus.focus-dashboard",
+  "result": "ok",
+  "session_focus": {
+    "files": 0,
+    "folder_exists": true
+  },
+  "settings": {
+    "focus_hooks_named": [],
+    "settings_found": true
+  },
+  "was_loaded": false
+}
