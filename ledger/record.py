@@ -29,7 +29,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from ledger import _repo  # noqa: E402,F401
 from laptop import common  # noqa: E402
-from ledger import costs, db, homes, sessions, spool, state_notes, transcript  # noqa: E402
+from ledger import costs, db, friction, friction_write, homes, sessions, spool, state_notes, transcript  # noqa: E402
 from ledger.text import short_text  # noqa: E402
 
 BY = "ledger/record.py"
@@ -265,6 +265,8 @@ def write_episode(conn, sid: str, path: Path, meta, *, ended_at: Optional[str], 
                     "SELECT COUNT(*) FROM session_state_notes WHERE session_uid = ? AND episode = ? AND kind = ?",
                     (uid, episode, kind)).fetchone()[0], now, by)
         _fact(conn, uid, episode, "compactions", meta.compactions, now, by)
+        _friction(conn, uid, episode, path, meta, sub is not None, started_by_row(conn, uid), folder, claude_home,
+                  now, by)
         ep = {"episode": episode, "folder": folder, "repo": facts["repo"], "branch": meta.branch}
         if homes.write_home_if_changed(conn, homes.find_home(uid, ep, conn, conv, jira), now):
             counts["homes"] += 1
@@ -301,6 +303,29 @@ def _fact(conn, uid: str, episode: int, fact: str, value: int, now: str, by: str
                      "VALUES (?, ?, ?, ?, ?, ?)", (uid, episode, fact, value, now, by))
 
 
+def started_by_row(conn, uid: str) -> Optional[str]:
+    row = conn.execute("SELECT started_by FROM sessions WHERE session_uid = ?", (uid,)).fetchone()
+    return row[0] if row else None
+
+
+def _friction(conn, uid, episode, path: Path, meta, is_subagent: bool, started_by: Optional[str],
+              folder: Optional[str], claude_home: Optional[Path], now: str, by: str) -> None:
+    """The friction facts and usage of the episode (JP-112), from the transcript lines this episode covers. All or
+    nothing for the episode's facts, and a failure here is logged and never stops the episode. The size of the
+    instruction files is counted only when the caller names its claude home (the real recorder and the backfill do)."""
+    conn.execute("SAVEPOINT friction")
+    try:
+        who = friction.who_for(started_by, is_subagent)
+        facts = friction.read(path, who=who, start_offset=meta.start_offset, end_offset=meta.end_offset)
+        files = friction.instruction_files(folder, claude_home) if claude_home is not None and not is_subagent else []
+        friction_write.record_episode(conn, uid, episode, facts, now, instructions=files, by=by)
+        conn.execute("RELEASE friction")
+    except Exception as e:  # noqa: BLE001
+        conn.execute("ROLLBACK TO friction")
+        conn.execute("RELEASE friction")
+        _log("friction facts skipped for episode {} of {}: {}: {}".format(episode, uid, type(e).__name__, e))
+
+
 def _link_ticket(conn, uid: str, branch: str, conv: dict, now: str, by: str = BY) -> None:
     key = homes.TICKET_BRANCH.match(branch).group(1)
     tracker = homes._tracker_for(key, conv["registry"])
@@ -318,7 +343,7 @@ def record_pass(conn, *, now: str, spool: Path, projects: Path, git: GitRun, jir
                 claude_home: Optional[Path] = None) -> Dict[str, int]:
     """One pass. `state` holds the spool mark and each transcript's offset; pass the same dict to the next pass.
     `cost_db` is the cost ledger opened read-only (None when it is missing); `claude_home` is where STATE.md files
-    are read from (default ~/.claude)."""
+    are read from (default ~/.claude) and where the size of the instruction files is counted (only when given)."""
     state = state if state is not None else _new_state()
     counts = {"sessions": 0, "episodes": 0, "refs": 0, "homes": 0, "skipped": 0, "costs": 0, "notes": 0}
     now_epoch = _epoch(now)
@@ -402,7 +427,8 @@ def main() -> int:
     jira = lambda key: jira_read.ticket_context(key, fetch, names)  # noqa: E731
     try:
         counts = record_pass(conn, now=now, spool=spool.spool_dir(), projects=Path.home() / ".claude" / "projects",
-                             git=real_git, jira=jira, conventions=conv, state=state, cost_db=cost_db)
+                             git=real_git, jira=jira, conventions=conv, state=state, cost_db=cost_db,
+                             claude_home=Path.home() / ".claude")
         daily = state.get("rehomed") != now[:10]
         if daily:  # once a day: the registry or a ticket's epic may have changed, and costs may have been re-priced
             counts["homes"] += rehome_recent(conn, now, jira, conv)["homes"]

@@ -270,7 +270,7 @@ class Recorder(LedgerCase):
         self.assertEqual(self.rows("SELECT ticket_key, source FROM ticket_links ORDER BY source"),
                          [("JP-900", "branch"), ("JP-902", "jira-command")])
         self.assertEqual(self.rows("SELECT fact, value FROM session_facts ORDER BY fact"),
-                         [("compactions", 1), ("dead_ends", 1), ("u_turns", 1)])
+                         [("compactions", 1), ("dead_ends", 1), ("seconds_working", 600), ("u_turns", 1)])
 
     def test_phi_folder_stores_no_notes_or_cost_ledger_title(self):
         """Review Focus 6: nothing from STATE.md, and no title from the cost ledger either."""
