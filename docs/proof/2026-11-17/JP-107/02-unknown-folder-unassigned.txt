@@ -1,0 +1,5 @@
+test_an_unknown_folder_stays_honest (test_ledger_record.Recorder.test_an_unknown_folder_stays_honest)
+JP-107 scenario 2, end to end: no ticket on the branch, a folder the registry does not list. ... ok
+----------------------------------------------------------------------
+Ran 1 test in 0.093s
+OK
