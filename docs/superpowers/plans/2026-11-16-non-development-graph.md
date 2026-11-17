@@ -50,7 +50,7 @@
 ### Task 1: Shared gate plumbing
 
 **Files:**
-- Create: `graphs/gates/lib/__init__.py` (empty), `graphs/gates/lib/gate_io.py`, `graphs/gates/lib/jira.py`, `graphs/gates/lib/evidence.py`
+- Create: `graphs/gates/lib/gate_io.py` (`graphs/gates/lib/__init__.py` exists, JP-149), `graphs/gates/lib/jira.py`, `graphs/gates/lib/evidence.py`
 - Test: `graphs/tests/test_gate_lib.py`
 
 **Interfaces:**
@@ -58,7 +58,7 @@
   - `gate_io.read_inputs(environ: Mapping[str, str], names: list[str]) -> dict[str, str]` returns the `GRAPH_INPUT_<NAME>` values. A missing name raises `GateError`.
   - `gate_io.emit(outcome: str, outputs: dict | None = None, summary: str = "") -> str` prints and returns one JSON line.
   - `gate_io.main(run, names, environ=os.environ, deps=None) -> int` reads the inputs, calls `run(inputs, deps)`, which returns `{"outcome", "outputs"?, "summary"?}`, emits the result and returns 0. A `GateError` prints to stderr and returns 1.
-  - `jira.JiraClient(site, email, token, transport=urllib_transport)` with `get_issue(key) -> dict` (fields `status`, `summary`, `description` as plain text, `properties`), `comments(key) -> list[dict]` (`author`, `body`, `created`), `add_comment(key, body) -> str` (returns the id after reading it back), `transition(key, transition_id) -> str` (returns the status read back). `transport(method, url, headers, body) -> (status, dict)` is the injection point.
+  - `jira.JiraClient(site, email, token, transport=urllib_transport)` with `get_issue(key) -> dict` (fields `status`, `summary`, `description` as plain text, `properties`), `comments(key) -> list[dict]` (`author`, `body`, `created`), `add_comment(key, body) -> str` (returns the id after reading it back), `transition(key, transition_id) -> str` (returns the status read back). `transport(method, url, headers, body) -> (status, dict)` is the injection point. **GitHub and Jira are the firm guard (JP-149):** every method that writes text to Jira runs `patient_data.scan(text, None, False, external=True)` (`graphs/gates/lib/patient_data.py`, on `main`) on that text first and refuses the write on any problem, naming the kind, never the text; a test writes made-up `MRN 1234` and expects the refusal with no request sent.
   - `jira.from_env(environ) -> JiraClient` reads `ACTION_AGENT_JIRA_SITE` (default `https://eventuswh-analytics.atlassian.net`), `ACTION_AGENT_JIRA_EMAIL` and `ACTION_TRIAGE_JIRA_TOKEN`, as action-triage does.
   - `evidence.load(path: Path) -> dict` parses the YAML-like front block of the evidence contract (`graphs/contracts/evidence.md`) with a stdlib parser for that block's flat keys and list of mappings. It raises `GateError` on a missing block.
   - `gate_io.GateError(Exception)`.
