@@ -71,6 +71,16 @@ def user_version(conn: sqlite3.Connection) -> int:
     return conn.execute("PRAGMA user_version").fetchone()[0]
 
 
+def header_version(path: Path) -> int:
+    """user_version read straight from the file header, so a check opens no connection and leaves no -wal or -shm
+    file behind (the install step must change nothing when the ledger is current)."""
+    with path.open("rb") as f:
+        head = f.read(100)
+    if len(head) < 100 or not head.startswith(b"SQLite format 3\x00"):
+        raise ValueError("not a SQLite database")
+    return int.from_bytes(head[60:64], "big")
+
+
 def newest_version(migrations: Path = MIGRATIONS) -> int:
     """The version a fully migrated ledger has: 1, or the number of the newest migration file."""
     found = [int(m.group(1)) for m in (MIGRATION_NAME.match(p.name) for p in migrations.glob("*.sql")) if m]
