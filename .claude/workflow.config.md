@@ -22,7 +22,7 @@ The per-project values the workflow skills read. The rules themselves are in `do
 | CI setup | `pip install -r requirements.txt` (PyYAML, for `scripts/conventions.py`) on Python 3.12, plus Node 22 for `apps/session-atlas` and the hook tests, `ubuntu-latest` |
 | Boards | `docs/design/views/<view>/` with a README |
 | Proof files | `docs/proof/YYYY-MM-DD/JP-<n>/` (not `deliverables/`, which Josh's global rules retire) |
-| Decisions | Choices that can be undone take the recommended option and go in `docs/decisions.md`. Design questions are batched to Josh once per phase (JP-106 for phase 1). |
+| Decisions | Choices that can be undone take the recommended option and go in the ticket's own file, `docs/decisions/JP-<n>.md`. Design questions are batched to Josh once per phase (JP-106 for phase 1). |
 | Needs Josh's confirmation in the thread | a permanent deletion (files, branches with unmerged work, tickets, data); a write to a shared database or to an app other people use |
 | Never a test or deploy target | any Eventus production database or shared app (Synapse, Apps SQL, Bifrost logs, Snowflake, Jira automation, other people's repos); tests use made-up sample data |
 | Deploy | Merging to `main` installs on the laptop within about 10 minutes (JP-105): the `follow` job moves `~/.josh-360/repo` to `main`, runs `laptop/install.py`, and reports on the `laptop-status` branch. Pause with a `laptop-pause` branch, or `laptop/pause.py on` on the laptop. Laptop-side code must run on Python 3.9 with the standard library only. |

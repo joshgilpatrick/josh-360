@@ -35,6 +35,9 @@ Checks:
  14. JP-114: every graph has an up-to-date JSON copy in graphs/compiled/ (graphs/tools/compile_graphs.py --check),
      which the walker reads on the laptop; the walker's files parse as Python 3.9.
 
+ 15. JP-153: the per-ticket decision files in docs/decisions/ pass scripts/decisions.py check, and no default-choice
+     row is left in the old shared table in docs/decisions.md.
+
 Tickets that add code add their own checks here or beside it. Exit 0 when everything passes, 1 otherwise.
 """
 from __future__ import annotations
@@ -68,6 +71,9 @@ REQUIRED = [
 LAYOUT = [
     "README.md",
     "docs/decisions.md",
+    "docs/decisions/README.md",
+    "scripts/decisions.py",
+    ".gitattributes",
     "docs/vision-and-roadmap.md",
     "docs/source-notes/README.md",
     ".gitignore",
@@ -415,6 +421,9 @@ def main() -> int:
     code, output = run_quietly(["scripts/architecture_page.py", "check"])
     if code != 0:
         problems.append(f"architecture page check failed:\n{output}")
+    code, output = run_quietly(["scripts/decisions.py", "check"])
+    if code != 0:
+        problems.append(f"decision files check failed (JP-153):\n{output}")
     if "--fast" not in sys.argv[1:]:
         code, output = run_quietly(["-m", "unittest", "discover", "-s", "graphs/tests"])
         if code != 0:
