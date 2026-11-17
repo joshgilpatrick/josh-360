@@ -322,9 +322,10 @@ class Jira:
 
     def link(self, kind: str, outward: str, inward: str) -> bool:
         """Link two tickets. kind is a link type name ("Blocks", "Relates"); for Blocks, `outward` blocks `inward`.
-        True only when the read-back shows the link (also when it already existed)."""
+        True only when the read-back shows the link in that direction (also when it already existed). A link the
+        other way round (inward blocks outward) is not this link and is never taken for it."""
         existing = self.get(outward, ["issuelinks"])
-        if existing is not None and _has_link(existing["links"], kind, inward):
+        if existing is not None and self._has_link(existing["links"], kind, inward):
             return True
         body = {"type": {"name": kind}, "outwardIssue": {"key": outward}, "inwardIssue": {"key": inward}}
         try:
@@ -332,14 +333,26 @@ class Jira:
         except JiraError:
             return False
         after = self.get(outward, ["issuelinks"])
-        return after is not None and _has_link(after["links"], kind, inward)
+        return after is not None and self._has_link(after["links"], kind, inward)
 
+    def _has_link(self, links: List[dict], kind: str, other: str) -> bool:
+        """Does `links` (a ticket's issuelinks) hold `kind` pointing out to `other`? An entry that points in (an
+        inwardIssue) is the opposite direction, and counts only for a type that reads the same from both ends."""
+        same_kind = [x for x in links if str((x.get("type") or {}).get("name", "")).casefold() == kind.casefold()]
+        if any((x.get("outwardIssue") or {}).get("key") == other for x in same_kind):
+            return True
+        if any((x.get("inwardIssue") or {}).get("key") == other for x in same_kind):
+            return self._symmetric(kind)
+        return False
 
-def _has_link(links: List[dict], kind: str, other: str) -> bool:
-    for link in links:
-        if str((link.get("type") or {}).get("name", "")).casefold() != kind.casefold():
-            continue
-        for side in ("outwardIssue", "inwardIssue"):
-            if (link.get(side) or {}).get("key") == other:
-                return True
-    return False
+    def _symmetric(self, kind: str) -> bool:
+        """True when the link type reads the same from both ends ("relates to"). Unknown is not symmetric."""
+        try:
+            parsed = self._ok(self._call("GET", "/rest/api/3/issueLinkType"), "linktypes")
+        except JiraError:
+            return False
+        rows = parsed.get("issueLinkTypes", []) if isinstance(parsed, dict) else []
+        for row in rows:
+            if str(row.get("name", "")).casefold() == kind.casefold():
+                return bool(row.get("inward")) and row.get("inward") == row.get("outward")
+        return False
