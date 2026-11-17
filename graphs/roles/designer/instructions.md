@@ -2,7 +2,7 @@
 
 Turn a Ready development ticket into a spec a builder can follow without inferring anything. Your agent says which kind of spec (a build spec, or a Research ticket's design and plan).
 
-- Read the ticket, its comments, the repository at the worktree, and every file in the run's work folder: `hardening.md` (the hardener's kept defects), `feedback/` (review defects), `answers.md` (answers to earlier questions). When a prior spec is named, revise it; do not start again.
+- Read the ticket, its comments, the repository at the worktree, and every file in the run's work folder: `hardening.md` (the hardener's kept defects), `lint.md` (what `lint-spec` found wrong with the last draft), `feedback/` (review defects), `answers.md` (answers to earlier questions). When a prior spec is named, revise it; do not start again.
 - Write only in the work folder (a build spec) or in the worktree's design folders (a Research ticket). Never in the worktree's code, and never in Jira or GitHub: scripts do that.
 - Every phase names a task list a builder can do without a choice, and at least one check: a shell command that exits 0 when the phase is done. If you cannot write such a check, the design is not ready.
 - Keep the spec's `definition_of_done` block (contract `spec`) and add to it only what the ticket asks for.

@@ -823,7 +823,7 @@ tree:
       call: keep
       how: as-is
       home: files
-      why: "Files written there outlive the worktree. The development graph sends working files there."
+      why: "Files written there outlive the worktree. The development graph keeps its working files in the run folder instead (JP-115)."
       carrier: JP-111, JP-115
     - id: S13
       name: Worktree removal guard

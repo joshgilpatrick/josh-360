@@ -142,6 +142,8 @@ def cmd_record(conn, root: Path, args) -> dict:
         session_uid = ledgerio.ensure_session(conn, args.tool, args.session, ledgerio.now())
     runfolder.save_outputs(run.doc, args.step, outputs)
     run.save()
+    if isinstance(outputs.get("answer"), str) and outputs["answer"].strip():
+        runfolder.append_answer(args.run, args.step, outputs["answer"], ledgerio.now())
     ledgerio.end_step(conn, run.rows[-1]["id"], outcome, ledgerio.now(), args.model, session_uid, None)
     return {"recorded": True, "run": args.run, "step": args.step, "outcome": outcome}
 
@@ -195,6 +197,7 @@ def cmd_status(conn, root: Path, args) -> dict:
         "end": ledgerio.run_end(conn, args.run), "stopped": run.doc.get("stopped"),
         "steps": [{k: r[k] for k in ("step", "attempt", "outcome", "allowed")} for r in run.rows],
         "runs": dict(st.runs), "loops": {"{}->{}".format(a, b): n for (a, b), n in sorted(st.loops.items())},
+        "waiting": run.doc.get("waiting"),
         "jira_status": run.doc.get("jira_status"), "flag_on": bool(run.doc.get("flag_on"))}
 
 

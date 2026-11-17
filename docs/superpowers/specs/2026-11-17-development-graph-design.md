@@ -24,10 +24,11 @@
 - [Out of scope](#out-of-scope)
 - [Questions for Josh](#questions-for-josh)
 - [Choices made by default](#choices-made-by-default)
+- [As built](#as-built)
 
 Ticket JP-115 (Story; design, then plan, then build). Status: **approved by Josh on 17 November 2026** in the thread "JP-115 Write the development graph" (merged as PR #39). The build plan is `docs/superpowers/plans/2026-11-17-development-graph.md`. There is no screen, so there are no boards.
 
-Draft graph: `docs/design/development-graph/development.yaml`. It uses one proposed addition to the convention, the `wait` step ([below](#waiting-without-a-session-the-wait-step)), so it stays out of `graphs/flows/` until the build adds that kind. With its two wait steps read as gate steps it passes today's checker (`python3 docs/design/development-graph/check_draft.py`), and the walker's own engine walks it on made-up outcomes through six scenarios (`python3 docs/design/development-graph/dry_walk.py`). Both outputs are saved in `docs/proof/2026-11-17/JP-115/`.
+Draft graph: `docs/design/development-graph/development.yaml` (since moved to `graphs/flows/development.yaml`; see [As built](#as-built)). It used one proposed addition to the convention, the `wait` step ([below](#waiting-without-a-session-the-wait-step)), so it stayed out of `graphs/flows/` until the build added that kind. With its two wait steps read as gate steps it passed the checker then (`python3 docs/design/development-graph/check_draft.py`), and the walker's own engine walked it on made-up outcomes through six scenarios (`python3 docs/design/development-graph/dry_walk.py`). Both outputs are saved in `docs/proof/2026-11-17/JP-115/`.
 
 Sources: Josh's drafted pipeline (`docs/source-notes/jira-ticket-pipeline.yaml`, its roles and scripts, defaults and swimlane), the playbook handoff note, the graph convention (`graphs/CONVENTION.md`), the walker design (`docs/superpowers/specs/2026-11-17-walker-design.md`), the triage design (JP-103, "What JP-115 must carry"), the non-development design (JP-104), `docs/WORKFLOW.md` §4 (the review ceremony), the feature tree (A21 PR audit, S12 durable output), and the JP-146 review comment on the ticket.
 
@@ -464,10 +465,37 @@ These can be undone, so they take the recommended option and are recorded in `do
 | 4 | Spec approval | None for build tickets (gap 1); Josh approves a Research ticket's design | Add an approval ask after `check_harden` |
 | 5 | Who merges | The graph in josh-360 (registry `merges: agent`); Josh everywhere else | Set `merges` per system |
 | 6 | Where working files live | `$JOSH360_RUNS/<run>/work/` from the first step, not the durable output folder (S12) | Point `prepare-worktree` at another folder outside the worktree |
-| 7 | Where the draft lives | `docs/design/development-graph/` until the `wait` step exists | Not needed once the build moves it |
+| 7 | Where the draft lived | `docs/design/development-graph/` until the `wait` step existed; the build moved it to `graphs/flows/development.yaml` and dropped the two draft tools | Not needed |
 | 8 | Where the spec lives | This file (`docs/WORKFLOW.md` §2.4), and the graph at `graphs/flows/development.yaml` (JP-146 review), not `graphs/development/graph.yaml` | |
 | 9 | How answers reach a session | The walker appends answered asks and `answer` outputs to `work/answers.md` | Pass answers through ticket comments |
 | 10 | A pull request closed unmerged | Clean up what is safe, ticket to Cancelled, run ends neutral | Send it back to triage instead |
 | 11 | Failed checks after the audit | The same fixer fixes them, and the fix goes back to the audit (§4.4) | A separate checks fixer that keeps ready-for-human |
 | 12 | A ticket another runner holds | `not_here`, back to triage | Wait for the other runner instead |
 | 13 | Research tickets | Design and plan on the branch, hardened, approved by Josh, merged through the same review stretch; the ticket is Done when they merge | End the run at Josh's approval and leave the pull request to him |
+
+## As built
+
+Built under JP-115 from `docs/superpowers/plans/2026-11-17-development-graph.md` on 17 November 2026. Where the text above says what the build "does" or "will do", read it as done.
+
+- **Where it lives.** The graph is `graphs/flows/development.yaml` with its JSON copy in `graphs/compiled/`. The draft folder `docs/design/development-graph/` and its two tools no longer exist. Fifteen gate scripts are real scripts (`read-dev-ticket`, `prepare-worktree`, `question-route`, `lint-spec`, `verify-build`, `cite-check`, `open-pr`, `queue-audit`, `review-state`, `after-fix`, `merge-rule`, `merge-pr`, `pr-merged`, `clean-up`, `close-unmerged`) and `return-to-triage`, `check-review`, `close-ticket` and `move-ticket` were extended in place. `ready` (JP-122) and `no-loose-ends` (JP-109) are the only gates that are not built here.
+- **The `wait` step.** Added to the convention, the checker and the walker (`graphs/CONVENTION.md`). A wait names a gate that only reads, and answers `pending` or one of the step's outcomes; the walker prints `waiting` and writes its ledger row when the wait ends.
+- **Input changes to the draft graph.** The gates needed more than the draft's step inputs gave them, so these steps gained inputs and nothing else changed (no `max_loops`, tier or `at_limit`): `return_early` takes `reason`; `return_question` takes `phi`; `lint` takes `ticket_key`; `check_harden` takes `plan_path`; `open_pr` and `queue_audit` take `work_dir`; `after_fix` takes `ticket_type` and `branch`; `close_unmerged` takes `repo` and `pr_url`; `close` takes `ticket_type`. `read_ticket` also gained the output `reason`.
+- **Working files.** The spec, state, evidence, answers, review cursor, hardening notes and feedback live in `$JOSH360_RUNS/<run>/work/`. `tests/test_development_graph.py` checks before every gate call that none of them is in a worktree.
+- **Proof.** `docs/proof/2026-11-17/JP-115/README.md` maps each of the seven scenarios above to the test that proves it.
+
+Choices the plan made (all undoable; also in `docs/decisions/JP-115.md`):
+
+| # | Choice | Why | How to undo |
+| --- | --- | --- | --- |
+| 1 | `work/spec.yaml` is written in YAML's JSON form | The laptop's Python has no YAML reader, and a hand-written reader for nested lists of shell commands would be fragile | Add a small YAML reader to `dev_spec.load` |
+| 2 | The development graph works JP tickets only | The shared gates move and comment on JP tickets only; other spaces have their own workflows | Teach `move-ticket` the other spaces' statuses |
+| 3 | A designer's question goes back as a comment and the flag, not as an edit to the ticket's Open questions | It is what JP-123 built and what triage's check C12 reads; the Jira library has no safe way to edit a description | Add a description edit to `lib/jira.py` |
+| 4 | A wait writes its ledger row only when it ends, as step kind `gate` | No ledger schema change, and a wait that is still pending leaves no trace to replay | Add `wait` to the ledger's step kinds |
+| 5 | An audit verdict whose findings cannot be counted is treated as 4 | The safe side is another audit round | Ask Josh instead |
+| 6 | With ready-for-human and no checks reported after 30 minutes, the wait answers `ready`; `merge-pr` still refuses to merge without a green check | Most of Josh's repositories have no check that starts on the label, and the run would otherwise sit for 48 hours | Set `JOSH360_CHECKS_GRACE` higher |
+| 7 | `lint-spec` writes its problems to `work/lint.md` | The designer's next run reads the work folder; a gate's summary reaches no session | Pass them as a step output |
+| 8 | The repository's owner comes from the clone's `origin` remote | The registry holds bare repository names | Add owners to the registry |
+| 9 | When two steps give an output the same name, the one that finished last wins | Today the walker gives the alphabetically last after a reload, which hands the fixer the hardener's findings | Give every output a unique name |
+| 10 | A check that runs past the gate's time budget counts as failed | A stopped run needs Josh; a failed check goes back to the builder | Raise `JOSH360_GATE_TIMEOUT` on the laptop |
+
+Choices made while building are in `docs/decisions/JP-115.md`.

@@ -1,0 +1,16 @@
+test_blocked_audit_asks_josh_and_requeue_goes_round_again (test_development_graph.DevelopmentRun.test_blocked_audit_asks_josh_and_requeue_goes_round_again) ... ok
+test_bug_elsewhere_waits_for_joshs_merge (test_development_graph.DevelopmentRun.test_bug_elsewhere_waits_for_joshs_merge) ... ok
+test_builder_failing_three_times_reaches_josh (test_development_graph.DevelopmentRun.test_builder_failing_three_times_reaches_josh) ... ok
+test_designers_question_on_a_story_goes_back_to_triage (test_development_graph.DevelopmentRun.test_designers_question_on_a_story_goes_back_to_triage) ... ok
+test_five_findings_requeue_then_closed_unmerged (test_development_graph.DevelopmentRun.test_five_findings_requeue_then_closed_unmerged) ... ok
+test_no_working_file_was_ever_in_the_worktree (test_development_graph.DevelopmentRun.test_no_working_file_was_ever_in_the_worktree) ... ok
+test_phi_designers_question_is_withheld (test_development_graph.DevelopmentRun.test_phi_designers_question_is_withheld) ... ok
+test_phi_run_comments_hold_paths_only (test_development_graph.DevelopmentRun.test_phi_run_comments_hold_paths_only) ... ok
+test_research_ticket_runs_the_design_stretch_only (test_development_graph.DevelopmentRun.test_research_ticket_runs_the_design_stretch_only) ... ok
+test_story_in_josh_360_is_merged_by_the_graph (test_development_graph.DevelopmentRun.test_story_in_josh_360_is_merged_by_the_graph) ... ok
+test_ticket_routed_elsewhere_returns_early (test_development_graph.DevelopmentRun.test_ticket_routed_elsewhere_returns_early) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 9.489s
+
+OK

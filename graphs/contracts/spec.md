@@ -20,7 +20,7 @@ The same folder holds the run's other working files: `state.json` (each phase's 
 
 ## Fields
 
-YAML.
+Written in YAML's JSON form: one JSON object, which is also valid YAML. The laptop's Python has no YAML reader, so the scripts read it with `json`, and a spec written as block YAML is refused by `lint-spec`.
 
 | Field | What it holds |
 | --- | --- |
@@ -34,13 +34,14 @@ There is no tier field. Every phase is built by the builder role at its own tier
 
 The five standard items, from Josh's draft:
 
-```yaml
-definition_of_done:
-  - { id: DOD-1, rule: "No placeholders: no TODO, FIXME, stub bodies, NotImplemented, fake data or commented-out code in files this plan changed, unless a phase names it as intended." }
-  - { id: DOD-2, rule: "Every item in a phase's task list is implemented in full." }
-  - { id: DOD-3, rule: "Tests assert the behaviour the phase names. None is skipped, tautological or mocks out the code under test, and at least one test per phase fails when the feature is removed." }
-  - { id: DOD-4, rule: "Every check of every phase ran and passed on the final tree (see evidence.md)." }
-  - { id: DOD-5, rule: "Files changed are the files the phases name." }
+```json
+{"definition_of_done": [
+  {"id": "DOD-1", "rule": "No placeholders: no TODO, FIXME, stub bodies, NotImplemented, fake data or commented-out code in files this plan changed, unless a phase names it as intended."},
+  {"id": "DOD-2", "rule": "Every item in a phase's task list is implemented in full."},
+  {"id": "DOD-3", "rule": "Tests assert the behaviour the phase names. None is skipped, tautological or mocks out the code under test, and at least one test per phase fails when the feature is removed."},
+  {"id": "DOD-4", "rule": "Every check of every phase ran and passed on the final tree (see evidence.md)."},
+  {"id": "DOD-5", "rule": "Files changed are the files the phases name."}
+]}
 ```
 
 ## How the scripts read it

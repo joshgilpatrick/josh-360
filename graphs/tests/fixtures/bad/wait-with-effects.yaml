@@ -1,0 +1,68 @@
+# A made-up graph with a wait step. The checker's and the walker's tests use it; it is not a real graph.
+convention: 1
+graph: wait-with-effects
+title: Sample graph with a wait step
+description: >
+  A made-up ticket is designed and built, then the run waits for a pull request to be merged without
+  holding a session, and Josh is told once it has.
+
+header:
+  jira:
+    - { status: In Progress, steps: [zeta, alpha, hold, confirm, tell] }
+  entry_gate: ready
+  exit_gate: no-loose-ends
+  asks_josh: [confirm]
+  ledger: [run, step, outcome, loop_count, session, tier, graph_version, model]
+  access:
+    zeta: josh
+    alpha: josh
+    hold: read
+    confirm: read
+    tell: josh
+  end_states:
+    finished: success
+    hold.closed: neutral
+
+inputs:
+  ticket_key: { type: string, required: true, description: Jira key of the made-up ticket }
+  system: { type: string, default: none, description: The ticket's system label }
+
+steps:
+  - id: zeta
+    role: designer
+    inputs: [ticket_key]
+    outputs:
+      note: { type: string, description: A note from the designer }
+    outcomes: [ready]
+
+  - id: alpha
+    role: builder
+    needs: [zeta]
+    outputs:
+      note: { type: string, description: A note from the builder }
+    outcomes: [done]
+
+  - id: hold
+    wait: pr-state
+    effects: [move_ticket]
+    needs: [alpha]
+    inputs: [note]
+    outputs:
+      state: { type: string, description: What the pull request is now }
+    outcomes: [merged, closed]
+    on:
+      closed: end
+
+  - id: confirm
+    needs: [hold]
+    ask:
+      question: "The pull request for {{ inputs.ticket_key }} is merged. Anything to add?"
+      choices: [answered]
+
+  - id: tell
+    role: publisher
+    needs: [confirm]
+    inputs: [note]
+    outputs:
+      answer: { type: string, description: What was told }
+    outcomes: [told]

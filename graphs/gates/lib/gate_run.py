@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Dict, List, NamedTuple, Optional, Sequence, Tuple
 
@@ -33,6 +34,9 @@ class Ticket(NamedTuple):
     status: str
     description: str          # plain text
     route: Optional[dict]     # the ticket's josh360.route property, or None
+    summary: str = ""
+    issuetype: str = ""
+    flagged: bool = False
 
 
 class Comment(NamedTuple):
@@ -78,6 +82,9 @@ class Deps:
     def __init__(self, environ=None):
         self.environ = os.environ if environ is None else environ
         self._ticket = None
+        self._github = {}
+        self.run_id = self.environ.get("JOSH360_RUN_ID", "")
+        self.runs_dir = Path(self.environ.get("JOSH360_RUNS") or "~/.josh-360/runs").expanduser()
         self.artifacts_root = artifacts_root(self.environ)
         self.registry_path = Path(__file__).resolve().parents[3] / "conventions" / "registry.json"
         self.mailer = lambda args: run_command(mailer_command(self.environ) + list(args))
@@ -107,6 +114,21 @@ class Deps:
             from lib.ticket_port import real_port   # imported late: a gate that needs no Jira never loads it
             self._ticket = real_port(self.environ)
         return self._ticket
+
+    @property
+    def work_dir(self) -> Path:
+        """This run's work folder: where the spec, the plan and the notes live, outside every repository."""
+        return self.runs_dir / self.run_id / "work"
+
+    def now(self) -> datetime:
+        return datetime.now(timezone.utc)
+
+    def github(self, repo: str):
+        """The GitHub port for one repository, built on first use."""
+        if repo not in self._github:
+            from lib.dev_github import GitHub   # imported late: a gate that needs no GitHub never loads it
+            self._github[repo] = GitHub(repo, self.environ)
+        return self._github[repo]
 
     def draft_email(self, to: str, subject: str, body_path: Path) -> None:
         from lib.ticket_port import outlook_draft

@@ -6,6 +6,7 @@
 - [Where it lives](#where-it-lives)
 - [Fields](#fields)
 - [Patient data](#patient-data)
+- [The development graph's evidence](#the-development-graphs-evidence)
 
 ## What it is
 
@@ -35,3 +36,18 @@ A YAML block at the top, then free notes.
 ## Patient data
 
 When `phi` is true, `summary` and `resolution` stay empty and the ticket, the email to Josh and the ledger carry the paths only. The deliverable, the evidence file and the saved queries may hold patient data because they live outside every repository, in the folder Josh's rules set aside for files meant for his own review.
+
+## The development graph's evidence
+
+The development graph (JP-115) writes its own evidence file, `work/evidence.md` in the run's folder (never in a worktree), every time `verify-build` runs. It starts with a front block the same parser reads, then four sections.
+
+| Front block field | What it holds |
+| --- | --- |
+| `ticket` | The ticket key. |
+| `kind` | `development`. |
+| `base` | The base branch the work was cut from. |
+| `head` | The worktree's head commit when the checks ran. |
+| `checks_total` | How many checks ran. |
+| `checks_passed` | How many exited 0. |
+
+The sections are, in order: **Checks** (phase, command, result and seconds, never the output), **Files changed** (the diff stat against the base), **Placeholder lines** (added lines that match the placeholder pattern from the drafted pipeline) and **Files no phase names**. The last two are reports for the plan reviewer and do not change the outcome. The walker keeps the file with the run when it ends.

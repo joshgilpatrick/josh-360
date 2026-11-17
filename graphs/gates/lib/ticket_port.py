@@ -11,7 +11,7 @@ import os
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from lib.gate_run import Comment, GateError, Ticket
 
@@ -19,6 +19,7 @@ OUTLOOK_TOOLS = ("~/Development/active/agent_services/agent_tools/outlook_tool.p
                  "~/Development/active/josh_projects/agent_tools/outlook_tool.py")
 TEXT_SUFFIXES = (".md", ".txt", ".csv", ".sql")
 MAX_BODY_CHARS = 60000
+AGENT_STATUS_FIELD = "customfield_10453"   # the Agent Status field on the JP project
 
 
 class JiraPort:
@@ -32,7 +33,19 @@ class JiraPort:
         if issue is None:
             raise GateError("{} could not be read from Jira".format(key))
         route = self.jira.get_property(key, "josh360.route")
-        return Ticket(key, issue["status"], issue["description"], route if isinstance(route, dict) else None)
+        return Ticket(key, issue["status"], issue["description"], route if isinstance(route, dict) else None,
+                      issue.get("summary") or "", issue.get("issuetype") or "", bool(issue.get("flagged")))
+
+    def agent_status(self, key: str) -> Optional[str]:
+        """The Agent Status option's value (the field named by JOSH360_AGENT_STATUS_FIELD), or None when it is empty."""
+        field = os.environ.get("JOSH360_AGENT_STATUS_FIELD") or AGENT_STATUS_FIELD
+        issue = self.jira.get(key, [field])
+        if issue is None:
+            raise GateError("{} could not be read from Jira".format(key))
+        value = (issue.get("fields") or {}).get(field)
+        if isinstance(value, dict):
+            return value.get("value") or None
+        return str(value) if value else None
 
     def comments(self, key: str) -> List[Comment]:
         rows = self.jira.comments(key)

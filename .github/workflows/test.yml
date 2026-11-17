@@ -48,6 +48,9 @@ jobs:
         run: pip install -r requirements.txt
       - name: Fast checks
         run: python3 scripts/check.py --fast
+      # JP-115: the gate scripts' own tests (graphs/tests/, stdlib unittest); check.py skips them with --fast.
+      - name: Gate tests
+        run: python3 -m unittest discover -s graphs/tests
       # The full suite adds the tests in tests/ (stdlib unittest; the laptop's Python is 3.9, which
       # scripts/check.py checks by parsing).
       - name: Full suite

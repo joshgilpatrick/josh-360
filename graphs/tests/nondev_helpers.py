@@ -63,8 +63,12 @@ def gate(name: str):
 class FakeTicket:
     """Five calls, all recorded. `fail_on` names a call that raises GateError, as the real port does on no read-back."""
 
-    def __init__(self, description=DESCRIPTION, status="Ready", route=None, comments=None, fail_on=()):
-        self.tickets = {KEY: Ticket(KEY, status, description, route if route is not None else {"graph": "non-development"})}
+    def __init__(self, description=DESCRIPTION, status="Ready", route=None, comments=None, fail_on=(), key=KEY,
+                 summary="", issuetype="", flagged=False, agent_status=None):
+        self.tickets = {key: Ticket(key, status, description,
+                                    route if route is not None else {"graph": "non-development"},
+                                    summary, issuetype, flagged)}
+        self.agent = {key: agent_status}
         self.posted = []        # (key, text)
         self.moves = []         # (key, status)
         self.flags = []         # (key, on)
@@ -80,6 +84,12 @@ class FakeTicket:
         if key not in self.tickets:
             raise GateError("{} could not be read".format(key))
         return self.tickets[key]
+
+    def agent_status(self, key):
+        self._maybe("agent_status")
+        if key not in self.tickets:
+            raise GateError("{} could not be read".format(key))
+        return self.agent.get(key)
 
     def comments(self, key):
         self._maybe("comments")

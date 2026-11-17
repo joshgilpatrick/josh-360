@@ -1,0 +1,1236 @@
+{
+ "agents": {
+  "design-writer": {
+   "fills": "designer",
+   "title": "Design writer"
+  },
+  "spec-writer": {
+   "fills": "designer",
+   "title": "Spec writer"
+  }
+ },
+ "compiled": 1,
+ "graph": {
+  "convention": 1,
+  "description": "Takes a Ready development ticket (a Story, Bug or Task with a repository) and ends with its pull request merged and the ticket Done: a spec hardened by the gate tier, a build checked by scripts, a review that may only cite the spec, the laptop's PR audit, and the working files saved with the run. A Research ticket with a repository runs the design stretch only: its design and plan, approved by Josh, go through the same pull request stretch. Designer questions on a build ticket go back to triage; Josh is asked only for builder and fixer questions no script or spec answers, a blocked audit, a loop limit, and his own merges outside josh-360.\n",
+  "graph": "development",
+  "header": {
+   "access": {
+    "after_fix": "josh",
+    "approve_design": "read",
+    "ask_builder": "read",
+    "ask_design": "read",
+    "ask_fixer": "read",
+    "audit_stuck": "read",
+    "await_merge": "read",
+    "await_review": "read",
+    "build": "josh",
+    "build_stuck": "read",
+    "check_harden": "josh",
+    "cite_check": "josh",
+    "clean_up": "josh",
+    "close": "josh",
+    "close_unmerged": "josh",
+    "design": "josh",
+    "design_stuck": "read",
+    "fix_review": "josh",
+    "harden": "read",
+    "lint": "read",
+    "merge": "josh",
+    "merge_rule": "read",
+    "open_pr": "josh",
+    "prepare": "josh",
+    "queue_audit": "josh",
+    "read_ticket": "read",
+    "return_early": "josh",
+    "return_question": "josh",
+    "review_plan": "read",
+    "review_stuck": "read",
+    "route_question": "read",
+    "triage_question": "read",
+    "verify": "josh",
+    "write_pr": "read"
+   },
+   "asks_josh": [
+    "ask_design",
+    "approve_design",
+    "design_stuck",
+    "ask_builder",
+    "build_stuck",
+    "audit_stuck",
+    "ask_fixer",
+    "review_stuck"
+   ],
+   "end_states": {
+    "ask_fixer.stop": "needs-josh",
+    "audit_stuck.stop": "needs-josh",
+    "build_stuck.stop": "needs-josh",
+    "close_unmerged.cancelled": "neutral",
+    "design_stuck.stop": "needs-josh",
+    "finished": "success",
+    "return_early.returned": "neutral",
+    "return_question.returned": "neutral",
+    "review_stuck.stop": "needs-josh"
+   },
+   "entry_gate": "ready",
+   "exit_gate": "no-loose-ends",
+   "jira": [
+    {
+     "status": "Ready",
+     "steps": [
+      "read_ticket"
+     ]
+    },
+    {
+     "status": "Not Started",
+     "steps": [
+      "return_early",
+      "return_question"
+     ]
+    },
+    {
+     "status": "Design/Planning",
+     "steps": [
+      "prepare",
+      "design",
+      "route_question",
+      "ask_design",
+      "lint",
+      "harden",
+      "check_harden",
+      "approve_design",
+      "design_stuck"
+     ]
+    },
+    {
+     "status": "In Progress",
+     "steps": [
+      "build",
+      "triage_question",
+      "ask_builder",
+      "verify",
+      "review_plan",
+      "cite_check",
+      "build_stuck",
+      "write_pr",
+      "open_pr"
+     ]
+    },
+    {
+     "status": "Code Review",
+     "steps": [
+      "queue_audit",
+      "await_review",
+      "audit_stuck",
+      "fix_review",
+      "ask_fixer",
+      "after_fix",
+      "review_stuck"
+     ]
+    },
+    {
+     "status": "Validation",
+     "steps": [
+      "merge_rule",
+      "merge",
+      "await_merge"
+     ]
+    },
+    {
+     "status": "Cancelled",
+     "steps": [
+      "close_unmerged"
+     ]
+    },
+    {
+     "status": "Done",
+     "steps": [
+      "clean_up",
+      "close"
+     ]
+    }
+   ],
+   "ledger": [
+    "run",
+    "step",
+    "outcome",
+    "loop_count",
+    "session",
+    "tier",
+    "ticket",
+    "started_at",
+    "ended_at",
+    "graph_version",
+    "model"
+   ]
+  },
+  "inputs": {
+   "base_branch": {
+    "default": "main",
+    "description": "The branch the work starts from and the pull request targets",
+    "type": "string"
+   },
+   "phi": {
+    "default": true,
+    "description": "The ticket's phi_risk; true when the ticket does not say",
+    "type": "boolean"
+   },
+   "resume_from": {
+    "default": "none",
+    "description": "The run that returned this ticket to triage (the route record's returned_from), or none",
+    "type": "string"
+   },
+   "system": {
+    "description": "The registry system triage recorded on the route record; it names the repository",
+    "required": true,
+    "type": "string"
+   },
+   "ticket_key": {
+    "description": "The ticket, for example JP-140 or AD-301",
+    "required": true,
+    "type": "string"
+   },
+   "ticket_type": {
+    "description": "Story, Bug, Task or Research, from the ticket. Research runs the design stretch only.",
+    "required": true,
+    "type": "string"
+   }
+  },
+  "outputs": {
+   "evidence_path": {
+    "description": "The evidence file, saved with the run",
+    "type": "string"
+   },
+   "pr_url": {
+    "description": "The merged (or, outside josh-360, Josh-merged) pull request",
+    "type": "string"
+   },
+   "spec_path": {
+    "description": "The spec the work was built from, saved with the run",
+    "type": "string"
+   }
+  },
+  "steps": [
+   {
+    "gate": "read-dev-ticket",
+    "id": "read_ticket",
+    "inputs": [
+     "ticket_key",
+     "ticket_type",
+     "system",
+     "resume_from"
+    ],
+    "outcomes": [
+     "build",
+     "design_only",
+     "not_here"
+    ],
+    "outputs": {
+     "prior_spec": {
+      "description": "The spec saved by the run named in resume_from, or none",
+      "type": "string"
+     },
+     "reason": {
+      "description": "Why the ticket is not workable here, when the outcome is not_here",
+      "type": "string"
+     },
+     "repo": {
+      "description": "owner/name of the repository, from the registry",
+      "type": "string"
+     }
+    }
+   },
+   {
+    "effects": [
+     "move_ticket"
+    ],
+    "gate": "return-to-triage",
+    "id": "return_early",
+    "inputs": [
+     "ticket_key",
+     "reason"
+    ],
+    "needs": [
+     "read_ticket"
+    ],
+    "on": {
+     "returned": "end"
+    },
+    "outcomes": [
+     "returned"
+    ],
+    "when": {
+     "outcome": "not_here",
+     "step": "read_ticket"
+    }
+   },
+   {
+    "gate": "prepare-worktree",
+    "id": "prepare",
+    "inputs": [
+     "ticket_key",
+     "repo",
+     "base_branch"
+    ],
+    "needs": [
+     "return_early"
+    ],
+    "outcomes": [
+     "ready"
+    ],
+    "outputs": {
+     "branch": {
+      "description": "<KEY>-<slug>",
+      "type": "string"
+     },
+     "work_dir": {
+      "description": "<run folder>/work: the spec, evidence, feedback and answers live here, never in the worktree",
+      "type": "string"
+     },
+     "worktree": {
+      "description": "A fresh worktree on the ticket's branch, cut from origin/<base_branch>",
+      "type": "string"
+     }
+    },
+    "when": {
+     "outcome": [
+      "build",
+      "design_only"
+     ],
+     "step": "read_ticket"
+    }
+   },
+   {
+    "agent": {
+     "by": "ticket_type",
+     "default": "spec-writer",
+     "map": {
+      "Research": "design-writer"
+     }
+    },
+    "brief": "Ticket {{ inputs.ticket_key }}, system {{ inputs.system }}. Read the ticket, the repository at the worktree, and every file in the run's work folder (hardening defects, review feedback, answers). If a prior spec is named, revise it rather than starting again.",
+    "id": "design",
+    "inputs": [
+     "ticket_key",
+     "ticket_type",
+     "system",
+     "worktree",
+     "work_dir",
+     "prior_spec",
+     "base_branch"
+    ],
+    "needs": [
+     "prepare"
+    ],
+    "outcomes": [
+     "ready",
+     "needs_input"
+    ],
+    "outputs": {
+     "card": {
+      "description": "The one question, when the outcome is needs_input",
+      "type": "string"
+     },
+     "plan_path": {
+      "description": "The plan written beside a Research ticket's design, else none",
+      "type": "string"
+     },
+     "spec_path": {
+      "contract": "spec",
+      "description": "work_dir/spec.yaml for a build ticket; the design document for a Research ticket",
+      "type": "string"
+     }
+    },
+    "role": "designer"
+   },
+   {
+    "gate": "question-route",
+    "id": "route_question",
+    "inputs": [
+     "ticket_type"
+    ],
+    "needs": [
+     "design"
+    ],
+    "outcomes": [
+     "to_triage",
+     "to_josh"
+    ],
+    "when": {
+     "outcome": "needs_input",
+     "step": "design"
+    }
+   },
+   {
+    "effects": [
+     "move_ticket"
+    ],
+    "gate": "return-to-triage",
+    "id": "return_question",
+    "inputs": [
+     "ticket_key",
+     "phi",
+     "work_dir",
+     "worktree",
+     "card"
+    ],
+    "needs": [
+     "route_question"
+    ],
+    "on": {
+     "returned": "end"
+    },
+    "outcomes": [
+     "returned"
+    ],
+    "when": {
+     "outcome": "to_triage",
+     "step": "route_question"
+    }
+   },
+   {
+    "ask": {
+     "choices": [
+      "answered"
+     ],
+     "question": "The design of {{ inputs.ticket_key }} needs your answer before it can go on."
+    },
+    "id": "ask_design",
+    "needs": [
+     "return_question"
+    ],
+    "on": {
+     "answered": {
+      "at_limit": "design_stuck",
+      "goto": "design",
+      "max_loops": 2
+     }
+    },
+    "when": {
+     "outcome": "to_josh",
+     "step": "route_question"
+    }
+   },
+   {
+    "gate": "lint-spec",
+    "id": "lint",
+    "inputs": [
+     "ticket_key",
+     "ticket_type",
+     "spec_path",
+     "plan_path",
+     "worktree",
+     "work_dir"
+    ],
+    "needs": [
+     "ask_design"
+    ],
+    "on": {
+     "incomplete": {
+      "at_limit": "design_stuck",
+      "goto": "design",
+      "max_loops": 2
+     }
+    },
+    "outcomes": [
+     "complete",
+     "incomplete"
+    ],
+    "when": {
+     "outcome": "ready",
+     "step": "design"
+    }
+   },
+   {
+    "brief": "Attack the spec for {{ inputs.ticket_key }}. One pass. Only what would make a builder fail or guess.",
+    "id": "harden",
+    "inputs": [
+     "ticket_key",
+     "ticket_type",
+     "spec_path",
+     "plan_path",
+     "worktree"
+    ],
+    "needs": [
+     "lint"
+    ],
+    "outcomes": [
+     "pass",
+     "defects"
+    ],
+    "outputs": {
+     "findings": {
+      "contract": "feedback",
+      "description": "Defects, each quoting the spec or the ticket",
+      "type": "list"
+     }
+    },
+    "role": "hardener"
+   },
+   {
+    "gate": "check-review",
+    "id": "check_harden",
+    "inputs": [
+     "ticket_key",
+     "spec_path",
+     "plan_path",
+     "work_dir",
+     "findings"
+    ],
+    "needs": [
+     "harden"
+    ],
+    "on": {
+     "rework": {
+      "at_limit": "design_stuck",
+      "goto": "design",
+      "max_loops": 1
+     }
+    },
+    "outcomes": [
+     "clean",
+     "rework"
+    ],
+    "when": {
+     "outcome": "defects",
+     "step": "harden"
+    }
+   },
+   {
+    "ask": {
+     "choices": [
+      "approve",
+      "revise"
+     ],
+     "question": "The design and plan for {{ inputs.ticket_key }} passed the hardening gate (paths in the ticket). Approve them?"
+    },
+    "id": "approve_design",
+    "needs": [
+     "check_harden"
+    ],
+    "on": {
+     "revise": {
+      "at_limit": "design_stuck",
+      "goto": "design",
+      "max_loops": 1
+     }
+    },
+    "when": {
+     "outcome": "design_only",
+     "step": "read_ticket"
+    }
+   },
+   {
+    "ask": {
+     "choices": [
+      "retry",
+      "stop"
+     ],
+     "on_limit_only": true,
+     "question": "The design of {{ inputs.ticket_key }} has used its rounds (three designer runs, two hardener runs) without passing. Allow one more round, or stop and leave it with me?"
+    },
+    "id": "design_stuck",
+    "on": {
+     "retry": {
+      "at_limit": "design_stuck",
+      "goto": "design",
+      "max_loops": 1
+     },
+     "stop": "end"
+    }
+   },
+   {
+    "brief": "Build every phase of the spec for {{ inputs.ticket_key }} in order, in the worktree. Read the work folder's feedback and answers files first.",
+    "id": "build",
+    "inputs": [
+     "ticket_key",
+     "spec_path",
+     "worktree",
+     "work_dir"
+    ],
+    "needs": [
+     "approve_design"
+    ],
+    "outcomes": [
+     "done",
+     "needs_judgment"
+    ],
+    "outputs": {
+     "card": {
+      "description": "The judgment call, when the outcome is needs_judgment",
+      "type": "string"
+     }
+    },
+    "role": "builder",
+    "when": {
+     "outcome": "build",
+     "step": "read_ticket"
+    }
+   },
+   {
+    "id": "triage_question",
+    "inputs": [
+     "ticket_key",
+     "spec_path",
+     "worktree",
+     "work_dir",
+     "card"
+    ],
+    "needs": [
+     "build"
+    ],
+    "on": {
+     "answered": {
+      "at_limit": "build_stuck",
+      "goto": "build",
+      "max_loops": 2
+     },
+     "redesign": {
+      "at_limit": "design_stuck",
+      "goto": "design",
+      "max_loops": 1
+     }
+    },
+    "outcomes": [
+     "answered",
+     "redesign",
+     "escalate"
+    ],
+    "outputs": {
+     "answer": {
+      "description": "The answer, quoting the spec or a recorded decision",
+      "type": "string"
+     }
+    },
+    "role": "build-triager",
+    "when": {
+     "outcome": "needs_judgment",
+     "step": "build"
+    }
+   },
+   {
+    "ask": {
+     "choices": [
+      "answered",
+      "redesign"
+     ],
+     "question": "A builder on {{ inputs.ticket_key }} hit a judgment call the spec does not settle."
+    },
+    "id": "ask_builder",
+    "needs": [
+     "triage_question"
+    ],
+    "on": {
+     "answered": {
+      "at_limit": "build_stuck",
+      "goto": "build",
+      "max_loops": 2
+     },
+     "redesign": {
+      "at_limit": "design_stuck",
+      "goto": "design",
+      "max_loops": 1
+     }
+    },
+    "when": {
+     "outcome": "escalate",
+     "step": "triage_question"
+    }
+   },
+   {
+    "gate": "verify-build",
+    "id": "verify",
+    "inputs": [
+     "ticket_key",
+     "spec_path",
+     "worktree",
+     "work_dir",
+     "base_branch"
+    ],
+    "needs": [
+     "ask_builder"
+    ],
+    "on": {
+     "failed": {
+      "at_limit": "build_stuck",
+      "goto": "build",
+      "max_loops": 2
+     }
+    },
+    "outcomes": [
+     "passed",
+     "failed"
+    ],
+    "outputs": {
+     "evidence_path": {
+      "contract": "evidence",
+      "description": "work_dir/evidence.md",
+      "type": "string"
+     }
+    },
+    "when": {
+     "outcome": "done",
+     "step": "build"
+    }
+   },
+   {
+    "id": "review_plan",
+    "inputs": [
+     "ticket_key",
+     "spec_path",
+     "evidence_path",
+     "worktree",
+     "base_branch"
+    ],
+    "needs": [
+     "verify"
+    ],
+    "on": {
+     "plan_gap": {
+      "at_limit": "design_stuck",
+      "goto": "design",
+      "max_loops": 1
+     }
+    },
+    "outcomes": [
+     "complete",
+     "defects",
+     "plan_gap"
+    ],
+    "outputs": {
+     "findings": {
+      "contract": "feedback",
+      "description": "Defects, each citing a criterion of the spec by id and quoting it",
+      "type": "list"
+     }
+    },
+    "role": "plan-reviewer",
+    "when": {
+     "outcome": "passed",
+     "step": "verify"
+    }
+   },
+   {
+    "gate": "cite-check",
+    "id": "cite_check",
+    "inputs": [
+     "ticket_key",
+     "spec_path",
+     "work_dir",
+     "findings"
+    ],
+    "needs": [
+     "review_plan"
+    ],
+    "on": {
+     "rework": {
+      "at_limit": "build_stuck",
+      "goto": "build",
+      "max_loops": 2
+     }
+    },
+    "outcomes": [
+     "clean",
+     "rework"
+    ],
+    "when": {
+     "outcome": "defects",
+     "step": "review_plan"
+    }
+   },
+   {
+    "ask": {
+     "choices": [
+      "retry",
+      "redesign",
+      "stop"
+     ],
+     "on_limit_only": true,
+     "question": "The build of {{ inputs.ticket_key }} has used its runs without passing its checks or its review. Allow one more build, send it back to design, or stop and leave it with me?"
+    },
+    "id": "build_stuck",
+    "on": {
+     "redesign": {
+      "at_limit": "design_stuck",
+      "goto": "design",
+      "max_loops": 1
+     },
+     "retry": {
+      "at_limit": "build_stuck",
+      "goto": "build",
+      "max_loops": 1
+     },
+     "stop": "end"
+    }
+   },
+   {
+    "id": "write_pr",
+    "inputs": [
+     "ticket_key",
+     "ticket_type",
+     "spec_path",
+     "plan_path",
+     "evidence_path",
+     "worktree",
+     "base_branch"
+    ],
+    "needs": [
+     "cite_check"
+    ],
+    "outcomes": [
+     "written"
+    ],
+    "outputs": {
+     "pr_body": {
+      "description": "What changed and why, from the spec; the evidence in brief",
+      "type": "string"
+     },
+     "pr_title": {
+      "description": "Starts with the ticket key",
+      "type": "string"
+     }
+    },
+    "role": "pr-writer"
+   },
+   {
+    "gate": "open-pr",
+    "id": "open_pr",
+    "inputs": [
+     "ticket_key",
+     "phi",
+     "repo",
+     "branch",
+     "worktree",
+     "work_dir",
+     "base_branch",
+     "pr_title",
+     "pr_body"
+    ],
+    "needs": [
+     "write_pr"
+    ],
+    "outcomes": [
+     "opened"
+    ],
+    "outputs": {
+     "pr_number": {
+      "description": "Digits only",
+      "type": "string"
+     },
+     "pr_url": {
+      "description": "The pull request",
+      "type": "string"
+     }
+    }
+   },
+   {
+    "effects": [
+     "set_label"
+    ],
+    "gate": "queue-audit",
+    "id": "queue_audit",
+    "inputs": [
+     "repo",
+     "pr_number",
+     "work_dir"
+    ],
+    "needs": [
+     "open_pr"
+    ],
+    "outcomes": [
+     "queued"
+    ]
+   },
+   {
+    "id": "await_review",
+    "inputs": [
+     "repo",
+     "pr_number",
+     "work_dir"
+    ],
+    "needs": [
+     "queue_audit"
+    ],
+    "outcomes": [
+     "ready",
+     "changes",
+     "checks_failed",
+     "blocked",
+     "stale"
+    ],
+    "outputs": {
+     "findings": {
+      "description": "The audit's verdict comment, or the failing checks, for the fixer",
+      "type": "string"
+     },
+     "issue_count": {
+      "description": "N, the findings in the verdict comment (optional ones not counted)",
+      "type": "number"
+     }
+    },
+    "wait": "review-state"
+   },
+   {
+    "ask": {
+     "choices": [
+      "requeue",
+      "stop"
+     ],
+     "question": "The audit of the pull request for {{ inputs.ticket_key }} is blocked or has not answered in 48 hours (see the PR). Queue it again, or stop and leave it with me?"
+    },
+    "id": "audit_stuck",
+    "needs": [
+     "await_review"
+    ],
+    "on": {
+     "requeue": {
+      "at_limit": "review_stuck",
+      "goto": "queue_audit",
+      "max_loops": 2
+     },
+     "stop": "end"
+    },
+    "when": {
+     "outcome": [
+      "blocked",
+      "stale"
+     ],
+     "step": "await_review"
+    }
+   },
+   {
+    "id": "fix_review",
+    "inputs": [
+     "ticket_key",
+     "spec_path",
+     "worktree",
+     "work_dir",
+     "pr_number",
+     "findings"
+    ],
+    "needs": [
+     "audit_stuck"
+    ],
+    "outcomes": [
+     "fixed",
+     "needs_input"
+    ],
+    "outputs": {
+     "card": {
+      "description": "The question, when the outcome is needs_input",
+      "type": "string"
+     },
+     "resolution": {
+      "description": "Commit, files changed, and the exact checks run with their results",
+      "type": "string"
+     }
+    },
+    "role": "review-fixer",
+    "when": {
+     "outcome": [
+      "changes",
+      "checks_failed"
+     ],
+     "step": "await_review"
+    }
+   },
+   {
+    "ask": {
+     "choices": [
+      "answered",
+      "stop"
+     ],
+     "question": "The fixer on the pull request for {{ inputs.ticket_key }} needs your answer."
+    },
+    "id": "ask_fixer",
+    "needs": [
+     "fix_review"
+    ],
+    "on": {
+     "answered": {
+      "at_limit": "review_stuck",
+      "goto": "fix_review",
+      "max_loops": 2
+     },
+     "stop": "end"
+    },
+    "when": {
+     "outcome": "needs_input",
+     "step": "fix_review"
+    }
+   },
+   {
+    "effects": [
+     "set_label"
+    ],
+    "gate": "after-fix",
+    "id": "after_fix",
+    "inputs": [
+     "ticket_key",
+     "ticket_type",
+     "phi",
+     "repo",
+     "pr_number",
+     "branch",
+     "spec_path",
+     "worktree",
+     "work_dir",
+     "resolution",
+     "issue_count"
+    ],
+    "needs": [
+     "ask_fixer"
+    ],
+    "on": {
+     "checks_failed": {
+      "at_limit": "review_stuck",
+      "goto": "fix_review",
+      "max_loops": 2
+     },
+     "relabel": {
+      "at_limit": "review_stuck",
+      "goto": "await_review",
+      "max_loops": 2
+     },
+     "requeue": {
+      "at_limit": "review_stuck",
+      "goto": "await_review",
+      "max_loops": 2
+     }
+    },
+    "outcomes": [
+     "requeue",
+     "relabel",
+     "checks_failed"
+    ],
+    "when": {
+     "outcome": "fixed",
+     "step": "fix_review"
+    }
+   },
+   {
+    "ask": {
+     "choices": [
+      "retry",
+      "stop"
+     ],
+     "on_limit_only": true,
+     "question": "The pull request for {{ inputs.ticket_key }} has used its fix rounds (three fixer runs) without a clean review. Allow one more fix, or stop and leave it with me?"
+    },
+    "id": "review_stuck",
+    "on": {
+     "retry": {
+      "at_limit": "review_stuck",
+      "goto": "fix_review",
+      "max_loops": 1
+     },
+     "stop": "end"
+    }
+   },
+   {
+    "gate": "merge-rule",
+    "id": "merge_rule",
+    "inputs": [
+     "repo"
+    ],
+    "needs": [
+     "after_fix"
+    ],
+    "outcomes": [
+     "agent",
+     "josh"
+    ]
+   },
+   {
+    "gate": "merge-pr",
+    "id": "merge",
+    "inputs": [
+     "repo",
+     "pr_number"
+    ],
+    "needs": [
+     "merge_rule"
+    ],
+    "outcomes": [
+     "merged"
+    ],
+    "when": {
+     "outcome": "agent",
+     "step": "merge_rule"
+    }
+   },
+   {
+    "id": "await_merge",
+    "inputs": [
+     "repo",
+     "pr_number"
+    ],
+    "needs": [
+     "merge"
+    ],
+    "outcomes": [
+     "merged",
+     "closed"
+    ],
+    "wait": "pr-merged",
+    "when": {
+     "outcome": "josh",
+     "step": "merge_rule"
+    }
+   },
+   {
+    "effects": [
+     "move_ticket"
+    ],
+    "gate": "close-unmerged",
+    "id": "close_unmerged",
+    "inputs": [
+     "ticket_key",
+     "repo",
+     "pr_url",
+     "worktree",
+     "branch",
+     "work_dir"
+    ],
+    "needs": [
+     "await_merge"
+    ],
+    "on": {
+     "cancelled": "end"
+    },
+    "outcomes": [
+     "cancelled"
+    ],
+    "when": {
+     "outcome": "closed",
+     "step": "await_merge"
+    }
+   },
+   {
+    "gate": "clean-up",
+    "id": "clean_up",
+    "inputs": [
+     "repo",
+     "pr_number",
+     "worktree",
+     "branch",
+     "work_dir"
+    ],
+    "needs": [
+     "close_unmerged"
+    ],
+    "outcomes": [
+     "cleaned"
+    ]
+   },
+   {
+    "effects": [
+     "move_ticket"
+    ],
+    "gate": "close-ticket",
+    "id": "close",
+    "inputs": [
+     "ticket_key",
+     "ticket_type",
+     "phi",
+     "pr_url",
+     "spec_path",
+     "evidence_path"
+    ],
+    "needs": [
+     "clean_up"
+    ],
+    "outcomes": [
+     "closed"
+    ]
+   }
+  ],
+  "title": "Development pipeline"
+ },
+ "max_runs": {
+  "cheap": 5,
+  "gate": 2,
+  "mid": 3
+ },
+ "roles": {
+  "build-triager": {
+   "may_change": false,
+   "reviewer": false,
+   "tier": "mid",
+   "title": "Build triager"
+  },
+  "builder": {
+   "may_change": true,
+   "reviewer": false,
+   "tier": "cheap",
+   "title": "Builder"
+  },
+  "designer": {
+   "may_change": true,
+   "reviewer": false,
+   "tier": "mid",
+   "title": "Designer"
+  },
+  "hardener": {
+   "may_change": false,
+   "reviewer": true,
+   "tier": "gate",
+   "title": "Hardener"
+  },
+  "plan-reviewer": {
+   "may_change": false,
+   "reviewer": true,
+   "tier": "mid",
+   "title": "Plan reviewer"
+  },
+  "pr-writer": {
+   "may_change": false,
+   "reviewer": false,
+   "tier": "cheap",
+   "title": "Pull request writer"
+  },
+  "review-fixer": {
+   "may_change": true,
+   "reviewer": false,
+   "tier": "mid",
+   "title": "Review fixer"
+  }
+ },
+ "sources": {
+  "agents/design-writer/agent.yaml": "c0ef66351e3340e67c1e909836ac524bc4678acfd08d32c31b8e944d4d8b2524",
+  "agents/spec-writer/agent.yaml": "4f15619f5c4a3c0353ee32a1c9f97e95615b97fd4e53923896d747892617d31f",
+  "flows/development.yaml": "bbdf0c7f29988f815a457d351aa35f6fd053e52ae70987d8877bc43c2e6b2248",
+  "roles/build-triager/role.yaml": "630b8f6fa3f80719c478804c33847c93d69b0da79346d25559212c093edc450f",
+  "roles/builder/role.yaml": "fa78390a921fe08398b871e49fecfa545ddaa2d88e9f0849676c2cab8f8e23de",
+  "roles/designer/role.yaml": "3138032c62e6e542ea2d5bc6638d5bffeec8c8113f513e1ce14d7c9d3f076ad1",
+  "roles/hardener/role.yaml": "a304944dda6c4dda8f3509885cde047d144f4aed8ff854b6900f8535e9b30381",
+  "roles/plan-reviewer/role.yaml": "d6b8e2357272b9c85dd3b41457294f577a3f2d71350dc01c81dfddca03aee384",
+  "roles/pr-writer/role.yaml": "5712c1b9ddb8d9d03ba0e12c4cbede23cfb34268acfe214e4c25f68b65afcab0",
+  "roles/review-fixer/role.yaml": "a65a5b5f2ac09f26602d80748166c809076950b4296de57355484990fc1124fa",
+  "tiers.yaml": "af81c945dec4862af3be1d3957865dd692e7c77e42df42fa43b35c1fe3a14d44"
+ },
+ "tiers": {
+  "cheap": [
+   {
+    "effort": "high",
+    "model": "claude-haiku-5-5"
+   },
+   {
+    "effort": "medium",
+    "model": "claude-sonnet-5-5"
+   }
+  ],
+  "gate": [
+   {
+    "effort": "high",
+    "model": "claude-opus-5-5"
+   }
+  ],
+  "mid": [
+   {
+    "effort": "medium",
+    "model": "claude-sonnet-5-5"
+   }
+  ]
+ }
+}

@@ -1,12 +1,39 @@
 #!/usr/bin/env python3
-"""DRAFT gate: clean-up. Designed in docs/superpowers/specs/2026-11-17-development-graph-design.md (JP-115); built in the JP-115 build.
+"""Gate clean-up (JP-115): after a merge, remove the worktree and the branches, and nothing that is at risk.
 
-After a merge: confirms the pull request is merged and nothing in the worktree is uncommitted or unpushed, then removes the worktree and the local branch (and the remote branch if GitHub kept it). Refuses rather than delete anything at risk.
+The pull request must be merged. The worktree and local branch are removed only when nothing in them is uncommitted and
+the branch is at the commit the pull request holds; any refusal is a GateError with its reason and nothing is removed.
+Then the remote branch is deleted (already gone is fine). Run again after it worked, it answers `cleaned`.
 
-Outcomes: cleaned.
-Inputs arrive as GRAPH_INPUT_<NAME>; prints one JSON line (graphs/CONVENTION.md, "Gate scripts").
-Until it is built it refuses, so no run can pass through it by accident.
+Outcomes: cleaned. Inputs: repo, pr_number, worktree, branch, work_dir.
 """
-import sys
+from pathlib import Path
 
-sys.exit("clean-up: not built yet (JP-115)")
+from lib import dev_git
+from lib.dev_github import GitHubError
+from lib.gate_run import GateError, execute, need
+
+
+def run(inputs, deps):
+    repo, branch = need(inputs, "repo"), need(inputs, "branch")
+    worktree = Path(need(inputs, "worktree")).expanduser()
+    try:
+        number = int(need(inputs, "pr_number"))
+    except ValueError:
+        raise GateError("pr_number is not a number")
+    try:
+        github = deps.github(repo)
+        pr = github.pr(number)
+        if pr.state != "MERGED":
+            raise GateError("the pull request is not merged: nothing is cleaned up")
+        reason = dev_git.remove_worktree(dev_git.clone_of(worktree), worktree, branch, pushed_head=pr.head_sha)
+        if reason:
+            raise GateError("not cleaned up, nothing was removed: {}".format(reason))
+        github.delete_branch(branch)
+    except (dev_git.GitError, GitHubError) as exc:
+        raise GateError(str(exc))
+    return "cleaned", None, "worktree and branches removed"
+
+
+if __name__ == "__main__":
+    execute(run, ["repo", "pr_number", "worktree", "branch", "work_dir"])
