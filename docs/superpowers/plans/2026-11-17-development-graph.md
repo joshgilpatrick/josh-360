@@ -29,7 +29,7 @@
 
 **Tech Stack:** Python 3.9, standard library only, for `graphs/gates/` and `graphs/tools/walker*` (they run on the laptop's `/usr/bin/python3`). The checker and `compile_graphs.py` use PyYAML and run in the cloud. Tests are stdlib `unittest` in `graphs/tests/` (gates, checker) and `tests/` (walker, whole runs), run by `python3 scripts/check.py`. `git` and `gh` 2.89 or later on the laptop.
 
-**Spec:** `docs/superpowers/specs/2026-11-17-development-graph-design.md` (approved by Josh on 17 November 2026; he chose one builder run per ticket). Read it with this plan: its steps table, loop table, rules, exact copy and seven scenarios are not repeated here. Ticket: JP-115. Build on `main` at or after 9a4dcbe.
+**Spec:** `docs/superpowers/specs/2026-11-17-development-graph-design.md` (approved by Josh on 17 November 2026; he chose one builder run per ticket). Read it with this plan: its steps table, loop table, rules, exact copy and seven scenarios are not repeated here. Ticket: JP-115. Build on the latest `main` (this plan was checked against it after JP-108, JP-109, JP-112 and JP-121 merged on 17 November).
 
 ## Global Constraints
 
@@ -160,7 +160,7 @@ Rules:
   - Gates find the folder as `Path(environ["JOSH360_RUNS"]) / environ["JOSH360_RUN_ID"] / "work"`.
 
 Rules:
-- `Run.values` passes `order`: step ids by each step's newest ledger row that has an outcome, oldest first. A later finished step wins a shared output name.
+- `Run.values` passes `order`: step ids by each step's newest ledger row that has an outcome, oldest first. A later finished step wins a shared output name. The `so_far` values a re-run is given (JP-121) come from the same call, so they follow the same order.
 - The walker appends to the answers file when: an ask is answered (`check_answer`, the answer text, whatever the choice); a role result carries a non-empty string output `answer` (`cmd_record`); a gate or wait gives a declared output `answer`.
 - `files_to_save` also returns `work/hardening.md` and every `work/feedback/*.md` that exists, as `{"step": "work", "name": <file stem>, "kind": "feedback"}`. `conclude` records them with no step row.
 - `CONVENTION.md`: one bullet, "The work folder", naming `work/`, the answers file and the saved feedback.
