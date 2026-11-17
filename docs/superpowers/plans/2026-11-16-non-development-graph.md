@@ -20,7 +20,7 @@
 
 **Tech Stack:** Python 3.9, standard library only (gates run on the laptop's `/usr/bin/python3`). Tests use stdlib `unittest` under `graphs/tests/`, run by `python3 scripts/check.py`.
 
-**Spec:** `docs/design/non-development-graph.md` (approved by Josh, 16 November 2026). Ticket: JP-123 (phase 2). Built on the JP-104 branch's draft.
+**Spec:** `docs/design/non-development-graph.md` (approved by Josh, 16 November 2026). Ticket: JP-123 (phase 1 since 16 November 2026, JP-147). Built on the JP-104 branch's draft.
 
 ## Global Constraints
 
@@ -175,7 +175,7 @@ Rules:
 
 ### Task 7: Point the Email Research Desk at the graph
 
-This changes other repositories, so its PRs wait for the phase 2 close (`docs/WORKFLOW.md` §5.1). It is the laptop step this ticket names.
+This changes other repositories, so its PRs wait for the phase 1 close (JP-120) (`docs/WORKFLOW.md` §5.1). It is the laptop step this ticket names.
 
 **Files:**
 - Modify (claude-harness): `skills/desk-coordinator/SKILL.md`. On a new question-path ticket, it starts a graph run (through the walker's runner, JP-117) instead of spawning a `desk-worker`. On a reply to a ticket in Done that came from the desk, it moves the ticket to Ready, comments Josh's reply on it, and starts a run. A reply to a ticket that is still open is commented only.
@@ -186,6 +186,6 @@ Rules:
 - The desk keeps its watcher and its Josh-only mailer unchanged (Josh's answer to question 1).
 - Only Josh's own reply reopens a ticket. The graph's comments never start a run (spec rule 16).
 
-- [ ] **Step 1:** Draft both skill changes and the README change on each repo's session branch, and open the PRs as drafts naming the phase 2 close.
-- [ ] **Step 2 (laptop, at the phase 2 close):** after merge, forward one made-up question email to the desk. Check that a ticket reaches Ready, the graph delivers, the ticket closes without a sign-off, and a reply reopens it. Save the checks under `docs/proof/<date>/JP-123/`, with ticket keys and paths only.
+- [ ] **Step 1:** Draft both skill changes and the README change on each repo's session branch, and open the PRs as drafts naming the phase 1 close (JP-120).
+- [ ] **Step 2 (laptop, at the phase 1 close, JP-120):** after merge, forward one made-up question email to the desk. Check that a ticket reaches Ready, the graph delivers, the ticket closes without a sign-off, and a reply reopens it. Save the checks under `docs/proof/<date>/JP-123/`, with ticket keys and paths only.
 - [ ] **Step 3: Commit** the proof: `JP-123: Prove the desk hands emailed asks to the graph`.
