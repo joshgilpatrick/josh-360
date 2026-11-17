@@ -10,7 +10,7 @@ Outcomes: clean, rework. Inputs: ticket_key, findings, evidence_path.
 import json
 from pathlib import Path
 
-from lib import artifacts
+from lib import artifacts, feedback
 from lib.gate_run import GateError, execute, need
 from lib.ticket_text import as_list, parse_sections, quotes
 
@@ -18,17 +18,9 @@ FIELDS = ("quote", "where", "problem", "fix")
 
 
 def feedback_text(key, kept):
-    lines = ["# Feedback for {}".format(key), "", "Defects the reviewer found, each quoting the ticket (contract feedback).",
-             "", "---"]
-    if not kept:
-        lines.append("[]")
-    for finding in kept:
-        first = True
-        for field in FIELDS:
-            lines.append("{}{}: {}".format("- " if first else "  ", field, json.dumps(str(finding.get(field, "")))))
-            first = False
-    lines.append("---")
-    return "\n".join(lines) + "\n"
+    return feedback.feedback_text(
+        "Feedback for {}".format(key), "Defects the reviewer found, each quoting the ticket (contract feedback).",
+        kept, FIELDS)
 
 
 def run(inputs, deps):
