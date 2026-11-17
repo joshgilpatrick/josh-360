@@ -13,7 +13,7 @@ Each run:
 
   1. Does nothing (exit 0, result "waiting") until `retire-session-atlas` has succeeded, so the old Atlas and the
      new one never run together.
-  2. Finds Node 22.18 or newer (JOSH360_NODE alone if set, else PATH, then Homebrew's two folders). Missing or too old: exit 1.
+  2. Finds Node 22.18 or newer (JOSH360_NODE alone if set, else a Node 22 Homebrew keg, then PATH, then Homebrew's two folders). Missing or too old: exit 1.
   3. Writes the plist when it differs (atomic), loads the service when it is not loaded, and restarts it
      (`kickstart -k`) when the plist or the apps/session-atlas code changed since the last run, because Node reads
      its modules only at start. The revision it started on is kept in ~/.josh-360/state/session-atlas-service.json.
@@ -41,7 +41,9 @@ from laptop import common  # noqa: E402
 
 LABEL = "com.josh360.session-atlas"
 MIN_NODE = (22, 18)
-NODE_CANDIDATES = ("/opt/homebrew/bin/node", "/usr/local/bin/node")
+# Node 22 (the version CI tests Atlas on) is preferred when Homebrew has it as a keg; otherwise PATH, then the plain folders.
+NODE_CANDIDATES = ("/opt/homebrew/opt/node@22/bin/node", "/usr/local/opt/node@22/bin/node",
+                   "/opt/homebrew/bin/node", "/usr/local/bin/node")
 
 
 def launchctl() -> str:
@@ -75,7 +77,7 @@ def node_version(node: str) -> Optional[Tuple[int, int]]:
 def find_node() -> Tuple[Optional[str], Optional[Tuple[int, int]]]:
     seen = []
     pinned = os.environ.get("JOSH360_NODE")  # an explicit choice is the only one tried
-    for cand in [pinned] if pinned else [shutil.which("node")] + list(NODE_CANDIDATES):
+    for cand in [pinned] if pinned else list(NODE_CANDIDATES[:2]) + [shutil.which("node")] + list(NODE_CANDIDATES[2:]):
         if cand and cand not in seen and os.access(cand, os.X_OK):
             seen.append(cand)
             v = node_version(cand)

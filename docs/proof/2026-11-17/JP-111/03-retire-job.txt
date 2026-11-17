@@ -1,8 +1,11 @@
+test_a_cache_db_holding_data_is_never_overwritten (test_retire_session_atlas.RetireSessionAtlasTest.test_a_cache_db_holding_data_is_never_overwritten) ... ok
 test_a_failed_bootout_touches_no_file (test_retire_session_atlas.RetireSessionAtlasTest.test_a_failed_bootout_touches_no_file) ... ok
 test_a_settings_file_that_is_not_json_is_left_alone (test_retire_session_atlas.RetireSessionAtlasTest.test_a_settings_file_that_is_not_json_is_left_alone) ... ok
 test_already_gone_is_success (test_retire_session_atlas.RetireSessionAtlasTest.test_already_gone_is_success) ... ok
-test_an_existing_cache_db_is_never_overwritten (test_retire_session_atlas.RetireSessionAtlasTest.test_an_existing_cache_db_is_never_overwritten) ... ok
+test_an_empty_cache_db_made_by_the_jira_hook_is_archived_and_seeded (test_retire_session_atlas.RetireSessionAtlasTest.test_an_empty_cache_db_made_by_the_jira_hook_is_archived_and_seeded) ... ok
+test_an_unreadable_cache_db_is_kept (test_retire_session_atlas.RetireSessionAtlasTest.test_an_unreadable_cache_db_is_kept) ... ok
 test_dry_run_changes_nothing (test_retire_session_atlas.RetireSessionAtlasTest.test_dry_run_changes_nothing) ... ok
+test_dry_run_reports_the_replacement_and_changes_nothing (test_retire_session_atlas.RetireSessionAtlasTest.test_dry_run_reports_the_replacement_and_changes_nothing) ... ok
 test_it_waits_for_the_backfill_and_changes_nothing (test_retire_session_atlas.RetireSessionAtlasTest.test_it_waits_for_the_backfill_and_changes_nothing) ... ok
 test_not_a_mac_touches_nothing (test_retire_session_atlas.RetireSessionAtlasTest.test_not_a_mac_touches_nothing) ... ok
 test_only_that_one_label_is_ever_named (test_retire_session_atlas.RetireSessionAtlasTest.test_only_that_one_label_is_ever_named) ... ok
@@ -10,6 +13,8 @@ test_only_the_old_atlas_hooks_leave_settings_and_a_backup_is_kept (test_retire_s
 test_running_twice_changes_nothing_the_second_time (test_retire_session_atlas.RetireSessionAtlasTest.test_running_twice_changes_nothing_the_second_time) ... ok
 test_switches_off_archives_and_seeds (test_retire_session_atlas.RetireSessionAtlasTest.test_switches_off_archives_and_seeds) ... ok
 test_the_wal_files_move_with_their_database (test_retire_session_atlas.RetireSessionAtlasTest.test_the_wal_files_move_with_their_database) ... ok
+
 ----------------------------------------------------------------------
-Ran 12 tests in 0.556s
+Ran 15 tests in 0.884s
+
 OK

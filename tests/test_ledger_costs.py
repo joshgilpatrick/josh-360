@@ -186,7 +186,17 @@ class DefaultPath(unittest.TestCase):
     def test_uses_cache_db_once_it_holds_the_cost_tables(self):
         new = self.tmp / "j360" / "state" / "cache.db"
         self.make(new)
+        db = sqlite3.connect(str(new))
+        db.execute("INSERT INTO pricing_runs (id, started_at) VALUES (1, '2026-11-17T08:00:00Z')")
+        db.commit()
+        db.close()
         self.assertEqual(costs.default_path(self.claude), new)
+
+    def test_a_cache_db_with_the_tables_but_no_pricing_run_is_not_used(self):
+        # the Jira hook creates exactly this before the cutover has seeded the old history
+        new = self.tmp / "j360" / "state" / "cache.db"
+        self.make(new)
+        self.assertEqual(costs.default_path(self.claude), self.claude / "cost-ledger" / "ledger.db")
 
     def test_a_cache_db_without_cost_tables_is_not_used(self):
         new = self.tmp / "j360" / "state" / "cache.db"

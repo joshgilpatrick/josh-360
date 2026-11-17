@@ -23,10 +23,20 @@ NOT_PRICED_AND_NOT_EMPTY = ("missing_price", "missing_alias", "suspect")
 
 
 def default_path(claude_home: Path) -> Path:
-    """Where the cost tables are now: cache.db under JOSH360_HOME (default ~/.josh-360), else the old cost ledger."""
+    """Where the cost tables are now: cache.db under JOSH360_HOME (default ~/.josh-360) once it holds a pricing run, else the old cost ledger."""
     from laptop import common
     new = common.state_dir() / "cache.db"
-    return new if open_cost_ledger(new) is not None else claude_home / "cost-ledger" / "ledger.db"
+    conn = open_cost_ledger(new)
+    if conn is not None:
+        try:
+            # An empty cost table is not the cost ledger: a hook may have created cache.db before the cutover seeded it.
+            if conn.execute("SELECT 1 FROM pricing_runs LIMIT 1").fetchone() is not None:
+                return new
+        except sqlite3.Error:
+            pass
+        finally:
+            conn.close()
+    return claude_home / "cost-ledger" / "ledger.db"
 
 
 def open_cost_ledger(path: Path) -> Optional[sqlite3.Connection]:

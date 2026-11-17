@@ -49,10 +49,26 @@ class AtlasHooks(unittest.TestCase):
         self.assertEqual((r.returncode, r.stdout, r.stderr), (0, "", ""))
         self.assertFalse((self.j360 / "state" / "cache.db").exists())
 
-    def test_the_jira_hook_writes_to_cache_db_and_never_fails(self):
-        r = self.dispatch("PostToolUse", {"hook_event_name": "PostToolUse", "tool_name": "Bash", "session_id": "sess-0001",
-                                          "tool_input": {"command": "jira workitem comment create --key JP-1 --body x"},
-                                          "tool_response": {"exitCode": 0}})
+    JIRA = {"hook_event_name": "PostToolUse", "tool_name": "Bash", "session_id": "sess-0001",
+            "tool_input": {"command": "jira workitem comment create --key JP-1 --body x"},
+            "tool_response": {"exitCode": 0}}
+
+    def retired(self, code):
+        (self.j360 / "state").mkdir(parents=True, exist_ok=True)
+        (self.j360 / "state" / "jobs-state.json").write_text(
+            json.dumps({"retire-session-atlas": {"last_run": 1, "last_result": code}}))
+
+    def test_the_jira_hook_does_nothing_before_the_cutover(self):
+        for state in (None, 1):  # no job record at all, then a failed run
+            if state is not None:
+                self.retired(state)
+            r = self.dispatch("PostToolUse", self.JIRA)
+            self.assertEqual((r.returncode, r.stdout), (0, ""))
+            self.assertFalse((self.j360 / "state" / "cache.db").exists(), "cache.db was created before the cutover")
+
+    def test_the_jira_hook_writes_to_cache_db_after_the_cutover_and_never_fails(self):
+        self.retired(0)
+        r = self.dispatch("PostToolUse", self.JIRA)
         self.assertEqual((r.returncode, r.stdout), (0, ""))
         self.assertTrue((self.j360 / "state" / "cache.db").exists())
         self.assertFalse((self.tmp / ".claude" / "cost-ledger").exists())

@@ -8,9 +8,12 @@ test_more_usage_adds_a_new_batch (test_ledger_costs.Costs.test_more_usage_adds_a
 test_partly_priced_session_says_so (test_ledger_costs.Costs.test_partly_priced_session_says_so) ... ok
 test_repriced_session_adds_a_new_batch_and_current_view_shows_it (test_ledger_costs.Costs.test_repriced_session_adds_a_new_batch_and_current_view_shows_it) ... ok
 test_unchanged_cost_is_not_copied_again (test_ledger_costs.Costs.test_unchanged_cost_is_not_copied_again) ... ok
+test_a_cache_db_with_the_tables_but_no_pricing_run_is_not_used (test_ledger_costs.DefaultPath.test_a_cache_db_with_the_tables_but_no_pricing_run_is_not_used) ... ok
 test_a_cache_db_without_cost_tables_is_not_used (test_ledger_costs.DefaultPath.test_a_cache_db_without_cost_tables_is_not_used) ... ok
 test_falls_back_to_the_old_cost_ledger_before_cutover (test_ledger_costs.DefaultPath.test_falls_back_to_the_old_cost_ledger_before_cutover) ... ok
 test_uses_cache_db_once_it_holds_the_cost_tables (test_ledger_costs.DefaultPath.test_uses_cache_db_once_it_holds_the_cost_tables) ... ok
+
 ----------------------------------------------------------------------
-Ran 13 tests in 0.540s
+Ran 14 tests in 0.598s
+
 OK

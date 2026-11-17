@@ -158,14 +158,42 @@ class RetireSessionAtlasTest(unittest.TestCase):
         self.assertEqual(before, self.snapshot())
         self.assertEqual(self.settings.read_text(), settings_before)
 
-    def test_an_existing_cache_db_is_never_overwritten(self):
-        make_db(self.j360 / "state" / "cache.db", "CREATE TABLE keep (x TEXT);")
+    def test_a_cache_db_holding_data_is_never_overwritten(self):
+        make_db(self.j360 / "state" / "cache.db", "CREATE TABLE messages (x TEXT);",
+                [("INSERT INTO messages VALUES ('kept')", ())])
         r = self.run_job()
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual(json.loads(r.stdout)["cache_db"], "kept-existing")
         db = sqlite3.connect(str(self.j360 / "state" / "cache.db"))
-        self.assertEqual([t[0] for t in db.execute("SELECT name FROM sqlite_master")], ["keep"])
+        self.assertEqual(db.execute("SELECT x FROM messages").fetchall(), [("kept",)])
         db.close()
+
+    def test_an_unreadable_cache_db_is_kept(self):
+        (self.j360 / "state" / "cache.db").write_text("this is not a database")
+        r = self.run_job()
+        self.assertEqual(json.loads(r.stdout)["cache_db"], "kept-existing")
+        self.assertEqual((self.j360 / "state" / "cache.db").read_text(), "this is not a database")
+
+    def test_an_empty_cache_db_made_by_the_jira_hook_is_archived_and_seeded(self):
+        # the hook can open (and so create) cache.db before this job has run; keeping it would strand the old history
+        make_db(self.j360 / "state" / "cache.db",
+                "CREATE TABLE pricing_runs (id INTEGER PRIMARY KEY, started_at TEXT); "
+                "CREATE TABLE messages (x TEXT); CREATE TABLE schema_migrations (id INTEGER);",
+                [("INSERT INTO schema_migrations VALUES (1)", ())])
+        r = self.run_job()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(json.loads(r.stdout)["cache_db"], "replaced-empty-and-seeded")
+        db = sqlite3.connect(str(self.j360 / "state" / "cache.db"))
+        self.assertEqual(db.execute("SELECT COUNT(*) FROM pricing_runs").fetchone()[0], 1)
+        db.close()
+        self.assertTrue((self.archive() / "state-cache.db").is_file(), "the empty file was not archived")
+
+    def test_dry_run_reports_the_replacement_and_changes_nothing(self):
+        make_db(self.j360 / "state" / "cache.db", "CREATE TABLE messages (x TEXT);")
+        before = self.snapshot()
+        r = self.run_job("--dry-run")
+        self.assertEqual(json.loads(r.stdout)["cache_db"], "would-replace-empty-and-seed")
+        self.assertEqual(before, self.snapshot())
 
     def test_the_wal_files_move_with_their_database(self):
         for suffix in ("-wal", "-shm"):

@@ -19,7 +19,8 @@ how to put it back. In order:
      place, the old removal guard would block every `git worktree remove`, because its service is gone.
      Josh 360's own hook dispatcher now carries the guard and the Jira link hook (hooks/PreToolUse, hooks/PostToolUse).
   4. If ~/.josh-360/state/cache.db does not exist yet, seed it with a consistent copy of the old cost ledger, so cost
-     history, pricing and Jira links carry over. An existing cache.db is never touched.
+     history, pricing and Jira links carry over. An existing cache.db is kept, unless it holds nothing at all (the Jira
+     hook can create it empty before this job runs): that empty file moves into the archive and is seeded.
   5. Move atlas.db and the old cost ledger (each with its -wal and -shm) into the archive. Nothing writes to them
      afterwards: the service is off, and their hooks are out of settings.json.
 
@@ -127,12 +128,48 @@ def has_old_hooks(settings: Path) -> Optional[bool]:
         return None
 
 
-def seed_cache(old_cost: Path, cache: Path) -> str:
-    """A consistent copy of the old cost ledger as the new cache.db. Returns a result word."""
+# Tables that hold history. models, prices and schema_migrations are filled on open and rebuilt, so they do not count.
+HISTORY_TABLES = ("pricing_runs", "messages", "message_costs", "source_files", "import_runs", "jira_session_links",
+                  "session_labels", "session_pr_links", "session_nodes", "session_links", "label_scans",
+                  "artifact_documents")
+
+
+def cache_holds_nothing(cache: Path) -> bool:
+    """True only when cache.db is a readable SQLite file with no cost rows and no catalog rows, as a hook that ran before
+    the cutover leaves it. Unreadable or unsure is False: an existing file is kept unless it is plainly empty."""
+    try:
+        conn = sqlite3.connect("file:{}?mode=ro".format(cache), uri=True, timeout=10.0)
+    except sqlite3.Error:
+        return False
+    try:
+        tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+        for t in HISTORY_TABLES:
+            if t in tables and conn.execute('SELECT 1 FROM "{}" LIMIT 1'.format(t)).fetchone() is not None:
+                return False
+        return True
+    except sqlite3.Error:
+        return False
+    finally:
+        conn.close()
+
+
+def seed_cache(old_cost: Path, cache: Path, dest: Path, actions: List[str], dry: bool) -> str:
+    """A consistent copy of the old cost ledger as the new cache.db. Returns a result word.
+
+    An existing cache.db is kept, unless it holds nothing at all: the Jira hook can create it, empty, before this job
+    runs, and keeping that would leave the old cost history in the archive only. Such an empty file moves into the
+    archive and is then seeded."""
+    replacing = False
     if cache.exists():
-        return "kept-existing"
+        if not (old_cost.is_file() and cache_holds_nothing(cache)):
+            return "kept-existing"
+        replacing = True
     if not old_cost.is_file():
         return "no-old-cost-ledger"
+    if dry:
+        return "would-replace-empty-and-seed" if replacing else "would-seed"
+    if replacing:
+        move_db(cache, dest, actions, False)
     cache.parent.mkdir(parents=True, exist_ok=True)
     tmp = cache.with_name(cache.name + ".seed-tmp")
     if tmp.exists():
@@ -151,7 +188,7 @@ def seed_cache(old_cost: Path, cache: Path) -> str:
         tmp.unlink()
         raise sqlite3.DatabaseError("seed copy failed its integrity check")
     os.replace(str(tmp), str(cache))
-    return "seeded"
+    return "replaced-empty-and-seeded" if replacing else "seeded"
 
 
 def move_db(db: Path, dest: Path, actions: List[str], dry: bool) -> bool:
@@ -186,6 +223,7 @@ switched off on {date}. Nothing was deleted. In this folder:
 - `atlas-atlas.db` (with `-wal` and `-shm`): the old index, focus text and artifact catalog (`~/.claude/atlas/atlas.db`)
 - `cost-ledger-ledger.db` (with `-wal` and `-shm`): the old cost ledger (`~/.claude/cost-ledger/ledger.db`). Its tables
   were also copied into `~/.josh-360/state/cache.db`, which the new Atlas keeps up to date.
+- `state-cache.db`: only if an empty `cache.db` had to be replaced by the seed (see above)
 - `settings.json.bak`: `~/.claude/settings.json` as it was before the old Atlas hook entries were taken out (owner
   read only; it can hold credentials, so delete it once you have checked the new settings).
 
@@ -296,7 +334,7 @@ def main(argv: List[str]) -> int:
 
         if ok:
             try:
-                seeded = seed_cache(cost_db, cache) if not dry else ("would-seed" if (cost_db.is_file() and not cache.exists()) else "not-needed")
+                seeded = seed_cache(cost_db, cache, dest, actions, dry)
             except (sqlite3.Error, OSError) as e:
                 actions.append("seeding cache.db failed ({})".format(e.__class__.__name__))
                 report["cache_db"] = "seed-failed"
