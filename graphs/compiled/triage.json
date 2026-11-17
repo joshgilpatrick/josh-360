@@ -1,0 +1,507 @@
+{
+ "agents": {},
+ "compiled": 1,
+ "graph": {
+  "convention": 1,
+  "description": "Takes one drafted ticket in Not Started and ends with it either Ready, with exactly one route (the development or the non-development graph) recorded on it, or sent back. A ticket Josh's agents wrote is revised by the ticket drafter and checked again, and Josh is asked one question only when the drafter cannot close a gap. A ticket someone else wrote gets a comment naming its gaps and is never edited. Scripts run the Ready checklist and route the ticket; a separate sign-off agent, which never wrote the ticket, judges only what a script cannot.\n",
+  "graph": "triage",
+  "header": {
+   "access": {
+    "apply_revision": "josh",
+    "ask_at_limit": "read",
+    "ask_josh": "read",
+    "ask_returned": "read",
+    "check_sign_off": "read",
+    "mark_ready": "josh",
+    "read_ticket": "read",
+    "ready_check": "read",
+    "revise": "read",
+    "route": "read",
+    "send_back": "josh",
+    "sign_off": "read",
+    "verdict": "read"
+   },
+   "asks_josh": [
+    "ask_josh",
+    "ask_returned",
+    "ask_at_limit"
+   ],
+   "end_states": {
+    "ask_at_limit.park": "needs-josh",
+    "ask_josh.park": "needs-josh",
+    "ask_returned.park": "needs-josh",
+    "finished": "success",
+    "send_back.sent": "neutral"
+   },
+   "entry_gate": "triageable",
+   "exit_gate": "no-loose-ends",
+   "jira": [
+    {
+     "status": "Not Started",
+     "steps": [
+      "read_ticket",
+      "ready_check",
+      "route",
+      "sign_off",
+      "check_sign_off",
+      "verdict",
+      "revise",
+      "apply_revision",
+      "ask_josh",
+      "ask_returned",
+      "ask_at_limit",
+      "send_back"
+     ]
+    },
+    {
+     "status": "Ready",
+     "steps": [
+      "mark_ready"
+     ]
+    }
+   ],
+   "ledger": [
+    "run",
+    "step",
+    "outcome",
+    "loop_count",
+    "session",
+    "tier",
+    "ticket",
+    "started_at",
+    "ended_at",
+    "graph_version",
+    "model"
+   ]
+  },
+  "inputs": {
+   "reason": {
+    "default": "new",
+    "description": "Why this run started: new (a drafted ticket), returned (the development or non-development graph sent it back with a question), or edited (the author changed it after a send-back). Every reason takes the same path; it is recorded for the ledger.\n",
+    "type": "string"
+   },
+   "ticket_key": {
+    "description": "Jira key of the drafted ticket, e.g. JP-140",
+    "required": true,
+    "type": "string"
+   }
+  },
+  "outputs": {
+   "graph": {
+    "description": "development or non-development; empty when not Ready",
+    "type": "string"
+   },
+   "system": {
+    "description": "The registry system the target graph uses to pick its agents",
+    "type": "string"
+   }
+  },
+  "steps": [
+   {
+    "gate": "ticket-facts",
+    "id": "read_ticket",
+    "inputs": [
+     "ticket_key"
+    ],
+    "outcomes": [
+     "read"
+    ],
+    "outputs": {
+     "author_kind": {
+      "description": "own (created by an allowed account) or other",
+      "type": "string"
+     },
+     "authors": {
+      "description": "Session ids in the josh360.authors property",
+      "type": "list"
+     },
+     "ticket_type": {
+      "description": "Story, Task, Bug or Research",
+      "type": "string"
+     },
+     "version": {
+      "description": "Hash of the summary, description, type, labels and links",
+      "type": "string"
+     }
+    }
+   },
+   {
+    "gate": "ready-check",
+    "id": "ready_check",
+    "inputs": [
+     "ticket_key",
+     "ticket_type",
+     "version"
+    ],
+    "needs": [
+     "read_ticket"
+    ],
+    "outcomes": [
+     "pass",
+     "gaps"
+    ],
+    "outputs": {
+     "failures": {
+      "contract": "ready-checklist",
+      "description": "Checklist items that failed",
+      "type": "list"
+     }
+    }
+   },
+   {
+    "gate": "route",
+    "id": "route",
+    "inputs": [
+     "ticket_key",
+     "ticket_type"
+    ],
+    "needs": [
+     "ready_check"
+    ],
+    "outcomes": [
+     "development",
+     "non_development",
+     "conflict"
+    ],
+    "outputs": {
+     "graph": {
+      "contract": "route-record",
+      "type": "string"
+     },
+     "space": {
+      "contract": "route-record",
+      "type": "string"
+     },
+     "system": {
+      "contract": "route-record",
+      "type": "string"
+     }
+    },
+    "when": {
+     "outcome": "pass",
+     "step": "ready_check"
+    }
+   },
+   {
+    "brief": "Ticket: {{ inputs.ticket_key }}. Judge items J1 to J5 only; the scripts have passed the rest.",
+    "id": "sign_off",
+    "inputs": [
+     "ticket_key",
+     "graph",
+     "version"
+    ],
+    "needs": [
+     "route"
+    ],
+    "outcomes": [
+     "ready",
+     "defects"
+    ],
+    "outputs": {
+     "defects": {
+      "contract": "sign-off-defects",
+      "description": "Each names a J item and quotes the ticket",
+      "type": "list"
+     }
+    },
+    "role": "sign-off",
+    "when": {
+     "outcome": [
+      "development",
+      "non_development"
+     ],
+     "step": "route"
+    }
+   },
+   {
+    "gate": "check-sign-off",
+    "id": "check_sign_off",
+    "inputs": [
+     "ticket_key",
+     "defects",
+     "version",
+     "authors"
+    ],
+    "needs": [
+     "sign_off"
+    ],
+    "on": {
+     "invalid": {
+      "at_limit": "ask_at_limit",
+      "goto": "sign_off",
+      "max_loops": 1
+     }
+    },
+    "outcomes": [
+     "ready",
+     "gaps",
+     "invalid"
+    ],
+    "outputs": {
+     "kept": {
+      "contract": "sign-off-defects",
+      "type": "list"
+     }
+    }
+   },
+   {
+    "gate": "triage-verdict",
+    "id": "verdict",
+    "inputs": [
+     "author_kind",
+     "failures",
+     "kept"
+    ],
+    "needs": [
+     "read_ticket",
+     "ready_check",
+     "route",
+     "check_sign_off"
+    ],
+    "outcomes": [
+     "ready",
+     "revise",
+     "comment",
+     "escalate"
+    ],
+    "outputs": {
+     "gaps": {
+      "contract": "send-back",
+      "description": "Script failures and kept defects, numbered",
+      "type": "list"
+     }
+    }
+   },
+   {
+    "brief": "Revise {{ inputs.ticket_key }} in place to close the numbered gaps you are given, and nothing else. Answer an open question only by quoting a source; otherwise return needs_josh with the one question.\n",
+    "id": "revise",
+    "inputs": [
+     "ticket_key",
+     "gaps"
+    ],
+    "needs": [
+     "verdict"
+    ],
+    "outcomes": [
+     "revised",
+     "needs_josh"
+    ],
+    "outputs": {
+     "proposal": {
+      "contract": "ticket-proposal",
+      "type": "string"
+     }
+    },
+    "role": "ticket-drafter",
+    "when": {
+     "outcome": "revise",
+     "step": "verdict"
+    }
+   },
+   {
+    "gate": "apply-revision",
+    "id": "apply_revision",
+    "inputs": [
+     "ticket_key",
+     "proposal",
+     "version"
+    ],
+    "needs": [
+     "revise"
+    ],
+    "on": {
+     "applied": {
+      "at_limit": "ask_at_limit",
+      "goto": "read_ticket",
+      "max_loops": 2
+     },
+     "changed": {
+      "at_limit": "ask_at_limit",
+      "goto": "read_ticket",
+      "max_loops": 2
+     }
+    },
+    "outcomes": [
+     "applied",
+     "changed"
+    ],
+    "when": {
+     "outcome": "revised",
+     "step": "revise"
+    }
+   },
+   {
+    "ask": {
+     "choices": [
+      "answered",
+      "park"
+     ],
+     "question": "{{ inputs.ticket_key }} needs one answer from you before it can be Ready. The question is on the ticket."
+    },
+    "id": "ask_josh",
+    "needs": [
+     "revise"
+    ],
+    "on": {
+     "answered": {
+      "at_limit": "ask_at_limit",
+      "goto": "revise",
+      "max_loops": 2
+     },
+     "park": "end"
+    },
+    "when": {
+     "outcome": "needs_josh",
+     "step": "revise"
+    }
+   },
+   {
+    "ask": {
+     "choices": [
+      "answered",
+      "park"
+     ],
+     "question": "{{ inputs.ticket_key }} has come back to triage three times. Every earlier question and answer is on the ticket. What should it do?"
+    },
+    "id": "ask_returned",
+    "needs": [
+     "verdict"
+    ],
+    "on": {
+     "answered": {
+      "at_limit": "ask_at_limit",
+      "goto": "read_ticket",
+      "max_loops": 1
+     },
+     "park": "end"
+    },
+    "when": {
+     "outcome": "escalate",
+     "step": "verdict"
+    }
+   },
+   {
+    "ask": {
+     "choices": [
+      "one_more_round",
+      "park"
+     ],
+     "on_limit_only": true,
+     "question": "{{ inputs.ticket_key }} is still not Ready after the rounds allowed. Its remaining gaps are on the ticket."
+    },
+    "id": "ask_at_limit",
+    "on": {
+     "one_more_round": {
+      "at_limit": "ask_at_limit",
+      "goto": "read_ticket",
+      "max_loops": 1
+     },
+     "park": "end"
+    }
+   },
+   {
+    "gate": "send-back",
+    "id": "send_back",
+    "inputs": [
+     "ticket_key",
+     "gaps"
+    ],
+    "needs": [
+     "verdict"
+    ],
+    "on": {
+     "sent": "end"
+    },
+    "outcomes": [
+     "sent"
+    ],
+    "when": {
+     "outcome": "comment",
+     "step": "verdict"
+    }
+   },
+   {
+    "effects": [
+     "move_ticket"
+    ],
+    "gate": "mark-ready",
+    "id": "mark_ready",
+    "inputs": [
+     "ticket_key",
+     "version",
+     "graph",
+     "system",
+     "space"
+    ],
+    "needs": [
+     "verdict"
+    ],
+    "on": {
+     "changed": {
+      "at_limit": "ask_at_limit",
+      "goto": "read_ticket",
+      "max_loops": 2
+     }
+    },
+    "outcomes": [
+     "moved",
+     "changed"
+    ],
+    "when": {
+     "outcome": "ready",
+     "step": "verdict"
+    }
+   }
+  ],
+  "title": "Ticket triage and sign-off"
+ },
+ "max_runs": {
+  "cheap": 5,
+  "gate": 2,
+  "mid": 3
+ },
+ "roles": {
+  "sign-off": {
+   "may_change": false,
+   "reviewer": true,
+   "tier": "mid",
+   "title": "Sign-off"
+  },
+  "ticket-drafter": {
+   "may_change": false,
+   "reviewer": false,
+   "tier": "mid",
+   "title": "Ticket drafter"
+  }
+ },
+ "sources": {
+  "flows/triage.yaml": "a9565a1a6f4d20f4ca61ec6f8a87a6e54dc8d2d3ac7414e99b2958919f8aa3ad",
+  "roles/sign-off/role.yaml": "2c940e901993068ff0bb897db05e74c23597b8a730e28ba2148bf29d47830254",
+  "roles/ticket-drafter/role.yaml": "392bcc63415c2ce8d1593dcf345b9ed21cd4d999cdc7571d936d5ed16b7ef44a",
+  "tiers.yaml": "af81c945dec4862af3be1d3957865dd692e7c77e42df42fa43b35c1fe3a14d44"
+ },
+ "tiers": {
+  "cheap": [
+   {
+    "effort": "high",
+    "model": "claude-haiku-5-5"
+   },
+   {
+    "effort": "medium",
+    "model": "claude-sonnet-5-5"
+   }
+  ],
+  "gate": [
+   {
+    "effort": "high",
+    "model": "claude-opus-5-5"
+   }
+  ],
+  "mid": [
+   {
+    "effort": "medium",
+    "model": "claude-sonnet-5-5"
+   }
+  ]
+ }
+}
