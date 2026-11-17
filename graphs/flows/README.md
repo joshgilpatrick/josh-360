@@ -6,3 +6,4 @@ One graph file per graph, `<graph>.yaml`, following `graphs/CONVENTION.md`. The 
 | --- | --- | --- |
 | `triage.yaml` | Ticket triage and sign-off | Draft from JP-103; its gate scripts are stubs until JP-122 builds them |
 | `non-development.yaml` | Non-development pipeline | Built (JP-123), from `docs/design/non-development-graph.md`; every gate it owns is a real script, and `ready` and `no-loose-ends` wait for JP-122 and JP-109 |
+| `development.yaml` | Development pipeline | Built (JP-115) from `docs/superpowers/specs/2026-11-17-development-graph-design.md`; its gate scripts are real scripts except `ready` (JP-122) and `no-loose-ends` (JP-109), and it uses the `wait` step |
