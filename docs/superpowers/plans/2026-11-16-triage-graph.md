@@ -78,7 +78,7 @@
 - [ ] **Step 1: Confirm the parts this build stands on are on `main`.** Each must exist; if one does not, stop and tell the coordinator which, because the plan is then wrong:
   - JP-114 walker: how it runs a gate (environment, working folder) and how a run records `returns`-free state.
   - JP-102/JP-121: `graphs/roles/ticket-drafter/` and `graphs/contracts/ticket-proposal.md` with an `action: revise` proposal whose single ticket carries `key`. If `revise` is missing, ask the coordinator for it before Task 9.
-  - JP-121: `graphs/gates/lib/patient_data.py` with a function that takes text and returns the names of the rules it matched.
+  - `graphs/gates/lib/patient_data.py` (on `main` since JP-149): `scan(text, source_text, flagged, external=False)` returns the kinds of rule it matched. Ticket text goes to Jira, so C13 calls it with `external=True`.
   - JP-139 (`max_runs` in `graphs/tiers.yaml`) and JP-140 (`graph_version`, `model`, end-state header field).
 - [ ] **Step 2: Capture the shape of a real ticket.** `GET /rest/api/2/issue/JP-103?fields=summary,description,issuetype,labels,issuelinks,creator,customfield_10021` and save it, then replace every text value except the bold section labels and the `{code:gherkin}` markers with made-up words. Note in the README which fields were kept and that it holds no patient data.
 - [ ] **Step 3: Find JP's Agent Status field id** (`GET /rest/api/2/field`, the field named `Agent Status`) and put it in `graphs/gates/lib/triage/__init__.py` as `AGENT_STATUS_FIELD`, with the README noting where it came from. `triageable` reads the changelog for that field.
@@ -87,11 +87,11 @@
 ### Task 1: Jira client
 
 **Files:**
-- Create: `graphs/gates/lib/__init__.py`, `graphs/gates/lib/jira_rest.py`, `graphs/gates/lib/gate_io.py`
+- Create: `graphs/gates/lib/jira_rest.py` (`graphs/gates/lib/__init__.py` exists, JP-149), `graphs/gates/lib/gate_io.py`
 - Test: `graphs/tests/test_triage_jira.py`
 
 **Interfaces:**
-- Produces: `JiraClient(site: str, email: str, token: str, opener=urllib.request.urlopen)` with `get_issue(key) -> dict | None`, `get_changelog(key) -> list[dict] | None` (all pages), `get_property(key, name) -> dict | None` (`{}` when absent, `None` on failure), `set_property(key, name, value) -> bool`, `add_comment(key, body) -> bool`, `update_description(key, wiki) -> bool`, `transition_to(key, status) -> bool`, `myself() -> str | None`; `client_from_env() -> JiraClient` (raises `GateError` if a variable is missing). `gate_io.inputs() -> dict[str, str]`, `gate_io.emit(outcome, outputs=None, summary="")`, `gate_io.fail(reason)` (stderr, exit 2), `class GateError(Exception)`.
+- Produces: `JiraClient(site: str, email: str, token: str, opener=urllib.request.urlopen)` with `get_issue(key) -> dict | None`, `get_changelog(key) -> list[dict] | None` (all pages), `get_property(key, name) -> dict | None` (`{}` when absent, `None` on failure), `set_property(key, name, value) -> bool`, `add_comment(key, body) -> bool`, `update_description(key, wiki) -> bool`, `transition_to(key, status) -> bool`, `myself() -> str | None`; `client_from_env() -> JiraClient` (raises `GateError` if a variable is missing). `gate_io.inputs() -> dict[str, str]`, `gate_io.emit(outcome, outputs=None, summary="")`, `gate_io.fail(reason)` (stderr, exit 2), `class GateError(Exception)`. **GitHub and Jira are the firm guard (JP-149):** every method that writes text to Jira runs `patient_data.scan(text, None, False, external=True)` (`graphs/gates/lib/patient_data.py`, on `main`) on that text first and refuses the write on any problem, naming the kind, never the text; a test writes made-up `MRN 1234` and expects the refusal with no request sent.
 
 - [ ] **Step 1: Write the failing tests** with a fake `opener`: `test_read_failure_is_none` (HTTP 500 → `None`), `test_missing_property_is_empty` (404 on a property → `{}`), `test_write_counts_only_after_read_back` (PUT ok, read-back differs → `False`), `test_token_never_in_error` (an exception's text never contains the token), `test_changelog_reads_every_page`.
 - [ ] **Step 2: Run** `python3 -m unittest graphs.tests.test_triage_jira` — expect import errors.
@@ -133,7 +133,7 @@
 - Test: `graphs/tests/test_triage_checklist.py`
 
 **Interfaces:**
-- Consumes: `Ticket` (Task 2), `find_gherkin_blocks`, `read_feature` (Task 3), `patient_data` (JP-121).
+- Consumes: `Ticket` (Task 2), `find_gherkin_blocks`, `read_feature` (Task 3), `patient_data` (on `main`, JP-149).
 - Produces: `CHECKLIST: list[dict]` (`id`, `types`, `text`) holding C1–C13, B1, B2, S1, R1, R2 with the spec's wording; `@dataclass Failure(item, where, found, needed)`; `run_checklist(t: Ticket, repo_known: Callable[[str], bool], send_back_after_edit: bool) -> list[Failure]`. `found` is cut to 200 characters, and is `missing` for C13.
 
 - [ ] **Step 1: Write the failing tests**, one per item, each on a made-up ticket built from one passing base ticket per type with a single change: C1 (Epic), C2 (Why missing; sections out of order), C3 (`TBD`; `None` allowed for Not in scope), C4 (two Gherkin blocks), C5 (two Whens; no Then; zero Whens passes), C6 (no tag; two tags), C7 (unknown repository; `none` on a Story), C8 (label `security`), C9 (`Josh's laptop` with no reason), C10 (parent in another space), C11 (subtask with no Done when), C12 (Why ending in `?`; Flagged on; `send_back_after_edit` true), C13 (patient-data rule matched; `found` is `missing`), B1, B2, S1, R1, and **`test_research_keeps_open_questions`** (R2: an Open questions section on a Research ticket gives no C12 failure, from the ticket's own acceptance criteria).
