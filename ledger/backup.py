@@ -4,8 +4,8 @@
 
 A copy is made with SQLite's own backup call, so it is safe while the walker and the recorder write. The copy is
 checked with PRAGMA integrity_check, and a copy that fails is removed, never kept. Copies sit in
-~/.josh-360/backups/ as `ledger-<YYYY-MM-DD>.db.gz`. There is no upload and no setting for one: the copy off the
-laptop is JP-150's.
+~/.josh-360/backups/ as `ledger-<YYYY-MM-DD>.db.gz`. The copy off the laptop is a separate job
+(ledger/upload.py, JP-150), so a failed upload never fails the backup.
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ import sqlite3
 import sys
 import tempfile
 from pathlib import Path
-from typing import List, Optional
+from typing import Iterable, List, Optional, Set
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -68,29 +68,47 @@ def copy_to(conn: sqlite3.Connection, dest: Path) -> None:
         shutil.rmtree(str(work), ignore_errors=True)
 
 
-def rotate(folder: Path, today: datetime.date) -> List[Path]:
-    """Remove all but the newest 14 daily copies and the newest copy of each of the last 8 weeks (counted back from
-    today). Only files named ledger-<date>.db.gz are looked at. Returns what was removed."""
-    copies = []
-    for p in folder.iterdir() if folder.is_dir() else []:
-        m = NAME.match(p.name)
+def keep_names(names: Iterable[str], today: datetime.date) -> Set[str]:
+    """Of the ledger-<date>.db.gz names given, the ones to keep: the newest 14 daily copies and the newest copy of
+    each of the last 8 weeks (counted back from today). Other names are never in the result. The upload to Azure
+    (JP-150) applies the same rule to the container's names."""
+    dated = []
+    for name in names:
+        m = NAME.match(name)
         if m:
             try:
-                copies.append((datetime.date.fromisoformat(m.group(1)), p))
+                dated.append((datetime.date.fromisoformat(m.group(1)), name))
             except ValueError:
                 continue
-    copies.sort(key=lambda c: c[0], reverse=True)
-    keep = {p for _, p in copies[:DAILY_KEPT]}
+    dated.sort(key=lambda c: c[0], reverse=True)
+    keep = {name for _, name in dated[:DAILY_KEPT]}
     seen_weeks = set()
-    for day, p in copies:  # newest first, so the first copy of a week is its newest
+    for day, name in dated:  # newest first, so the first copy of a week is its newest
         week = (today - day).days // 7
         if 0 <= week < WEEKLY_KEPT and week not in seen_weeks:
             seen_weeks.add(week)
-            keep.add(p)
-    removed = [p for _, p in copies if p not in keep]
+            keep.add(name)
+    return keep
+
+
+def rotate(folder: Path, today: datetime.date) -> List[Path]:
+    """Remove all but the copies keep_names keeps. Only files named ledger-<date>.db.gz are looked at. Returns what
+    was removed."""
+    present = {p.name: p for p in folder.iterdir()} if folder.is_dir() else {}
+    keep = keep_names(present, today)
+    removed = [p for name, p in sorted(present.items()) if NAME.match(name) and name not in keep
+               and _dated(name)]
     for p in removed:
         p.unlink()
     return removed
+
+
+def _dated(name: str) -> bool:
+    try:
+        datetime.date.fromisoformat(NAME.match(name).group(1))  # type: ignore[union-attr]
+        return True
+    except ValueError:
+        return False
 
 
 def main() -> int:
