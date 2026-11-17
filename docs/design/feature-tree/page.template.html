@@ -1,0 +1,310 @@
+<title>Josh 360 Feature Tree</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column. A summary of the one app's parts, then one collapsible tree per source repo.
+   Each feature is a row: its box (ticked = comes into josh-360), its name and chips, the rationale, and a comment.
+   A sticky bar at the bottom shows what Josh changed and sends the review. */
+:root {
+  --bg: #f4f6f5; --surface: #ffffff; --ink: #16201d; --muted: #5a6763; --line: #d9e0dd; --rail: #c5cfcb;
+  --accent: #0f6e63; --accent-soft: #e2f1ee;
+  --keep: #19744d; --keep-soft: #e3f3ea; --drop: #9a4a2a; --drop-soft: #f7e9e2; --mine: #6a3fb5; --mine-soft: #efe8fa;
+  --display: "Sora", "Segoe UI", system-ui, sans-serif;
+  --body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1513; --surface: #161e1b; --ink: #e4ebe8; --muted: #9aa8a3; --line: #27322e; --rail: #34423d;
+  --accent: #5cc7b6; --accent-soft: #17302b;
+  --keep: #62cf98; --keep-soft: #16301f; --drop: #e59a78; --drop-soft: #35211a; --mine: #b99af0; --mine-soft: #2a2140; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1513; --surface: #161e1b; --ink: #e4ebe8; --muted: #9aa8a3; --line: #27322e; --rail: #34423d;
+  --accent: #5cc7b6; --accent-soft: #17302b;
+  --keep: #62cf98; --keep-soft: #16301f; --drop: #e59a78; --drop-soft: #35211a; --mine: #b99af0; --mine-soft: #2a2140; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--body); }
+.wrap { max-width: 860px; margin: 0 auto; padding-block: 24px 140px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1 { font: 600 30px/1.15 var(--display); margin: 0 0 8px; text-wrap: balance; }
+h2 { font: 600 21px/1.25 var(--display); margin: 0; text-wrap: balance; }
+h3 { font: 600 13px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.eyebrow { font: 500 12px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+p { margin: 0 0 10px; max-width: 68ch; }
+.lede { color: var(--muted); }
+code { font: 12.5px var(--mono); background: var(--accent-soft); padding: 0 4px; border-radius: 4px; overflow-wrap: anywhere; }
+button { font: 500 14px var(--body); border-radius: 8px; padding: 9px 14px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+button.small { padding: 4px 9px; font-size: 13px; }
+button:focus-visible, textarea:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.legend { display: grid; gap: 6px; margin: 16px 0; font-size: 14px; }
+.legend div { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.stats { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 14px 0 4px; font: 500 13px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.stats b { color: var(--ink); font-weight: 600; }
+
+.homes { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; margin: 12px 0 8px; }
+.home { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.home .hn { font-weight: 600; display: flex; justify-content: space-between; gap: 8px; }
+.home .hn span { font: 500 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.home .ha { font-size: 13px; color: var(--muted); }
+
+.filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 22px 0 6px; position: sticky; top: env(safe-area-inset-top, 0px); background: var(--bg); padding-block: 8px; z-index: 5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.filters button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
+.filters input { flex: 1 1 180px; min-width: 0; font: 14px var(--body); padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+
+section.repo { margin-top: 28px; }
+.repohead { display: grid; gap: 4px; padding-bottom: 10px; border-bottom: 2px solid var(--ink); }
+.repohead .rc { font: 500 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.detail { margin: 12px 0 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 10px 14px; }
+.detail summary { cursor: pointer; color: var(--accent); font-weight: 500; }
+.detail ul { margin: 10px 0 0; padding-left: 18px; display: grid; gap: 8px; font-size: 14px; }
+details.area { margin-top: 14px; }
+details.area > summary { cursor: pointer; list-style: none; display: flex; gap: 10px; align-items: baseline; padding: 6px 0; }
+details.area > summary::before { content: "▸"; color: var(--muted); font-size: 12px; }
+details.area[open] > summary::before { content: "▾"; }
+details.area > summary .ac { font: 500 12px var(--mono); color: var(--muted); }
+
+.kids { margin-left: 13px; padding-left: 14px; border-left: 1px solid var(--rail); }
+.feat { padding: 12px 0 10px; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+.kids .kids .feat { padding-top: 9px; }
+.row1 { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; }
+.box { appearance: none; width: 22px; height: 22px; margin: 1px 0 0; border: 2px solid var(--drop); border-radius: 6px; background: var(--surface); cursor: pointer; display: grid; place-content: center; }
+.box:checked { border-color: var(--keep); background: var(--keep); }
+.box:checked::after { content: ""; width: 6px; height: 11px; border: solid var(--surface); border-width: 0 2.5px 2.5px 0; transform: rotate(45deg) translate(-1px, -1px); }
+.nm { min-width: 0; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+.nm label { font-weight: 600; cursor: pointer; }
+.chip { font: 500 11px var(--mono); letter-spacing: .03em; border-radius: 99px; padding: 1px 8px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.chip.id { border-color: transparent; background: var(--accent-soft); color: var(--accent); }
+.chip.keep { color: var(--keep); border-color: currentColor; background: var(--keep-soft); }
+.chip.drop { color: var(--drop); border-color: currentColor; background: var(--drop-soft); }
+.chip.mine { color: var(--mine); border-color: currentColor; background: var(--mine-soft); }
+.body { margin-left: 32px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; }
+.body > * { min-width: 0; overflow-wrap: anywhere; }
+.what { font-size: 14px; color: var(--muted); }
+.why { font-size: 14.5px; }
+.why b { font-weight: 600; }
+.meta { font: 12px var(--mono); color: var(--muted); }
+.cmt { display: grid; gap: 6px; }
+.cmt textarea { width: 100%; box-sizing: border-box; min-height: 56px; font: 14px/1.5 var(--body); padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); resize: vertical; }
+.cmtline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.has-cmt { font-size: 13px; color: var(--mine); }
+.feat.changed > .row1 .box { box-shadow: 0 0 0 3px var(--mine-soft); }
+.feat[hidden] { display: none; }
+
+.bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); z-index: 6;
+  padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.bar .in { max-width: 860px; margin: 0 auto; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.status { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 0; }
+.status.err { color: var(--drop); }
+.done { padding: 10px 14px; border-radius: 10px; border: 1px solid var(--keep); color: var(--keep); margin-top: 12px; }
+.empty { color: var(--muted); padding: 16px 0; }
+@media (prefers-reduced-motion: no-preference) { .box { transition: background .12s, border-color .12s; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">JP-143 · Josh 360 · one app</div>
+    <h1>What comes into josh-360</h1>
+    <p class="lede">Every feature in action-triage, claude-360 and macbook-automations, plus the agent-deck hooks on your laptop, as a tree. A ticked box means the feature is extracted and built into josh-360 as part of one app with one look; an unticked box means it is not brought in. Each call has its reason beside it.</p>
+    <p class="lede">Untick or tick anything you disagree with, and comment on any call. Your changes save as you go. Press <strong>Send review</strong> when you are done and I write your calls into the feature list and the move tickets (JP-111, JP-124).</p>
+    <div class="legend">
+      <div><span class="chip keep">as is</span><span class="chip keep">onto the ledger</span><span class="chip keep">rebuilt</span><span class="chip keep">merged</span> how a kept feature comes in</div>
+      <div><span class="chip drop">retired</span><span class="chip drop">stays outside</span><span class="chip drop">merged into …</span> why a feature is not brought in: switched off and archived, left running where it is, or another copy survives</div>
+      <div><span class="chip mine">your call</span> marks a box you changed</div>
+    </div>
+    <div id="stats" class="stats"></div>
+    <div id="done" class="done" hidden></div>
+  </header>
+
+  <section aria-labelledby="homes-h" style="margin-top:22px">
+    <h3 id="homes-h">The one app, and where kept features land</h3>
+    <div id="homes" class="homes"></div>
+  </section>
+
+  <div class="filters" role="toolbar" aria-label="Show">
+    <button type="button" data-f="all" aria-pressed="true">All</button>
+    <button type="button" data-f="keep" aria-pressed="false">Ticked</button>
+    <button type="button" data-f="drop" aria-pressed="false">Unticked</button>
+    <button type="button" data-f="mine" aria-pressed="false">Changed by you</button>
+    <button type="button" data-f="cmt" aria-pressed="false">Commented</button>
+    <input id="q" type="search" placeholder="Search features" aria-label="Search features">
+  </div>
+  <main id="list"></main>
+</div>
+<div class="bar"><div class="in">
+  <span id="status" class="status">Loading your saved review…</span>
+  <button id="send" class="primary" type="button">Send review</button>
+</div></div>
+
+<script>
+const DATA = /*__DATA__*/null;
+const HOW = { "as-is": "as is", ledger: "onto the ledger", rebuilt: "rebuilt", merged: "merged", retire: "retired", outside: "stays outside" };
+const DOC = "reviews/featureTree";
+let state = { nodes: {}, submittedAt: null };
+let db = null, docRef = null, saveTimer = null, saving = false, pending = false, filter = "all", query = "";
+const byId = {};
+const $ = (id) => document.getElementById(id);
+
+function esc(s) { return String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
+function fmt(s) { return esc(s).replace(/`([^`]+)`/g, "<code>$1</code>"); }
+function* walk(nodes, depth = 0, path = []) { for (const n of nodes || []) { yield [n, depth, path]; yield* walk(n.children, depth + 1, path.concat(n)); } }
+for (const [n] of walk(DATA.tree)) byId[n.id] = n;
+
+function kept(n) { const s = state.nodes[n.id]; return s && typeof s.keep === "boolean" ? s.keep : n.call === "keep"; }
+function changed(n) { const s = state.nodes[n.id]; return !!(s && typeof s.keep === "boolean" && s.keep !== (n.call === "keep")); }
+function comment(n) { return ((state.nodes[n.id] || {}).comment || "").trim(); }
+function features(nodes) { return [...walk(nodes)].map(x => x[0]).filter(n => n.call); }
+
+function howChip(n) {
+  const cls = n.call === "keep" ? "keep" : "drop";
+  let label = HOW[n.how] || n.how;
+  if (n.how === "merged" && n.into) label = "merged into " + n.into;
+  return `<span class="chip ${cls}" title="My call">${esc(label)}</span>`;
+}
+
+function featHTML(n) {
+  const home = n.home && DATA.homes[n.home] ? `<span class="chip" title="${esc(DATA.homes[n.home].about)}">${esc(DATA.homes[n.home].name)}</span>` : "";
+  const into = n.into && byId[n.into] ? ` Survivor: <b>${esc(n.into)}</b> ${esc(byId[n.into].name)}.` : "";
+  return `<div class="feat" data-id="${esc(n.id)}">
+    <div class="row1">
+      <input type="checkbox" class="box" id="b-${esc(n.id)}" aria-describedby="w-${esc(n.id)}">
+      <div class="nm"><label for="b-${esc(n.id)}">${esc(n.name)}</label><span class="chip id">${esc(n.id)}</span>${howChip(n)}${home}<span class="chip mine" hidden>your call</span></div>
+    </div>
+    <div class="body">
+      <div class="what">${fmt(n.what)}</div>
+      <div class="why" id="w-${esc(n.id)}"><b>${n.call === "keep" ? "Why keep:" : "Why not bring in:"}</b> ${fmt(n.why)}${into}</div>
+      ${n.carrier ? `<div class="meta">Carried by ${esc(n.carrier)}</div>` : ""}
+      <div class="cmt">
+        <div class="cmtline"><button type="button" class="small cbtn">Comment</button><span class="has-cmt" hidden></span></div>
+        <textarea id="c-${esc(n.id)}" placeholder="Your comment on this call" hidden aria-label="Comment on ${esc(n.id)}"></textarea>
+      </div>
+    </div>
+  </div>`;
+}
+
+function nodeHTML(n) {
+  if (n.call) return featHTML(n) + (n.children ? `<div class="kids">${n.children.map(nodeHTML).join("")}</div>` : "");
+  const fs = features(n.children);
+  return `<details class="area" open data-area="${esc(n.id)}"><summary><h3>${esc(n.name)}</h3><span class="ac">${fs.length} features</span></summary>
+    <div class="kids">${(n.children || []).map(nodeHTML).join("")}</div></details>`;
+}
+
+function render() {
+  const list = $("list");
+  list.innerHTML = DATA.tree.map(repo => {
+    const fs = features(repo.children);
+    const det = repo.detail ? `<details class="detail" open><summary>About agent-deck, in detail</summary><ul>${repo.detail.map(d => `<li>${fmt(d)}</li>`).join("")}</ul></details>` : "";
+    return `<section class="repo" data-repo="${esc(repo.id)}"><div class="repohead"><div class="eyebrow">Source</div><h2>${esc(repo.name)}</h2>
+      <p class="lede" style="margin:0">${fmt(repo.about)}</p><div class="rc" data-rc="${esc(repo.id)}"></div>${det}</div>
+      ${(repo.children || []).map(nodeHTML).join("")}</section>`;
+  }).join("") + `<p id="none" class="empty" hidden>No features match.</p>`;
+
+  for (const el of list.querySelectorAll(".feat")) {
+    const n = byId[el.dataset.id];
+    const box = el.querySelector(".box"), ta = el.querySelector("textarea"), btn = el.querySelector(".cbtn");
+    box.addEventListener("change", () => {
+      const s = state.nodes[n.id] = Object.assign({}, state.nodes[n.id] || {});
+      if (box.checked === (n.call === "keep")) delete s.keep; else s.keep = box.checked;
+      if (!s.keep && s.keep !== false && !s.comment) delete state.nodes[n.id];
+      paint(el); scheduleSave();
+    });
+    btn.addEventListener("click", () => { ta.hidden = !ta.hidden; if (!ta.hidden) ta.focus(); paint(el); });
+    ta.addEventListener("input", () => {
+      const s = state.nodes[n.id] = Object.assign({}, state.nodes[n.id] || {});
+      s.comment = ta.value; if (!ta.value.trim()) delete s.comment;
+      if (s.keep === undefined && s.comment === undefined) delete state.nodes[n.id];
+      paint(el, true); scheduleSave();
+    });
+  }
+  paintAll();
+}
+
+function paint(el, typing) {
+  const n = byId[el.dataset.id];
+  const box = el.querySelector(".box"), ta = el.querySelector("textarea"), btn = el.querySelector(".cbtn"), has = el.querySelector(".has-cmt");
+  box.checked = kept(n);
+  el.classList.toggle("changed", changed(n));
+  el.querySelector(".chip.mine").hidden = !changed(n);
+  const c = comment(n);
+  if (!typing) { ta.value = (state.nodes[n.id] || {}).comment || ""; if (c) ta.hidden = false; }
+  btn.textContent = ta.hidden ? (c ? "Show comment" : "Comment") : "Hide";
+  has.hidden = !c || !ta.hidden; has.textContent = c ? "Commented" : "";
+  stats();
+}
+function paintAll() { for (const el of document.querySelectorAll(".feat")) paint(el); applyFilter(); }
+
+function stats() {
+  const all = features(DATA.tree);
+  const k = all.filter(kept).length, ch = all.filter(changed).length, cm = all.filter(n => comment(n)).length;
+  $("stats").innerHTML = `<span><b>${all.length}</b> features</span><span><b>${k}</b> ticked</span><span><b>${all.length - k}</b> unticked</span><span><b>${ch}</b> changed by you</span><span><b>${cm}</b> commented</span>`;
+  for (const repo of DATA.tree) {
+    const fs = features(repo.children), rk = fs.filter(kept).length;
+    const el = document.querySelector(`[data-rc="${repo.id}"]`); if (el) el.textContent = `${fs.length} features · ${rk} ticked · ${fs.length - rk} unticked`;
+  }
+  const homes = $("homes");
+  homes.innerHTML = Object.entries(DATA.homes).map(([key, h]) => {
+    const n = all.filter(f => f.call === "keep" && f.home === key && kept(f)).length;
+    return `<div class="home"><div class="hn">${esc(h.name)}<span>${n}</span></div><div class="ha">${esc(h.about)}</div></div>`;
+  }).join("");
+  updateStatus();
+}
+
+function matches(n) {
+  if (filter === "keep" && !kept(n)) return false;
+  if (filter === "drop" && kept(n)) return false;
+  if (filter === "mine" && !changed(n)) return false;
+  if (filter === "cmt" && !comment(n)) return false;
+  if (query) { const hay = [n.id, n.name, n.what, n.why, n.carrier].join(" ").toLowerCase(); if (!hay.includes(query)) return false; }
+  return true;
+}
+function applyFilter() {
+  let shown = 0;
+  for (const el of document.querySelectorAll(".feat")) { const ok = matches(byId[el.dataset.id]); el.hidden = !ok; if (ok) shown++; }
+  for (const a of document.querySelectorAll("details.area")) { const any = [...a.querySelectorAll(".feat")].some(f => !f.hidden); a.hidden = !any; if (filter !== "all" || query) a.open = true; }
+  for (const s of document.querySelectorAll("section.repo")) { s.hidden = ![...s.querySelectorAll(".feat")].some(f => !f.hidden); }
+  $("none").hidden = shown > 0;
+}
+for (const b of document.querySelectorAll(".filters button")) b.addEventListener("click", () => {
+  filter = b.dataset.f; for (const o of document.querySelectorAll(".filters button")) o.setAttribute("aria-pressed", String(o === b)); applyFilter();
+});
+$("q").addEventListener("input", (e) => { query = e.target.value.trim().toLowerCase(); applyFilter(); });
+
+function updateStatus(msg, err) {
+  const el = $("status"); el.classList.toggle("err", !!err);
+  const all = features(DATA.tree);
+  el.textContent = msg || `${all.filter(changed).length} changed · ${all.filter(n => comment(n)).length} commented` + (docRef ? "" : (db === false ? " · not saving (open this page signed in to claude.ai)" : ""));
+  const d = $("done");
+  if (state.submittedAt) { d.hidden = false; d.textContent = "Sent " + new Date(state.submittedAt).toLocaleString() + ". Claude writes your calls into the feature list and the move tickets. You can still change a box or a comment and send again."; }
+  else d.hidden = true;
+}
+function scheduleSave() { updateStatus(); clearTimeout(saveTimer); saveTimer = setTimeout(save, 700); }
+async function save() {
+  if (!docRef) return;
+  if (saving) { pending = true; return; }
+  saving = true;
+  try { await docRef.set(JSON.parse(JSON.stringify(state))); updateStatus(); $("status").textContent += " · saved"; }
+  catch (e) { updateStatus("Could not save: " + (e && (e.message || e.code) || "unknown error") + ". Your changes are still on screen; try again.", true); }
+  finally { saving = false; if (pending) { pending = false; save(); } }
+}
+$("send").addEventListener("click", async () => {
+  state.submittedAt = new Date().toISOString(); clearTimeout(saveTimer); await save();
+  if (!docRef) updateStatus("Not saved: open this page signed in to claude.ai to send your review.", true); else updateStatus();
+});
+
+render();
+(async () => {
+  const timer = setTimeout(() => { if (!docRef) { db = false; updateStatus(); } }, 10000);
+  try {
+    const got = window.claude && window.claude.use ? await window.claude.use("db") : null;
+    if (got) {
+      db = got; docRef = db.doc(DOC);
+      const snap = await docRef.get();
+      if (snap.exists) { const d = snap.data(); state = { nodes: Object.assign({}, d.nodes || {}), submittedAt: d.submittedAt || null }; }
+      paintAll();
+    } else db = false;
+  } catch (e) { clearTimeout(timer); updateStatus("Could not load your saved review: " + (e && (e.message || e.code) || "unknown error"), true); return; }
+  clearTimeout(timer); updateStatus();
+})();
+</script>

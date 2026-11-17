@@ -1,0 +1,1023 @@
+# Feature tree for melding action-triage, claude-360 (Session Atlas) and macbook-automations into josh-360.
+# Ticket: JP-143. Written 17 November 2026 from action-triage main (7785e6d), claude-360 main (2da83a3),
+# macbook-automations main (f1fae04), josh-360's docs/inventory/features.md (JP-97) and laptop.md (JP-96),
+# and Josh's JP-106 answers (submitted 17 November 2026, 00:28 UTC).
+#
+# Every feature node has:
+#   id     stable; A/S ids are the JP-97 rows, M ids are new for macbook-automations, D ids are agent-deck.
+#   call   keep (box ticked: the feature comes into josh-360) or drop (box unticked).
+#   how    keep: as-is | ledger | rebuilt | merged   drop: retire | outside | merged
+#   home   keep only: the part of the one app it lands in (see homes below).
+#   into   merged only: the id of the node that survives.
+#   why    the rationale shown next to the box.
+#   carrier  the josh-360 ticket(s) that do the work, where one exists.
+# Group nodes (repos and areas) have an id, a name and children, and no call.
+
+homes:
+  shell: {name: App shell, about: "One window (the edge pill that slides out into a panel), one theme, the phone view and one installer."}
+  intake: {name: Intake, about: "Where work comes in: meetings, quick tickets, forwarded email and the ticket draft form."}
+  tickets: {name: Tickets, about: "Jira tickets for the configured projects, with Start and the runner choice."}
+  runner: {name: Runner, about: "The background service that watches Jira, starts headless sessions through the walker and keeps them safe."}
+  review: {name: Review, about: "The PR audit and the review queue."}
+  needs-you: {name: Needs you, about: "Every question an agent asks Josh, and every stuck ticket."}
+  sessions: {name: Sessions, about: "The ledger's view of every session: search, transcript, lineage, cost, history and activity."}
+  files: {name: Files, about: "What sessions made, and the guard that stops it being lost."}
+  jobs: {name: Laptop jobs and hooks, about: "josh-360's job list (jobs.yaml) and its hook folder (hooks/), installed from main."}
+  settings: {name: Settings, about: "Prompts and configuration Josh edits without a code change."}
+
+tree:
+- id: AT
+  name: action-triage
+  about: "Electron app, background daemon, email desk and command line. Today it lives in Eventus-Whole-Health/action-triage."
+  children:
+  - id: AT.intake
+    name: Intake and capture
+    children:
+    - id: A1
+      name: Meeting sync and action-item extraction
+      what: "Copies Notion meeting notes every 15 minutes and asks a small model for each meeting's action items."
+      call: keep
+      how: as-is
+      home: intake
+      why: "The vision names meeting action items as a ticket-creation input, and extraction is cheap: one call per meeting."
+      carrier: JP-124, JP-121
+      children:
+      - id: A1.1
+        name: Notion pull and meeting files
+        what: "meetings-sync/refresh.py writes transcripts, summaries and notion-data.json."
+        call: keep
+        how: as-is
+        home: intake
+        why: "The source for both the Calendar tab and the ticket creation graph."
+        carrier: JP-124
+      - id: A1.2
+        name: Action-item extraction
+        what: "One Haiku call per meeting summary writes action-items.json."
+        call: keep
+        how: as-is
+        home: intake
+        why: "Cheap, runs once per meeting, works."
+        carrier: JP-124
+      - id: A1.3
+        name: Refresh on new items and the sync spinner
+        what: "The app watches action-items.json and kicks the launchd sync, waiting for it to finish."
+        call: keep
+        how: rebuilt
+        home: intake
+        why: "Becomes a josh-360 laptop job (jobs.yaml) in place of Agent Command Center's old plist, so one startup list owns it."
+        carrier: JP-119, JP-124
+    - id: A2
+      name: Item classification and field prefill
+      what: "Two cheap calls per item: is it Josh's and can an agent act on it; then suggested ticket fields."
+      call: keep
+      how: rebuilt
+      home: intake
+      why: "These are the first steps of the ticket creation graph. Rebuilt as graph steps so there is one copy, not two that drift."
+      carrier: JP-121
+    - id: A3
+      name: Calendar tab
+      what: "Meetings by day with their action items: draft a ticket, mark done, defer, dismiss, snooze."
+      call: keep
+      how: as-is
+      home: intake
+      why: "You said on 17 November you have not agreed to discontinue it (JP-106 Q9), so it stays. Once the ticket creation graph exists, its draft action goes through that graph."
+      carrier: JP-124, JP-121
+    - id: A4
+      name: Ticket drafting
+      what: "The draft form and `ticket create`: one Jira create with Repository, Agent Status and the spec property, checked first and never blindly retried."
+      call: keep
+      how: as-is
+      home: intake
+      why: "The one safe write every intake route needs, and it already speaks Jira."
+      carrier: JP-124, JP-121
+    - id: A5
+      name: Quick capture
+      what: "Cmd+Alt+. opens a small window to capture a to-do with an optional screenshot."
+      call: keep
+      how: rebuilt
+      home: intake
+      why: "Becomes a quick ticket: the same shortcut files a Not Started JP ticket. This is your 'QuickTasks could become quick tickets' idea (JP-106 Q12)."
+      carrier: JP-124
+    - id: A6
+      name: To-do tab
+      what: "The inbox of captured to-dos that are not work yet."
+      call: drop
+      how: merged
+      into: A8
+      why: "Once quick capture files tickets, the Tickets tab's Backlog view is this inbox. Two inboxes is what you are trying to get rid of."
+      carrier: JP-124
+    - id: A7
+      name: Prompt settings
+      what: "View, edit, test and reset the app's model prompts."
+      call: keep
+      how: as-is
+      home: settings
+      why: "You tune prompts without a code change. In josh-360 it also lists the graph step prompts, so all prompts live in one Settings page."
+      carrier: JP-124
+  - id: AT.tickets
+    name: Tickets and agent sessions
+    children:
+    - id: A8
+      name: Tickets tab
+      what: "Active and Backlog views of AD and JP tickets, a detail view, Start, the runner toggle and a Stuck count."
+      call: keep
+      how: as-is
+      home: tickets
+      why: "The Jira-native view the console redesign built to replace the issue tabs."
+      carrier: JP-124
+      children:
+      - id: A8.1
+        name: Active and Backlog views
+        what: "Two JQL views, read by field id, newest 200."
+        call: keep
+        how: as-is
+        home: tickets
+        why: "The list you work from."
+        carrier: JP-124
+      - id: A8.2
+        name: Start (sets Agent Status to Queued)
+        what: "Re-reads the ticket, runs the start gates, then writes Queued as you."
+        call: keep
+        how: as-is
+        home: tickets
+        why: "The one button that hands a ticket to the runner."
+        carrier: JP-124
+      - id: A8.3
+        name: Runner toggle (headless or Agent Manager)
+        what: "Adds or removes the agent-manager label."
+        call: keep
+        how: rebuilt
+        home: tickets
+        why: "Kept as the choice between a headless run and a run you can watch in Agent Manager. Today 'Agent Manager' means the sprint lead (A15, dropped); in josh-360 it means the walker bound to Agent Manager (JP-117)."
+        carrier: JP-124, JP-117
+      - id: A8.4
+        name: Stuck ticket watcher
+        what: "Counts Stuck tickets every 60 seconds, backing off on rate limits."
+        call: keep
+        how: as-is
+        home: needs-you
+        why: "Feeds the pill count and the Needs you tab."
+        carrier: JP-124
+    - id: A9
+      name: Jira ticket pickup (daemon)
+      what: "Polls for Queued tickets, runs the start gate, prepares the branch, starts a headless session, moves Jira status, finds the PR and cleans up. Off today."
+      call: keep
+      how: rebuilt
+      home: runner
+      why: "Your JP-106 Q7 answer: a daemon watches Jira for tickets in a set state and launches the graph. This is that daemon; it asks the walker for the next step instead of always running one session, and its records move onto the ledger."
+      carrier: JP-124, JP-114, JP-117
+      children:
+      - id: A9.1
+        name: Start gate
+        what: "Who set Queued, a valid Repository, a parseable spec, a trusted email sender; every check fails closed."
+        call: keep
+        how: as-is
+        home: runner
+        why: "The trust boundary for anything that turns a ticket into a session on your laptop."
+        carrier: JP-124
+      - id: A9.2
+        name: Branch contract and slot clearing
+        what: "Prepares <KEY>-<slug> from a fresh origin, pushes it, clears an old generation safely."
+        call: keep
+        how: as-is
+        home: runner
+        why: "Each rule records a real incident (PR #91's 18 unrelated commits)."
+        carrier: JP-124
+      - id: A9.3
+        name: Jira status moves
+        what: "Running, Stuck, Finished, Code Review on a review label, Deployed after merge."
+        call: keep
+        how: as-is
+        home: runner
+        why: "Fixes pipeline gap 2, Jira status never moving."
+        carrier: JP-124
+      - id: A9.4
+        name: Run records in state.json
+        what: "Ticket and handoff records under __tickets__."
+        call: keep
+        how: ledger
+        home: runner
+        why: "Workflow-run facts belong in the ledger, so the dashboard and the weekly review can read them."
+        carrier: JP-124, JP-107
+    - id: A10
+      name: GitHub-issue sessions
+      what: "Picks up issues carrying an agent-spec and the action-triage label, resumes from owner comments, sets status:* labels."
+      call: drop
+      how: retire
+      why: "Replaced by Jira pickup (A9) and the session Jira channel (A11). Two issues in a month use it. It drains until Jira pickup is turned on, then retires."
+      carrier: JP-124
+    - id: A11
+      name: Session Jira channel
+      what: "A per-session MCP server (report, report_blocker, permission_host); the daemon relays it to Jira, keeps a mailbox per ticket and resumes on a reply."
+      call: keep
+      how: ledger
+      home: runner
+      why: "Questions and answers are the decision records the ledger holds. Passing new ticket comments to sessions (JP-118) builds on this mailbox."
+      carrier: JP-124, JP-118
+    - id: A12
+      name: Tasked tab and standalone issues
+      what: "Rows for tasked meeting items and action-triage issues, with a lifecycle view."
+      call: drop
+      how: merged
+      into: A8
+      why: "Issue-based; the Tickets tab replaces it. Already planned in action-triage's own roadmap (phase 8)."
+      carrier: JP-124
+    - id: A13
+      name: Nudge, redo and model change on an issue
+      what: "Nudge comments, Redo closes and reopens, the Session tab rewrites the spec's model line."
+      call: drop
+      how: retire
+      why: "Issue versions. Their ticket versions replace them: Start sets Queued again, a mailbox message is the nudge, the spec property holds the model. JP-124 builds ticket Cancel and Redo first."
+      carrier: JP-124
+    - id: A14
+      name: Email-origin issues and the one result email
+      what: "Issues filed from forwarded email, with a single-tool emailer MCP server."
+      call: drop
+      how: merged
+      into: A27
+      why: "The Email Research Desk replaced it; the desk's cutover retires this path."
+      carrier: JP-124
+    - id: A15
+      name: Sprint lead handoff and Start lead
+      what: "Hands an agent-manager ticket to the sprint lead; Needs you offers a Start lead button."
+      call: drop
+      how: retire
+      why: "The walker bound to Agent Manager (JP-117) replaces the sprint lead, and the sprint skill retires (JP-128)."
+      carrier: JP-128
+    - id: A16
+      name: Session spawning and its safety rails
+      what: "How a headless session is started safely."
+      call: keep
+      how: as-is
+      home: runner
+      why: "Every headless session needs it, and each rule records a real incident."
+      carrier: JP-124
+      children:
+      - id: A16.1
+        name: Bifrost routing, virtual key and model aliases
+        what: "Sessions run against the gateway with the project's own key; opus/sonnet/haiku resolve to concrete models."
+        call: keep
+        how: as-is
+        home: runner
+        why: "Cost attribution and working tier aliases. Rename the key to josh-360's when it moves."
+        carrier: JP-124
+      - id: A16.2
+        name: Per-session GitHub token, refreshed every minute
+        what: "A private GH_CONFIG_DIR per session, rewritten each watchdog tick, minted per repo owner's App."
+        call: keep
+        how: as-is
+        home: runner
+        why: "Fixed the 7-hour session on a 1-hour token (#10) and the cross-org PR blindness (#88)."
+        carrier: JP-124
+      - id: A16.3
+        name: Guardrails hook
+        what: "Denies reads of tokens and secrets, writes to the guard itself and to the channel stores, and destructive Jira writes."
+        call: keep
+        how: as-is
+        home: runner
+        why: "The only thing between a bypass-permissions session and your credentials."
+        carrier: JP-124
+      - id: A16.4
+        name: Forced transcript saving
+        what: "CLAUDE_CODE_FORCE_SESSION_PERSISTENCE=1 on every launch."
+        call: keep
+        how: as-is
+        home: runner
+        why: "The ledger, watchdog and resume all need the transcript."
+        carrier: JP-124
+      - id: A16.5
+        name: Turn cap and reflection nudge
+        what: "--max-turns per run; every 40 turns a Stop hook asks 'are you looping?'."
+        call: keep
+        how: as-is
+        home: runner
+        why: "Bounds cost the same way the graph run caps do (JP-139)."
+        carrier: JP-124
+      - id: A16.6
+        name: apiKeyHelper and plugin-MCP skip
+        what: "Strict gateway auth with no keychain probe; personal plugin MCP servers off in headless runs."
+        call: keep
+        how: as-is
+        home: runner
+        why: "Fixed the 3-minute auth hang and the 128-tool cap error."
+        carrier: JP-124
+    - id: A17
+      name: Session watchdog and recovery
+      what: "Kills hung turns, sweeps orphans, recovers after restarts and names why a session stopped."
+      call: keep
+      how: as-is
+      home: runner
+      why: "Its block reasons are free friction facts for JP-112, and each check fixed an outage."
+      carrier: JP-124, JP-112
+      children:
+      - id: A17.1
+        name: Kill criteria (no transcript, stalled, hard cap)
+        what: "10 minutes with no transcript, 30 minutes with no growth, 3 hours total."
+        call: keep
+        how: as-is
+        home: runner
+        why: "Without it one hung session blocks every other."
+        carrier: JP-124
+      - id: A17.2
+        name: Orphan sweep and boot reaper
+        what: "Kills a session's whole process tree; demotes stranded records at boot and every poll."
+        call: keep
+        how: as-is
+        home: runner
+        why: "Fixed the surviving grandchild and athena#1 stuck in progress forever."
+        carrier: JP-124
+      - id: A17.3
+        name: One auto-resume after a restart
+        what: "A session interrupted by a daemon restart resumes once on its own."
+        call: keep
+        how: as-is
+        home: runner
+        why: "Restarts happen; one free resume avoids a manual nudge."
+        carrier: JP-124
+      - id: A17.4
+        name: Preflight retry cap, silent-stop and API-error names
+        what: "Three failed starts in 24 hours put a hold on; a stop with no comment or a synthetic API error gets named and explained."
+        call: keep
+        how: as-is
+        home: runner
+        why: "Turns a silent vanish into a reason you can read."
+        carrier: JP-124
+    - id: A18
+      name: Daemon self-checks
+      what: "Restarts on its own code change when idle, heartbeat each poll, exits on a stalled poll, bounds the Key Vault read."
+      call: keep
+      how: as-is
+      home: runner
+      why: "Each check fixed an outage where the daemon looked alive and did nothing (16.5 hours on 16 August)."
+      carrier: JP-124
+    - id: A19
+      name: Diagnose a stuck session
+      what: "One button starts a background session to find why an item went wrong and fix the app."
+      call: keep
+      how: rebuilt
+      home: sessions
+      why: "On demand and cheap. Rebuilt to diagnose a ticket run (not an issue) and to open its fix as a josh-360 ticket."
+      carrier: JP-124
+    - id: A20
+      name: Open in terminal and Send to Background
+      what: "Two buttons on a session."
+      call: keep
+      how: as-is
+      home: sessions
+      why: "Both buttons stay; only one way of backgrounding survives."
+      carrier: JP-124
+      children:
+      - id: A20.1
+        name: Open in terminal (Ghostty)
+        what: "Opens the session in Ghostty with your own credentials."
+        call: keep
+        how: as-is
+        home: sessions
+        why: "The quickest way to take over a session by hand."
+        carrier: JP-124
+      - id: A20.2
+        name: Send to Background by writing a supervisor job file
+        what: "Writes Claude Code's supervisor state.json directly."
+        call: drop
+        how: merged
+        into: S7
+        why: "Atlas's `claude --bg --resume` uses the public command instead of private files, so it survives Claude Code updates."
+        carrier: JP-124
+  - id: AT.review
+    name: Pull request audit
+    children:
+    - id: A21
+      name: Automated PR audit
+      what: "Finds PRs labelled review:needs-agent-audit in every configured org, audits them in a prepared worktree, posts one comment and a verdict label."
+      call: keep
+      how: as-is
+      home: review
+      why: "Heavily used (95 verdicts since 1 November) and josh-360's only reviewer by your choice on 16 November. It becomes the review step of the development graph."
+      carrier: JP-124, JP-115
+      children:
+      - id: A21.1
+        name: Per-owner GitHub Apps and the bot-login set
+        what: "One App per owner (Eventus-Whole-Health, eventuswh-apps, joshgilpatrick)."
+        call: keep
+        how: as-is
+        home: review
+        why: "A private App installs only on its owner."
+        carrier: JP-124
+      - id: A21.2
+        name: Discovery, queue order and one-slot pickup
+        what: "Searches every org with the same query as the board, orders by your pins, enqueues only what starts now."
+        call: keep
+        how: as-is
+        home: review
+        why: "Keeps the board's numbers honest."
+        carrier: JP-124
+      - id: A21.3
+        name: Recovery, blocked handoff and cleanup
+        what: "One automatic resume, a blocked audit handed to you, worktree removed only after a confirmed verdict."
+        call: keep
+        how: as-is
+        home: review
+        why: "Audits stall; this keeps them from vanishing or looping."
+        carrier: JP-124
+      - id: A21.4
+        name: Re-engaging the author session
+        what: "The verdict comment wakes the session that opened the PR; three or fewer findings skip another round."
+        call: keep
+        how: as-is
+        home: review
+        why: "The ceremony josh-360's own workflow relies on."
+        carrier: JP-124
+    - id: A22
+      name: Code Review board
+      what: "Every open PR with a review label, in lanes, with the real queue order, reordering, stuck flags and Force review."
+      call: keep
+      how: as-is
+      home: review
+      why: "The one place you see and order the review queue."
+      carrier: JP-124
+  - id: AT.needs
+    name: Needs you
+    children:
+    - id: A23
+      name: Needs you tab and the question hook
+      what: "Catches AskUserQuestion in Agent Manager and ticket sessions, shows it as a card, sends your pick back; lists Stuck tickets."
+      call: keep
+      how: ledger
+      home: needs-you
+      why: "You chose it as the one place for agent decisions. Your answers become the first decision records (JP-116) and later feed suggestions (JP-126)."
+      carrier: JP-125, JP-116, JP-126
+      children:
+      - id: A23.1
+        name: Ask hook (interactive)
+        what: "Holds the question up to 9 minutes for an answer from the app, then falls back to the terminal."
+        call: keep
+        how: as-is
+        home: needs-you
+        why: "Answer from anywhere without opening the session's terminal. Its live path still points into a worktree; JP-105's hook folder fixes that."
+        carrier: JP-125
+      - id: A23.2
+        name: Headless questions
+        what: "A ticket session's question ends the turn; your answer resumes it with no prompt."
+        call: keep
+        how: as-is
+        home: needs-you
+        why: "How a 2 AM ticket asks you something without holding a slot."
+        carrier: JP-125
+      - id: A23.3
+        name: Stuck tickets section
+        what: "Lists tickets whose Agent Status is Stuck."
+        call: keep
+        how: as-is
+        home: needs-you
+        why: "Matches the pill count."
+        carrier: JP-125
+  - id: AT.log
+    name: Log tabs
+    children:
+    - id: A24
+      name: History tab
+      what: "A lifecycle timeline per item, with the files the session made; archives worktree files before pruning."
+      call: keep
+      how: ledger
+      home: sessions
+      why: "The timeline is ledger facts. Its file list comes from Atlas's artifact manager (S11), which keeps files without copying them."
+      carrier: JP-124
+    - id: A25
+      name: Activity tab
+      what: "A feed of the last 500 events with read marks."
+      call: keep
+      how: ledger
+      home: sessions
+      why: "Each event is a run or step fact the walker writes to the ledger anyway; keyed by ticket instead of issue number."
+      carrier: JP-124
+    - id: A26
+      name: Sessions catalog
+      what: "Every transcript from the last 30 days, scanned from disk, with search and a transcript view."
+      call: drop
+      how: merged
+      into: S5
+      why: "Atlas already indexes every session with lineage and cost. One Sessions view on the ledger, not two scanners."
+      carrier: JP-124
+  - id: AT.desk
+    name: Email Research Desk
+    children:
+    - id: A27
+      name: Email Research Desk
+      what: "Every minute, finds mail you forwarded, files a Jira ticket, hands it to a worker session, guards the worker and replies to you only."
+      call: keep
+      how: as-is
+      home: intake
+      why: "It replaced the email-issue path and works. Its intake becomes one route into the ticket creation graph."
+      carrier: JP-124, JP-121
+      children:
+      - id: A27.1
+        name: Watcher and handoff to the coordinator
+        what: "desk_watcher.py, every 60 seconds, into Agent Manager's coordinator session."
+        call: keep
+        how: rebuilt
+        home: intake
+        why: "Becomes a josh-360 laptop job and hands to the walker instead of a fixed coordinator session."
+        carrier: JP-124, JP-117
+      - id: A27.2
+        name: Worker guard
+        what: "desk_guard.py limits tools in desk worker sessions."
+        call: keep
+        how: as-is
+        home: jobs
+        why: "A hook in josh-360's hook folder."
+        carrier: JP-124
+      - id: A27.3
+        name: Mailer and desk ledger
+        what: "Replies to you only; desk.db records threads and sends."
+        call: keep
+        how: ledger
+        home: intake
+        why: "Thread and send records move onto the ledger; the mailer keeps its fixed recipient."
+        carrier: JP-124, JP-107
+    - id: A28
+      name: Desk tab
+      what: "A read-only list of the desk's threads, stage, ticket, worker and reply status."
+      call: keep
+      how: rebuilt
+      home: intake
+      why: "Reads the ledger instead of desk.db through an inline Python script."
+      carrier: JP-124
+  - id: AT.shell
+    name: Command line and app shell
+    children:
+    - id: A29
+      name: Developer CLI
+      what: "`action-triage <noun> <verb>` with --yes, --dry-run, --json and fixed exit codes."
+      call: keep
+      how: rebuilt
+      home: shell
+      why: "How agents drive the app. Renamed to one josh-360 command; the todo noun goes with the To-do tab, ticket and session stay."
+      carrier: JP-124
+    - id: A30
+      name: Pill window and panel
+      what: "The always-on-top pill on the screen edge that slides out into the tabbed panel, with tray menu and notifications."
+      call: keep
+      how: rebuilt
+      home: shell
+      why: "Recommended as the one app's shell. Atlas's dashboard pages are rebuilt as panel tabs in the same theme, so you get one window, not a pill plus a web page on port 8770. The look is settled by JP-130."
+      carrier: JP-124, JP-130
+    - id: A31
+      name: Phone bridge
+      what: "An opt-in, token-protected web view of the panel, for example over Tailscale. Off by default."
+      call: keep
+      how: as-is
+      home: shell
+      why: "Free when off; with the shell unified, the phone sees every tab, Atlas's included."
+      carrier: JP-124
+    - id: A32
+      name: Packaged app and installers
+      what: "The signed macOS package and the scripts that install the app and daemon as launchd jobs."
+      call: keep
+      how: rebuilt
+      home: shell
+      why: "One installer: josh-360's laptop/install.py installs the app and the runner from main, replacing three separate installers."
+      carrier: JP-124, JP-119
+    - id: A33
+      name: Bifrost request labels
+      what: "Wraps every CLI the app launches so gateway requests carry repo, branch and folder labels."
+      call: keep
+      how: as-is
+      home: runner
+      why: "Cost attribution by repo and branch, which the cost ledger reconciles against."
+      carrier: JP-124
+    - id: A34
+      name: GitHub label scripts
+      what: "Create the label taxonomy in each repo."
+      call: keep
+      how: as-is
+      home: review
+      why: "Only the review:* labels survive."
+      carrier: JP-124
+      children:
+      - id: A34.1
+        name: review:* labels
+        what: "needs-agent-audit, audit-in-progress, changes-requested, ready-for-human, audit-blocked."
+        call: keep
+        how: as-is
+        home: review
+        why: "The audit ceremony runs on them."
+        carrier: JP-124
+      - id: A34.2
+        name: status:* and type:* issue labels
+        what: "The issue path's labels."
+        call: drop
+        how: retire
+        why: "They go with GitHub-issue sessions (A10)."
+        carrier: JP-124
+    - id: A35
+      name: OpenCode server the app starts
+      what: "Starts `opencode serve` at launch."
+      call: drop
+      how: retire
+      why: "No code in the app calls it. You use OpenCode directly, which does not need this server; the agent sync (M4) is what keeps your OpenCode agents working."
+      carrier: JP-124
+
+- id: CA
+  name: claude-360 (Session Atlas)
+  about: "Local service that indexes every Claude Code session and the files they make, plus the cost ledger. Today it lives in joshgilpatrick/claude-360."
+  children:
+  - id: CA.index
+    name: Session index
+    children:
+    - id: S1
+      name: Session index
+      what: "Nine hooks post event metadata to the local service, spooled when it is down; every session is recorded with folders, status, start and end."
+      call: keep
+      how: ledger
+      home: sessions
+      why: "The vision makes it the ledger's starting point."
+      carrier: JP-107, JP-111
+      children:
+      - id: S1.1
+        name: Hook recorder and spool
+        what: "atlas-hook.js on nine events, 5-second timeout, spooled on failure."
+        call: keep
+        how: rebuilt
+        home: jobs
+        why: "Becomes the ledger's recorder in josh-360's hooks/ folder, loaded through hooks/dispatch."
+        carrier: JP-107
+      - id: S1.2
+        name: Transcript reader
+        what: "Reads transcripts in place with checkpoints; since 16 November reads oversized lines up to 64 MiB and warns once on a stall."
+        call: keep
+        how: as-is
+        home: sessions
+        why: "The one reader of transcripts the ledger keeps."
+        carrier: JP-107, JP-111
+      - id: S1.3
+        name: Idle close
+        what: "Marks sessions idle for 12 hours as closed."
+        call: keep
+        how: as-is
+        home: sessions
+        why: "Needed for loose ends (JP-109) and the five summary lines (JP-108)."
+        carrier: JP-111
+    - id: S2
+      name: Session lineage and titles
+      what: "Links subagents and resumed sessions to their root and picks a title: custom first, then Claude's own, then a fallback."
+      call: keep
+      how: ledger
+      home: sessions
+      why: "Fields of one ledger session. The cost ledger's second title set (S8) folds into this one."
+      carrier: JP-107, JP-111
+    - id: S15
+      name: Project names
+      what: "Names a session's project from its git remote, then its top folder, then the folder, with aliases."
+      call: keep
+      how: ledger
+      home: sessions
+      why: "The first rule of how a session finds its home in the registry."
+      carrier: JP-107
+  - id: CA.focus
+    name: Focus summaries
+    children:
+    - id: S3
+      name: Focus summaries
+      what: "After every turn of an active session, a Haiku call rewrites its title, summary and task list."
+      call: drop
+      how: retire
+      why: "You accepted on 15 November that no model runs per turn. Five summary lines written once when a session goes quiet (JP-108) and STATE.md (JP-100) replace it."
+      carrier: JP-108, JP-111
+      children:
+      - id: S3.1
+        name: Focus worker and its activation rules
+        what: "Plan mode, TaskCreate, /focus or a planning skill make a session active."
+        call: drop
+        how: retire
+        why: "Goes with S3."
+        carrier: JP-111
+      - id: S3.2
+        name: Provider presets and the claude-atlas Keychain item
+        what: "Anthropic, Bifrost, OpenRouter or fake providers for the focus worker."
+        call: drop
+        how: retire
+        why: "Nothing else uses them once the focus worker is off."
+        carrier: JP-111
+  - id: CA.views
+    name: Views
+    children:
+    - id: S4
+      name: Dashboard
+      what: "Cost at a glance, sessions in motion, recent artifacts, Needs attention and worker status, at 127.0.0.1:8770."
+      call: keep
+      how: rebuilt
+      home: sessions
+      why: "Its panels become tabs in the one app shell, reading ledger rows, so there is no second web page with its own look. The phase 3 dashboard (JP-131) builds on it."
+      carrier: JP-111, JP-130
+    - id: S5
+      name: Sessions grid and session page
+      what: "Search, filter and sort every session; open one for its transcript, lineage, cost, artifacts and resume folder."
+      call: keep
+      how: rebuilt
+      home: sessions
+      why: "The main way to find a past session, ticketed or not. The survivor for action-triage's Sessions catalog (A26)."
+      carrier: JP-111
+    - id: S6
+      name: Needs attention
+      what: "Sessions whose job is blocked or stale, quarantined jobs and missing resume folders, with dismiss and retry."
+      call: keep
+      how: ledger
+      home: sessions
+      why: "System health, kept separate from Needs you (decisions for you). Its two focus reasons go with S3."
+      carrier: JP-111
+    - id: S7
+      name: Send to Background
+      what: "Checks the session id, transcript and folder, then runs `claude --bg --resume <id>`."
+      call: keep
+      how: as-is
+      home: sessions
+      why: "The survivor for both apps: it uses Claude Code's public command."
+      carrier: JP-111
+  - id: CA.cost
+    name: Cost
+    children:
+    - id: S8
+      name: Cost ledger
+      what: "Imports token use from Claude Code, OpenCode and Pi, prices it from explicit price rows, reprices on change, and reports."
+      call: keep
+      how: ledger
+      home: sessions
+      why: "The cost half of the ledger already. Per your Q1 answer, the per-message rows live in cache.db and each session's cost in ledger.db."
+      carrier: JP-99, JP-107, JP-111
+      children:
+      - id: S8.1
+        name: Importers (Claude Code, OpenCode, Pi)
+        what: "Reads transcripts, the Pi folder and the OpenCode database."
+        call: keep
+        how: ledger
+        home: sessions
+        why: "You still use OpenCode (Q11), so its import stays."
+        carrier: JP-111
+      - id: S8.2
+        name: Price rows and repricing
+        what: "Dated price rows; a price change reprices affected rows."
+        call: keep
+        how: ledger
+        home: sessions
+        why: "The reason the big rows sit in cache.db, which may be rewritten."
+        carrier: JP-111
+      - id: S8.3
+        name: Reports by repo, branch, tool, model, day or session tree
+        what: "`npm run costledger` reports."
+        call: keep
+        how: rebuilt
+        home: sessions
+        why: "Become ledger queries behind one josh-360 command and the Sessions tab."
+        carrier: JP-111
+      - id: S8.4
+        name: Bifrost reconciliation
+        what: "Checks imported cost against the gateway's own logs."
+        call: keep
+        how: as-is
+        home: sessions
+        why: "The only check that the local numbers match what was billed."
+        carrier: JP-111
+      - id: S8.5
+        name: Session names and PR links
+        what: "session_labels and PR links in the cost ledger."
+        call: drop
+        how: merged
+        into: S2
+        why: "One title and one set of links per ledger session."
+        carrier: JP-107
+    - id: S9
+      name: Hourly cost import and cost cache
+      what: "Imports into the cost ledger at start and every hour; keeps a small cost copy for lists."
+      call: keep
+      how: rebuilt
+      home: jobs
+      why: "Becomes a josh-360 job in jobs.yaml, so cost stays current with nobody running it."
+      carrier: JP-111, JP-119
+    - id: S10
+      name: Jira session links
+      what: "A Bash hook records which session worked on which Jira issue; `jira-cost` totals an issue's cost."
+      call: keep
+      how: merged
+      home: sessions
+      why: "The ledger's session links hold ticket links (JP-107). The jira-cost report stays, on top of them."
+      carrier: JP-107
+  - id: CA.files
+    name: Files
+    children:
+    - id: S11
+      name: Artifact manager
+      what: "Catalogs the documents sessions make: locations, versions, evidence, coverage, preview, export, and protected documents hidden by default."
+      call: keep
+      how: ledger
+      home: files
+      why: "The survivor for 'files a session made' (A24) and the base for fixing pipeline gap 3, working files vanishing at cleanup. Since 16 November it prunes settled candidates older than 7 days."
+      carrier: JP-111
+    - id: S12
+      name: Durable output folder
+      what: "Gives each repository a private, registered folder outside the checkout."
+      call: keep
+      how: as-is
+      home: files
+      why: "Files written there outlive the worktree. The development graph sends working files there."
+      carrier: JP-111, JP-115
+    - id: S13
+      name: Worktree removal guard
+      what: "Blocks `git worktree remove` unless a read-only check finds nothing at risk; blocks --force and rm of a worktree."
+      call: keep
+      how: as-is
+      home: jobs
+      why: "Stops the loss gap 3 describes. It is not wired on the laptop today, so this also turns it back on. The closeout agent (JP-109) runs the same check."
+      carrier: JP-111, JP-109
+    - id: S14
+      name: Older file list
+      what: "The first artifact table, filled from hook-reported writes."
+      call: drop
+      how: merged
+      into: S11
+      why: "The artifact manager already adopts these rows."
+      carrier: JP-111
+  - id: CA.plumbing
+    name: Service plumbing
+    children:
+    - id: S16
+      name: Service plumbing
+      what: "The launchd service, hook installer, health endpoint, migrations, preflight, benchmarks and browser tests."
+      call: keep
+      how: rebuilt
+      home: shell
+      why: "Folds into josh-360's one installer, one hook folder and one test suite."
+      carrier: JP-111, JP-119
+      children:
+      - id: S16.1
+        name: launchd service and installer
+        what: "com.eventus.claude-atlas, always on."
+        call: drop
+        how: merged
+        into: A32
+        why: "One background service for josh-360, installed by laptop/install.py."
+        carrier: JP-119
+      - id: S16.2
+        name: Hook installer (apply-hooks)
+        what: "Merges Atlas's hooks into ~/.claude/settings.json."
+        call: drop
+        how: merged
+        into: M7
+        why: "josh-360's hooks/dispatch already loads every hook from the repo."
+        carrier: JP-111
+      - id: S16.3
+        name: Migrations with a backup check
+        what: "Backs up before a destructive migration."
+        call: keep
+        how: as-is
+        home: sessions
+        why: "The ledger needs the same safety."
+        carrier: JP-107
+      - id: S16.4
+        name: Log rotation and health endpoint
+        what: "Rotates the log past 20 MiB; /api/health."
+        call: keep
+        how: as-is
+        home: shell
+        why: "Cheap and keeps the disk safe."
+        carrier: JP-111
+      - id: S16.5
+        name: Benchmarks and browser tests
+        what: "The performance seed and Playwright tests."
+        call: keep
+        how: rebuilt
+        home: shell
+        why: "Become part of josh-360's suite for the screens they cover."
+        carrier: JP-111
+
+- id: MA
+  name: macbook-automations
+  about: "The laptop's login startup list and its automations. Today it lives in joshgilpatrick/macbook-automations. Only the DevEx parts meld into josh-360; personal chores stay here."
+  children:
+  - id: MA.startup
+    name: Startup
+    children:
+    - id: M1
+      name: Login startup list
+      what: "One LaunchAgent (com.jgilpatrick.startup) runs startup.sh, which loads every plist in startup-manifest.txt."
+      call: keep
+      how: rebuilt
+      home: jobs
+      why: "Split by purpose: the DevEx jobs move into josh-360's jobs.yaml (one list for the agent workflow), and this list keeps only the personal chores."
+      carrier: JP-119
+    - id: M7
+      name: Josh 360 job runner entry
+      what: "josh-360-jobs.sh runs josh-360's job runner every 5 minutes; clones josh-360 the first time."
+      call: keep
+      how: as-is
+      home: jobs
+      why: "The single bridge that lets a merge to main install on the laptop (JP-105). It is the one entry the laptop needs."
+      carrier: JP-105, JP-119
+  - id: MA.devex
+    name: DevEx automations
+    children:
+    - id: M2
+      name: Agent Manager at login
+      what: "Starts Agent Manager detached in tmux through a login shell, waiting up to 20 seconds for it to wake."
+      call: keep
+      how: as-is
+      home: jobs
+      why: "The walker binds to Agent Manager first (JP-117), and the desk needs it running after a reboot. Moves into jobs.yaml."
+      carrier: JP-119, JP-117
+    - id: M3
+      name: OpenCode agent sync
+      what: "Copies ~/.claude/agents into OpenCode's agents every hour."
+      call: keep
+      how: rebuilt
+      home: jobs
+      why: "You still use OpenCode and asked why it is hourly (Q11). Rebuilt to run when an agent file changes (a file watch, as the skill-link sync already does), with its model names updated to Bifrost's; today it writes litellm names that cannot run."
+      carrier: JP-119
+    - id: M4
+      name: Claude transcript scrubber
+      what: "Once a day, Gitleaks finds secrets in transcripts and the exact match is redacted in place."
+      call: keep
+      how: as-is
+      home: jobs
+      why: "The ledger keeps pointers to transcripts, so they must stay free of secrets. Moves into jobs.yaml."
+      carrier: JP-119
+  - id: MA.personal
+    name: Personal and machine chores
+    children:
+    - id: M5
+      name: Receipt watcher and Outlook receipt fetcher
+      what: "Files receipts with a Claude call (always on), and sweeps Outlook's Receipt folder on Fridays at 5 PM."
+      call: drop
+      how: outside
+      why: "Personal finance, not the agent workflow. Stays in macbook-automations, started by its own trimmed list. JP-132 can revisit it when personal work comes into Josh 360."
+      carrier: JP-132
+      children:
+      - id: M5.1
+        name: Receipt watcher (hub.py)
+        what: "FSEvents on receipt_inbox, rename, file by month, dedup by transaction id."
+        call: drop
+        how: outside
+        why: "Personal chore."
+        carrier: JP-132
+      - id: M5.2
+        name: Outlook receipt fetcher
+        what: "Weekly sweep into receipt_inbox; renders email bodies to PDF."
+        call: drop
+        how: outside
+        why: "Personal chore."
+        carrier: JP-132
+    - id: M6
+      name: Idemeum log retention
+      what: "Daily at 03:17, deletes Idemeum security-extension logs older than 24 hours (it writes 3-4 GB a day)."
+      call: drop
+      how: outside
+      why: "Machine hygiene with nothing to do with agents. Stays where it is; it keeps the disk from filling."
+
+- id: AD
+  name: agent-deck (laptop hooks)
+  about: "Not in any of the three repositories: a third-party program at ~/.local/bin/agent-deck whose hook runs in every Claude Code session on the laptop. Included because you asked for detail."
+  detail:
+  - "What it is: agent-deck (github.com/asheshgoplani/agent-deck) is an open-source Go program, a tmux-based session manager for AI coding agents. One terminal screen lists Claude Code, Codex, OpenCode, Gemini and other sessions, with groups, search, forking a session into a new git worktree, per-session MCP and skill pickers, a 'conductor' that watches sessions and escalates over Telegram, Slack or Discord, and a local web view on port 8420."
+  - "What is on your laptop: the binary at ~/.local/bin/agent-deck and its hook-handler registered on 7 events in ~/.claude/settings.json (SessionStart, UserPromptSubmit, Notification for permission and elicitation prompts, PermissionRequest, PreCompact, Stop with AGENTDECK_STOP_SYNC=1, and SessionEnd). The 16 November laptop run found no agent-deck process running and no agent-deck data folder in its listing, so it does not look like it is in use. A folder from 27 September, ~/Development/active/deliverables/2026-09-27/agent-deck-security-audit, suggests you had it audited once."
+  - "What the hook does: it only acts inside sessions agent-deck itself started (it reads AGENTDECK_INSTANCE_ID and exits silently when that is not set). In those sessions it writes a status file per session under ~/.agent-deck/hooks/ (running, waiting or dead). On PermissionRequest it can answer 'allow' by itself when the session was started with --dangerously-skip-permissions, or deny and queue a question in an unattended conductor turn. On Stop it can block the turn from ending, up to 3 times in a row, to make Claude read messages waiting in agent-deck's inbox. On UserPromptSubmit it can add inbox text and a list of child sessions to your prompt. It always exits 0, so it never stops Claude Code by failing."
+  - "What it costs you today: in your ordinary sessions (Agent Manager, the terminal, the daemon) it does nothing but start a process on each of those 7 events. The risk is small but real: any process that sets AGENTDECK_INSTANCE_ID gets the auto-allow and Stop-blocking behaviour, and it shares PermissionRequest and Stop with your other hooks."
+  - "How to remove it: `agent-deck hooks uninstall` removes only its entries and keeps your other hooks (and restores the status line if it wrapped it); `agent-deck uninstall --keep-data` removes the program too. Its data, if any, is under ~/.agent-deck/, ~/.local/share/agent-deck/ and ~/.config/agent-deck/."
+  - "Sources: the project's README, docs/claude-status-hooks.md, cmd/agent-deck/hook_handler.go and PR #3095 on GitHub, read 17 November 2026; claude-harness docs/harness/hooks-inventory.md (8 November); the JP-96 laptop run (16 November). The installed version was not checked; it has no PreToolUse hook, which newer versions add, so it is probably an older install."
+  children:
+  - id: AD.hooks
+    name: agent-deck
+    children:
+    - id: D1
+      name: agent-deck the program
+      what: "A tmux session manager: session list, groups, forking into worktrees, MCP and skill pickers, conductor escalation, web view."
+      call: drop
+      how: retire
+      why: "Agent Manager is your session manager now, and josh-360 binds the walker to it (JP-117). The ideas worth having (a worktree per piece of work, escalating to you) are covered by the runner's branch contract and Needs you. Not running on the laptop on 16 November."
+      carrier: JP-120
+    - id: D2
+      name: agent-deck hook-handler on 7 events
+      what: "Status files, auto-allow on permission requests and inbox-driven Stop blocking, for sessions agent-deck started."
+      call: drop
+      how: retire
+      why: "A no-op in every session you actually run, but it starts a process 7 times a session and can auto-allow or keep a turn running for anything that sets its variable. Remove it with `agent-deck hooks uninstall` at the phase 1 close."
+      carrier: JP-120
+      children:
+      - id: D2.1
+        name: Status hooks (SessionStart, UserPromptSubmit, Notification, PreCompact, SessionEnd)
+        what: "Write running/waiting/dead to ~/.agent-deck/hooks/<id>.json; UserPromptSubmit can add inbox text to the prompt."
+        call: drop
+        how: retire
+        why: "Only agent-deck's own screen reads these files. The ledger's recorder (S1.1) records session status for josh-360."
+        carrier: JP-120
+      - id: D2.2
+        name: PermissionRequest decision
+        what: "Answers allow for sessions started with --dangerously-skip-permissions; denies and queues a question in unattended conductor turns."
+        call: drop
+        how: retire
+        why: "Permission answers on your laptop should come from your settings and the runner's guardrails (A16.3), not from a third-party hook."
+        carrier: JP-120
+      - id: D2.3
+        name: Synchronous Stop hook (inbox delivery)
+        what: "Blocks a turn from ending up to 3 times to deliver agent-deck inbox messages."
+        call: drop
+        how: retire
+        why: "Passing messages to a running session is JP-118's job, built on the ticket mailbox (A11)."
+        carrier: JP-120, JP-118

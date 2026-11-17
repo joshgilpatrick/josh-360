@@ -51,6 +51,7 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - What the laptop has installed: `python3 laptop/status.py show` (reads the `laptop-status` branch).
 - Install: merging to `main` installs on the laptop on its own (JP-105). Code that runs on the laptop uses Python 3.9 and the standard library only. A new background job is an entry in `jobs.yaml`; a new Claude Code hook is an executable file in `hooks/<Event>/`; a new install step goes in `STEPS` in `laptop/install.py`.
 - Pause the laptop from the cloud: push a branch named `laptop-pause`; delete it to resume.
+- Feature tree (JP-143): `python3 scripts/feature_tree.py check`, and `build` after editing `docs/design/feature-tree/tree.yaml`.
 - Graph checker on its own: `python3 graphs/tools/check_graph.py` (rules in `graphs/CONVENTION.md`).
 
 ## Layout
