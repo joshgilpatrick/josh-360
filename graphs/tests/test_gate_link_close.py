@@ -160,6 +160,23 @@ class ClosingTheIntake(unittest.TestCase):
             self.with_todo(tmp, ticketKey="AD-999", status="tasked")
             self.assertEqual(intake_closed.decide(values, self.made())[0], "open")
 
+    def test_a_session_or_manual_source_passes_without_a_stored_key(self):
+        with TemporaryDirectory() as tmp:
+            self.with_todo(tmp)
+            for source in ("session", "manual"):
+                values = self.values(source=source, source_ref="sess-1")
+                self.assertEqual(intake_closed.decide(values, self.made())[0], "pass", source)
+            comment = {"action": "comment_on_match", "gaps": [], "authors": [],
+                       "match": {"key": "AD-412", "status": "In Progress", "request": "x"}}
+            values = self.values(source="session", source_ref="sess-1", proposal=comment, ticket_keys=[])
+            self.assertEqual(intake_closed.decide(values, self.made())[0], "pass")
+
+    def test_a_session_run_still_needs_its_tickets_to_exist(self):
+        with TemporaryDirectory() as tmp:
+            self.with_todo(tmp)
+            values = self.values(source="session", source_ref="sess-1", proposal=h.family(), ticket_keys=["JP-201"])
+            self.assertEqual(intake_closed.decide(values, self.made())[0], "open")
+
     def test_a_ticket_with_no_parent_and_no_area_is_open(self):
         with TemporaryDirectory() as tmp:
             self.with_todo(tmp, ticketKey="JP-201", status="tasked")
