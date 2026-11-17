@@ -73,3 +73,10 @@ jobs:
     timeout: 30m
     report: true
     description: JP-112, once. Writes friction facts and usage for episodes recorded before JP-112 merged, from their transcripts. Counts and codes only, no model call. The report is counts only.
+
+  - id: ticket-comments
+    run: ledger/comments.py
+    every: 5m
+    timeout: 5m
+    report: true
+    description: JP-118. Passes new Jira comments on a ticket to the sessions and graph runs working on it (a file the session's hook reads; a folder in the run for the binding), once each, recorded in the ledger. Skips comments the system wrote. No model call. The report is counts only.
