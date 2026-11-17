@@ -2,6 +2,7 @@
 """The laptop-status branch (JP-105): what is installed on the laptop, readable from the cloud.
 
     python3 laptop/status.py show     print the laptop's last status (run from any clone)
+    python3 laptop/status.py show <job>   print that job's report, such as `show doctor` (JP-152)
 
 The laptop pushes one small commit to `laptop-status` after each install. Its tree holds only
 `status.json` (commit, time, result, short reason, counts) and, for jobs marked `report: true`,
@@ -16,6 +17,7 @@ from __future__ import annotations
 import datetime
 import json
 import os
+import re
 import sys
 import tempfile
 from pathlib import Path
@@ -118,6 +120,27 @@ def publish(status: Optional[dict], reports: Optional[Dict[str, object]] = None,
     return "pushed"
 
 
+REPORT_NAME = re.compile(r"^[a-z][a-z0-9-]{0,39}$")
+
+
+def show_report(repo: Path, name: str) -> int:
+    """Print one job's report (reports/<name>.json) from the laptop-status branch."""
+    if not REPORT_NAME.match(name):
+        print("a report name is a lower-case job id, such as doctor", file=sys.stderr)
+        return 2
+    try:
+        parent = fetch_parent(repo)
+    except Unexpected as e:
+        print(e, file=sys.stderr)
+        return 1
+    shown = git(["show", "{}:reports/{}.json".format(parent, name)], repo, check=False) if parent else None
+    if shown is None or shown.returncode != 0:
+        print("The laptop has not reported {} yet.".format(name))
+        return 1
+    print(shown.stdout, end="")
+    return 0
+
+
 def show(repo: Path) -> int:
     try:
         parent = fetch_parent(repo)
@@ -137,5 +160,7 @@ def show(repo: Path) -> int:
 if __name__ == "__main__":
     if sys.argv[1:] == ["show"]:
         sys.exit(show(Path.cwd()))
+    if len(sys.argv) == 3 and sys.argv[1] == "show":
+        sys.exit(show_report(Path.cwd(), sys.argv[2]))
     print(__doc__.strip().splitlines()[2].strip())
     sys.exit(2)
