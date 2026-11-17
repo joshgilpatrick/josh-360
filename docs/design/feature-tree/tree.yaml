@@ -2,28 +2,32 @@
 # Ticket: JP-143. Written 17 November 2026 from action-triage main (7785e6d), claude-360 main (2da83a3),
 # macbook-automations main (f1fae04), josh-360's docs/inventory/features.md (JP-97) and laptop.md (JP-96),
 # and Josh's JP-106 answers (submitted 17 November 2026, 00:28 UTC).
+# Josh's review of this tree (submitted 17 November 2026, 03:48 UTC) is written in by JP-145.
 #
 # Every feature node has:
-#   id     stable; A/S ids are the JP-97 rows, M ids are new for macbook-automations, D ids are agent-deck.
+#   id     stable; A/S ids are the JP-97 rows, M ids are new for macbook-automations, D ids are agent-deck,
+#          N ids are features built new in josh-360 that replace one above.
 #   call   keep (box ticked: the feature comes into josh-360) or drop (box unticked).
-#   how    keep: as-is | ledger | rebuilt | merged   drop: retire | outside | merged
+#   how    keep: as-is | ledger | rebuilt | merged | new   drop: retire | outside | merged | later
+#          (later: not now; comes back once the ledger is hardened. new: built new in josh-360.)
 #   home   keep only: the part of the one app it lands in (see homes below).
 #   into   merged only: the id of the node that survives.
 #   why    the rationale shown next to the box.
 #   carrier  the josh-360 ticket(s) that do the work, where one exists.
+#   reply  optional: my answer to Josh's comment on the review page (JP-145).
 # Group nodes (repos and areas) have an id, a name and children, and no call.
 
 homes:
-  shell: {name: App shell, about: "One window (the edge pill that slides out into a panel), one theme, the phone view and one installer."}
+  shell: {name: App shell, about: "One window (the edge pill that slides out into a panel), one theme and one installer."}
   intake: {name: Intake, about: "Where work comes in: meetings, quick tickets, forwarded email and the ticket draft form."}
   tickets: {name: Tickets, about: "Jira tickets for the configured projects, with Start and the runner choice."}
-  runner: {name: Runner, about: "The background service that watches Jira, starts headless sessions through the walker and keeps them safe."}
+  runner: {name: Runner, about: "The background service that watches Jira, starts sessions in Agent Manager through the walker and keeps them safe."}
   review: {name: Review, about: "The PR audit and the review queue."}
   needs-you: {name: Needs you, about: "Every question an agent asks Josh, and every stuck ticket."}
   sessions: {name: Sessions, about: "The ledger's view of every session: search, transcript, lineage, cost, history and activity."}
   files: {name: Files, about: "What sessions made, and the guard that stops it being lost."}
   jobs: {name: Laptop jobs and hooks, about: "josh-360's job list (jobs.yaml) and its hook folder (hooks/), installed from main."}
-  settings: {name: Settings, about: "Prompts and configuration Josh edits without a code change."}
+  settings: {name: Settings, about: "Prompts, graphs and configuration Josh reviews and edits without a code change."}
 
 tree:
 - id: AT
@@ -109,10 +113,11 @@ tree:
     - id: A7
       name: Prompt settings
       what: "View, edit, test and reset the app's model prompts."
-      call: keep
-      how: as-is
-      home: settings
-      why: "You tune prompts without a code change. In josh-360 it also lists the graph step prompts, so all prompts live in one Settings page."
+      call: drop
+      how: merged
+      into: N1
+      why: "Replaced by N1, one configuration surface for reviewing and updating graphs as well as prompts. Prompt editing becomes one part of it."
+      reply: "Agreed. I've recorded A7 as replaced, not lost: N1 is a new settings surface for prompts and graphs together, carried by JP-124."
       carrier: JP-124
   - id: AT.tickets
     name: Tickets and agent sessions
@@ -164,7 +169,8 @@ tree:
       call: keep
       how: rebuilt
       home: runner
-      why: "Your JP-106 Q7 answer: a daemon watches Jira for tickets in a set state and launches the graph. This is that daemon; it asks the walker for the next step instead of always running one session, and its records move onto the ledger."
+      why: "Your Q7 answer asks for a daemon that watches Jira and launches the graph. This code is scaffolding to judge against that design, never a reason to settle: the runner design (JP-117, JP-124) keeps only what serves it and rebuilds the rest. Its hard-won rules (A9.1 to A9.3) stand as requirements either way."
+      reply: "Agreed. A9 is now reference material. JP-117 and JP-124 design the runner first, then take from A9 only what fits."
       carrier: JP-124, JP-114, JP-117
       children:
       - id: A9.1
@@ -246,11 +252,12 @@ tree:
       carrier: JP-128
     - id: A16
       name: Session spawning and its safety rails
-      what: "How a headless session is started safely."
+      what: "How a session is started safely."
       call: keep
       how: as-is
       home: runner
-      why: "Every headless session needs it, and each rule records a real incident."
+      why: "Every session the runner starts needs these rails, and each records a real incident. They attach to sessions started in Agent Manager, which you can always see; nothing runs as a hidden `claude -p` process you would need a workaround to reach."
+      reply: "Agreed and recorded: every session has a surface in Agent Manager and runs without expecting you, except where the graph asks. The rails stay. JP-117 re-checks the ones written for bare `claude -p` launches (A16.5, A16.6) against Agent Manager's launch path."
       carrier: JP-124
       children:
       - id: A16.1
@@ -361,27 +368,25 @@ tree:
     - id: A20
       name: Open in terminal and Send to Background
       what: "Two buttons on a session."
-      call: keep
-      how: as-is
-      home: sessions
-      why: "Both buttons stay; only one way of backgrounding survives."
+      call: drop
+      how: retire
+      why: "Every session already has a surface in Agent Manager, so there is nothing to open in a terminal or send to the background."
+      reply: "Agreed. Both buttons drop, along with S7."
       carrier: JP-124
       children:
       - id: A20.1
         name: Open in terminal (Ghostty)
         what: "Opens the session in Ghostty with your own credentials."
-        call: keep
-        how: as-is
-        home: sessions
-        why: "The quickest way to take over a session by hand."
+        call: drop
+        how: retire
+        why: "Goes with A20: you take over a session in Agent Manager."
         carrier: JP-124
       - id: A20.2
         name: Send to Background by writing a supervisor job file
         what: "Writes Claude Code's supervisor state.json directly."
         call: drop
-        how: merged
-        into: S7
-        why: "Atlas's `claude --bg --resume` uses the public command instead of private files, so it survives Claude Code updates."
+        how: retire
+        why: "Goes with A20 and S7."
         carrier: JP-124
   - id: AT.review
     name: Pull request audit
@@ -496,7 +501,7 @@ tree:
       call: drop
       how: merged
       into: S5
-      why: "Atlas already indexes every session with lineage and cost. One Sessions view on the ledger, not two scanners."
+      why: "Atlas already indexes every session with lineage and cost; one Sessions view on the ledger, not two scanners. S5 is later, so this waits with it."
       carrier: JP-124
   - id: AT.desk
     name: Email Research Desk
@@ -564,10 +569,10 @@ tree:
     - id: A31
       name: Phone bridge
       what: "An opt-in, token-protected web view of the panel, for example over Tailscale. Off by default."
-      call: keep
-      how: as-is
-      home: shell
-      why: "Free when off; with the shell unified, the phone sees every tab, Atlas's included."
+      call: drop
+      how: retire
+      why: "You don't plan to use the platform from a phone."
+      reply: "Agreed. Dropped, and the phone view is gone from the shell's description."
       carrier: JP-124
     - id: A32
       name: Packaged app and installers
@@ -580,10 +585,10 @@ tree:
     - id: A33
       name: Bifrost request labels
       what: "Wraps every CLI the app launches so gateway requests carry repo, branch and folder labels."
-      call: keep
-      how: as-is
-      home: runner
-      why: "Cost attribution by repo and branch, which the cost ledger reconciles against."
+      call: drop
+      how: retire
+      why: "It never worked well, and cost by repo and branch is not something you need from Bifrost (S8.4)."
+      reply: "Agreed. Dropped."
       carrier: JP-124
     - id: A34
       name: GitHub label scripts
@@ -704,34 +709,31 @@ tree:
     - id: S4
       name: Dashboard
       what: "Cost at a glance, sessions in motion, recent artifacts, Needs attention and worker status, at 127.0.0.1:8770."
-      call: keep
-      how: rebuilt
-      home: sessions
-      why: "Its panels become tabs in the one app shell, reading ledger rows, so there is no second web page with its own look. The phase 3 dashboard (JP-131) builds on it."
+      call: drop
+      how: later
+      why: "Views wait until the data architecture is hardened. It comes back on the ledger after JP-107 as a new design built for your purposes, not a port of this view; only its features may be reused. The phase 3 dashboard (JP-131) is that design."
+      reply: "Agreed, and confirmed in the thread: S4, S5 and S6 are later, not retired. When they come back they are designed afresh for your purposes; the current views were never sufficient, so only their features may be ported."
       carrier: JP-111, JP-130
     - id: S5
       name: Sessions grid and session page
       what: "Search, filter and sort every session; open one for its transcript, lineage, cost, artifacts and resume folder."
-      call: keep
-      how: rebuilt
-      home: sessions
-      why: "The main way to find a past session, ticketed or not. The survivor for action-triage's Sessions catalog (A26)."
+      call: drop
+      how: later
+      why: "Views wait until the data architecture is hardened (your note on S4). It comes back on the ledger after JP-107 as a new design built for your purposes, not a port of this view; only its features may be reused. Still the survivor for A26."
       carrier: JP-111
     - id: S6
       name: Needs attention
       what: "Sessions whose job is blocked or stale, quarantined jobs and missing resume folders, with dismiss and retry."
-      call: keep
-      how: ledger
-      home: sessions
-      why: "System health, kept separate from Needs you (decisions for you). Its two focus reasons go with S3."
+      call: drop
+      how: later
+      why: "Views wait until the data architecture is hardened (your note on S4). It comes back on the ledger after JP-107 as a new design built for your purposes, not a port of this view; only its features may be reused."
       carrier: JP-111
     - id: S7
       name: Send to Background
       what: "Checks the session id, transcript and folder, then runs `claude --bg --resume <id>`."
-      call: keep
-      how: as-is
-      home: sessions
-      why: "The survivor for both apps: it uses Claude Code's public command."
+      call: drop
+      how: retire
+      why: "Not needed once every session lives in Agent Manager (your note on A16)."
       carrier: JP-111
   - id: CA.cost
     name: Cost
@@ -773,17 +775,20 @@ tree:
         name: Bifrost reconciliation
         what: "Checks imported cost against the gateway's own logs."
         call: keep
-        how: as-is
+        how: rebuilt
         home: sessions
-        why: "The only check that the local numbers match what was billed."
+        why: "Narrowed to one signal: did the provider (Anthropic, Azure or another) receive the request, yes or no. No matching against Bifrost's estimated costs."
+        reply: "Agreed. Only the yes/no delivery signal is ingested."
         carrier: JP-111
       - id: S8.5
         name: Session names and PR links
         what: "session_labels and PR links in the cost ledger."
-        call: drop
+        call: keep
         how: merged
+        home: sessions
         into: S2
-        why: "One title and one set of links per ledger session."
+        why: "The names and links live on the ledger's session record (S2), so each session has one title and one set of links."
+        reply: "You're right, and nothing was lost. My \"drop\" only meant this second copy goes away because S2 holds the same names and links. It now reads as kept, inside S2."
         carrier: JP-107
     - id: S9
       name: Hourly cost import and cost cache
@@ -991,14 +996,15 @@ tree:
       call: drop
       how: retire
       why: "Agent Manager is your session manager now, and josh-360 binds the walker to it (JP-117). The ideas worth having (a worktree per piece of work, escalating to you) are covered by the runner's branch contract and Needs you. Not running on the laptop on 16 November."
-      carrier: JP-120
+      reply: "Noted. You remove agent-deck yourself, so it is off the phase 1 deletion work."
+      carrier: Josh, locally
     - id: D2
       name: agent-deck hook-handler on 7 events
       what: "Status files, auto-allow on permission requests and inbox-driven Stop blocking, for sessions agent-deck started."
       call: drop
       how: retire
-      why: "A no-op in every session you actually run, but it starts a process 7 times a session and can auto-allow or keep a turn running for anything that sets its variable. Remove it with `agent-deck hooks uninstall` at the phase 1 close."
-      carrier: JP-120
+      why: "A no-op in every session you actually run, but it starts a process 7 times a session and can auto-allow or keep a turn running for anything that sets its variable. You are removing it yourself (17 November)."
+      carrier: Josh, locally
       children:
       - id: D2.1
         name: Status hooks (SessionStart, UserPromptSubmit, Notification, PreCompact, SessionEnd)
@@ -1021,3 +1027,18 @@ tree:
         how: retire
         why: "Passing messages to a running session is JP-118's job, built on the ticket mailbox (A11)."
         carrier: JP-120, JP-118
+- id: NEW
+  name: New in josh-360
+  about: "Features that do not exist in any of the three repositories yet, added because your review replaced one above with something larger."
+  children:
+  - id: NEW.settings
+    name: Settings
+    children:
+    - id: N1
+      name: Configuration surface for prompts and graphs
+      what: "One place to review and update the graphs (steps, roles, gates, tiers) and every prompt they use, without a code change."
+      call: keep
+      how: new
+      home: settings
+      why: "Your note on A7: reviewing and updating prompts is not enough; graphs need the same surface. It replaces A7's prompt settings."
+      carrier: JP-124
