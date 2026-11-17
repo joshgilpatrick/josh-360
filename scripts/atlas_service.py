@@ -4,6 +4,12 @@
     python3 scripts/atlas_service.py            make sure it is installed, loaded and on the latest code
     python3 scripts/atlas_service.py --dry-run  say what it would do, change nothing
 
+INTERIM (JP-119): this is the one launchd installer Josh 360 still ships. Josh 360 should start every job through the
+macbook-automations startup list, but moving this service there changes macbook-automations, which waits for the phase 1
+close, and switching this job off first would leave Atlas down, which blocks every worktree removal (the guard fails
+closed). It is named as transitional in laptop/launchd-register.json, allowed by tests/test_no_installers.py, and
+docs/phase-1-close-checklist.md lists the two steps that move it onto the startup list and delete this installer.
+
 Atlas is a headless service (no dashboard, no model call): the artifact manager, the hourly cost import and a
 read-only mirror of the ledger's sessions, all writing ~/.josh-360/state/cache.db. The worktree removal guard asks it
 about live sessions, so it has to stay up. The job runner is not a long-running process, so launchd owns the service:
