@@ -1,0 +1,2 @@
+wait steps read as gate steps: review-state, pr-merged
+check_graph: ok (1 graph(s))
