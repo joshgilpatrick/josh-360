@@ -22,7 +22,7 @@
 - [Questions for Josh](#questions-for-josh)
 - [Choices made by default](#choices-made-by-default)
 
-Ticket JP-117 (Story). Status: **design, waiting for Josh's approval**. Then a separate session writes the build plan, and a build session follows it.
+Ticket JP-117 (Story). Status: **approved by Josh on 17 November 2026** ("Approve as written", which takes the three recommendations under [Questions for Josh](#questions-for-josh)), in the thread "JP-117 Design the graph runner for Agent Manager". A separate session writes the build plan, starting from the probe's answer ([below](#the-probe-and-the-fallback-if-a-job-cannot-spawn)), and a build session follows it.
 
 Sources: the ticket and its three comments (the JP-106 daemon answer, the feature-tree review on A16, and the 17 November decisions: "Ready plus not in backlog", Needs you stays, one runner design); the walker design (`docs/superpowers/specs/2026-11-17-walker-design.md`), which leaves starting sessions, the Jira watch and when a run starts to this ticket; the development graph design (JP-115), which leaves every role step's turn cap and time cap to this ticket; the triage design ("Ready is not started", "Loops inside a step"); the feature tree's A9, A16 and A17; JP-118's comment hand-over in `graphs/bindings/README.md`; the sprint skill's waker and Agent Manager database reader (claude-harness), and the `agent-manager-cli` and `launch-background-session` skills.
 
@@ -332,7 +332,7 @@ Feature: The development graph runs on Agent Manager
 
 ## Questions for Josh
 
-Each has a recommendation; approving this design takes the recommendations.
+Each has a recommendation; approving this design takes the recommendations. **Josh approved as written on 17 November 2026: development only, two sessions at once, finished sessions archived.**
 
 1. **Which start rules does JP-117 switch on?** (a) Development only, the others ship off, **recommended**: it is the ticket's scope, and switching on triage would triage every Not Started ticket in JP at once. (b) Development and non-development: same rule, a different route. (c) All four, with triage limited to tickets created after a date.
 2. **How many step sessions at once, across all runs?** (a) One. (b) **Two, recommended**: a second ticket can move while the first waits on the audit, and two Opus or Sonnet sessions are a bounded cost. (c) Three.
