@@ -44,15 +44,15 @@ Epic: [JP-94](https://eventuswh-analytics.atlassian.net/browse/JP-94), Josh 360:
 | [JP-117](https://eventuswh-analytics.atlassian.net/browse/JP-117) | Story | Bind the walker to Agent Manager and carry a real ticket to a pull request | JP-115 |
 | [JP-118](https://eventuswh-analytics.atlassian.net/browse/JP-118) | Story | Pass new ticket comments to the sessions working on that ticket | JP-114 |
 | [JP-119](https://eventuswh-analytics.atlassian.net/browse/JP-119) | Task | Start every Josh 360 background job from the one startup list | JP-111, JP-118 |
-| [JP-120](https://eventuswh-analytics.atlassian.net/browse/JP-120) | Task | Close phase 1: proof pages and the deletion list | JP-100, JP-109, JP-110, JP-112, JP-116, JP-117, JP-119 |
+| [JP-121](https://eventuswh-analytics.atlassian.net/browse/JP-121) | Story | Build the ticket creation graph | JP-114, JP-139, JP-140 |
+| [JP-122](https://eventuswh-analytics.atlassian.net/browse/JP-122) | Story | Build the triage and sign-off graph | JP-114, JP-121, JP-139, JP-140 |
+| [JP-123](https://eventuswh-analytics.atlassian.net/browse/JP-123) | Story | Build the non-development graph | JP-114, JP-139, JP-140 |
+| [JP-120](https://eventuswh-analytics.atlassian.net/browse/JP-120) | Task | Close phase 1: proof pages and the deletion list | JP-100, JP-109, JP-110, JP-112, JP-116, JP-117, JP-119, JP-121, JP-122, JP-123 |
 
 ## Phase 2: the full pipeline
 
 | Key | Type | Ticket | Blocked by |
 | --- | --- | --- | --- |
-| [JP-121](https://eventuswh-analytics.atlassian.net/browse/JP-121) | Story | Build the ticket creation graph | JP-120 |
-| [JP-122](https://eventuswh-analytics.atlassian.net/browse/JP-122) | Story | Build the triage and sign-off graph | JP-120 |
-| [JP-123](https://eventuswh-analytics.atlassian.net/browse/JP-123) | Story | Build the non-development graph | JP-120 |
 | [JP-124](https://eventuswh-analytics.atlassian.net/browse/JP-124) | Story | Move action-triage into josh-360 and onto the ledger | JP-120 |
 | [JP-125](https://eventuswh-analytics.atlassian.net/browse/JP-125) | Story | Make the Needs you tab the one place for agent decisions | JP-124 |
 | [JP-126](https://eventuswh-analytics.atlassian.net/browse/JP-126) | Story | Decision memory stage two: suggest and confirm with precedent | JP-125 |
@@ -70,5 +70,7 @@ Epic: [JP-94](https://eventuswh-analytics.atlassian.net/browse/JP-94), Josh 360:
 | [JP-133](https://eventuswh-analytics.atlassian.net/browse/JP-133) | Story | Bring personal work into Josh 360 | JP-131, JP-132 |
 
 ## How to read this
+
+JP-121, JP-122 and JP-123 moved from phase 2 to phase 1 on 16 November 2026, when Josh said all graphs are phase 1 (JP-147). They still block JP-129, whose email run uses them.
 
 "Blocked by" lists only the direct blockers, which are the Blocks links in Jira. A ticket can start when every ticket in that column is Done. Josh is needed at five points: the laptop hookup (JP-105), the phase 1 design questions (JP-106), and the close of each phase (JP-120, JP-129 and JP-133).
