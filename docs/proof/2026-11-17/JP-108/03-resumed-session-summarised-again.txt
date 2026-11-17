@@ -1,0 +1,7 @@
+test_a_resumed_session_is_summarised_again (test_ledger_summary.Summaries.test_a_resumed_session_is_summarised_again)
+JP-108 scenario 3. ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.081s
+
+OK

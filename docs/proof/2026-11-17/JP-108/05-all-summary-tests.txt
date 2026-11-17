@@ -1,0 +1,43 @@
+test_a_line_still_being_written_is_not_read (test_ledger_summary.Sources.test_a_line_still_being_written_is_not_read) ... ok
+test_a_missing_or_empty_transcript_has_no_first_line (test_ledger_summary.Sources.test_a_missing_or_empty_transcript_has_no_first_line) ... ok
+test_the_excerpt_is_bounded (test_ledger_summary.Sources.test_the_excerpt_is_bounded) ... ok
+test_the_first_line_is_cut_at_160_characters (test_ledger_summary.Sources.test_the_first_line_is_cut_at_160_characters) ... ok
+test_the_first_line_skips_tool_results_tags_meta_and_sidechains (test_ledger_summary.Sources.test_the_first_line_skips_tool_results_tags_meta_and_sidechains) ... ok
+test_the_timeline_skips_the_template_placeholder (test_ledger_summary.Sources.test_the_timeline_skips_the_template_placeholder) ... ok
+test_a_closed_terminal_still_gets_its_summary (test_ledger_summary.Summaries.test_a_closed_terminal_still_gets_its_summary)
+JP-108 scenario 4: no SessionEnd, no closeout step; only the quiet period passes. ... ok
+test_a_failed_call_is_tried_again_on_the_next_model_and_then_given_up (test_ledger_summary.Summaries.test_a_failed_call_is_tried_again_on_the_next_model_and_then_given_up) ... ok
+test_a_first_line_that_fails_the_screen_and_a_thin_session_earns_the_call (test_ledger_summary.Summaries.test_a_first_line_that_fails_the_screen_and_a_thin_session_earns_the_call) ... ok
+test_a_first_line_that_fails_the_screen_is_withheld_and_counted (test_ledger_summary.Summaries.test_a_first_line_that_fails_the_screen_is_withheld_and_counted) ... ok
+test_a_phi_folder_keeps_its_words_out_and_never_calls_a_model (test_ledger_summary.Summaries.test_a_phi_folder_keeps_its_words_out_and_never_calls_a_model) ... ok
+test_a_question_only_session_is_described_by_its_first_line (test_ledger_summary.Summaries.test_a_question_only_session_is_described_by_its_first_line) ... ok
+test_a_resumed_session_is_summarised_again (test_ledger_summary.Summaries.test_a_resumed_session_is_summarised_again)
+JP-108 scenario 3. ... ok
+test_a_session_that_is_still_working_has_no_summary (test_ledger_summary.Summaries.test_a_session_that_is_still_working_has_no_summary) ... ok
+test_a_subagent_gets_no_summary (test_ledger_summary.Summaries.test_a_subagent_gets_no_summary) ... ok
+test_a_thin_phi_session_is_still_summarised_without_a_call (test_ledger_summary.Summaries.test_a_thin_phi_session_is_still_summarised_without_a_call) ... ok
+test_a_title_and_a_timeline_are_enough_without_a_first_line (test_ledger_summary.Summaries.test_a_title_and_a_timeline_are_enough_without_a_first_line) ... ok
+test_a_withdrawn_summary_is_not_written_again (test_ledger_summary.Summaries.test_a_withdrawn_summary_is_not_written_again) ... ok
+test_an_answer_with_no_usable_line_still_records_the_cost (test_ledger_summary.Summaries.test_an_answer_with_no_usable_line_still_records_the_cost) ... ok
+test_an_old_episode_never_earns_a_call (test_ledger_summary.Summaries.test_an_old_episode_never_earns_a_call) ... ok
+test_ask_find_shows_the_first_summary_line (test_ledger_summary.Summaries.test_ask_find_shows_the_first_summary_line) ... ok
+test_at_most_three_calls_in_one_run (test_ledger_summary.Summaries.test_at_most_three_calls_in_one_run) ... ok
+test_enough_material_means_no_model (test_ledger_summary.Summaries.test_enough_material_means_no_model)
+JP-108 scenario 1, with the first line copied. ... ok
+test_model_lines_are_cut_to_three_and_screened (test_ledger_summary.Summaries.test_model_lines_are_cut_to_three_and_screened) ... ok
+test_more_than_five_lines_or_800_characters_is_rejected (test_ledger_summary.Summaries.test_more_than_five_lines_or_800_characters_is_rejected) ... ok
+test_the_call_gets_a_short_excerpt_and_the_facts_never_more (test_ledger_summary.Summaries.test_the_call_gets_a_short_excerpt_and_the_facts_never_more) ... ok
+test_the_worst_case_stays_inside_the_limit (test_ledger_summary.Summaries.test_the_worst_case_stays_inside_the_limit) ... ok
+test_thin_material_means_one_call_and_its_cost_is_recorded (test_ledger_summary.Summaries.test_thin_material_means_one_call_and_its_cost_is_recorded)
+JP-108 scenario 2. ... ok
+test_with_no_model_available_a_thin_session_gets_the_facts (test_ledger_summary.Summaries.test_with_no_model_available_a_thin_session_gets_the_facts) ... ok
+test_a_call_josh_360_makes_is_not_recorded_as_a_session (test_ledger_summary.TheCall.test_a_call_josh_360_makes_is_not_recorded_as_a_session) ... ok
+test_a_failed_call_is_none (test_ledger_summary.TheCall.test_a_failed_call_is_none) ... ok
+test_the_real_call_has_no_tools_no_session_and_the_internal_flag (test_ledger_summary.TheCall.test_the_real_call_has_no_tools_no_session_and_the_internal_flag) ... ok
+test_the_summary_makes_no_network_connection_of_its_own (test_ledger_summary.TheCall.test_the_summary_makes_no_network_connection_of_its_own) ... ok
+test_the_tier_comes_from_tiers_yaml (test_ledger_summary.TheCall.test_the_tier_comes_from_tiers_yaml) ... ok
+
+----------------------------------------------------------------------
+Ran 34 tests in 1.837s
+
+OK
