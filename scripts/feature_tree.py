@@ -27,7 +27,7 @@ PAGE = FOLDER / "review-page.html"
 PLACEHOLDER = "/*__DATA__*/null"
 
 CALLS = {"keep", "drop"}
-HOW = {"keep": {"as-is", "ledger", "rebuilt", "merged"}, "drop": {"retire", "outside", "merged"}}
+HOW = {"keep": {"as-is", "ledger", "rebuilt", "merged", "new"}, "drop": {"retire", "outside", "merged", "later"}}
 # Every row of docs/inventory/features.md (JP-97) must appear in the tree.
 REQUIRED_IDS = [f"A{n}" for n in range(1, 36)] + [f"S{n}" for n in range(1, 17)]
 
@@ -82,6 +82,8 @@ def problems(data: dict) -> list[str]:
             out.append(f"{nid}: home {node.get('home')!r} is not one of the homes")
         if call == "drop" and node.get("home"):
             out.append(f"{nid}: a dropped feature has no home")
+        if "reply" in node and not str(node.get("reply") or "").strip():
+            out.append(f"{nid}: an empty reply")
         if how == "merged" and call == "drop":
             into = node.get("into")
             if into not in seen:
