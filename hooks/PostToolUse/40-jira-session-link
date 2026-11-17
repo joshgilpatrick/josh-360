@@ -1,0 +1,14 @@
+#!/bin/bash
+# JP-111: records a cost-ledger link when a successful Jira transition or comment names an issue key
+# (apps/session-atlas/src/costledger/jira-hook-cli.ts, which writes cache.db). Cheap prefilter: node only starts when the
+# command mentions Jira. Always exits 0 so it can never block or fail a Bash call. Prints nothing.
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cli="${here}/../../apps/session-atlas/src/costledger/jira-hook-cli.ts"
+input="$(cat)"
+case "$input" in
+  *"jira workitem"*)
+    node_bin="$(command -v node 2>/dev/null)"
+    [ -n "$node_bin" ] && [ -f "$cli" ] && printf '%s' "$input" | "$node_bin" --disable-warning=ExperimentalWarning "$cli" >/dev/null 2>&1
+    ;;
+esac
+exit 0

@@ -1,0 +1,18 @@
+#!/bin/bash
+# JP-111: the worktree removal guard (apps/session-atlas/hooks/atlas-removal-guard.js), now loaded through the dispatcher.
+# It blocks `git worktree remove` of a linked worktree unless Atlas's removal check says nothing is at risk. The guard
+# exits 2 (block, reason on stderr) or 0 and fails closed on its own errors. If node is not on the PATH the guard cannot
+# run and the command is allowed, as the Atlas README says; the dispatcher logs only nonzero exits, so we log that here.
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+guard="${here}/../../apps/session-atlas/hooks/atlas-removal-guard.js"
+input="$(cat)"
+# The dispatcher runs every PreToolUse hook for every tool; the guard is for the Bash tool only.
+printf '%s' "$input" | grep -Eq '"tool_name"[[:space:]]*:[[:space:]]*"Bash"' || exit 0
+node_bin="$(command -v node 2>/dev/null)"
+if [ -z "$node_bin" ] || [ ! -f "$guard" ]; then
+  log_dir="${JOSH360_HOME:-$HOME/.josh-360}/logs"
+  mkdir -p "$log_dir" 2>/dev/null && printf '%s PreToolUse atlas-removal-guard could not run (no node or no guard file)\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >>"$log_dir/hooks.log"
+  exit 0
+fi
+printf '%s' "$input" | "$node_bin" --disable-warning=ExperimentalWarning "$guard"
+exit $?
