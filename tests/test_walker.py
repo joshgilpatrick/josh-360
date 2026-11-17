@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 from walker_helpers import ROOT, WalkerCase, db, questions
+from walker_lib import runfolder
 
 
 class WalkingAGraph(WalkerCase):
@@ -116,6 +117,22 @@ class WalkingAGraph(WalkerCase):
         self.assertEqual(len(sha), 64)
         spec.unlink()
         self.assertTrue(Path(path).is_file())      # the copy outlives the file it came from
+
+    def test_a_long_multi_line_output_does_not_stop_the_run_ending(self):
+        run = self.start()
+        card = "Create this ticket?\n" + "A long line of card text. " * 20 + "\nNote: " + "x" * 300
+        self.walk_happy(run, card)
+        done = self.walker("next", "--run", run)
+        self.assertEqual((done["action"], done["end"]), ("done", "finished"))
+        conn = db.connect(db.ledger_path())
+        self.addCleanup(conn.close)
+        self.assertEqual(conn.execute("SELECT COUNT(*) FROM run_files").fetchone()[0], 0)   # text is not a file
+        self.assertIsNotNone(conn.execute("SELECT 1 FROM run_ends WHERE run_id = ?", (run,)).fetchone())
+        self.assertEqual(self.walker("next", "--run", run), done)        # asking again changes nothing
+
+    def test_a_text_that_cannot_be_a_path_is_never_taken_for_one(self):
+        for text in ("x" * 5000, "one\ntwo", "nul\x00byte", ""):
+            self.assertFalse(runfolder.is_saved_file(text), repr(text[:20]))
 
 
 class Limits(WalkerCase):

@@ -1,0 +1,4 @@
+test_a_long_multi_line_output_does_not_stop_the_run_ending (test_walker.WalkingAGraph.test_a_long_multi_line_output_does_not_stop_the_run_ending) ... ok
+test_a_text_that_cannot_be_a_path_is_never_taken_for_one (test_walker.WalkingAGraph.test_a_text_that_cannot_be_a_path_is_never_taken_for_one) ... ok
+Ran 36 tests in 11.333s
+OK

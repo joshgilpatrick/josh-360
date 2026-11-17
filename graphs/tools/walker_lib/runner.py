@@ -195,9 +195,8 @@ def _ancestors_card(run: Run, step: str) -> Optional[str]:
             card = run.doc["outputs"][sid]["card"]
     if not isinstance(card, str) or not card:
         return None
-    path = Path(card)
     try:
-        return path.read_text(encoding="utf-8")[:4000] if path.is_file() else card[:4000]
+        return Path(card).read_text(encoding="utf-8")[:4000] if runfolder.is_saved_file(card) else card[:4000]
     except OSError:
         return card[:4000]
 
