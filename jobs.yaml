@@ -40,3 +40,9 @@ jobs:
     every: 5m
     timeout: 10m
     description: JP-107. Writes sessions, episodes, refs and homes to the ledger from the hook spool, transcript metadata and git. No model call.
+
+  - id: ledger-backup
+    run: ledger/backup.py
+    every: 1d
+    timeout: 10m
+    description: JP-107. Copies the ledger with SQLite's backup call, checks the copy, gzips it, keeps 14 daily and 8 weekly. No upload.
