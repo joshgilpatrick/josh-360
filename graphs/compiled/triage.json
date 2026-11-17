@@ -13,6 +13,7 @@
     "ask_returned": "read",
     "check_sign_off": "read",
     "mark_ready": "josh",
+    "post_question": "josh",
     "read_ticket": "read",
     "ready_check": "read",
     "revise": "read",
@@ -47,6 +48,7 @@
       "verdict",
       "revise",
       "apply_revision",
+      "post_question",
       "ask_josh",
       "ask_returned",
       "ask_at_limit",
@@ -168,6 +170,10 @@
       "contract": "route-record",
       "type": "string"
      },
+     "route_reason": {
+      "description": "When the outcome is conflict: the sentence saying why no single graph fits",
+      "type": "string"
+     },
      "space": {
       "contract": "route-record",
       "type": "string"
@@ -242,15 +248,25 @@
       "contract": "sign-off-defects",
       "type": "list"
      }
+    },
+    "when": {
+     "outcome": [
+      "ready",
+      "defects"
+     ],
+     "step": "sign_off"
     }
    },
    {
     "gate": "triage-verdict",
     "id": "verdict",
     "inputs": [
+     "ticket_key",
      "author_kind",
      "failures",
-     "kept"
+     "kept",
+     "graph",
+     "route_reason"
     ],
     "needs": [
      "read_ticket",
@@ -262,7 +278,8 @@
      "ready",
      "revise",
      "comment",
-     "escalate"
+     "escalate",
+     "exhausted"
     ],
     "outputs": {
      "gaps": {
@@ -331,6 +348,24 @@
     }
    },
    {
+    "gate": "post-question",
+    "id": "post_question",
+    "inputs": [
+     "ticket_key",
+     "proposal"
+    ],
+    "needs": [
+     "revise"
+    ],
+    "outcomes": [
+     "posted"
+    ],
+    "when": {
+     "outcome": "needs_josh",
+     "step": "revise"
+    }
+   },
+   {
     "ask": {
      "choices": [
       "answered",
@@ -340,7 +375,7 @@
     },
     "id": "ask_josh",
     "needs": [
-     "revise"
+     "post_question"
     ],
     "on": {
      "answered": {
@@ -351,8 +386,8 @@
      "park": "end"
     },
     "when": {
-     "outcome": "needs_josh",
-     "step": "revise"
+     "outcome": "posted",
+     "step": "post_question"
     }
    },
    {
@@ -386,10 +421,12 @@
       "one_more_round",
       "park"
      ],
-     "on_limit_only": true,
      "question": "{{ inputs.ticket_key }} is still not Ready after the rounds allowed. Its remaining gaps are on the ticket."
     },
     "id": "ask_at_limit",
+    "needs": [
+     "verdict"
+    ],
     "on": {
      "one_more_round": {
       "at_limit": "ask_at_limit",
@@ -397,6 +434,10 @@
       "max_loops": 1
      },
      "park": "end"
+    },
+    "when": {
+     "outcome": "exhausted",
+     "step": "verdict"
     }
    },
    {
@@ -475,7 +516,7 @@
   }
  },
  "sources": {
-  "flows/triage.yaml": "a9565a1a6f4d20f4ca61ec6f8a87a6e54dc8d2d3ac7414e99b2958919f8aa3ad",
+  "flows/triage.yaml": "e776d2e7471e1c1f38e735f24d227040134452503351353eeafc153b9bc9af7f",
   "roles/sign-off/role.yaml": "2c940e901993068ff0bb897db05e74c23597b8a730e28ba2148bf29d47830254",
   "roles/ticket-drafter/role.yaml": "392bcc63415c2ce8d1593dcf345b9ed21cd4d999cdc7571d936d5ed16b7ef44a",
   "tiers.yaml": "af81c945dec4862af3be1d3957865dd692e7c77e42df42fa43b35c1fe3a14d44"

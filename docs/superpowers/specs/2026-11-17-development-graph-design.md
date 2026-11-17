@@ -25,7 +25,7 @@
 - [Questions for Josh](#questions-for-josh)
 - [Choices made by default](#choices-made-by-default)
 
-Ticket JP-115 (Story; design, then plan, then build). Status: **draft, waiting for Josh's approval** in the thread "JP-115 Write the development graph". There is no screen, so there are no boards.
+Ticket JP-115 (Story; design, then plan, then build). Status: **approved by Josh on 17 November 2026** in the thread "JP-115 Write the development graph" (merged as PR #39). The build plan is `docs/superpowers/plans/2026-11-17-development-graph.md`. There is no screen, so there are no boards.
 
 Draft graph: `docs/design/development-graph/development.yaml`. It uses one proposed addition to the convention, the `wait` step ([below](#waiting-without-a-session-the-wait-step)), so it stays out of `graphs/flows/` until the build adds that kind. With its two wait steps read as gate steps it passes today's checker (`python3 docs/design/development-graph/check_draft.py`), and the walker's own engine walks it on made-up outcomes through six scenarios (`python3 docs/design/development-graph/dry_walk.py`). Both outputs are saved in `docs/proof/2026-11-17/JP-115/`.
 
@@ -450,7 +450,7 @@ The binding to Agent Manager and the first real ticket are JP-117.
 
 1. **How should the builder work through a ticket's phases, given the run caps?** Answered on 17 November: one builder run per ticket, building every phase in order (the recommended option). See [Building every phase](#building-every-phase).
 
-No questions are open. The design itself waits for Josh's approval.
+No questions are open. Josh approved the design on 17 November 2026.
 
 ## Choices made by default
 

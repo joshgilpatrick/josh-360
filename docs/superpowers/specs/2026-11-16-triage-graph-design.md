@@ -23,6 +23,7 @@
 - [Out of scope](#out-of-scope)
 - [Questions for the JP-106 sitting](#questions-for-the-jp-106-sitting)
 - [Choices made by default](#choices-made-by-default)
+- [As built](#as-built)
 
 Status: approved by Josh in the JP-103 thread on 16 November 2026. His approval takes the recommended option for Q1 to Q4 below. Build plan: `docs/superpowers/plans/2026-11-16-triage-graph.md`.
 
@@ -515,3 +516,21 @@ These can be undone, so they follow the recommended option and are recorded in `
 | Routing uses type and Repository, with the work kind only as a cross-check | Hand-written tickets have no `action-triage.spec`. |
 | A Research ticket with a repository routes to the development graph's design stretch; one with `none` routes to non-development | A design ticket such as this one produces a spec in a repository through the boards, spec and plan flow, which is the development graph's design stretch. An answer has no repository. The JP-104 thread proposed this, and a script can decide it from the Repository field alone. |
 | Triage reuses ticket creation's `ticket-drafter` role for send-backs | One author role, so "the author never signs off" has one meaning. |
+
+## As built
+
+Built in JP-122. The graph is `graphs/flows/triage.yaml`; every gate it owns is a script in `graphs/gates/`, with its parts in `graphs/gates/lib/triage/`. Proof: `docs/proof/2026-11-17/JP-122/`. Differences from the design above, each recorded in `docs/decisions.md`:
+
+| Design said | Built |
+| --- | --- |
+| `ask_josh` asks, and the question is posted on the ticket first | A `post-question` gate between `revise` and `ask_josh` posts it once. The drafter's `needs_josh` result carries the question, a recommendation and a reason. |
+| `ask_at_limit` is reached only when a loop hits its limit | It is also reached when `triage-verdict` returns `exhausted` (two drafter rounds used in this run, one more for each "one more round" Josh chooses). The engine takes a loop arrow after its gate has run, so a limit on `apply_revision` alone would write a third round. |
+| Route output is `graph`, `system`, `space` | Plus `route_reason`, the conflict sentence, because the graph's own input is already called `reason`. |
+| `returned_from` is the run id of the graph that sent it back | The id of the newest "Returned to triage" comment not seen before, because `return-to-triage` records no run id. `returns_seen` is new on the route record. |
+| The signing session is "the sign-off session" | Read from the ledger's record of the `sign_off` step, never from what the agent says. |
+| C3 | `none` is a valid answer for Repository (C7 and the routing table rule on it). |
+| The sign-off step runs after every check | `check_sign_off` runs only when `sign_off` ran, so a ticket that fails the checklist goes straight to the verdict. |
+| `no-loose-ends` is the exit gate | Still JP-109's stub. A run that reaches its end stops there, with the ticket already Ready. |
+
+Owed on the laptop (not run in the cloud): the `@e2e` scenario, one run on two made-up JP tickets with the walker bound to Agent Manager, and a check that a real sign-off session's id reaches the ledger through `record --session`.
+
