@@ -51,6 +51,8 @@ class LaptopCase(LedgerCase):
 
     def setUp(self):
         super().setUp()
+        # macOS puts temp folders under /var, a link to /private/var; git and loose_ends.py report the real path.
+        self.tmp = Path(os.path.realpath(str(self.tmp)))
         self.origin = self.tmp / "origin.git"
         self.repo = self.tmp / "work" / "josh_360"
         self.repo.parent.mkdir()
