@@ -10,6 +10,7 @@
 - [Scoring a run](#scoring-a-run)
 - [Steps](#steps)
 - [How a graph runs](#how-a-graph-runs)
+- [The walker](#the-walker)
 - [The rules](#the-rules)
 - [The run cap](#the-run-cap)
 - [The checker](#the-checker)
@@ -35,7 +36,8 @@ graphs/
   gates/<gate>.py|.sh    gate scripts
   contracts/<name>.md    the formats passed between steps
   bindings/<tool>/       everything specific to one runner (Agent Manager first); never read by the checker
-  tools/                 the checker now, the walker later
+  tools/                 the checker, the walker (walker.py, walker_lib/) and compile_graphs.py
+  compiled/              the JSON copy of each graph the walker reads (built by compile_graphs.py)
   tests/                 the checker's tests and sample graphs
 ```
 
@@ -173,7 +175,7 @@ Every step has an `id` and exactly one of `role`, `gate` or `ask`.
 
 ## How a graph runs
 
-The walker (a later ticket) holds this logic; a runner only starts the step the walker names.
+The walker (`graphs/tools/walker.py`, JP-114; see [The walker](#the-walker)) holds this logic; a runner only starts the step the walker names.
 
 1. The entry gate runs first. A run starts only if it passes.
 2. A step is ready when every step in its `needs` has finished or been skipped, and its `when` matches. A step whose `when` does not match is skipped.
@@ -210,14 +212,27 @@ loop check_review -> build (outcome 'rework') would run step 'review' 3 times (m
 
 The steps a loop runs again are the target and every step that depends on it (`needs`, directly or further down), except the steps that depend on the loop's own step, because those cannot have run yet. A step that is skipped by its `when` is still counted, so for a single loop the check is an upper bound. The checker also refuses a `tiers.yaml` where a tier has no `max_runs`, where one is not a whole number of 1 or more, or where `max_runs` names something that is not a tier. A `goto` that reruns any role step of the `gate` tier can have a `max_loops` of 1 at most, because the gate cap is 2. (The `gate` tier is the Opus tier; script gates, the `gate` step kind, have no cap.)
 
-**What the walker holds** (JP-114 builds this; this section is its rule):
+**What the walker holds** (JP-114 built this; this section is its rule):
 
 1. Count every run of every role step, whichever loop sent the run back to it, in one counter for each step in one run of the graph. The first run counts as run 1.
 2. Before starting a role step again, compare the count with the cap of the step's tier. When the next run would pass the cap, do not start it: send the run to that loop's `at_limit` ask step.
-3. Each yes from Josh at that ask allows exactly one more run of that step, no more. The extra run is counted like any other, so the next time the cap is reached Josh is asked again.
+3. Each yes from Josh at that ask allows exactly one more run of that step, no more. The extra run is counted like any other, so the next time the cap is reached Josh is asked again. A *yes* is a choice whose `on` is a `goto`, taken at an ask the run was sent to by a limit; that `goto` is Josh's own decision, so its own `max_loops` is not enforced by the walker (the checker still requires it), and it allows one extra run of each role step it sends the run back through that is at its cap. Any other choice moves on or ends, and no extra run is allowed.
 4. Record the tier, and whether the run was one Josh allowed, in the ledger for the step (`tier` is already a ledger field).
 
 The checker cannot add up loops that share a step, because which loops fire depends on the outcomes of the run. That sum is the walker's job; the checker only makes sure no single loop is written to break the cap.
+
+## The walker
+
+`graphs/tools/walker.py` (JP-114) is the one script that holds the logic above. Design and decisions: `docs/superpowers/specs/2026-11-17-walker-design.md`. It runs on the laptop's Python 3.9 with the standard library only, so it reads the JSON copy of a graph in `graphs/compiled/<graph>.json`, never the YAML.
+
+- **The JSON copy.** `python3 graphs/tools/compile_graphs.py` (cloud, needs PyYAML) runs the checker and writes the copy for each graph that passes, with the SHA-256 of every source file. `scripts/check.py` fails when a copy is missing or stale. The walker refuses a graph with no copy, a copy whose sources changed, or (where PyYAML is installed) a graph the checker rejects. *A change to a graph file, a tier, or a role or agent it names needs `compile_graphs.py` run in the same pull request.*
+- **Commands.** `start`, `next`, `record`, `answer`, `abandon`, `allow`, `retry`, `status`. `next` prints `run` (a role step for the binding to start), `parked` (a question is waiting for Josh), `done` (the end and its score) or `stopped`. It runs gate steps itself. Calling it again prints the same answer until something changes.
+- **State.** The ledger holds every step (`graph_runs`, `step_runs`, `step_results`, `asks`, `decisions`, `run_ends`, `run_files`); the walker replays them to find its place. The run's input values and step outputs are in `$JOSH360_RUNS/<run id>/run.json` (default `~/.josh-360/runs/`), outside the repository.
+- **How a role session reports.** The `run` answer carries `result_file`. The session writes `{"outcome": "...", "outputs": {...}}` there, and the binding calls `record --result-file`. The outcome must be one the step declares and every output one it declares.
+- **What a gate script is given.** `GRAPH_INPUT_<NAME>` for each input the step lists (a list as JSON), `GRAPH_INPUT_TARGET_STATUS` (the Jira status of the step's stretch), `JOSH360_TICKET_KEY`, `JOSH360_RUN_ID`, `JOSH360_RUNS`, and the Jira credentials (`JOSH360_JIRA_EMAIL`, `JOSH360_JIRA_TOKEN`, from the keychain item `jira-claude-api-key` when unset). Role sessions never get the credentials. A gate that fails (no outcome, an undeclared outcome, a non-zero exit, a timeout) stops the run; the walker never retries it.
+- **Jira.** The walker moves a ticket to the status of the stretch the next step is in by calling the `move-ticket` gate script. A gate step with `effects: move_ticket` moves the ticket itself and is passed the target. It sets the Jira flag when a question is parked and clears it on the answer (`set-flag`), and posts a typed answer (`post-comment`) after the patient-data screen for outside writes. A failed Jira effect is a warning on the output, never a stop.
+- **Asking Josh.** A parked ask is a record in action-triage's Needs you store (`questions/`, `runner: headless`); no session waits. The ask's text is its `question` plus a step output named `card` from a step above it, when there is one. The category is `<graph>/<step>` plus `;<name>=<value>` for each name in `split`, and the answer is saved as a decision.
+- **Not the walker's job.** Starting sessions and deciding when a run starts (the runner, JP-117), and the content of any role.
 
 ## The checker
 
@@ -225,6 +240,7 @@ The checker cannot add up loops that share a step, because which loops fire depe
 python3 graphs/tools/check_graph.py                             # every graph in graphs/flows/
 python3 graphs/tools/check_graph.py graphs/flows/my-graph.yaml   # one file
 python3 graphs/tools/check_graph.py --root <dir> <file>         # another parts folder (the tests use this)
+python3 graphs/tools/compile_graphs.py [--check]                 # the JSON copies the walker reads (see The walker)
 ```
 
 It checks `tiers.yaml` (models, efforts and run caps), every role and agent, and each graph file. It prints one line per problem, naming the file and where in it (a step id, a loop, a key), and exits 0 when there are none, 1 when there are, and 2 when it cannot run (a missing folder, or PyYAML not installed). A YAML key written twice in one mapping is refused, and `on`, `off`, `yes` and `no` are read as plain words, not as true or false. It needs PyYAML (`pip install -r requirements.txt`). `python3 scripts/check.py`, the repository's suite, runs it and its tests (`graphs/tests/`). The sample graphs there, one that passes and one per broken rule, are the quickest way to see the convention in use.

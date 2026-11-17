@@ -1,0 +1,30 @@
+1. Story in josh-360: one hardening round, one audit round with 2 findings, merged by the graph
+   Jira:  Ready -> Design/Planning -> In Progress -> Code Review -> Validation -> Done
+   steps: read_ticket=build, prepare=ready, design=ready, lint=complete, harden=defects, check_harden=rework, design=ready, lint=complete, harden=pass, build=done, verify=passed, review_plan=complete, write_pr=written, open_pr=opened, queue_audit=queued, await_review=changes, fix_review=fixed, after_fix=relabel, await_review=ready, merge_rule=agent, merge=merged, clean_up=cleaned, close=closed, no-loose-ends
+   end:   finished (success)
+
+2. Bug in another repository: a builder question the spec answers, a plan-review defect, Josh merges
+   Jira:  Ready -> Design/Planning -> In Progress -> Code Review -> Validation -> Done
+   steps: read_ticket=build, prepare=ready, design=ready, lint=complete, harden=pass, build=needs_judgment, triage_question=answered, build=done, verify=passed, review_plan=defects, cite_check=rework, build=done, verify=passed, review_plan=complete, write_pr=written, open_pr=opened, queue_audit=queued, await_review=ready, merge_rule=josh, await_merge=merged, clean_up=cleaned, close=closed, no-loose-ends
+   end:   finished (success)
+
+3. Research ticket: design and plan, Josh approves, Josh merges
+   Jira:  Ready -> Design/Planning -> In Progress -> Code Review -> Validation -> Done
+   steps: read_ticket=design_only, prepare=ready, design=ready, lint=complete, harden=pass, approve_design=approve, write_pr=written, open_pr=opened, queue_audit=queued, await_review=ready, merge_rule=josh, await_merge=merged, clean_up=cleaned, close=closed, no-loose-ends
+   end:   finished (success)
+
+4. Story whose designer has a question: back to triage
+   Jira:  Ready -> Design/Planning -> Not Started
+   steps: read_ticket=build, prepare=ready, design=needs_input, route_question=to_triage, return_question=returned
+   end:   return_question.returned (neutral)
+
+5. Builder keeps failing its checks: the run cap sends it to Josh, who stops
+   Jira:  Ready -> Design/Planning -> In Progress
+   steps: read_ticket=build, prepare=ready, design=ready, lint=complete, harden=pass, build=done, verify=failed, build=done, verify=failed, build=done, verify=failed, build_stuck=stop
+   end:   build_stuck.stop (needs-josh)
+
+6. Audit asks for 5 changes, a re-audit, then Josh's merge is closed unmerged
+   Jira:  Ready -> Design/Planning -> In Progress -> Code Review -> Validation -> Cancelled
+   steps: read_ticket=build, prepare=ready, design=ready, lint=complete, harden=pass, build=done, verify=passed, review_plan=complete, write_pr=written, open_pr=opened, queue_audit=queued, await_review=changes, fix_review=fixed, after_fix=requeue, await_review=ready, merge_rule=josh, await_merge=closed, close_unmerged=cancelled
+   end:   close_unmerged.cancelled (neutral)
+

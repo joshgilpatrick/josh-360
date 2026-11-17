@@ -1,0 +1,14 @@
+One walked run of the ticket creation graph (made-up to-do, fake Jira). step, attempt, outcome
+  _entry           1  pass
+  read_intake      1  recorded
+  route            1  matched
+  find_duplicates  1  searched
+  duplicate_rule   1  new_light
+  draft            1  drafted
+  check_draft      1  pass
+  approve          1  approve
+  write            1  created
+  link_source      1  linked
+  _exit            1  pass
+Jira writes, in order:
+  POST /rest/api/3/issue

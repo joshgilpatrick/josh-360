@@ -1,0 +1,7 @@
+$ cd tests && python3 -m unittest -v test_walker.WalkingAGraph.test_a_run_survives_a_closed_terminal
+test_a_run_survives_a_closed_terminal (test_walker.WalkingAGraph.test_a_run_survives_a_closed_terminal) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.709s
+
+OK

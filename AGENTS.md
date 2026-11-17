@@ -54,13 +54,14 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - Feature tree (JP-143): `python3 scripts/feature_tree.py check`, and `build` after editing `docs/design/feature-tree/tree.yaml`.
 - Architecture page (JP-144): `python3 scripts/architecture_page.py check`, and `build` after editing the feature tree or anything in `docs/design/architecture/`.
 - Graph checker on its own: `python3 graphs/tools/check_graph.py` (rules in `graphs/CONVENTION.md`).
+- Walker (JP-114): `python3 graphs/tools/walker.py <start|next|record|answer|abandon|allow|retry|status> ...`; it reads the JSON copies in `graphs/compiled/`, so run `python3 graphs/tools/compile_graphs.py` after changing a graph, a tier, or a role or agent (`--check` is part of `scripts/check.py`).
 
 ## Layout
 
 - `README.md`: what the repository is and where things live.
 - `apps/`: runnable parts (moved in from Session Atlas and action-triage later).
 - `ledger/`: the ledger, the local record of every agent session.
-- `graphs/`: the agent graphs and the walker. How a graph is stored, and the checker's rules: `graphs/CONVENTION.md`.
+- `graphs/`: the agent graphs and the walker (`graphs/tools/walker.py`). How a graph is stored, the checker's rules and how a graph runs: `graphs/CONVENTION.md`.
 - `conventions/`: ticket conventions (`tickets.md`), the system registry (`registry.yaml`) and the standing priorities (`priorities.yaml`). Ticket rules for all of Josh's work start here.
 - `docs/surface-map.md`: every surface Josh works through, and where its configuration lives.
 - `docs/vision-and-roadmap.md`: the approved vision and roadmap (the requirements source).
