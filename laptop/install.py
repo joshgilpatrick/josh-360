@@ -63,12 +63,8 @@ def step_ledger() -> Plan:
         return [], ["{} exists but is not a regular file".format(path)]
     if path.is_file():
         try:
-            conn = ledger_db.sqlite3.connect("file:{}?mode=ro".format(path), uri=True)
-            try:
-                current = ledger_db.user_version(conn)
-            finally:
-                conn.close()
-        except ledger_db.sqlite3.Error as e:
+            current = ledger_db.header_version(path)
+        except (OSError, ValueError) as e:
             return [], ["{} cannot be read: {}".format(path, e)]
         if current >= ledger_db.newest_version():
             return [], []
