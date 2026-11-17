@@ -1,0 +1,103 @@
+# Salvage rows for the pieces the feature tree (docs/design/feature-tree/tree.yaml) does not cover:
+# claude-harness (~/.claude) and the rest of the work laptop. Ticket: JP-144.
+#
+# Every row comes from a verdict already made: the laptop inventory (docs/inventory/laptop.md, JP-96),
+# Josh's phase 1 answers (docs/decisions.md, "The phase 1 sitting", JP-106) or JP-100. Nothing here is a new call.
+#
+#   id       H = claude-harness, L = elsewhere on the laptop
+#   name     what it is
+#   how      as-is | ledger | rebuilt | retire | outside   (the same words as the feature tree)
+#   why      one line
+#   source   where the verdict was made
+
+source:
+  id: HL
+  name: claude-harness and the laptop
+  about: "Josh's ~/.claude folder and the other jobs, hooks and stores the laptop inventory found. claude-harness stays its own repository and is trimmed; it is not melded into josh-360."
+
+rows:
+  - id: H1
+    name: Global rules (AGENTS.md) and settings
+    how: as-is
+    why: "Stays in claude-harness. josh-360 adds one hook dispatcher entry per event to the settings."
+    source: vision ("What exists today"), JP-105
+  - id: H2
+    name: STATE.md and its compaction hooks
+    how: as-is
+    why: "The one per-session record. Its U-turns and dead ends are also copied into the ledger."
+    source: JP-100, data-model.md
+  - id: H3
+    name: 67 skills Josh kept
+    how: as-is
+    why: "Josh picked them on the skill picker page. The 64 others are archived at the phase close."
+    source: JP-106 Q14
+  - id: H4
+    name: Agent definitions in use
+    how: as-is
+    why: "Graph steps can name these agents. Eight with no caller are archived."
+    source: JP-96
+  - id: H5
+    name: Secret redaction, failure toast and review reminder hooks
+    how: as-is
+    why: "Small safety nets that cost nothing per turn."
+    source: JP-96
+  - id: H6
+    name: Atlas hook, Jira link hook and removal guard
+    how: ledger
+    why: "Become the ledger's recorder hooks in josh-360's hooks/ folder."
+    source: JP-96, JP-107, JP-111
+  - id: H7
+    name: Sprint skill state
+    how: rebuilt
+    why: "Graph run state replaces it once the walker and the development graph carry real tickets."
+    source: JP-96, JP-114, JP-128
+  - id: H8
+    name: Focus hooks, focus files and the focus dashboard
+    how: retire
+    why: "STATE.md and the ledger replace them. Archived in claude-harness archive/focus/."
+    source: JP-100
+  - id: H9
+    name: Compaction summaries, handoff files and the unused meter
+    how: retire
+    why: "Second records beside STATE.md."
+    source: JP-96, JP-100
+  - id: H10
+    name: 64 unused skills and the Obsidian wiki skills
+    how: retire
+    why: "Archived at the phase close, not deleted."
+    source: JP-106 Q10, Q14
+  - id: H11
+    name: Tactic Remote hooks
+    how: retire
+    why: "Nothing listens for them."
+    source: JP-96, JP-106 Q12
+  - id: L1
+    name: claude-mem, Obsidian staging, context-mode and agentmemory
+    how: retire
+    why: "The ledger is the one memory and keeps pointers to transcripts, not copies."
+    source: JP-96
+  - id: L2
+    name: Omnara, QuickTasks, the task-manager queue and rclone
+    how: retire
+    why: "Josh's answers: Omnara disconnected, QuickTasks gone, tickets are the work item, no rclone."
+    source: JP-106 Q12, Q13
+  - id: L3
+    name: QA waker watchdog and the ClickUp to Notion sync
+    how: retire
+    why: "Left over from one sprint, or never loaded."
+    source: JP-96
+  - id: L4
+    name: Claude Code transcripts (~/.claude/projects)
+    how: as-is
+    why: "The source the ledger points into. They stay on the laptop."
+    source: JP-96, data-model.md
+  - id: L5
+    name: Work pipelines (Athena pipeline, spend alert, test suite sync)
+    how: outside
+    why: "Work for an accountability, not agent plumbing."
+    source: JP-96
+  - id: L6
+    name: Personal chores (receipts, Idemeum logs, local Postgres)
+    how: outside
+    why: "Outside the agent workflow; they stay on the macbook-automations list."
+    source: JP-96, JP-143 (M5, M6)

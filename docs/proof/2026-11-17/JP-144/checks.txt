@@ -1,0 +1,17 @@
+architecture page ok: {'keep': 82, 'drop': 34} plus 17 laptop rows
+OK
+check.py: ok (0 problem(s))
+test_built_page_is_up_to_date (tests.test_architecture_page.ACopyLivesInTheRepo.test_built_page_is_up_to_date) ... ok
+test_page_is_under_docs (tests.test_architecture_page.ACopyLivesInTheRepo.test_page_is_under_docs) ... ok
+test_id_that_repeats_the_tree_is_refused (tests.test_architecture_page.LaptopRows.test_id_that_repeats_the_tree_is_refused) ... ok
+test_row_without_a_reason_is_refused (tests.test_architecture_page.LaptopRows.test_row_without_a_reason_is_refused) ... ok
+test_sample_rows_pass (tests.test_architecture_page.LaptopRows.test_sample_rows_pass) ... ok
+test_the_real_rows_pass (tests.test_architecture_page.LaptopRows.test_the_real_rows_pass) ... ok
+test_unknown_how_is_refused (tests.test_architecture_page.LaptopRows.test_unknown_how_is_refused) ... ok
+test_every_tree_feature_and_laptop_row_is_in_the_page (tests.test_architecture_page.TheSalvageMapCoversEveryFeature.test_every_tree_feature_and_laptop_row_is_in_the_page) ... ok
+test_the_page_carries_each_call (tests.test_architecture_page.TheSalvageMapCoversEveryFeature.test_the_page_carries_each_call) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.244s
+
+OK

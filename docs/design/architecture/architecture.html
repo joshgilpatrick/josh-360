@@ -1,0 +1,631 @@
+<title>Josh 360 Architecture</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: a long technical sheet. Two drawings first (the parts, then how data moves), then the salvage
+   map as a grid of sources by fate, then the phase split. One teal accent for josh-360's own parts; amber
+   only where Josh steps in; fate colours are semantic and separate from the accent. */
+:root {
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --band: #eaeef2;
+  --ink: #16202a;
+  --muted: #566372;
+  --line: #cfd7e0;
+  --accent: #0e6a70;
+  --accent-soft: #dcefef;
+  --josh: #a95a06;
+  --p2: #4658a0;
+  --p3: #7c8794;
+  --f-asis: #2c7a4b;
+  --f-ledger: #2360a3;
+  --f-rebuilt: #6a48ad;
+  --f-later: #7c8794;
+  --f-drop: #a13a3a;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1318; --surface: #151c24; --band: #19212b; --ink: #e5eaef; --muted: #9ba7b5; --line: #2b3542;
+    --accent: #52b9be; --accent-soft: #15302f; --josh: #f0a24a; --p2: #8c9ce2; --p3: #8d97a3;
+    --f-asis: #5dbf86; --f-ledger: #6ea8e9; --f-rebuilt: #a98ae6; --f-later: #8d97a3; --f-drop: #e27b7b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1318; --surface: #151c24; --band: #19212b; --ink: #e5eaef; --muted: #9ba7b5; --line: #2b3542;
+  --accent: #52b9be; --accent-soft: #15302f; --josh: #f0a24a; --p2: #8c9ce2; --p3: #8d97a3;
+  --f-asis: #5dbf86; --f-ledger: #6ea8e9; --f-rebuilt: #a98ae6; --f-later: #8d97a3; --f-drop: #e27b7b;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--font-body); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 40px 72px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.05; font-weight: 700; }
+h2 { font-size: 24px; font-weight: 600; }
+h3 { font-size: 16px; font-weight: 600; }
+p { margin: 0; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code, .mono { font-family: var(--font-mono); font-size: 0.88em; }
+.eyebrow { font: 500 12px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+header { display: grid; gap: 14px; margin-bottom: 28px; }
+.lede { max-width: 68ch; font-size: 17px; color: var(--ink); }
+.meta { color: var(--muted); font-size: 13px; max-width: 80ch; }
+nav.jump { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; padding-block: 12px; border-block: 1px solid var(--line); margin-bottom: 36px; }
+nav.jump a { text-decoration: none; }
+nav.jump a:hover { text-decoration: underline; }
+section { display: grid; gap: 16px; margin-bottom: 56px; }
+.intro { max-width: 72ch; color: var(--muted); }
+.intro strong { color: var(--ink); }
+figure { margin: 0; display: grid; gap: 12px; }
+.canvas { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow-x: auto; padding: 8px; }
+.canvas svg { display: block; width: 100%; min-width: 860px; height: auto; color: var(--muted); }
+figcaption { color: var(--muted); font-size: 14px; max-width: 80ch; }
+figcaption ol { margin: 6px 0 0; padding-left: 22px; display: grid; gap: 2px; }
+
+/* SVG parts (styled from the page so both themes work) */
+.svg-band { fill: var(--band); }
+.svg-band-label { fill: var(--muted); font: 600 11px var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+.svg-box { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; }
+.svg-box.core { stroke: var(--accent); stroke-width: 2; fill: var(--accent-soft); }
+.svg-box.later { stroke-dasharray: 5 4; fill: none; stroke: var(--p3); }
+.svg-box.outside { fill: none; stroke-dasharray: 2 3; }
+.svg-title { fill: var(--ink); font: 600 14px var(--font-display); }
+.svg-line { fill: var(--ink); font: 400 12px var(--font-body); }
+.svg-from { fill: var(--muted); font: 400 11px var(--font-mono); }
+.svg-josh { fill: var(--josh); font: 600 11.5px var(--font-body); }
+.svg-joshbar { fill: var(--josh); }
+.svg-tag-p1 { fill: var(--accent); } .svg-tag-p2 { fill: var(--p2); } .svg-tag-p3 { fill: var(--p3); } .svg-tag-done { fill: var(--f-asis); } .svg-tag-today { fill: var(--muted); }
+.svg-tag-text { fill: var(--surface); font: 600 10px var(--font-mono); }
+.svg-chip { fill: var(--bg); stroke: var(--line); }
+.svg-chip-text { fill: var(--ink); font: 500 11px var(--font-body); }
+.svg-arrow { stroke: currentColor; stroke-width: 1.5; fill: none; }
+.svg-arrow-label { fill: var(--muted); font: 500 11.5px var(--font-body); }
+.svg-step { fill: var(--accent); } .svg-step-text { fill: var(--surface); font: 700 11px var(--font-mono); }
+.svg-head { fill: currentColor; }
+
+/* Salvage map */
+.legend { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 13.5px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.sw.asis { background: var(--f-asis); } .sw.ledger { background: var(--f-ledger); } .sw.rebuilt { background: var(--f-rebuilt); }
+.sw.later { border: 2px dashed var(--f-later); } .sw.drop { background: var(--f-drop); }
+.tablebox { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+table.matrix { border-collapse: collapse; width: 100%; min-width: 640px; font-variant-numeric: tabular-nums; font-size: 14px; }
+.matrix th, .matrix td { padding: 9px 12px; text-align: right; border-bottom: 1px solid var(--line); }
+.matrix th:first-child, .matrix td:first-child { text-align: left; }
+.matrix thead th { font: 600 12px var(--font-mono); letter-spacing: 0.04em; color: var(--muted); text-transform: uppercase; }
+.matrix tbody tr:last-child td { border-bottom: 0; }
+.matrix tfoot td { font-weight: 600; border-top: 2px solid var(--line); border-bottom: 0; }
+.matrix td.zero { color: var(--line); }
+.matrix td .bar { display: inline-block; height: 8px; border-radius: 2px; margin-right: 8px; vertical-align: middle; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { font: 500 13px var(--font-body); color: var(--ink); background: none; border: 0; padding: 7px 12px; cursor: pointer; border-right: 1px solid var(--line); }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+label.toggle { display: inline-flex; gap: 8px; align-items: center; font-size: 13.5px; color: var(--muted); cursor: pointer; }
+.source { display: grid; gap: 10px; padding: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.source-head { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; }
+.source-head p { color: var(--muted); font-size: 13.5px; flex: 1 1 340px; min-width: 0; }
+.fates { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.fate { display: grid; align-content: start; gap: 6px; min-width: 0; }
+.fate-head { font: 600 11.5px var(--font-mono); letter-spacing: 0.05em; text-transform: uppercase; display: flex; gap: 6px; align-items: center; color: var(--muted); padding-bottom: 4px; border-bottom: 2px solid var(--line); }
+.fate.asis .fate-head { border-color: var(--f-asis); } .fate.ledger .fate-head { border-color: var(--f-ledger); }
+.fate.rebuilt .fate-head { border-color: var(--f-rebuilt); } .fate.later .fate-head { border-bottom-style: dashed; border-color: var(--f-later); }
+.fate.drop .fate-head { border-color: var(--f-drop); }
+.fate-empty { color: var(--line); font-size: 13px; }
+button.chip { text-align: left; font: 13px/1.3 var(--font-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; cursor: pointer; display: grid; gap: 2px; width: 100%; }
+button.chip:hover { border-color: var(--accent); }
+button.chip[aria-expanded="true"] { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+button.chip.sub { margin-left: 10px; width: calc(100% - 10px); font-size: 12.5px; }
+.chip .cid { font: 500 11px var(--font-mono); color: var(--muted); }
+.chip .note { font-size: 11.5px; color: var(--muted); }
+.detail { border-left: 3px solid var(--accent); padding: 10px 14px; background: var(--bg); border-radius: 0 8px 8px 0; display: grid; gap: 6px; font-size: 14px; }
+.detail dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 0; }
+.detail dt { color: var(--muted); font-size: 13px; }
+.detail dd { margin: 0; min-width: 0; }
+.detail ul { margin: 0; padding-left: 18px; }
+
+/* Phases */
+.phases { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 14px; }
+.phase { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; align-content: start; gap: 12px; min-width: 0; }
+.phase.p1 { border-top: 4px solid var(--accent); }
+.phase.p2 { border-top: 4px solid var(--p2); }
+.phase.p3 { border-top: 4px dashed var(--p3); }
+.phase .gate { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; }
+.phase h4 { margin: 0; font: 600 12px var(--font-mono); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+.tickets { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 14px; }
+.tickets li { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 8px; }
+.tickets .k { font: 500 12.5px var(--font-mono); color: var(--muted); padding-top: 1px; }
+.tickets li.done .k { color: var(--f-asis); }
+.tickets li.done span:last-child { color: var(--muted); }
+.meanwhile { font-size: 13.5px; background: var(--bg); border-radius: 8px; padding: 10px 12px; color: var(--muted); }
+.meanwhile strong { color: var(--ink); }
+
+/* Open points */
+.points { display: grid; gap: 12px; }
+.point { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+.point h3 { grid-column: 1 / -1; }
+.point p { font-size: 14.5px; }
+.point .rec { border-left: 3px solid var(--josh); padding-left: 12px; }
+.point .rec b { color: var(--josh); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; display: block; margin-bottom: 2px; }
+
+@media (max-width: 900px) {
+  .fates { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .phases { grid-template-columns: 1fr; }
+  .point { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) { .fates { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">JP-144 · Phase 1 design</div>
+    <h1>Josh 360 Architecture</h1>
+    <p class="lede">One application on the work laptop. The useful parts of action-triage, Session Atlas and the DevEx MacBook automations are taken out of their repositories and rebuilt inside josh-360 with one look and one codebase. Nothing is nested inside it.</p>
+    <p class="meta">Built from the design docs on main: the data model (JP-99), the graph convention and designs (JP-101 to JP-104), the laptop inventory (JP-96), Josh's phase 1 answers (JP-106) and his feature-tree review of 17 November 2026 (JP-145). The salvage calls are Josh's. Tag on each part: <b>P1</b> phase 1, <b>P2</b> phase 2, <b>P3</b> phase 3, <b>Done</b> already on main, <b>today</b> a tool that already exists.</p>
+  </header>
+
+  <nav class="jump" aria-label="Sections">
+    <a href="#parts">The parts</a>
+    <a href="#flow">How data moves</a>
+    <a href="#improve">How it improves itself</a>
+    <a href="#salvage">Salvage map</a>
+    <a href="#phases">Phase 1 and later</a>
+    <a href="#points">Points this raises</a>
+  </nav>
+
+  <section id="parts" aria-labelledby="parts-h">
+    <h2 id="parts-h">The parts of the one app</h2>
+    <p class="intro">Five layers, top to bottom: where Josh works, the workflow that moves tickets, the data, the laptop base it all runs on, and the tools that stay outside. Each box names the old features it is built from, by their ids in the feature tree. <strong>Teal outline</strong> is the ledger, the centre of phase 1.</p>
+    <figure>
+      <div class="canvas"><svg id="svg-parts" viewBox="0 0 1100 800" role="img" aria-label="Josh 360 as five layers: where Josh works (Jira, Agent Manager, the josh-360 window, later views), workflow (runner, walker, graphs, PR audit), data (recorder, ledger.db, cache.db, ask.py), laptop base (~/.josh-360, jobs.yaml, hooks, backups), and tools that stay separate."></svg></div>
+      <figcaption>The josh-360 window arrives in phase 2 with JP-124, and the session views wait for phase 3, redesigned rather than ported. Until then Josh works in Jira, Agent Manager and the action-triage app as it runs today.</figcaption>
+    </figure>
+  </section>
+
+  <section id="flow" aria-labelledby="flow-h">
+    <h2 id="flow-h">How data moves</h2>
+    <p class="intro">One ticket's trip through the system, and where each fact lands. Hooks and scripts write the ledger; working agents never do. <strong>Amber</strong> marks the three places Josh steps in.</p>
+    <figure>
+      <div class="canvas"><svg id="svg-flow" viewBox="0 0 1110 610" role="img" aria-label="A Ready ticket in Jira is picked up by the runner, which asks the walker for the next step and starts that step's session in Agent Manager. The session's hooks feed the recorder, its questions go to Needs you, and its pull request goes to the PR audit and then to Josh. Walker, Needs you, recorder and cost import all write to ledger.db, which agents read through ask.py, the window reads, and a daily job backs up."></svg></div>
+      <figcaption>
+        <ol>
+          <li>A ticket reaches Ready in Jira (Josh, or the triage graph).</li>
+          <li>The runner asks the walker what happens next. The walker reads the run so far and names the step.</li>
+          <li>The runner starts that step's session in Agent Manager, where Josh can always see it.</li>
+          <li>The session's hooks append one line each to a spool file; the recorder job turns spool, transcript and git into ledger rows. The hourly cost import fills cache.db and copies each session's total into the ledger.</li>
+          <li>A question goes to Needs you. Josh's answer resumes the session and becomes a decision record.</li>
+          <li>The session opens a pull request.</li>
+          <li>The PR audit comments, then Josh signs off.</li>
+          <li>A script moves the Jira status. The walker records how the run ended; the loose-ends check is the exit gate.</li>
+        </ol>
+      </figcaption>
+    </figure>
+  </section>
+
+  <section id="improve" aria-labelledby="improve-h">
+    <h2 id="improve-h">How it improves itself</h2>
+    <p class="intro">The loop Josh approved on 15 November 2026 (the vision's "How the system measures and improves itself"). Scripts count friction in every session, one small model call explains it when a session earns one, and a weekly review turns repeats into improvement tickets that go through the same pipeline as any other work. The headline number is <strong>Josh's messages per finished ticket</strong>, read beside the share of work signed off first time: if the first falls while the second holds, it is working.</p>
+    <figure>
+      <div class="canvas"><svg id="svg-improve" viewBox="0 0 1110 420" role="img" aria-label="Sessions and graph runs feed a friction-facts script with no model, which flags the sessions that earn a one-call debrief. Facts and debriefs land in ledger.db beside graph-run scores and decisions. A weekly review and threshold scripts read the ledger and file improvement tickets, at most five open. Josh prioritises them; they pass the Ready gate and the development graph like any ticket, the change merges, and ten runs later the ledger checks whether the number it named moved."></svg></div>
+      <figcaption>
+        <ol>
+          <li><b>Phase 1 collects.</b> Friction facts (JP-112) start first and run for about two weeks; the debrief form (JP-113) is settled only after looking at those real rows. Graph runs already record their version, model and end state (JP-140, done), and Josh's answers become decision records (JP-116).</li>
+          <li><b>Phase 2 acts.</b> The weekly review, the threshold scripts and the claim check are one ticket (JP-127). Starting thresholds: three repeats, five open improvement tickets, ten runs, in a file Josh can edit.</li>
+          <li><b>Phase 3 shows.</b> The dashboard design (JP-130) includes an improvement page: the headline measure and the open improvement tickets.</li>
+          <li><b>Cost:</b> no model call on any turn. At most one small call per session when it goes quiet (shared with the five summary lines), and one review a week.</li>
+          <li><b>The line:</b> the system may improve itself without Josh, but never reduce his oversight without him. Thresholds, budgets, gates and memory stages stay his. Working agents never see the measures or the debriefs, and nothing rates Josh's own choices.</li>
+        </ol>
+      </figcaption>
+    </figure>
+  </section>
+
+  <section id="salvage" aria-labelledby="salvage-h">
+    <h2 id="salvage-h">Salvage map</h2>
+    <p class="intro">Where every feature of the existing tools ends up. The first five sources are the feature tree Josh reviewed; the last row covers claude-harness and the rest of the laptop, from the laptop inventory and his phase 1 answers. Counts include sub-features.</p>
+    <div class="legend" aria-label="Legend">
+      <span><i class="sw asis"></i>Kept as is: the code comes over unchanged</span>
+      <span><i class="sw ledger"></i>Onto the ledger: its data becomes ledger rows</span>
+      <span><i class="sw rebuilt"></i>Rebuilt or new: same job, new code</span>
+      <span><i class="sw later"></i>Later: after the ledger is hardened</span>
+      <span><i class="sw drop"></i>Dropped: retired, folded into another, or outside</span>
+    </div>
+    <div class="tablebox"><table class="matrix" id="matrix"></table></div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Source" id="source-filter"></div>
+      <label class="toggle"><input type="checkbox" id="show-subs"> Show sub-features</label>
+    </div>
+    <div id="sources" style="display:grid;gap:14px"></div>
+  </section>
+
+  <section id="phases" aria-labelledby="phases-h">
+    <h2 id="phases-h">Phase 1 and later</h2>
+    <p class="intro">Phase 1 builds the data layer and all four graphs (Josh, 17 November 2026). The app features move in during phase 2, and the views come back in phase 3. Each gate is a check Josh makes before the next phase starts.</p>
+    <div class="phases">
+      <div class="phase p1">
+        <div class="eyebrow">Phase 1 · foundation</div>
+        <h3>The ledger, the walker and the four graphs</h3>
+        <div>
+          <h4>Unified data model</h4>
+          <ul class="tickets">
+            <li><span class="k">JP-107</span><span>The ledger and its recorder: ledger.db, cache.db, ask.py, backups</span></li>
+            <li><span class="k">JP-108</span><span>Five summary lines when a session goes quiet</span></li>
+            <li><span class="k">JP-109</span><span>Loose ends and the closeout agent</span></li>
+            <li><span class="k">JP-110</span><span>Offer a ticket when work becomes ticket-sized</span></li>
+            <li><span class="k">JP-111</span><span>Atlas's data onto the ledger (S1, S2, S8, S11 to S16); its views wait</span></li>
+            <li><span class="k">JP-112</span><span>Friction facts, with no model</span></li>
+            <li><span class="k">JP-113</span><span>The session debrief</span></li>
+            <li><span class="k">JP-116</span><span>Josh's decisions in the ledger, stage one</span></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Agent workflows</h4>
+          <ul class="tickets">
+            <li><span class="k">JP-114</span><span>The walker</span></li>
+            <li><span class="k">JP-115</span><span>The development graph</span></li>
+            <li><span class="k">JP-121</span><span>Ticket creation graph</span></li>
+            <li><span class="k">JP-122</span><span>Triage and sign-off graph</span></li>
+            <li><span class="k">JP-123</span><span>Non-development graph</span></li>
+            <li><span class="k">JP-117</span><span>The runner in Agent Manager, carrying a real ticket to a pull request</span></li>
+            <li><span class="k">JP-118</span><span>New ticket comments passed to the sessions working on it</span></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Laptop jobs and close</h4>
+          <ul class="tickets">
+            <li><span class="k">JP-119</span><span>Every job from one list (M1 to M4, S9)</span></li>
+            <li><span class="k">JP-120</span><span>Proof pages and the deletion list</span></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Already on main</h4>
+          <ul class="tickets">
+            <li class="done"><span class="k">Done</span><span>Home layout, conventions and registry, laptop link, STATE.md, graph convention and checker, three graph designs, tier caps, data model, feature tree</span></li>
+          </ul>
+        </div>
+        <p class="meanwhile"><strong>Running unchanged meanwhile:</strong> the action-triage app and daemon (Tickets tab, Needs you, PR audit, Email Research Desk) until JP-124, and Session Atlas until JP-111 moves its data.</p>
+        <p class="gate"><b>Gate to phase 2:</b> the development pipeline carries a real ticket to a pull request, a forwarded email becomes a signed-off deliverable in one run, and the stores the ledger replaces are switched off and archived.</p>
+      </div>
+      <div class="phase p2">
+        <div class="eyebrow">Phase 2 · one app</div>
+        <h3>The app, the queue and the review</h3>
+        <ul class="tickets">
+          <li><span class="k">JP-124</span><span>action-triage's features rebuilt in josh-360: the window, intake, tickets, the Jira watch, PR audit, Needs you, the desk, the command line and Settings (N1)</span></li>
+          <li><span class="k">JP-125</span><span>Needs you as the one place for agent decisions</span></li>
+          <li><span class="k">JP-126</span><span>Decision memory stage two</span></li>
+          <li><span class="k">JP-127</span><span>The weekly review</span></li>
+          <li><span class="k">JP-128</span><span>Retire the sprint skill</span></li>
+          <li><span class="k">JP-129</span><span>Close phase 2</span></li>
+        </ul>
+        <p class="gate"><b>Gate to phase 3:</b> action-triage is archived, with its kept features running in josh-360, and the weekly review has filed its first improvement ticket.</p>
+      </div>
+      <div class="phase p3">
+        <div class="eyebrow">Phase 3 · reflection</div>
+        <h3>Views, redesigned</h3>
+        <ul class="tickets">
+          <li><span class="k">JP-130</span><span>Design the dashboard and the weekly priorities view; the session views (S4 to S6) come back here as new designs</span></li>
+          <li><span class="k">JP-131</span><span>Build them</span></li>
+          <li><span class="k">JP-132</span><span>Design how personal work appears</span></li>
+          <li><span class="k">JP-133</span><span>Bring personal work in</span></li>
+        </ul>
+        <p class="gate"><b>Deliberately later:</b> shared writes without Josh, a custom agent per system, data off the laptop.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="points" aria-labelledby="points-h">
+    <h2 id="points-h">Points this picture raises</h2>
+    <div class="points">
+      <div class="point">
+        <h3>Atlas's pages go before their replacements arrive</h3>
+        <p>JP-111 moves Atlas's data onto the ledger, so its dashboard, sessions grid and needs-attention pages stop getting fresh data. Josh moved their replacements to phase 3. Until JP-124, the action-triage app's Sessions and History tabs still list sessions as they do today.</p>
+        <p class="rec"><b>Recommendation</b>Switch Atlas's pages off with JP-111 rather than keep them on old data. The action-triage tabs cover finding a session, and Josh said the current views were never enough. The JP-111 plan should say this either way.</p>
+      </div>
+      <div class="point">
+        <h3>The runner is built in two halves</h3>
+        <p>In phase 1, JP-117 starts the walker's steps in Agent Manager. The Jira watch Josh asked for (Q7) comes from the action-triage daemon, which Josh called scaffolding, and moves in with JP-124.</p>
+        <p class="rec"><b>Recommendation</b>JP-117 designs the whole runner, Jira watch included, so JP-124 builds to that design. Only the A9 rules that fit it carry over: the start gate, the branch contract and the status moves.</p>
+      </div>
+      <div class="point">
+        <h3>claude-harness is not melded in</h3>
+        <p>The one-app direction covers action-triage, Session Atlas and the DevEx automations. The vision keeps claude-harness as its own repository, trimmed. josh-360 reaches it through one hook dispatcher entry per event.</p>
+        <p class="rec"><b>Recommendation</b>Keep it separate. Its global rules and skills serve every repository, not only josh-360. Trim it through claude-harness pull requests at the phase close.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+const DATA = {"homes":{"files":{"about":"What sessions made, and the guard that stops it being lost.","name":"Files"},"intake":{"about":"Where work comes in: meetings, quick tickets, forwarded email and the ticket draft form.","name":"Intake"},"jobs":{"about":"josh-360's job list (jobs.yaml) and its hook folder (hooks/), installed from main.","name":"Laptop jobs and hooks"},"needs-you":{"about":"Every question an agent asks Josh, and every stuck ticket.","name":"Needs you"},"review":{"about":"The PR audit and the review queue.","name":"Review"},"runner":{"about":"The background service that watches Jira, starts sessions in Agent Manager through the walker and keeps them safe.","name":"Runner"},"sessions":{"about":"The ledger's view of every session: search, transcript, lineage, cost, history and activity.","name":"Sessions"},"settings":{"about":"Prompts, graphs and configuration Josh reviews and edits without a code change.","name":"Settings"},"shell":{"about":"One window (the edge pill that slides out into a panel), one theme and one installer.","name":"App shell"},"tickets":{"about":"Jira tickets for the configured projects, with Start and the runner choice.","name":"Tickets"}},"pieces":{"rows":[{"how":"as-is","id":"H1","name":"Global rules (AGENTS.md) and settings","source":"vision (\"What exists today\"), JP-105","why":"Stays in claude-harness. josh-360 adds one hook dispatcher entry per event to the settings."},{"how":"as-is","id":"H2","name":"STATE.md and its compaction hooks","source":"JP-100, data-model.md","why":"The one per-session record. Its U-turns and dead ends are also copied into the ledger."},{"how":"as-is","id":"H3","name":"67 skills Josh kept","source":"JP-106 Q14","why":"Josh picked them on the skill picker page. The 64 others are archived at the phase close."},{"how":"as-is","id":"H4","name":"Agent definitions in use","source":"JP-96","why":"Graph steps can name these agents. Eight with no caller are archived."},{"how":"as-is","id":"H5","name":"Secret redaction, failure toast and review reminder hooks","source":"JP-96","why":"Small safety nets that cost nothing per turn."},{"how":"ledger","id":"H6","name":"Atlas hook, Jira link hook and removal guard","source":"JP-96, JP-107, JP-111","why":"Become the ledger's recorder hooks in josh-360's hooks/ folder."},{"how":"rebuilt","id":"H7","name":"Sprint skill state","source":"JP-96, JP-114, JP-128","why":"Graph run state replaces it once the walker and the development graph carry real tickets."},{"how":"retire","id":"H8","name":"Focus hooks, focus files and the focus dashboard","source":"JP-100","why":"STATE.md and the ledger replace them. Archived in claude-harness archive/focus/."},{"how":"retire","id":"H9","name":"Compaction summaries, handoff files and the unused meter","source":"JP-96, JP-100","why":"Second records beside STATE.md."},{"how":"retire","id":"H10","name":"64 unused skills and the Obsidian wiki skills","source":"JP-106 Q10, Q14","why":"Archived at the phase close, not deleted."},{"how":"retire","id":"H11","name":"Tactic Remote hooks","source":"JP-96, JP-106 Q12","why":"Nothing listens for them."},{"how":"retire","id":"L1","name":"claude-mem, Obsidian staging, context-mode and agentmemory","source":"JP-96","why":"The ledger is the one memory and keeps pointers to transcripts, not copies."},{"how":"retire","id":"L2","name":"Omnara, QuickTasks, the task-manager queue and rclone","source":"JP-106 Q12, Q13","why":"Josh's answers: Omnara disconnected, QuickTasks gone, tickets are the work item, no rclone."},{"how":"retire","id":"L3","name":"QA waker watchdog and the ClickUp to Notion sync","source":"JP-96","why":"Left over from one sprint, or never loaded."},{"how":"as-is","id":"L4","name":"Claude Code transcripts (~/.claude/projects)","source":"JP-96, data-model.md","why":"The source the ledger points into. They stay on the laptop."},{"how":"outside","id":"L5","name":"Work pipelines (Athena pipeline, spend alert, test suite sync)","source":"JP-96","why":"Work for an accountability, not agent plumbing."},{"how":"outside","id":"L6","name":"Personal chores (receipts, Idemeum logs, local Postgres)","source":"JP-96, JP-143 (M5, M6)","why":"Outside the agent workflow; they stay on the macbook-automations list."}],"source":{"about":"Josh's ~/.claude folder and the other jobs, hooks and stores the laptop inventory found. claude-harness stays its own repository and is trimmed; it is not melded into josh-360.","id":"HL","name":"claude-harness and the laptop"}},"tree":[{"about":"Electron app, background daemon, email desk and command line. Today it lives in Eventus-Whole-Health/action-triage.","children":[{"children":[{"call":"keep","carrier":"JP-124, JP-121","children":[{"call":"keep","carrier":"JP-124","home":"intake","how":"as-is","id":"A1.1","name":"Notion pull and meeting files","what":"meetings-sync/refresh.py writes transcripts, summaries and notion-data.json.","why":"The source for both the Calendar tab and the ticket creation graph."},{"call":"keep","carrier":"JP-124","home":"intake","how":"as-is","id":"A1.2","name":"Action-item extraction","what":"One Haiku call per meeting summary writes action-items.json.","why":"Cheap, runs once per meeting, works."},{"call":"keep","carrier":"JP-119, JP-124","home":"intake","how":"rebuilt","id":"A1.3","name":"Refresh on new items and the sync spinner","what":"The app watches action-items.json and kicks the launchd sync, waiting for it to finish.","why":"Becomes a josh-360 laptop job (jobs.yaml) in place of Agent Command Center's old plist, so one startup list owns it."}],"home":"intake","how":"as-is","id":"A1","name":"Meeting sync and action-item extraction","what":"Copies Notion meeting notes every 15 minutes and asks a small model for each meeting's action items.","why":"The vision names meeting action items as a ticket-creation input, and extraction is cheap: one call per meeting."},{"call":"keep","carrier":"JP-121","home":"intake","how":"rebuilt","id":"A2","name":"Item classification and field prefill","what":"Two cheap calls per item: is it Josh's and can an agent act on it; then suggested ticket fields.","why":"These are the first steps of the ticket creation graph. Rebuilt as graph steps so there is one copy, not two that drift."},{"call":"keep","carrier":"JP-124, JP-121","home":"intake","how":"as-is","id":"A3","name":"Calendar tab","what":"Meetings by day with their action items: draft a ticket, mark done, defer, dismiss, snooze.","why":"You said on 17 November you have not agreed to discontinue it (JP-106 Q9), so it stays. Once the ticket creation graph exists, its draft action goes through that graph."},{"call":"keep","carrier":"JP-124, JP-121","home":"intake","how":"as-is","id":"A4","name":"Ticket drafting","what":"The draft form and `ticket create`: one Jira create with Repository, Agent Status and the spec property, checked first and never blindly retried.","why":"The one safe write every intake route needs, and it already speaks Jira."},{"call":"keep","carrier":"JP-124","home":"intake","how":"rebuilt","id":"A5","name":"Quick capture","what":"Cmd+Alt+. opens a small window to capture a to-do with an optional screenshot.","why":"Becomes a quick ticket: the same shortcut files a Not Started JP ticket. This is your 'QuickTasks could become quick tickets' idea (JP-106 Q12)."},{"call":"drop","carrier":"JP-124","how":"merged","id":"A6","into":"A8","name":"To-do tab","what":"The inbox of captured to-dos that are not work yet.","why":"Once quick capture files tickets, the Tickets tab's Backlog view is this inbox. Two inboxes is what you are trying to get rid of."},{"call":"drop","carrier":"JP-124","how":"merged","id":"A7","into":"N1","name":"Prompt settings","what":"View, edit, test and reset the app's model prompts.","why":"Replaced by N1, one configuration surface for reviewing and updating graphs as well as prompts. Prompt editing becomes one part of it."}],"id":"AT.intake","name":"Intake and capture"},{"children":[{"call":"keep","carrier":"JP-124","children":[{"call":"keep","carrier":"JP-124","home":"tickets","how":"as-is","id":"A8.1","name":"Active and Backlog views","what":"Two JQL views, read by field id, newest 200.","why":"The list you work from."},{"call":"keep","carrier":"JP-124","home":"tickets","how":"as-is","id":"A8.2","name":"Start (sets Agent Status to Queued)","what":"Re-reads the ticket, runs the start gates, then writes Queued as you.","why":"The one button that hands a ticket to the runner."},{"call":"keep","carrier":"JP-124, JP-117","home":"tickets","how":"rebuilt","id":"A8.3","name":"Runner toggle (headless or Agent Manager)","what":"Adds or removes the agent-manager label.","why":"Kept as the choice between a headless run and a run you can watch in Agent Manager. Today 'Agent Manager' means the sprint lead (A15, dropped); in josh-360 it means the walker bound to Agent Manager (JP-117)."},{"call":"keep","carrier":"JP-124","home":"needs-you","how":"as-is","id":"A8.4","name":"Stuck ticket watcher","what":"Counts Stuck tickets every 60 seconds, backing off on rate limits.","why":"Feeds the pill count and the Needs you tab."}],"home":"tickets","how":"as-is","id":"A8","name":"Tickets tab","what":"Active and Backlog views of AD and JP tickets, a detail view, Start, the runner toggle and a Stuck count.","why":"The Jira-native view the console redesign built to replace the issue tabs."},{"call":"keep","carrier":"JP-124, JP-114, JP-117","children":[{"call":"keep","carrier":"JP-124","home":"runner","how":"as-is","id":"A9.1","name":"Start gate","what":"Who set Queued, a valid Repository, a parseable spec, a trusted email sender; every check fails closed.","why":"The trust boundary for anything that turns a ticket into a session on your laptop."},{"call":"keep","carrier":"JP-124","home":"runner","how":"as-is","id":"A9.2","name":"Branch contract and slot clearing","what":"Prepares <KEY>-<slug> from a fresh origin, pushes it, clears an old generation safely.","why":"Each rule records a real incident (PR #91's 18 unrelated commits)."},{"call":"keep","carrier":"JP-124","home":"runner","how":"as-is","id":"A9.3","name":"Jira status moves","what":"Running, Stuck, Finished, Code Review on a review label, Deployed after merge.","why":"Fixes pipeline gap 2, Jira status never moving."},{"call":"keep","carrier":"JP-124, JP-107","home":"runner","how":"ledger","id":"A9.4","name":"Run records in state.json","what":"Ticket and handoff records under __tickets__.","why":"Workflow-run facts belong in the ledger, so the dashboard and the weekly review can read them."}],"home":"runner","how":"rebuilt","id":"A9","name":"Jira ticket pickup (daemon)","what":"Polls for Queued tickets, runs the start gate, prepares the branch, starts a headless session, moves Jira status, finds the PR and cleans up. Off today.","why":"Your Q7 answer asks for a daemon that watches Jira and launches the graph. This code is scaffolding to judge against that design, never a reason to settle: the runner design (JP-117, JP-124) keeps only what serves it and rebuilds the rest. Its hard-won rules (A9.1 to A9.3) stand as requirements either way."},{"call":"drop","carrier":"JP-124","how":"retire","id":"A10","name":"GitHub-issue sessions","what":"Picks up issues carrying an agent-spec and the action-triage label, resumes from owner comments, sets status:* labels.","why":"Replaced by Jira pickup (A9) and the session Jira channel (A11). Two issues in a month use it. It drains until Jira pickup is turned on, then retires."},{"call":"keep","carrier":"JP-124, JP-118","home":"runner","how":"ledger","id":"A11","name":"Session Jira channel","what":"A per-session MCP server (report, report_blocker, permission_host); the daemon relays it to Jira, keeps a mailbox per ticket and resumes on a reply.","why":"Questions and answers are the decision records the ledger holds. Passing new ticket comments to sessions (JP-118) builds on this mailbox."},{"call":"drop","carrier":"JP-124","how":"merged","id":"A12","into":"A8","name":"Tasked tab and standalone issues","what":"Rows for tasked meeting items and action-triage issues, with a lifecycle view.","why":"Issue-based; the Tickets tab replaces it. Already planned in action-triage's own roadmap (phase 8)."},{"call":"drop","carrier":"JP-124","how":"retire","id":"A13","name":"Nudge, redo and model change on an issue","what":"Nudge comments, Redo closes and reopens, the Session tab rewrites the spec's model line.","why":"Issue versions. Their ticket versions replace them: Start sets Queued again, a mailbox message is the nudge, the spec property holds the model. JP-124 builds ticket Cancel and Redo first."},{"call":"drop","carrier":"JP-124","how":"merged","id":"A14","into":"A27","name":"Email-origin issues and the one result email","what":"Issues filed from forwarded email, with a single-tool emailer MCP server.","why":"The Email Research Desk replaced it; the desk's cutover retires this path."},{"call":"drop","carrier":"JP-128","how":"retire","id":"A15","name":"Sprint lead handoff and Start lead","what":"Hands an agent-manager ticket to the sprint lead; Needs you offers a Start lead button.","why":"The walker bound to Agent Manager (JP-117) replaces the sprint lead, and the sprint skill retires (JP-128)."},{"call":"keep","carrier":"JP-124","children":[{"call":"keep","carrier":"JP-124","home":"runner","how":"as-is","id":"A16.1","name":"Bifrost routing, virtual key and model aliases","what":"Sessions run against the gateway with the project's own key; opus/sonnet/haiku resolve to concrete models.","why":"Cost attribution and working tier aliases. Rename the key to josh-360's when it moves."},{"call":"keep","carrier":"JP-124","home":"runner","how":"as-is","id":"A16.2","name":"Per-session GitHub token, refreshed every minute","what":"A private GH_CONFIG_DIR per session, rewritten each watchdog tick, minted per repo owner's App.","why":"Fixed the 7-hour session on a 1-hour token (#10) and the cross-org PR blindness (#88)."},{"call":"keep","carrier":"JP-124","home":"runner","how":"as-is","id":"A16.3","name":"Guardrails hook","what":"Denies reads of tokens and secrets, writes to the guard itself and to the channel stores, and destructive Jira writes.","why":"The only thing between a bypass-permissions session and your credentials."},{"call":"keep","carrier":"JP-124","home":"runner","how":"as-is","id":"A16.4","name":"Forced transcript saving","what":"CLAUDE_CODE_FORCE_SESSION_PERSISTENCE=1 on every launch.","why":"The ledger, watchdog and resume all need the transcript."},{"call":"keep","carrier":"JP-124","home":"runner","how":"as-is","id":"A16.5","name":"Turn cap and reflection nudge","what":"--max-turns per run; every 40 turns a Stop hook asks 'are you looping?'.","why":"Bounds cost the same way the graph run caps do (JP-139)."},{"call":"keep","carrier":"JP-124","home":"runner","how":"as-is","id":"A16.6","name":"apiKeyHelper and plugin-MCP skip","what":"Strict gateway auth with no keychain probe; personal plugin MCP servers off in headless runs.","why":"Fixed the 3-minute auth hang and the 128-tool cap error."}],"home":"runner","how":"as-is","id":"A16","name":"Session spawning and its safety rails","what":"How a session is started safely.","why":"Every session the runner starts needs these rails, and each records a real incident. They attach to sessions started in Agent Manager, which you can always see; nothing runs as a hidden `claude -p` process you would need a workaround to reach."},{"call":"keep","carrier":"JP-124, JP-112","children":[{"call":"keep","carrier":"JP-124","home":"runner","how":"as-is","id":"A17.1","name":"Kill criteria (no transcript, stalled, hard cap)","what":"10 minutes with no transcript, 30 minutes with no growth, 3 hours total.","why":"Without it one hung session blocks every other."},{"call":"keep","carrier":"JP-124","home":"runner","how":"as-is","id":"A17.2","name":"Orphan sweep and boot reaper","what":"Kills a session's whole process tree; demotes stranded records at boot and every poll.","why":"Fixed the surviving grandchild and athena#1 stuck in progress forever."},{"call":"keep","carrier":"JP-124","home":"runner","how":"as-is","id":"A17.3","name":"One auto-resume after a restart","what":"A session interrupted by a daemon restart resumes once on its own.","why":"Restarts happen; one free resume avoids a manual nudge."},{"call":"keep","carrier":"JP-124","home":"runner","how":"as-is","id":"A17.4","name":"Preflight retry cap, silent-stop and API-error names","what":"Three failed starts in 24 hours put a hold on; a stop with no comment or a synthetic API error gets named and explained.","why":"Turns a silent vanish into a reason you can read."}],"home":"runner","how":"as-is","id":"A17","name":"Session watchdog and recovery","what":"Kills hung turns, sweeps orphans, recovers after restarts and names why a session stopped.","why":"Its block reasons are free friction facts for JP-112, and each check fixed an outage."},{"call":"keep","carrier":"JP-124","home":"runner","how":"as-is","id":"A18","name":"Daemon self-checks","what":"Restarts on its own code change when idle, heartbeat each poll, exits on a stalled poll, bounds the Key Vault read.","why":"Each check fixed an outage where the daemon looked alive and did nothing (16.5 hours on 16 August)."},{"call":"keep","carrier":"JP-124","home":"sessions","how":"rebuilt","id":"A19","name":"Diagnose a stuck session","what":"One button starts a background session to find why an item went wrong and fix the app.","why":"On demand and cheap. Rebuilt to diagnose a ticket run (not an issue) and to open its fix as a josh-360 ticket."},{"call":"drop","carrier":"JP-124","children":[{"call":"drop","carrier":"JP-124","how":"retire","id":"A20.1","name":"Open in terminal (Ghostty)","what":"Opens the session in Ghostty with your own credentials.","why":"Goes with A20: you take over a session in Agent Manager."},{"call":"drop","carrier":"JP-124","how":"retire","id":"A20.2","name":"Send to Background by writing a supervisor job file","what":"Writes Claude Code's supervisor state.json directly.","why":"Goes with A20 and S7."}],"how":"retire","id":"A20","name":"Open in terminal and Send to Background","what":"Two buttons on a session.","why":"Every session already has a surface in Agent Manager, so there is nothing to open in a terminal or send to the background."}],"id":"AT.tickets","name":"Tickets and agent sessions"},{"children":[{"call":"keep","carrier":"JP-124, JP-115","children":[{"call":"keep","carrier":"JP-124","home":"review","how":"as-is","id":"A21.1","name":"Per-owner GitHub Apps and the bot-login set","what":"One App per owner (Eventus-Whole-Health, eventuswh-apps, joshgilpatrick).","why":"A private App installs only on its owner."},{"call":"keep","carrier":"JP-124","home":"review","how":"as-is","id":"A21.2","name":"Discovery, queue order and one-slot pickup","what":"Searches every org with the same query as the board, orders by your pins, enqueues only what starts now.","why":"Keeps the board's numbers honest."},{"call":"keep","carrier":"JP-124","home":"review","how":"as-is","id":"A21.3","name":"Recovery, blocked handoff and cleanup","what":"One automatic resume, a blocked audit handed to you, worktree removed only after a confirmed verdict.","why":"Audits stall; this keeps them from vanishing or looping."},{"call":"keep","carrier":"JP-124","home":"review","how":"as-is","id":"A21.4","name":"Re-engaging the author session","what":"The verdict comment wakes the session that opened the PR; three or fewer findings skip another round.","why":"The ceremony josh-360's own workflow relies on."}],"home":"review","how":"as-is","id":"A21","name":"Automated PR audit","what":"Finds PRs labelled review:needs-agent-audit in every configured org, audits them in a prepared worktree, posts one comment and a verdict label.","why":"Heavily used (95 verdicts since 1 November) and josh-360's only reviewer by your choice on 16 November. It becomes the review step of the development graph."},{"call":"keep","carrier":"JP-124","home":"review","how":"as-is","id":"A22","name":"Code Review board","what":"Every open PR with a review label, in lanes, with the real queue order, reordering, stuck flags and Force review.","why":"The one place you see and order the review queue."}],"id":"AT.review","name":"Pull request audit"},{"children":[{"call":"keep","carrier":"JP-125, JP-116, JP-126","children":[{"call":"keep","carrier":"JP-125","home":"needs-you","how":"as-is","id":"A23.1","name":"Ask hook (interactive)","what":"Holds the question up to 9 minutes for an answer from the app, then falls back to the terminal.","why":"Answer from anywhere without opening the session's terminal. Its live path still points into a worktree; JP-105's hook folder fixes that."},{"call":"keep","carrier":"JP-125","home":"needs-you","how":"as-is","id":"A23.2","name":"Headless questions","what":"A ticket session's question ends the turn; your answer resumes it with no prompt.","why":"How a 2 AM ticket asks you something without holding a slot."},{"call":"keep","carrier":"JP-125","home":"needs-you","how":"as-is","id":"A23.3","name":"Stuck tickets section","what":"Lists tickets whose Agent Status is Stuck.","why":"Matches the pill count."}],"home":"needs-you","how":"ledger","id":"A23","name":"Needs you tab and the question hook","what":"Catches AskUserQuestion in Agent Manager and ticket sessions, shows it as a card, sends your pick back; lists Stuck tickets.","why":"You chose it as the one place for agent decisions. Your answers become the first decision records (JP-116) and later feed suggestions (JP-126)."}],"id":"AT.needs","name":"Needs you"},{"children":[{"call":"keep","carrier":"JP-124","home":"sessions","how":"ledger","id":"A24","name":"History tab","what":"A lifecycle timeline per item, with the files the session made; archives worktree files before pruning.","why":"The timeline is ledger facts. Its file list comes from Atlas's artifact manager (S11), which keeps files without copying them."},{"call":"keep","carrier":"JP-124","home":"sessions","how":"ledger","id":"A25","name":"Activity tab","what":"A feed of the last 500 events with read marks.","why":"Each event is a run or step fact the walker writes to the ledger anyway; keyed by ticket instead of issue number."},{"call":"drop","carrier":"JP-124","how":"merged","id":"A26","into":"S5","name":"Sessions catalog","what":"Every transcript from the last 30 days, scanned from disk, with search and a transcript view.","why":"Atlas already indexes every session with lineage and cost; one Sessions view on the ledger, not two scanners. S5 is later, so this waits with it."}],"id":"AT.log","name":"Log tabs"},{"children":[{"call":"keep","carrier":"JP-124, JP-121","children":[{"call":"keep","carrier":"JP-124, JP-117","home":"intake","how":"rebuilt","id":"A27.1","name":"Watcher and handoff to the coordinator","what":"desk_watcher.py, every 60 seconds, into Agent Manager's coordinator session.","why":"Becomes a josh-360 laptop job and hands to the walker instead of a fixed coordinator session."},{"call":"keep","carrier":"JP-124","home":"jobs","how":"as-is","id":"A27.2","name":"Worker guard","what":"desk_guard.py limits tools in desk worker sessions.","why":"A hook in josh-360's hook folder."},{"call":"keep","carrier":"JP-124, JP-107","home":"intake","how":"ledger","id":"A27.3","name":"Mailer and desk ledger","what":"Replies to you only; desk.db records threads and sends.","why":"Thread and send records move onto the ledger; the mailer keeps its fixed recipient."}],"home":"intake","how":"as-is","id":"A27","name":"Email Research Desk","what":"Every minute, finds mail you forwarded, files a Jira ticket, hands it to a worker session, guards the worker and replies to you only.","why":"It replaced the email-issue path and works. Its intake becomes one route into the ticket creation graph."},{"call":"keep","carrier":"JP-124","home":"intake","how":"rebuilt","id":"A28","name":"Desk tab","what":"A read-only list of the desk's threads, stage, ticket, worker and reply status.","why":"Reads the ledger instead of desk.db through an inline Python script."}],"id":"AT.desk","name":"Email Research Desk"},{"children":[{"call":"keep","carrier":"JP-124","home":"shell","how":"rebuilt","id":"A29","name":"Developer CLI","what":"`action-triage <noun> <verb>` with --yes, --dry-run, --json and fixed exit codes.","why":"How agents drive the app. Renamed to one josh-360 command; the todo noun goes with the To-do tab, ticket and session stay."},{"call":"keep","carrier":"JP-124, JP-130","home":"shell","how":"rebuilt","id":"A30","name":"Pill window and panel","what":"The always-on-top pill on the screen edge that slides out into the tabbed panel, with tray menu and notifications.","why":"Recommended as the one app's shell. Atlas's dashboard pages are rebuilt as panel tabs in the same theme, so you get one window, not a pill plus a web page on port 8770. The look is settled by JP-130."},{"call":"drop","carrier":"JP-124","how":"retire","id":"A31","name":"Phone bridge","what":"An opt-in, token-protected web view of the panel, for example over Tailscale. Off by default.","why":"You don't plan to use the platform from a phone."},{"call":"keep","carrier":"JP-124, JP-119","home":"shell","how":"rebuilt","id":"A32","name":"Packaged app and installers","what":"The signed macOS package and the scripts that install the app and daemon as launchd jobs.","why":"One installer: josh-360's laptop/install.py installs the app and the runner from main, replacing three separate installers."},{"call":"drop","carrier":"JP-124","how":"retire","id":"A33","name":"Bifrost request labels","what":"Wraps every CLI the app launches so gateway requests carry repo, branch and folder labels.","why":"It never worked well, and cost by repo and branch is not something you need from Bifrost (S8.4)."},{"call":"keep","carrier":"JP-124","children":[{"call":"keep","carrier":"JP-124","home":"review","how":"as-is","id":"A34.1","name":"review:* labels","what":"needs-agent-audit, audit-in-progress, changes-requested, ready-for-human, audit-blocked.","why":"The audit ceremony runs on them."},{"call":"drop","carrier":"JP-124","how":"retire","id":"A34.2","name":"status:* and type:* issue labels","what":"The issue path's labels.","why":"They go with GitHub-issue sessions (A10)."}],"home":"review","how":"as-is","id":"A34","name":"GitHub label scripts","what":"Create the label taxonomy in each repo.","why":"Only the review:* labels survive."},{"call":"drop","carrier":"JP-124","how":"retire","id":"A35","name":"OpenCode server the app starts","what":"Starts `opencode serve` at launch.","why":"No code in the app calls it. You use OpenCode directly, which does not need this server; the agent sync (M4) is what keeps your OpenCode agents working."}],"id":"AT.shell","name":"Command line and app shell"}],"id":"AT","name":"action-triage"},{"about":"Local service that indexes every Claude Code session and the files they make, plus the cost ledger. Today it lives in joshgilpatrick/claude-360.","children":[{"children":[{"call":"keep","carrier":"JP-107, JP-111","children":[{"call":"keep","carrier":"JP-107","home":"jobs","how":"rebuilt","id":"S1.1","name":"Hook recorder and spool","what":"atlas-hook.js on nine events, 5-second timeout, spooled on failure.","why":"Becomes the ledger's recorder in josh-360's hooks/ folder, loaded through hooks/dispatch."},{"call":"keep","carrier":"JP-107, JP-111","home":"sessions","how":"as-is","id":"S1.2","name":"Transcript reader","what":"Reads transcripts in place with checkpoints; since 16 November reads oversized lines up to 64 MiB and warns once on a stall.","why":"The one reader of transcripts the ledger keeps."},{"call":"keep","carrier":"JP-111","home":"sessions","how":"as-is","id":"S1.3","name":"Idle close","what":"Marks sessions idle for 12 hours as closed.","why":"Needed for loose ends (JP-109) and the five summary lines (JP-108)."}],"home":"sessions","how":"ledger","id":"S1","name":"Session index","what":"Nine hooks post event metadata to the local service, spooled when it is down; every session is recorded with folders, status, start and end.","why":"The vision makes it the ledger's starting point."},{"call":"keep","carrier":"JP-107, JP-111","home":"sessions","how":"ledger","id":"S2","name":"Session lineage and titles","what":"Links subagents and resumed sessions to their root and picks a title: custom first, then Claude's own, then a fallback.","why":"Fields of one ledger session. The cost ledger's second title set (S8) folds into this one."},{"call":"keep","carrier":"JP-107","home":"sessions","how":"ledger","id":"S15","name":"Project names","what":"Names a session's project from its git remote, then its top folder, then the folder, with aliases.","why":"The first rule of how a session finds its home in the registry."}],"id":"CA.index","name":"Session index"},{"children":[{"call":"drop","carrier":"JP-108, JP-111","children":[{"call":"drop","carrier":"JP-111","how":"retire","id":"S3.1","name":"Focus worker and its activation rules","what":"Plan mode, TaskCreate, /focus or a planning skill make a session active.","why":"Goes with S3."},{"call":"drop","carrier":"JP-111","how":"retire","id":"S3.2","name":"Provider presets and the claude-atlas Keychain item","what":"Anthropic, Bifrost, OpenRouter or fake providers for the focus worker.","why":"Nothing else uses them once the focus worker is off."}],"how":"retire","id":"S3","name":"Focus summaries","what":"After every turn of an active session, a Haiku call rewrites its title, summary and task list.","why":"You accepted on 15 November that no model runs per turn. Five summary lines written once when a session goes quiet (JP-108) and STATE.md (JP-100) replace it."}],"id":"CA.focus","name":"Focus summaries"},{"children":[{"call":"drop","carrier":"JP-111, JP-130","how":"later","id":"S4","name":"Dashboard","what":"Cost at a glance, sessions in motion, recent artifacts, Needs attention and worker status, at 127.0.0.1:8770.","why":"Views wait until the data architecture is hardened. It comes back on the ledger after JP-107 as a new design built for your purposes, not a port of this view; only its features may be reused. The phase 3 dashboard (JP-131) is that design."},{"call":"drop","carrier":"JP-111","how":"later","id":"S5","name":"Sessions grid and session page","what":"Search, filter and sort every session; open one for its transcript, lineage, cost, artifacts and resume folder.","why":"Views wait until the data architecture is hardened (your note on S4). It comes back on the ledger after JP-107 as a new design built for your purposes, not a port of this view; only its features may be reused. Still the survivor for A26."},{"call":"drop","carrier":"JP-111","how":"later","id":"S6","name":"Needs attention","what":"Sessions whose job is blocked or stale, quarantined jobs and missing resume folders, with dismiss and retry.","why":"Views wait until the data architecture is hardened (your note on S4). It comes back on the ledger after JP-107 as a new design built for your purposes, not a port of this view; only its features may be reused."},{"call":"drop","carrier":"JP-111","how":"retire","id":"S7","name":"Send to Background","what":"Checks the session id, transcript and folder, then runs `claude --bg --resume <id>`.","why":"Not needed once every session lives in Agent Manager (your note on A16)."}],"id":"CA.views","name":"Views"},{"children":[{"call":"keep","carrier":"JP-99, JP-107, JP-111","children":[{"call":"keep","carrier":"JP-111","home":"sessions","how":"ledger","id":"S8.1","name":"Importers (Claude Code, OpenCode, Pi)","what":"Reads transcripts, the Pi folder and the OpenCode database.","why":"You still use OpenCode (Q11), so its import stays."},{"call":"keep","carrier":"JP-111","home":"sessions","how":"ledger","id":"S8.2","name":"Price rows and repricing","what":"Dated price rows; a price change reprices affected rows.","why":"The reason the big rows sit in cache.db, which may be rewritten."},{"call":"keep","carrier":"JP-111","home":"sessions","how":"rebuilt","id":"S8.3","name":"Reports by repo, branch, tool, model, day or session tree","what":"`npm run costledger` reports.","why":"Become ledger queries behind one josh-360 command and the Sessions tab."},{"call":"keep","carrier":"JP-111","home":"sessions","how":"rebuilt","id":"S8.4","name":"Bifrost reconciliation","what":"Checks imported cost against the gateway's own logs.","why":"Narrowed to one signal: did the provider (Anthropic, Azure or another) receive the request, yes or no. No matching against Bifrost's estimated costs."},{"call":"keep","carrier":"JP-107","home":"sessions","how":"merged","id":"S8.5","into":"S2","name":"Session names and PR links","what":"session_labels and PR links in the cost ledger.","why":"The names and links live on the ledger's session record (S2), so each session has one title and one set of links."}],"home":"sessions","how":"ledger","id":"S8","name":"Cost ledger","what":"Imports token use from Claude Code, OpenCode and Pi, prices it from explicit price rows, reprices on change, and reports.","why":"The cost half of the ledger already. Per your Q1 answer, the per-message rows live in cache.db and each session's cost in ledger.db."},{"call":"keep","carrier":"JP-111, JP-119","home":"jobs","how":"rebuilt","id":"S9","name":"Hourly cost import and cost cache","what":"Imports into the cost ledger at start and every hour; keeps a small cost copy for lists.","why":"Becomes a josh-360 job in jobs.yaml, so cost stays current with nobody running it."},{"call":"keep","carrier":"JP-107","home":"sessions","how":"merged","id":"S10","name":"Jira session links","what":"A Bash hook records which session worked on which Jira issue; `jira-cost` totals an issue's cost.","why":"The ledger's session links hold ticket links (JP-107). The jira-cost report stays, on top of them."}],"id":"CA.cost","name":"Cost"},{"children":[{"call":"keep","carrier":"JP-111","home":"files","how":"ledger","id":"S11","name":"Artifact manager","what":"Catalogs the documents sessions make: locations, versions, evidence, coverage, preview, export, and protected documents hidden by default.","why":"The survivor for 'files a session made' (A24) and the base for fixing pipeline gap 3, working files vanishing at cleanup. Since 16 November it prunes settled candidates older than 7 days."},{"call":"keep","carrier":"JP-111, JP-115","home":"files","how":"as-is","id":"S12","name":"Durable output folder","what":"Gives each repository a private, registered folder outside the checkout.","why":"Files written there outlive the worktree. The development graph sends working files there."},{"call":"keep","carrier":"JP-111, JP-109","home":"jobs","how":"as-is","id":"S13","name":"Worktree removal guard","what":"Blocks `git worktree remove` unless a read-only check finds nothing at risk; blocks --force and rm of a worktree.","why":"Stops the loss gap 3 describes. It is not wired on the laptop today, so this also turns it back on. The closeout agent (JP-109) runs the same check."},{"call":"drop","carrier":"JP-111","how":"merged","id":"S14","into":"S11","name":"Older file list","what":"The first artifact table, filled from hook-reported writes.","why":"The artifact manager already adopts these rows."}],"id":"CA.files","name":"Files"},{"children":[{"call":"keep","carrier":"JP-111, JP-119","children":[{"call":"drop","carrier":"JP-119","how":"merged","id":"S16.1","into":"A32","name":"launchd service and installer","what":"com.eventus.claude-atlas, always on.","why":"One background service for josh-360, installed by laptop/install.py."},{"call":"drop","carrier":"JP-111","how":"merged","id":"S16.2","into":"M7","name":"Hook installer (apply-hooks)","what":"Merges Atlas's hooks into ~/.claude/settings.json.","why":"josh-360's hooks/dispatch already loads every hook from the repo."},{"call":"keep","carrier":"JP-107","home":"sessions","how":"as-is","id":"S16.3","name":"Migrations with a backup check","what":"Backs up before a destructive migration.","why":"The ledger needs the same safety."},{"call":"keep","carrier":"JP-111","home":"shell","how":"as-is","id":"S16.4","name":"Log rotation and health endpoint","what":"Rotates the log past 20 MiB; /api/health.","why":"Cheap and keeps the disk safe."},{"call":"keep","carrier":"JP-111","home":"shell","how":"rebuilt","id":"S16.5","name":"Benchmarks and browser tests","what":"The performance seed and Playwright tests.","why":"Become part of josh-360's suite for the screens they cover."}],"home":"shell","how":"rebuilt","id":"S16","name":"Service plumbing","what":"The launchd service, hook installer, health endpoint, migrations, preflight, benchmarks and browser tests.","why":"Folds into josh-360's one installer, one hook folder and one test suite."}],"id":"CA.plumbing","name":"Service plumbing"}],"id":"CA","name":"claude-360 (Session Atlas)"},{"about":"The laptop's login startup list and its automations. Today it lives in joshgilpatrick/macbook-automations. Only the DevEx parts meld into josh-360; personal chores stay here.","children":[{"children":[{"call":"keep","carrier":"JP-119","home":"jobs","how":"rebuilt","id":"M1","name":"Login startup list","what":"One LaunchAgent (com.jgilpatrick.startup) runs startup.sh, which loads every plist in startup-manifest.txt.","why":"Split by purpose: the DevEx jobs move into josh-360's jobs.yaml (one list for the agent workflow), and this list keeps only the personal chores."},{"call":"keep","carrier":"JP-105, JP-119","home":"jobs","how":"as-is","id":"M7","name":"Josh 360 job runner entry","what":"josh-360-jobs.sh runs josh-360's job runner every 5 minutes; clones josh-360 the first time.","why":"The single bridge that lets a merge to main install on the laptop (JP-105). It is the one entry the laptop needs."}],"id":"MA.startup","name":"Startup"},{"children":[{"call":"keep","carrier":"JP-119, JP-117","home":"jobs","how":"as-is","id":"M2","name":"Agent Manager at login","what":"Starts Agent Manager detached in tmux through a login shell, waiting up to 20 seconds for it to wake.","why":"The walker binds to Agent Manager first (JP-117), and the desk needs it running after a reboot. Moves into jobs.yaml."},{"call":"keep","carrier":"JP-119","home":"jobs","how":"rebuilt","id":"M3","name":"OpenCode agent sync","what":"Copies ~/.claude/agents into OpenCode's agents every hour.","why":"You still use OpenCode and asked why it is hourly (Q11). Rebuilt to run when an agent file changes (a file watch, as the skill-link sync already does), with its model names updated to Bifrost's; today it writes litellm names that cannot run."},{"call":"keep","carrier":"JP-119","home":"jobs","how":"as-is","id":"M4","name":"Claude transcript scrubber","what":"Once a day, Gitleaks finds secrets in transcripts and the exact match is redacted in place.","why":"The ledger keeps pointers to transcripts, so they must stay free of secrets. Moves into jobs.yaml."}],"id":"MA.devex","name":"DevEx automations"},{"children":[{"call":"drop","carrier":"JP-132","children":[{"call":"drop","carrier":"JP-132","how":"outside","id":"M5.1","name":"Receipt watcher (hub.py)","what":"FSEvents on receipt_inbox, rename, file by month, dedup by transaction id.","why":"Personal chore."},{"call":"drop","carrier":"JP-132","how":"outside","id":"M5.2","name":"Outlook receipt fetcher","what":"Weekly sweep into receipt_inbox; renders email bodies to PDF.","why":"Personal chore."}],"how":"outside","id":"M5","name":"Receipt watcher and Outlook receipt fetcher","what":"Files receipts with a Claude call (always on), and sweeps Outlook's Receipt folder on Fridays at 5 PM.","why":"Personal finance, not the agent workflow. Stays in macbook-automations, started by its own trimmed list. JP-132 can revisit it when personal work comes into Josh 360."},{"call":"drop","how":"outside","id":"M6","name":"Idemeum log retention","what":"Daily at 03:17, deletes Idemeum security-extension logs older than 24 hours (it writes 3-4 GB a day).","why":"Machine hygiene with nothing to do with agents. Stays where it is; it keeps the disk from filling."}],"id":"MA.personal","name":"Personal and machine chores"}],"id":"MA","name":"macbook-automations"},{"about":"Not in any of the three repositories: a third-party program at ~/.local/bin/agent-deck whose hook runs in every Claude Code session on the laptop. Included because you asked for detail.","children":[{"children":[{"call":"drop","carrier":"Josh, locally","how":"retire","id":"D1","name":"agent-deck the program","what":"A tmux session manager: session list, groups, forking into worktrees, MCP and skill pickers, conductor escalation, web view.","why":"Agent Manager is your session manager now, and josh-360 binds the walker to it (JP-117). The ideas worth having (a worktree per piece of work, escalating to you) are covered by the runner's branch contract and Needs you. Not running on the laptop on 16 November."},{"call":"drop","carrier":"Josh, locally","children":[{"call":"drop","carrier":"JP-120","how":"retire","id":"D2.1","name":"Status hooks (SessionStart, UserPromptSubmit, Notification, PreCompact, SessionEnd)","what":"Write running/waiting/dead to ~/.agent-deck/hooks/<id>.json; UserPromptSubmit can add inbox text to the prompt.","why":"Only agent-deck's own screen reads these files. The ledger's recorder (S1.1) records session status for josh-360."},{"call":"drop","carrier":"JP-120","how":"retire","id":"D2.2","name":"PermissionRequest decision","what":"Answers allow for sessions started with --dangerously-skip-permissions; denies and queues a question in unattended conductor turns.","why":"Permission answers on your laptop should come from your settings and the runner's guardrails (A16.3), not from a third-party hook."},{"call":"drop","carrier":"JP-120, JP-118","how":"retire","id":"D2.3","name":"Synchronous Stop hook (inbox delivery)","what":"Blocks a turn from ending up to 3 times to deliver agent-deck inbox messages.","why":"Passing messages to a running session is JP-118's job, built on the ticket mailbox (A11)."}],"how":"retire","id":"D2","name":"agent-deck hook-handler on 7 events","what":"Status files, auto-allow on permission requests and inbox-driven Stop blocking, for sessions agent-deck started.","why":"A no-op in every session you actually run, but it starts a process 7 times a session and can auto-allow or keep a turn running for anything that sets its variable. You are removing it yourself (17 November)."}],"id":"AD.hooks","name":"agent-deck"}],"id":"AD","name":"agent-deck (laptop hooks)"},{"about":"Features that do not exist in any of the three repositories yet, added because your review replaced one above with something larger.","children":[{"children":[{"call":"keep","carrier":"JP-124","home":"settings","how":"new","id":"N1","name":"Configuration surface for prompts and graphs","what":"One place to review and update the graphs (steps, roles, gates, tiers) and every prompt they use, without a code change.","why":"Your note on A7: reviewing and updating prompts is not enough; graphs need the same surface. It replaces A7's prompt settings."}],"id":"NEW.settings","name":"Settings"}],"id":"NEW","name":"New in josh-360"}]};
+const NS = "http://www.w3.org/2000/svg";
+
+function el(parent, name, attrs, text) {
+  const node = document.createElementNS(NS, name);
+  for (const [k, v] of Object.entries(attrs || {})) node.setAttribute(k, v);
+  if (text != null) node.textContent = text;
+  parent.appendChild(node);
+  return node;
+}
+function defs(svg, id) {
+  const d = el(svg, "defs");
+  const m = el(d, "marker", { id, viewBox: "0 0 10 10", refX: "9", refY: "5", markerWidth: "7", markerHeight: "7", orient: "auto-start-reverse" });
+  el(m, "path", { d: "M0,0 L10,5 L0,10 z", class: "svg-head" });
+}
+const TAGS = { P1: "p1", P2: "p2", P3: "p3", Done: "done", today: "today" };
+function tag(svg, x, y, text) {
+  const kind = TAGS[text.split(" ")[0]] || "p1";
+  const w = text.length * 6.4 + 12;
+  el(svg, "rect", { x: x - w, y, width: w, height: 17, rx: 4, class: "svg-tag-" + kind });
+  el(svg, "text", { x: x - w / 2, y: y + 12, "text-anchor": "middle", class: "svg-tag-text" }, text);
+}
+function box(svg, b) {
+  const cls = "svg-box" + (b.core ? " core" : "") + (b.later ? " later" : "") + (b.outside ? " outside" : "");
+  el(svg, "rect", { x: b.x, y: b.y, width: b.w, height: b.h, rx: 8, class: cls });
+  el(svg, "text", { x: b.x + 12, y: b.y + 22, class: "svg-title" }, b.title);
+  (b.lines || []).forEach((line, i) => el(svg, "text", { x: b.x + 12, y: b.y + 42 + i * 16, class: "svg-line" }, line));
+  if (b.from) el(svg, "text", { x: b.x + 12, y: b.y + b.h - (b.josh ? 28 : 10), class: "svg-from" }, b.from);
+  if (b.josh) {
+    el(svg, "rect", { x: b.x, y: b.y + b.h - 4, width: b.w, height: 4, rx: 2, class: "svg-joshbar" });
+    el(svg, "text", { x: b.x + 12, y: b.y + b.h - 11, class: "svg-josh" }, b.josh);
+  }
+  if (b.tag) tag(svg, b.x + b.w - 8, b.y + 8, b.tag);
+}
+function arrow(svg, x1, y1, x2, y2, label, opts) {
+  opts = opts || {};
+  el(svg, "line", { x1, y1, x2, y2, class: "svg-arrow", "marker-end": "url(#" + svg.id + "-head)" });
+  if (opts.step) {
+    const cx = opts.sx != null ? opts.sx : (x1 + x2) / 2, cy = opts.sy != null ? opts.sy : (y1 + y2) / 2;
+    el(svg, "circle", { cx, cy, r: 9, class: "svg-step" });
+    el(svg, "text", { x: cx, y: cy + 4, "text-anchor": "middle", class: "svg-step-text" }, String(opts.step));
+  }
+  if (label) el(svg, "text", { x: opts.lx, y: opts.ly, "text-anchor": opts.anchor || "middle", class: "svg-arrow-label" }, label);
+}
+
+function drawParts() {
+  const svg = document.getElementById("svg-parts");
+  defs(svg, svg.id + "-head");
+  const bands = [
+    [10, 150, "Where Josh works"], [170, 170, "Workflow"], [350, 190, "Data"], [550, 130, "Laptop base"], [690, 100, "Stays separate"],
+  ];
+  for (const [y, h, label] of bands) {
+    el(svg, "rect", { x: 0, y, width: 1100, height: h, rx: 8, class: "svg-band" });
+    const words = label.split(" ");
+    words.forEach((w, i) => el(svg, "text", { x: 16, y: y + 26 + i * 15, class: "svg-band-label" }, w));
+  }
+  const B = [
+    { x: 150, y: 34, w: 190, h: 112, title: "Jira", lines: ["Tickets and Agent Status", "The status of record;", "only scripts move it"], tag: "today", josh: "Josh prioritises" },
+    { x: 355, y: 34, w: 200, h: 112, title: "Agent Manager", lines: ["Every session has a", "surface here; nothing", "runs hidden (A16)"], from: "from M2 (starts at login)", tag: "today" },
+    { x: 570, y: 34, w: 330, h: 112, title: "josh-360 window", lines: ["One theme (A30). Until P2: action-triage's app"], from: "A3-A5, A8, A22, A23, A27, A28, N1", tag: "P2 JP-124", homes: true },
+    { x: 915, y: 34, w: 170, h: 112, title: "Session views", lines: ["Dashboard, sessions", "grid, needs attention", "Redesigned, not ported"], from: "S4-S6 features", tag: "P3", later: true },
+
+    { x: 150, y: 194, w: 240, h: 136, title: "Runner", lines: ["Watches Jira for Ready tickets", "Starts each step in Agent Manager", "Safety rails, watchdog,", "self-checks"], from: "A9 as scaffold, A16-A18", tag: "P1 JP-117" },
+    { x: 405, y: 194, w: 170, h: 136, title: "Walker", lines: ["Says the next step", "Writes every step", "to the ledger"], from: "new", tag: "P1 JP-114" },
+    { x: 590, y: 194, w: 270, h: 136, title: "Graphs", lines: ["Development (JP-115), ticket", "creation (JP-121), triage (JP-122),", "non-development (JP-123)", "Roles, agents, gates, tiers"], from: "A2 and A27 become steps", tag: "P1" },
+    { x: 875, y: 194, w: 210, h: 136, title: "PR audit", lines: ["The development graph's", "review step; runs on the", "action-triage daemon today"], from: "A21, A22, A34.1 as is", tag: "P2 JP-124", josh: "Josh signs off" },
+
+    { x: 150, y: 374, w: 200, h: 120, title: "Recorder", lines: ["Hooks append one line;", "a job writes the rows", "from spool, transcript, git"], from: "S1.1-S1.3, H6", tag: "P1 JP-107" },
+    { x: 365, y: 374, w: 300, h: 120, title: "ledger.db", lines: ["Facts only, append-only, kept for ever", "Sessions, homes, cost, summaries,", "friction, graph runs, decisions"], from: "S1, S2, S8, S15, A11, A23-A25", tag: "P1 JP-107", core: true },
+    { x: 680, y: 374, w: 190, h: 120, title: "cache.db", lines: ["Rebuildable rows:", "per-message cost, prices,", "file catalog, job queues"], from: "S8.1, S8.2, S9, S11", tag: "P1 JP-111" },
+    { x: 885, y: 374, w: 200, h: 120, title: "ledger/ask.py", lines: ["Six queries, 20 rows max", "The only way working", "agents read the ledger"], from: "new", tag: "P1 JP-107" },
+
+    { x: 150, y: 574, w: 225, h: 100, title: "~/.josh-360", lines: ["The laptop's copy of main", "A merge to main installs"], from: "M7", tag: "Done" },
+    { x: 390, y: 574, w: 255, h: 100, title: "jobs.yaml", lines: ["One job list, run every 5 min:", "recorder, cost import, backups,", "OpenCode sync, scrubber"], from: "M1-M4, S9, A1.3", tag: "P1 JP-119" },
+    { x: 660, y: 574, w: 200, h: 100, title: "hooks/", lines: ["One folder per event,", "loaded by one dispatcher"], from: "S16.2, A23.1", tag: "Done" },
+    { x: 875, y: 574, w: 210, h: 100, title: "Backups", lines: ["14 daily and 8 weekly,", "each copied to Azure blob"], from: "Josh, JP-106 Q3", tag: "P1 JP-107" },
+
+    { x: 150, y: 712, w: 330, h: 68, title: "claude-harness (~/.claude)", lines: ["Global rules, 67 skills, agents, STATE.md"], outside: true },
+    { x: 495, y: 712, w: 250, h: 68, title: "macbook-automations", lines: ["Personal chores, one startup entry"], outside: true },
+    { x: 760, y: 712, w: 325, h: 68, title: "Outside services", lines: ["GitHub, Bifrost, Notion, Outlook"], outside: true },
+  ];
+  B.forEach(b => box(svg, b));
+  // the scripts that add to the ledger in phase 1
+  el(svg, "rect", { x: 150, y: 504, width: 935, height: 28, rx: 6, class: "svg-chip" });
+  el(svg, "text", { x: 162, y: 522, class: "svg-line" }, "Phase 1 writers: summaries JP-108 · loose ends and closeout JP-109 · ticket offer JP-110 · friction JP-112 · debrief JP-113 · decisions JP-116");
+  // the window's homes, as chips inside its box
+  const homes = ["Intake", "Tickets", "Review", "Needs you", "Sessions", "Files", "Settings"];
+  let hx = 582, hy = 84;
+  for (const h of homes) {
+    const w = h.length * 6.6 + 14;
+    if (hx + w > 890) { hx = 582; hy += 24; }
+    el(svg, "rect", { x: hx, y: hy, width: w, height: 19, rx: 9, class: "svg-chip" });
+    el(svg, "text", { x: hx + w / 2, y: hy + 13.5, "text-anchor": "middle", class: "svg-chip-text" }, h);
+    hx += w + 6;
+  }
+}
+
+function drawImprove() {
+  const svg = document.getElementById("svg-improve");
+  defs(svg, svg.id + "-head");
+  const c = [20, 245, 470, 695], W = 180, R1 = 30, R2 = 230, H = 104;
+  [
+    { x: c[0], y: R1, w: W, h: H, title: "Sessions", lines: ["Every session and graph", "run, visible in", "Agent Manager"], tag: "today" },
+    { x: c[1], y: R1, w: W, h: H, title: "Facts", lines: ["A script counts friction", "in each session; no", "model, no message text"], tag: "P1 JP-112" },
+    { x: c[2], y: R1, w: W, h: H, title: "Debrief", lines: ["One small call when a", "session earns it; codes", "and pointers, no quotes"], tag: "P1 JP-113" },
+    { x: c[3], y: R1, w: 395, h: H, title: "ledger.db", lines: ["Friction facts and debriefs; graph runs scored", "success, neutral or needs-Josh (JP-140);", "decisions (JP-116); the measures as queries"], tag: "P1 JP-107", core: true },
+    { x: c[3], y: R2, w: 395, h: H, title: "Weekly review", lines: ["Reads ledger rows, not transcripts; acts on", "three or more repeats, opens transcripts", "only for the top few. Thresholds act sooner."], tag: "P2 JP-127" },
+    { x: c[2], y: R2, w: W, h: H, title: "Improvement ticket", lines: ["Rows attached; names", "the number to move;", "five open at most"], josh: "Josh prioritises" },
+    { x: c[1], y: R2, w: W, h: H, title: "Development graph", lines: ["Ready gate, build, PR", "audit (JP-115), like", "any other ticket"], josh: "Josh signs off" },
+    { x: c[0], y: R2, w: W, h: H, title: "Change merged", lines: ["A script or gate first,", "a tighter skill or rule", "next, new text last"] },
+  ].forEach(b => box(svg, b));
+  const m1 = R1 + H / 2, m2 = R2 + H / 2;
+  arrow(svg, 200, m1, 243, m1, "reads", { lx: 222, ly: m1 - 8 });
+  arrow(svg, 425, m1, 468, m1, "flags", { lx: 447, ly: m1 - 8 });
+  arrow(svg, 650, m1, 693, m1, "writes", { lx: 672, ly: m1 - 8 });
+  arrow(svg, 892, R1 + H, 892, R2 - 2, "weekly", { lx: 901, ly: 186, anchor: "start" });
+  arrow(svg, 695, m2, 652, m2, "files", { lx: 673, ly: m2 - 8 });
+  arrow(svg, 470, m2, 427, m2, "Ready", { lx: 448, ly: m2 - 8 });
+  arrow(svg, 245, m2, 202, m2, "merges", { lx: 223, ly: m2 - 8 });
+  arrow(svg, 110, R2, 110, R1 + H + 2, "next runs", { lx: 119, ly: 186, anchor: "start" });
+  el(svg, "rect", { x: 20, y: 364, width: 1070, height: 40, rx: 6, class: "svg-chip" });
+  el(svg, "text", { x: 34, y: 389, class: "svg-line" }, "Claim check (JP-127): ten runs after a change merges, the ledger shows whether its number moved. If it did not, a follow-up ticket proposes undoing it.");
+}
+
+function drawFlow() {
+  const svg = document.getElementById("svg-flow");
+  defs(svg, svg.id + "-head");
+  const c = [20, 250, 480, 710, 940], W = 150;
+  const R1 = 30, R2 = 210, R3 = 390, R4 = 526, H = 84;
+  [
+    { x: c[0], y: R1, w: W, h: H, title: "Jira", lines: ["A Ready ticket"], josh: "Josh sets priorities" },
+    { x: c[1], y: R1, w: W, h: H, title: "Runner", lines: ["Watches Jira,", "starts steps"] },
+    { x: c[2], y: R1, w: W, h: H, title: "Session", lines: ["In Agent Manager,", "always visible"] },
+    { x: c[3], y: R1, w: W, h: H, title: "Pull request", lines: ["PR audit comments,", "then marks it ready"], josh: "7 Josh signs off" },
+    { x: c[1], y: R2, w: W, h: H, title: "Walker", lines: ["Reads the run,", "names the next step"] },
+    { x: c[2], y: R2, w: W, h: H, title: "Needs you", lines: ["action-triage's tab", "in P1; window in P2"], josh: "Josh answers" },
+    { x: c[3], y: R2, w: W, h: H, title: "Recorder job", lines: ["Spool, transcript", "and git into rows"] },
+    { x: c[4], y: R2, w: W, h: H, title: "cache.db", lines: ["Hourly cost import", "of every message"] },
+    { x: c[0], y: R3, w: W, h: H, title: "ledger/ask.py", lines: ["Six small queries", "for working agents"] },
+    { x: c[1], y: R3, w: 840, h: H, title: "ledger.db", lines: ["Sessions, lineage, homes, ticket links, summaries, cost per session, friction, graph runs and steps, asks and decisions.", "Rows are only added; a wrong row is withdrawn by a correction."], core: true },
+    { x: c[1], y: R4, w: 380, h: 64, title: "Daily backup", lines: ["14 daily, 8 weekly, a copy to Azure blob"] },
+    { x: c[3], y: R4, w: 380, h: 64, title: "Window (P2) and views (P3)", lines: ["Read the ledger directly"], later: true },
+  ].forEach(b => box(svg, b));
+  const mid = y => y + H / 2;
+  arrow(svg, 170, mid(R1) - 12, 248, mid(R1) - 12, "Ready", { step: 1, sx: 209, sy: mid(R1) - 12, lx: 209, ly: mid(R1) - 28 });
+  arrow(svg, 250, mid(R1) + 16, 172, mid(R1) + 16, "moves status", { step: 8, sx: 209, sy: mid(R1) + 16, lx: 209, ly: mid(R1) + 40 });
+  arrow(svg, 400, mid(R1), 478, mid(R1), "starts step", { step: 3, sx: 439, sy: mid(R1), lx: 439, ly: mid(R1) - 16 });
+  arrow(svg, 630, mid(R1), 708, mid(R1), "opens PR", { step: 6, sx: 669, sy: mid(R1), lx: 669, ly: mid(R1) - 16 });
+  arrow(svg, 305, R1 + H, 305, R2 - 2, "asks", { step: 2, sx: 305, sy: 162, lx: 288, ly: 166, anchor: "end" });
+  arrow(svg, 345, R2, 345, R1 + H + 2, "names step", { lx: 354, ly: 166, anchor: "start" });
+  arrow(svg, 535, R1 + H, 535, R2 - 2, "asks Josh", { step: 5, sx: 535, sy: 162, lx: 518, ly: 166, anchor: "end" });
+  arrow(svg, 575, R2, 575, R1 + H + 2, "answer", { lx: 584, ly: 166, anchor: "start" });
+  arrow(svg, 622, R1 + H, 718, R2 - 2, "hooks append", { step: 4, sx: 670, sy: 162, lx: 700, ly: 150, anchor: "start" });
+  arrow(svg, 325, R2 + H, 325, R3 - 2, "runs, steps", { lx: 334, ly: 350, anchor: "start" });
+  arrow(svg, 555, R2 + H, 555, R3 - 2, "asks, decisions", { lx: 564, ly: 350, anchor: "start" });
+  arrow(svg, 785, R2 + H, 785, R3 - 2, "sessions, homes, refs", { lx: 794, ly: 350, anchor: "start" });
+  arrow(svg, 1015, R2 + H, 1015, R3 - 2, "cost per session", { lx: 1006, ly: 350, anchor: "end" });
+  arrow(svg, 250, mid(R3), 172, mid(R3), "reads", { lx: 211, ly: mid(R3) - 8 });
+  arrow(svg, 440, R3 + H, 440, R4 - 2, "copies", { lx: 449, ly: 512, anchor: "start" });
+  arrow(svg, 900, R3 + H, 900, R4 - 2, "reads", { lx: 909, ly: 512, anchor: "start" });
+}
+
+/* ---------- Salvage map ---------- */
+const FATES = [
+  ["asis", "Kept as is"], ["ledger", "Onto the ledger"], ["rebuilt", "Rebuilt or new"], ["later", "Later"], ["drop", "Dropped"],
+];
+function fateOf(node) {
+  if (node.how === "as-is") return "asis";
+  if (node.how === "ledger") return "ledger";
+  if (node.call === "keep" || node.how === "rebuilt" || node.how === "new") return "rebuilt";
+  if (node.how === "later") return "later";
+  return "drop";
+}
+function noteOf(node) {
+  if (node.how === "merged") return node.into ? (node.call === "keep" ? "merged into " : "folded into ") + node.into : "merged with another feature";
+  if (node.how === "outside") return "stays outside josh-360";
+  if (node.how === "retire") return "retired";
+  if (node.how === "new") return "built new";
+  return "";
+}
+function collect(nodes, out, parent) {
+  for (const n of nodes || []) {
+    if (n.call) out.push({ node: n, parent });
+    collect(n.children, out, n.call ? n : parent);
+  }
+  return out;
+}
+const SOURCES = [];
+for (const repo of DATA.tree) {
+  SOURCES.push({ id: repo.id, name: repo.name, about: repo.about || "", items: collect(repo.children, [], null) });
+}
+SOURCES.push({
+  id: DATA.pieces.source.id, name: DATA.pieces.source.name, about: DATA.pieces.source.about,
+  items: DATA.pieces.rows.map(r => ({ node: Object.assign({ call: ["retire", "outside"].includes(r.how) ? "drop" : "keep", carrier: r.source }, r), parent: null })),
+});
+const SHORT = { AT: "action-triage", CA: "Session Atlas", MA: "macbook-automations", AD: "agent-deck", NEW: "New in josh-360", HL: "claude-harness and laptop" };
+
+function drawMatrix() {
+  const t = document.getElementById("matrix");
+  const head = "<thead><tr><th scope=\"col\">Source</th>" + FATES.map(f => "<th scope=\"col\">" + f[1] + "</th>").join("") + "<th scope=\"col\">All</th></tr></thead>";
+  const totals = { asis: 0, ledger: 0, rebuilt: 0, later: 0, drop: 0, all: 0 };
+  const max = Math.max(...SOURCES.map(s => s.items.length));
+  const rows = SOURCES.map(s => {
+    const c = { asis: 0, ledger: 0, rebuilt: 0, later: 0, drop: 0 };
+    s.items.forEach(i => c[fateOf(i.node)]++);
+    FATES.forEach(([k]) => totals[k] += c[k]);
+    totals.all += s.items.length;
+    const cells = FATES.map(([k]) => c[k] ? "<td><span class=\"bar\" style=\"width:" + Math.max(3, Math.round(c[k] / max * 60)) + "px;background:var(--f-" + (k === "asis" ? "asis" : k) + ")\"></span>" + c[k] + "</td>" : "<td class=\"zero\">0</td>").join("");
+    return "<tr><td>" + (SHORT[s.id] || s.name) + "</td>" + cells + "<td>" + s.items.length + "</td></tr>";
+  }).join("");
+  const foot = "<tfoot><tr><td>All sources</td>" + FATES.map(([k]) => "<td>" + totals[k] + "</td>").join("") + "<td>" + totals.all + "</td></tr></tfoot>";
+  t.innerHTML = head + "<tbody>" + rows + "</tbody>" + foot;
+}
+
+let current = "all", showSubs = false, open = null;
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" })[ch]); }
+function detailHtml(item) {
+  const n = item.node, homes = DATA.homes || {};
+  const kids = collect(n.children, [], n).map(k => "<li><span class=\"mono\">" + esc(k.node.id) + "</span> " + esc(k.node.name) + ": " + esc(FATES.find(f => f[0] === fateOf(k.node))[1].toLowerCase()) + (noteOf(k.node) ? " (" + esc(noteOf(k.node)) + ")" : "") + "</li>").join("");
+  return "<div class=\"detail\" role=\"region\" aria-label=\"" + esc(n.name) + "\"><h3><span class=\"mono\">" + esc(n.id) + "</span> " + esc(n.name) + "</h3><dl>" +
+    (n.what ? "<dt>What it is</dt><dd>" + esc(n.what) + "</dd>" : "") +
+    "<dt>Call</dt><dd>" + esc(FATES.find(f => f[0] === fateOf(n))[1]) + (noteOf(n) ? ", " + esc(noteOf(n)) : "") + "</dd>" +
+    (n.home ? "<dt>Lands in</dt><dd>" + esc((homes[n.home] || {}).name || n.home) + "</dd>" : "") +
+    "<dt>Why</dt><dd>" + esc(n.why) + "</dd>" +
+    (n.carrier ? "<dt>Carried by</dt><dd>" + esc(n.carrier) + "</dd>" : "") +
+    (kids ? "<dt>Parts</dt><dd><ul>" + kids + "</ul></dd>" : "") + "</dl></div>";
+}
+function drawSources() {
+  const host = document.getElementById("sources");
+  host.innerHTML = "";
+  for (const s of SOURCES) {
+    if (current !== "all" && current !== s.id) continue;
+    const card = document.createElement("div");
+    card.className = "source";
+    const items = s.items.filter(i => showSubs || !i.parent);
+    let html = "<div class=\"source-head\"><h3>" + esc(s.name) + "</h3><p>" + esc(s.about) + "</p></div><div class=\"fates\">";
+    for (const [k, label] of FATES) {
+      const here = items.filter(i => fateOf(i.node) === k);
+      html += "<div class=\"fate " + k + "\"><div class=\"fate-head\">" + label + " <span>" + here.length + "</span></div>";
+      if (!here.length) html += "<div class=\"fate-empty\">None</div>";
+      for (const i of here) {
+        const n = i.node, kids = collect(n.children, [], n);
+        const differ = showSubs ? 0 : kids.filter(kk => fateOf(kk.node) !== fateOf(n)).length;
+        const note = [noteOf(n), differ ? differ + (differ === 1 ? " part differs" : " parts differ") : ""].filter(Boolean).join(" · ");
+        html += "<button type=\"button\" class=\"chip" + (i.parent ? " sub" : "") + "\" data-id=\"" + esc(n.id) + "\" aria-expanded=\"" + (open === n.id) + "\"><span class=\"cid\">" + esc(n.id) + "</span><span>" + esc(n.name) + "</span>" + (note ? "<span class=\"note\">" + esc(note) + "</span>" : "") + "</button>";
+      }
+      html += "</div>";
+    }
+    html += "</div>";
+    const hit = open && items.find(i => i.node.id === open);
+    if (hit) html += detailHtml(hit);
+    card.innerHTML = html;
+    host.appendChild(card);
+  }
+}
+function drawFilter() {
+  const f = document.getElementById("source-filter");
+  const opts = [["all", "All sources"]].concat(SOURCES.map(s => [s.id, SHORT[s.id] || s.name]));
+  f.innerHTML = opts.map(([id, label]) => "<button type=\"button\" data-src=\"" + id + "\" aria-pressed=\"" + (current === id) + "\">" + esc(label) + "</button>").join("");
+}
+document.getElementById("source-filter").addEventListener("click", e => {
+  const b = e.target.closest("button[data-src]"); if (!b) return;
+  current = b.dataset.src; open = null;
+  try { localStorage.setItem("arch-source", current); } catch (err) {}
+  drawFilter(); drawSources();
+});
+document.getElementById("show-subs").addEventListener("change", e => { showSubs = e.target.checked; open = null; drawSources(); });
+document.getElementById("sources").addEventListener("click", e => {
+  const b = e.target.closest("button.chip"); if (!b) return;
+  open = open === b.dataset.id ? null : b.dataset.id;
+  drawSources();
+  const again = document.querySelector("button.chip[data-id=\"" + b.dataset.id + "\"]");
+  if (again) again.focus();
+});
+try { const saved = localStorage.getItem("arch-source"); if (saved && (saved === "all" || SOURCES.some(s => s.id === saved))) current = saved; } catch (err) {}
+
+drawParts();
+drawFlow();
+drawImprove();
+drawMatrix();
+drawFilter();
+drawSources();
+</script>
