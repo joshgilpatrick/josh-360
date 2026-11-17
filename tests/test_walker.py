@@ -243,6 +243,20 @@ class Asking(WalkerCase):
         self.assertEqual(json.loads((self.tmp / "questions" / (parked["question_id"] + ".json")).read_text())["state"],
                          "delivered")
 
+    def test_the_needs_you_tab_would_accept_an_answer_to_a_parked_question(self):
+        # action-triage's answerFromUi refuses an answer once now >= waitUntil ("no longer waiting"), and a headless
+        # record is meant to have no deadline: the real ask hook writes 9999-12-31T23:59:59.000Z. JP-156.
+        run = self.start()
+        self.do_role(run, "design", "ready", {"spec_path": "spec-1"})
+        parked = self.walker("next", "--run", run)
+        record = json.loads((self.tmp / "questions" / (parked["question_id"] + ".json")).read_text())
+        self.assertEqual(record["runner"], "headless")
+        self.assertEqual(record["waitUntil"], "9999-12-31T23:59:59.000Z")
+        self.assertGreater(record["waitUntil"], record["askedAt"])
+        self.assertEqual(self.walker("next", "--run", run)["action"], "parked")      # parking again keeps the record
+        again = json.loads((self.tmp / "questions" / (parked["question_id"] + ".json")).read_text())
+        self.assertEqual(again, record)
+
     def test_the_answer_is_saved_as_a_decision_in_its_category(self):
         run = self.start()
         self.do_role(run, "design", "ready", {"spec_path": "spec-1"})
