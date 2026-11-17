@@ -93,6 +93,8 @@ class FakeTicket:
     def move(self, key, status):
         self._maybe("move")
         self.moves.append((key, status))
+        if key in self.tickets:
+            self.tickets[key] = self.tickets[key]._replace(status=status)
 
     def set_flag(self, key, on):
         self._maybe("flag")
