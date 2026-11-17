@@ -9,6 +9,7 @@
 - [The header](#the-header)
 - [Scoring a run](#scoring-a-run)
 - [Steps](#steps)
+- [Wait steps](#wait-steps)
 - [How a graph runs](#how-a-graph-runs)
 - [The walker](#the-walker)
 - [The rules](#the-rules)
@@ -152,7 +153,7 @@ The walker (JP-114) writes the end a run reached, as one of these names or `exit
 
 ## Steps
 
-Every step has an `id` and exactly one of `role`, `gate` or `ask`.
+Every step has an `id` and exactly one of `role`, `gate`, `ask` or `wait`.
 
 | Key | On | What it holds |
 | --- | --- | --- |
@@ -163,15 +164,25 @@ Every step has an `id` and exactly one of `role`, `gate` or `ask`.
 | `brief` | role step, optional | one or two sentences this step adds to the role's instructions. `{{ inputs.<name> }}` stands for a graph input's value, and must name one (the same holds in an ask's `question`). |
 | `gate` | gate step | the gate script's name |
 | `effects` | gate step, optional | what the script changes outside the run: `move_ticket`, `set_label`. A step with effects is never `read` in the header's `access`. |
+| `wait` | wait step | the name of a gate script that only reads. It answers `pending` while the run must wait, or one of the step's `outcomes` when it can go on. See [Wait steps](#wait-steps). |
 | `ask` | ask step | `{question, choices, approves, approves_on, on_limit_only, split}`. `choices` is a list of answers, which are the step's outcomes. `approves` (optional) lists the steps this ask approves, and then `approves_on` lists the choices that mean yes: some of the choices, never all, so Josh can always say no. `on_limit_only: true` marks an ask that runs only when a loop reaches its limit; it takes no `needs` or `when`, and at least one loop's `at_limit` must name it. `split` (optional) lists the details that split this ask into categories for decision memory; see below. |
 | `needs` | all, optional | steps that must finish first |
 | `when` | all, optional | `{step: <id>, outcome: <outcome or list>}`: run only if that step ended with that outcome; otherwise skip |
-| `inputs` | role and gate steps, optional | a list of names the step reads: graph inputs, or outputs of steps it `needs` (directly or further up) |
-| `outputs` | role and gate steps, optional | name to `{type, description, contract}` |
-| `outcomes` | role and gate steps | the outcomes the step can end with; an ask step's outcomes are its `choices` |
+| `inputs` | role, gate and wait steps, optional | a list of names the step reads: graph inputs, or outputs of steps it `needs` (directly or further up) |
+| `outputs` | role, gate and wait steps, optional | name to `{type, description, contract}` |
+| `outcomes` | role, gate and wait steps | the outcomes the step can end with; an ask step's outcomes are its `choices` |
 | `on` | all, optional | what an outcome does, when it does more than move on: `end`, or `{goto: <step>, max_loops: <n>, at_limit: <ask step>}` |
 
 **Categories of question (`split`).** Every answer Josh gives is saved, and decision memory moves a whole category of question through its three stages (JP-106, question 4, option C). By default an ask step is one category, `<graph>/<step>`. An ask whose answers differ by detail lists those details in `split`, and each value then makes its own category: `ticket-creation/approve;system=josh-360;shape=single` is a different category from `ticket-creation/approve;system=josh-360;shape=epic_with_tickets`, so a yes to a single ticket is never offered as precedent for an epic with children. The walker builds the category from the names in the order listed, from the run's values at the time of asking; a value is a short code (lowercase letters, digits, `.`, `_` and `-`), and an ask whose value is not one is asked with no precedent. Precedent is looked up by category, system and work type together, never wider, and the ledger refuses a precedent from another category (`docs/design/data-model.md`, "Decisions"). *The checker refuses a `split` that is not a list of distinct names, or that names something other than a graph input or an output of a step above the ask.*
+
+### Wait steps
+
+A graph sometimes has to wait for something outside it, such as a review that takes hours or a merge that takes days. A gate script must answer at once, an ask is for Josh, and a role step would keep a model session open, so a wait is a fourth kind (JP-115). It is additive: no graph file becomes invalid, and the convention stays at version 1.
+
+- A `wait` names a script in `gates/` and lists `outcomes` like a gate. It may have `needs`, `when`, `inputs`, `outputs` and `on`.
+- The script runs like any gate and answers at once. `{"outcome": "pending"}` means "not yet": the walker records nothing, counts no loop, prints `waiting`, and the runner calls `next` again later. Any declared outcome ends the wait, as a gate's does.
+- No session is open and a wait never changes anything: its access is `read` and it takes no `effects`. `pending` is reserved, so a wait never declares it.
+- A wait that can last long names its own deadline in its script and answers a declared outcome when it passes. A wait is not a gate for rule 5: a reviewer role still needs a `gate` step.
 
 ## How a graph runs
 
@@ -243,8 +254,8 @@ python3 graphs/tools/check_graph.py --root <dir> <file>         # another parts 
 python3 graphs/tools/compile_graphs.py [--check]                 # the JSON copies the walker reads (see The walker)
 ```
 
-It checks `tiers.yaml` (models, efforts and run caps), every role and agent, and each graph file. It prints one line per problem, naming the file and where in it (a step id, a loop, a key), and exits 0 when there are none, 1 when there are, and 2 when it cannot run (a missing folder, or PyYAML not installed). A YAML key written twice in one mapping is refused, and `on`, `off`, `yes` and `no` are read as plain words, not as true or false. It needs PyYAML (`pip install -r requirements.txt`). `python3 scripts/check.py`, the repository's suite, runs it and its tests (`graphs/tests/`). The sample graphs there, one that passes and one per broken rule, are the quickest way to see the convention in use.
+It checks `tiers.yaml` (models, efforts and run caps), every role and agent, and each graph file. A wait step must name a gate script, have access `read`, take no `effects` and not declare `pending`. It prints one line per problem, naming the file and where in it (a step id, a loop, a key), and exits 0 when there are none, 1 when there are, and 2 when it cannot run (a missing folder, or PyYAML not installed). A YAML key written twice in one mapping is refused, and `on`, `off`, `yes` and `no` are read as plain words, not as true or false. It needs PyYAML (`pip install -r requirements.txt`). `python3 scripts/check.py`, the repository's suite, runs it and its tests (`graphs/tests/`). The sample graphs there, one that passes and one per broken rule, are the quickest way to see the convention in use.
 
 ## Changing this convention
 
-A change to this file changes the checker and its tests in the same pull request. A change that would make an existing graph file invalid raises `convention` to the next number and says how to move a file across.
+A change to this file changes the checker and its tests in the same pull request. The `wait` step (JP-115) is an additive change: the convention stays at version 1. A change that would make an existing graph file invalid raises `convention` to the next number and says how to move a file across.
