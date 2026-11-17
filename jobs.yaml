@@ -34,3 +34,9 @@ jobs:
     timeout: 5m
     report: true
     description: JP-100, once. Boots out the focus dashboard's launchd job and archives its plist under ~/Archive/josh-360-retired/. Reversible; deletes nothing.
+
+  - id: ledger-record
+    run: ledger/record.py
+    every: 5m
+    timeout: 10m
+    description: JP-107. Writes sessions, episodes, refs and homes to the ledger from the hook spool, transcript metadata and git. No model call.
