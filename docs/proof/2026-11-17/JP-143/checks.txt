@@ -1,0 +1,27 @@
+$ python3 scripts/feature_tree.py check
+feature tree ok: {'keep': 89, 'drop': 26}
+
+$ python3 -m unittest tests.test_feature_tree -v
+test_a_missing_row_is_reported (tests.test_feature_tree.EveryExistingFeatureRowIsCovered.test_a_missing_row_is_reported) ... ok
+test_every_features_md_row_is_in_the_tree (tests.test_feature_tree.EveryExistingFeatureRowIsCovered.test_every_features_md_row_is_in_the_tree) ... ok
+test_a_call_other_than_keep_or_drop_is_refused (tests.test_feature_tree.EveryFeatureHasACallAndARationale.test_a_call_other_than_keep_or_drop_is_refused) ... ok
+test_a_feature_with_no_rationale_is_refused (tests.test_feature_tree.EveryFeatureHasACallAndARationale.test_a_feature_with_no_rationale_is_refused) ... ok
+test_a_kept_feature_needs_a_known_home (tests.test_feature_tree.EveryFeatureHasACallAndARationale.test_a_kept_feature_needs_a_known_home) ... ok
+test_a_merge_must_name_a_node_in_the_tree (tests.test_feature_tree.EveryFeatureHasACallAndARationale.test_a_merge_must_name_a_node_in_the_tree) ... ok
+test_a_repeated_id_is_refused (tests.test_feature_tree.EveryFeatureHasACallAndARationale.test_a_repeated_id_is_refused) ... ok
+test_every_real_feature_id_is_a_valid_page_id (tests.test_feature_tree.EveryFeatureHasACallAndARationale.test_every_real_feature_id_is_a_valid_page_id) ... ok
+test_how_must_match_the_call (tests.test_feature_tree.EveryFeatureHasACallAndARationale.test_how_must_match_the_call) ... ok
+test_the_real_tree_has_no_problems (tests.test_feature_tree.EveryFeatureHasACallAndARationale.test_the_real_tree_has_no_problems) ... ok
+test_the_sample_tree_has_no_problems (tests.test_feature_tree.EveryFeatureHasACallAndARationale.test_the_sample_tree_has_no_problems) ... ok
+test_the_committed_page_is_up_to_date (tests.test_feature_tree.ThePageIsBuiltFromTheTree.test_the_committed_page_is_up_to_date) ... ok
+test_the_page_embeds_every_node_and_cannot_close_its_script (tests.test_feature_tree.ThePageIsBuiltFromTheTree.test_the_page_embeds_every_node_and_cannot_close_its_script) ... ok
+test_the_page_saves_to_the_review_document (tests.test_feature_tree.ThePageIsBuiltFromTheTree.test_the_page_saves_to_the_review_document) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.212s
+
+OK
+
+$ python3 scripts/check.py
+OK
+check.py: ok (0 problem(s))
