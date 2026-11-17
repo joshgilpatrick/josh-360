@@ -95,13 +95,25 @@ def sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def is_saved_file(value: object) -> bool:
+    """True when a step output names an existing file. Any other text (a card, a question, a list of problems) is
+    not a path and must never be asked about as one: the operating system refuses a long or multi-line name with an
+    error, and that error once stopped a run from ending."""
+    if not isinstance(value, str) or not value or len(value) > 1024 or "\n" in value or "\x00" in value:
+        return False
+    try:
+        return Path(value).is_file()
+    except (OSError, ValueError):
+        return False
+
+
 def files_to_save(graph, doc: dict) -> List[dict]:
     """Step outputs that name an existing file, with the kind their contract gives them."""
     found = []
     for step in graph.order:
         declared = graph.steps[step].get("outputs") or {}
         for name, value in (doc.get("outputs", {}).get(step) or {}).items():
-            if not isinstance(value, str) or not value or not Path(value).is_file():
+            if not is_saved_file(value):
                 continue
             contract = (declared.get(name) or {}).get("contract")
             found.append({"step": step, "name": name, "path": value, "kind": SAVED_KINDS.get(contract, "output")})
