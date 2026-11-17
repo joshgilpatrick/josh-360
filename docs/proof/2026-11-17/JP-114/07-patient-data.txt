@@ -1,0 +1,10 @@
+$ cd tests && python3 -m unittest -v test_walker.TypedAnswers test_walker.Asking.test_a_phi_run_stores_no_question_text
+test_a_failed_jira_effect_is_a_warning_and_the_run_goes_on (test_walker.TypedAnswers.test_a_failed_jira_effect_is_a_warning_and_the_run_goes_on) ... ok
+test_a_typed_answer_is_posted_on_the_ticket_and_kept_as_an_output (test_walker.TypedAnswers.test_a_typed_answer_is_posted_on_the_ticket_and_kept_as_an_output) ... ok
+test_a_typed_answer_with_patient_data_is_used_but_not_posted (test_walker.TypedAnswers.test_a_typed_answer_with_patient_data_is_used_but_not_posted) ... ok
+test_a_phi_run_stores_no_question_text (test_walker.Asking.test_a_phi_run_stores_no_question_text) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 1.239s
+
+OK
