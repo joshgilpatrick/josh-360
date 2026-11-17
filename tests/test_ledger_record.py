@@ -105,6 +105,17 @@ class Recorder(LedgerCase):
         home = self.rows("SELECT method, ticket_key, epic_key, priority, jira_read FROM session_homes")
         self.assertEqual(home, [("branch", "JP-900", "JP-901", "epicprio", "ok")])
 
+    def test_an_unknown_folder_stays_honest(self):
+        """JP-107 scenario 2, end to end: no ticket on the branch, a folder the registry does not list."""
+        self.start(folder="/tmp/nowhere/in-particular")
+        self.end()
+        tr.write(self.tfile(), tr.plain("/tmp/nowhere/in-particular", branch="main"), mtime=NOW_EPOCH - 60)
+        self.run_pass(git=lambda folder, args: None)
+        self.assertEqual(self.rows("SELECT method, priority, ticket_key, system FROM session_homes"),
+                         [("unassigned", "unassigned", None, None)])
+        self.assertEqual(self.count("asks"), 0)
+        self.assertEqual(self.count("ticket_links"), 0)
+
     def test_not_quiet_yet_writes_nothing(self):
         self.start()
         tr.write(self.tfile(), tr.plain(FOLDER), mtime=NOW_EPOCH - 600)
