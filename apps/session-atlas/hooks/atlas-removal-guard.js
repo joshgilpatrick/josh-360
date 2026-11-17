@@ -280,7 +280,7 @@ const CODE_LIKE = /[\s;&|()<>`$]/
 // JP-157. Commands whose quoted text is data, not code: it is never run by them. Anything not listed (a shell, eval, sudo, env,
 // xargs, find, ssh, tmux, an unknown program, a quote that starts a command) is an executor and its quoted text is read as code.
 const DATA_INTERPRETER_RE = /^(?:python[\d.]*|node|nodejs|deno|bun|ruby|perl|php)$/
-const CODE_FLAG_RE = /^(?:--(?:eval|print|command|exec)|-[a-z]*[cepr][a-z]*)$/i
+const CODE_FLAG_RE = /^(?:eval|--(?:eval|print|command|exec)|-[a-z]*[cepr][a-z]*)$/i
 const DATA_GIT_COMMANDS = new Set(['commit', 'tag', 'log', 'show', 'notes', 'merge', 'stash', 'status', 'diff', 'branch', 'add', 'describe',
   'shortlog', 'blame', 'rev-parse', 'rev-list', 'ls-files', 'cherry-pick', 'revert', 'am', 'apply', 'checkout', 'switch', 'reset'])
 const DATA_GH_COMMANDS = new Set(['api', 'pr', 'issue', 'run', 'repo', 'release', 'workflow', 'label', 'gist', 'search', 'project'])
@@ -1176,6 +1176,7 @@ function gitMayBeWorktree(words) {
 // JP-157: words that may delete, move or prune something, in a command or in code text (os.remove, shutil.rmtree, fs.rmSync). Matching more
 // than needed is safe: it only opens the gate to the path rules below, which are unchanged.
 const DELETING_WORD_RE = /(?:^|[./])(?:rm|rmdir|unlink|shred|trash|trash-put|srm|rimraf|rmtree|rmsync|remove|removesync|prune|rename|move|mv)$|rmtree|rimraf|^-+delete|^-exec/i
+const DELETING_CODE_RE = /rm_r|rm_f|rmdir|rmtree|rimraf|rmsync|unlink|remove|delete|shred|trash|rename|move/i
 const RUNS_ARBITRARY_RE = /^(?:eval|exec|source|\.|sh|bash|zsh|dash|ksh|csh|fish)$/
 
 /** The deletion gate (JP-157): the first word of a segment that may delete or move something, a computed command name included, or null. */
@@ -1189,7 +1190,9 @@ function deletingWord(seg, skipped) {
   }
   const words = new Set(seg.tokens.map(t => t.text.toLowerCase()))
   if (words.has('git') && words.has('clean')) return 'git clean'
-  for (const t of seg.tokens) if (DELETING_WORD_RE.test(t.text)) return t.text
+  // Code text (an interpreter one-liner) glues the call to its object: FileUtils.rm_rf, File.delete, Deno.removeSync. A token with no
+  // blank and no slash (so not a path and not prose) opens the gate on the name anywhere inside it.
+  for (const t of seg.tokens) if (DELETING_WORD_RE.test(t.text) || (!/[\s/]/.test(t.text) && DELETING_CODE_RE.test(t.text))) return t.text
   return null
 }
 
