@@ -44,6 +44,15 @@ class Creating(LedgerDbCase):
         self.assertEqual((self.path.parent / "machine-id").read_text().strip(), rows[0][0])
         self.assertEqual(db.machine_id(conn), rows[0][0])
 
+    def test_header_version_matches_user_version_and_leaves_no_files(self):
+        db.ensure(self.path, self.backups, NOW, self.migrations)
+        before = sorted(p.name for p in self.path.parent.iterdir())
+        self.assertEqual(db.header_version(self.path), 1)
+        self.assertEqual(sorted(p.name for p in self.path.parent.iterdir()), before)
+        (self.tmp / "junk").write_bytes(b"not a database" * 20)
+        with self.assertRaises(ValueError):
+            db.header_version(self.tmp / "junk")
+
     def test_machine_label_is_not_a_person(self):
         db.ensure(self.path, self.backups, NOW, self.migrations)
         label = db.connect(self.path).execute("SELECT label FROM machines").fetchone()[0]
