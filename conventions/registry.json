@@ -223,6 +223,7 @@
         "~/Development/active/josh_360"
       ],
       "jira_space": "JP",
+      "merges": "agent",
       "name": "josh-360",
       "priority": "devex",
       "repositories": [
