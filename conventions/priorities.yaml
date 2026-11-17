@@ -51,7 +51,7 @@ priorities:
     shown_to: department
     covers:
       areas: []
-      initiatives: []
+      initiatives: [TECH-25]
       epics: []
 
   - id: ma-clinical-data-transfer
@@ -61,7 +61,7 @@ priorities:
     shown_to: department
     covers:
       areas: []
-      initiatives: []
+      initiatives: [TECH-26]
       epics: []
 
   - id: clinician-tech-stack-ux
@@ -81,7 +81,7 @@ priorities:
     shown_to: department
     covers:
       areas: []
-      initiatives: []
+      initiatives: [TECH-27]
       epics: []
 
   - id: internal-systems-applications
