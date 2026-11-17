@@ -188,6 +188,21 @@ class Redaction(UploadCase):
         self.assertNotIn(FAKE_PHONE, text)
         self.assertEqual(json.loads(text), [["session_episodes", self.row, "title"]])
 
+    def test_a_redaction_queued_while_a_run_is_in_progress_is_not_lost(self):
+        upload.queue_redaction("session_episodes", self.row, "title")
+        late = ["session_episodes", self.other, "title"]
+        client = self.container
+        real_download = client.download
+
+        def download_then_queue(name, path):  # the other redaction is queued part-way through the run
+            real_download(name, path)
+            upload.queue_redaction(*late)
+            client.download = real_download
+
+        client.download = download_then_queue
+        upload.apply_pending(client)
+        self.assertEqual(upload.pending_redactions(), [late])
+
     def test_an_unreadable_copy_keeps_the_redaction_pending(self):
         (self.container.folder / "ledger-2026-11-10.db.gz").write_bytes(b"not a gzip")
         upload.queue_redaction("session_episodes", self.row, "title")

@@ -13,7 +13,7 @@ The container in every test is a made-up folder behind the same four calls as th
 | --- | --- | --- |
 | A new backup is uploaded | `01-upload-tests.txt` | `Sync.test_a_new_backup_is_uploaded` (also: not uploaded twice, replaced when the size differs, only dated `ledger-*.db.gz` names go up, the container keeps 14 daily and 8 weekly) |
 | A failed upload is reported, not hidden | `01-upload-tests.txt` | `Job.test_a_failed_upload_is_reported_and_the_local_backup_kept`, `Job.test_a_failure_keeps_the_time_of_the_last_success`, `Sync.test_nothing_is_removed_when_the_container_cannot_be_listed` |
-| A redaction reaches the uploaded copies | `01-upload-tests.txt` | `Redaction.test_a_redaction_reaches_the_uploaded_copies`, `Redaction.test_a_remote_only_copy_is_redacted_too`, `RedactCommand.test_the_command_also_rewrites_the_uploaded_copies` (also: an unreachable container or an unreadable copy keeps the redaction owed, and the queue holds where, never what) |
+| A redaction reaches the uploaded copies | `01-upload-tests.txt` | `Redaction.test_a_redaction_reaches_the_uploaded_copies`, `Redaction.test_a_remote_only_copy_is_redacted_too`, `RedactCommand.test_the_command_also_rewrites_the_uploaded_copies` (also: an unreachable container or an unreadable copy keeps the redaction owed, a redaction queued while an upload run is working is not lost, and the queue holds where, never what) |
 | No secret is stored | `01-upload-tests.txt` | `Config.test_a_file_holding_a_secret_is_refused`, `AzCli.test_every_call_signs_in_as_josh_and_carries_no_key`, `AzCli.test_a_key_in_the_environment_is_not_passed_on` |
 | The laptop uploads a real backup (`@manual`) | see below | after the merge |
 | The suite still passes | `02-suite.txt` | `python3 scripts/check.py` |

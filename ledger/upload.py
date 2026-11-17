@@ -22,15 +22,16 @@ next run does it first.
 from __future__ import annotations
 
 import datetime
-import gzip
+import fcntl
 import json
 import os
 import shutil
 import sqlite3
 import sys
 import tempfile
+from contextlib import contextmanager
 from pathlib import Path
-from typing import List, Optional
+from typing import Iterator, List, Optional
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -72,13 +73,31 @@ def pending_redactions() -> List[list]:
     return [list(item) for item in data if isinstance(item, list) and len(item) == 3]
 
 
+@contextmanager
+def _pending_lock() -> Iterator[None]:
+    """Held only for a read-modify-write of the pending file, never across a network call, so `redact.py` waits
+    milliseconds, not minutes, while an upload run is busy."""
+    path = pending_path().with_name("azure-redactions-pending.lock")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(str(path), "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        yield
+
+
 def queue_redaction(table: str, row_id: int, column: str) -> None:
     """Remember that the uploaded copies still owe this redaction. Holds where, never what."""
-    pending = pending_redactions()
-    item = [table, row_id, column]
-    if item not in pending:
-        pending.append(item)
-    _write_private(pending_path(), pending)
+    with _pending_lock():
+        pending = pending_redactions()
+        item = [table, row_id, column]
+        if item not in pending:
+            pending.append(item)
+        _write_private(pending_path(), pending)
+
+
+def _settle(done: List[list]) -> None:
+    """Remove the finished items from the file as it is now, so a redaction queued while this run was working stays."""
+    with _pending_lock():
+        _write_private(pending_path(), [i for i in pending_redactions() if i not in done])
 
 
 def sync(client, folder: Path, today: datetime.date) -> dict:
@@ -126,14 +145,19 @@ def redact_uploaded(client, table: str, row_id: int, column: str) -> dict:
 
 def apply_pending(client) -> List[str]:
     """Do every owed redaction. Returns the names of uploaded copies that could not be read; an item whose copies
-    could not all be read stays owed. AzureError leaves everything owed."""
-    still, unreadable = [], []
-    for table, row_id, column in pending_redactions():
-        result = redact_uploaded(client, table, row_id, column)
-        if result["unreadable"]:
-            still.append([table, row_id, column])
-            unreadable.extend(n for n in result["unreadable"] if n not in unreadable)
-    _write_private(pending_path(), still)
+    could not all be read stays owed. AzureError leaves everything owed (what was finished before it is settled). An
+    item queued while this runs is never dropped: only the finished items are removed, from the file as it is at the
+    end."""
+    done, unreadable = [], []
+    try:
+        for item in pending_redactions():
+            result = redact_uploaded(client, *item)
+            if result["unreadable"]:
+                unreadable.extend(n for n in result["unreadable"] if n not in unreadable)
+            else:
+                done.append(item)
+    finally:
+        _settle(done)
     return unreadable
 
 
