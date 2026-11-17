@@ -246,7 +246,7 @@ Josh answered on the answer page on 16 November 2026 at 7:26 PM. Each answer is 
 | Q3 | A, plus an off-laptop copy | Backups as recommended, and each copy also goes to an Azure blob storage container, not OneDrive. | `docs/design/data-model.md` |
 | Q4 | C, the asking step, split on the details it names | The approval card splits by system, ticket type, shape and action. | `docs/design/data-model.md` (JP-114, JP-116) |
 | Q5 | Josh's own mapping | Charta goes under EQuIP. The shared function app and Zus go under a new seventh accountability, Internal Systems & Applications. Survey and Training stay Unassigned on purpose. Synapse stays Unassigned. | `conventions/registry.yaml`, `conventions/priorities.yaml` |
-| Q6 | B, new epics in CI | The new epics are created in CI. Creating them is a write to a team board, so it waits for Josh's yes on the epic list in the JP-106 thread, and the department convention says an epic has an end. | `conventions/priorities.yaml` once the epics exist |
+| Q6 | Standing TECH initiatives | One TECH initiative each, as ongoing support that never closes: TECH-25 (PIMS), TECH-26 (M&A clinical data transfer), TECH-27 (AI scribing utilization). | `conventions/priorities.yaml` |
 | Q7 | Yes (A) | A daemon watches Jira for tickets in a given state and launches the graph when the conditions are met, for example a Ready ticket not in the backlog goes through triage. | `docs/inventory/features.md` (JP-114, JP-120) |
 | Q8 | A, every input gets one card at first | Nothing; the design already did this. | `docs/design/ticket-creation-graph.md` |
 | Q9 | A, but the Calendar tab stays | Josh has not agreed to retire the Calendar tab. Items also flow to the ticket creation graph once it exists. | `docs/inventory/features.md` (row A3) |
