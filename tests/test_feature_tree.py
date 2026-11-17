@@ -1,4 +1,4 @@
-"""Tests for scripts/feature_tree.py and the JP-143 feature tree.
+"""Tests for scripts/feature_tree.py and the JP-143 feature tree (with JP-145, Josh's review).
 
 Each test named after a Gherkin scenario in JP-143 proves that scenario. Run: python3 -m unittest discover -s tests
 """
@@ -114,6 +114,63 @@ class ThePageIsBuiltFromTheTree(unittest.TestCase):
         template = feature_tree.TEMPLATE.read_text(encoding="utf-8")
         self.assertIn('const DOC = "reviews/featureTree"', template)
         self.assertIn('claude.use("db")', template)
+
+
+# Josh's review of 17 November 2026 (JP-145): the calls he changed, and the nodes he commented on.
+JOSH_CALLS = {"A7": False, "A20.1": False, "A31": False, "A33": False, "S4": False, "S5": False, "S6": False,
+              "S7": False, "S8.5": True}
+JOSH_COMMENTED = ["A7", "A9", "A16", "A20", "A31", "A33", "D1", "S4", "S8.4", "S8.5"]
+
+
+def real_nodes():
+    return {n["id"]: n for n, _ in feature_tree.walk(feature_tree.load()["tree"])}
+
+
+class EveryCallJoshChangedMatchesTheTree(unittest.TestCase):
+    def test_every_call_josh_changed_matches_the_tree(self):
+        nodes = real_nodes()
+        for nid, keep in JOSH_CALLS.items():
+            self.assertEqual(nodes[nid]["call"] == "keep", keep, nid)
+
+    def test_the_replacement_for_prompt_settings_is_kept(self):
+        nodes = real_nodes()
+        self.assertEqual(nodes["A7"]["into"], "N1")
+        self.assertEqual(nodes["N1"]["call"], "keep")
+
+
+class ADeferredFeatureIsValid(unittest.TestCase):
+    def test_a_deferred_feature_is_valid(self):
+        data = copy.deepcopy(SAMPLE)
+        data["tree"][0]["children"][0]["children"][1]["how"] = "later"
+        self.assertEqual(sample_problems(data), [])
+
+    def test_an_unknown_reason_is_still_refused(self):
+        data = copy.deepcopy(SAMPLE)
+        data["tree"][0]["children"][0]["children"][1]["how"] = "someday"
+        self.assertTrue(any(p.startswith("X2: how must be one of") for p in sample_problems(data)))
+
+    def test_a_feature_built_new_is_valid(self):
+        data = copy.deepcopy(SAMPLE)
+        data["tree"][0]["children"][0]["children"][0]["how"] = "new"
+        self.assertEqual(sample_problems(data), [])
+
+
+class EveryCommentJoshLeftHasAReply(unittest.TestCase):
+    def test_every_comment_josh_left_has_a_reply(self):
+        nodes = real_nodes()
+        for nid in JOSH_COMMENTED:
+            self.assertTrue(str(nodes[nid].get("reply") or "").strip(), nid)
+
+    def test_the_page_shows_replies(self):
+        template = feature_tree.TEMPLATE.read_text(encoding="utf-8")
+        self.assertIn('<b>My reply:</b> ${fmt(n.reply)}', template)
+        page = feature_tree.PAGE.read_text(encoding="utf-8")
+        self.assertIn('"reply":', page)
+
+    def test_an_empty_reply_is_refused(self):
+        data = copy.deepcopy(SAMPLE)
+        data["tree"][0]["children"][0]["children"][1]["reply"] = " "
+        self.assertIn("X2: an empty reply", sample_problems(data))
 
 
 if __name__ == "__main__":
