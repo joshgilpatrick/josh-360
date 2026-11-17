@@ -11,7 +11,8 @@ What `mark-ready` writes on a Ready ticket, as the Jira issue property `josh360.
 | `run` | The triage run id |
 | `signed_by` | The sign-off session id |
 | `returns` | How many times the ticket has come back to triage from another graph since Josh last answered about it. Kept across runs; the third return goes to Josh (spec rule 10). |
-| `returned_from` | The run id of the graph that sent the ticket back, or empty for a first route |
+| `returns_seen` | How many "Returned to triage" comments the ticket carried when this record was written. The next `mark-ready` counts only the comments after that many as new returns. |
+| `returned_from` | The id of the newest "Returned to triage" comment not seen before, or empty for a first route (the return gate records no run id, so the comment id is the stable pointer) |
 
 The record never holds a priority, a rank or anything from `conventions/priorities.yaml`: working agents never see priorities.
 

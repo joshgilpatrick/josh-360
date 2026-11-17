@@ -125,7 +125,7 @@ def laptop_problems() -> list[str]:
                     and p.read_text(encoding="utf-8", errors="replace").startswith("#!/usr/bin/env python")]
     # JP-114: the walker reads a JSON copy of each graph so that it runs here too (graphs/tools/walker*).
     walker_files = sorted((ROOT / "graphs/tools/walker_lib").glob("*.py")) + [ROOT / "graphs/tools/walker.py"] + sorted(
-        (ROOT / "graphs/gates/lib").glob("*.py"))
+        (ROOT / "graphs/gates/lib").rglob("*.py")) + sorted((ROOT / "graphs/gates").glob("*.py"))
     ledger_files = (sorted((ROOT / "ledger").glob("*.py")) + [ROOT / "scripts/conventions.py"] + ledger_hooks
                     + walker_files)
     for py in (sorted((ROOT / "laptop").glob("*.py")) + sorted((ROOT / "hooks").rglob("*.py")) + jp96
