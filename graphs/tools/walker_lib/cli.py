@@ -92,6 +92,7 @@ def cmd_start(conn, root: Path, args) -> dict:
            "jira_status": None, "flag_on": False}
     runfolder.create(run_id, doc)
     env = gates.gate_env(values, list(graph.inputs), run_id, str(runfolder.runs_dir()), ticket, None)
+    env["JOSH360_GRAPH"] = graph.id        # an entry gate cannot otherwise know which graph it admits a run to
     result = gates.run_gate(graph.root, graph.header["entry_gate"], env, runfolder.folder(run_id), None)
     if result.error or result.outcome != "pass":
         shutil.rmtree(str(runfolder.folder(run_id)), ignore_errors=True)
