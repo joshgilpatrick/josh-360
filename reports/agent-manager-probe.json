@@ -65,7 +65,7 @@
   },
   "claude": {
     "path": "/Users/jgilpatrick/.local/bin/claude",
-    "version": "2.1.326 (Claude Code)"
+    "version": "2.1.327 (Claude Code)"
   },
   "database": {
     "exists": true,
@@ -135,13 +135,14 @@
     ]
   },
   "detached": {
-    "started": 1794957849.2667782
+    "started": 1794957849.2667782,
+    "survived": true
   },
   "env_names": [],
   "job": "agent-manager-probe",
   "path": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
   "spawn": {
-    "attempt": 1,
+    "attempt": 2,
     "code": 1,
     "error": "agent-manager: claude is not installed; install it with: curl -fsSL https://claude.ai/install.sh | bash"
   }
