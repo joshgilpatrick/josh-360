@@ -182,6 +182,10 @@
       "description": "True when the Deliverable format came from Josh, not inferred",
       "type": "boolean"
      },
+     "reason": {
+      "description": "Why the ticket cannot be worked here, in a fixed sentence, when the outcome is not_here",
+      "type": "string"
+     },
      "search_terms": {
       "description": "Words and synonyms for the lookup, from the ticket",
       "type": "list"
@@ -195,7 +199,8 @@
     "gate": "return-to-triage",
     "id": "return_early",
     "inputs": [
-     "ticket_key"
+     "ticket_key",
+     "reason"
     ],
     "needs": [
      "read_ticket"
@@ -295,6 +300,10 @@
      "gap"
     ],
     "outputs": {
+     "card": {
+      "description": "The same sentence, shown to Josh on the ask below",
+      "type": "string"
+     },
      "gap": {
       "description": "The one thing to ask, in one sentence, when the outcome is gap",
       "type": "string"
@@ -480,7 +489,8 @@
     "id": "check_review",
     "inputs": [
      "ticket_key",
-     "findings"
+     "findings",
+     "evidence_path"
     ],
     "needs": [
      "review_work"
@@ -552,7 +562,13 @@
     ],
     "outcomes": [
      "delivered"
-    ]
+    ],
+    "outputs": {
+     "card": {
+      "description": "The ticket comment, shown to Josh on his sign-off ask",
+      "type": "string"
+     }
+    }
    },
    {
     "gate": "sign-off-rule",
@@ -577,6 +593,7 @@
     "inputs": [
      "ticket_key",
      "phi",
+     "deliverable_path",
      "evidence_path"
     ],
     "needs": [
@@ -650,6 +667,7 @@
     "inputs": [
      "ticket_key",
      "phi",
+     "deliverable_path",
      "evidence_path"
     ],
     "needs": [
@@ -697,7 +715,7 @@
   "agents/answerer/agent.yaml": "0f51692d8064755fb71cae3b97156e9d3fb799352575a72f8b4000bee524a86a",
   "agents/drafter/agent.yaml": "e2d01f330a8146414681bde4a43df4f520c74c9732f6a91620419e486a834e21",
   "agents/finder/agent.yaml": "4c57438151cc4e1faf5ff55f52a41a7d2f0ed27db202eae293bb2e2f730eb981",
-  "flows/non-development.yaml": "08a193811b21f19836f4b9cf4d50f3553e66fb5a0d8fff0f47295c464b5baffe",
+  "flows/non-development.yaml": "cbf7dd5c6b4d9a24be6d4f8a56e61ab725741474f08bdfe5d98721c753d610d8",
   "roles/jira-searcher/role.yaml": "465f5d9a7010810b7ae11e05a55486eb025ee68b021c4a8397ec1cdefc8e1634",
   "roles/precedent-judge/role.yaml": "9d13931e45b14b73920bbc770650b0710a6c159af45ed15f1833c7792641e2ed",
   "roles/researcher/role.yaml": "51d99a5329ef887ec56ee34d8e817c1a64f54213838fd07a6f59aaecc6afe4e4",
