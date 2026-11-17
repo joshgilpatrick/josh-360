@@ -113,8 +113,10 @@ def copy_costs(conn: sqlite3.Connection, cost_db: Optional[sqlite3.Connection], 
 
 
 def copy_links(conn: sqlite3.Connection, cost_db: Optional[sqlite3.Connection], uid: str, tool_session_id: str,
-               episode: int, now: str) -> int:
-    """Ticket links and pull request refs the cost ledger saw for this session. Rows written."""
+               episode: int, now: str, by: str = BY, source: str = "transcript") -> int:
+    """Ticket links and pull request refs the cost ledger saw for this session. Rows written. The backfill passes
+    source "backfill", which marks both the ticket links and the refs as copied from rows already there."""
+    link_source = "backfill" if source == "backfill" else "jira-command"
     if cost_db is None:
         return 0
     source_id = tool_session_id.split("+", 1)[0]
@@ -123,20 +125,20 @@ def copy_links(conn: sqlite3.Connection, cost_db: Optional[sqlite3.Connection], 
             "SELECT issue_key, recorded_at FROM jira_session_links WHERE tool = 'claude-code' "
             "AND source_session_id = ? ORDER BY issue_key", (source_id,)).fetchall():
         exists = conn.execute("SELECT 1 FROM ticket_links WHERE session_uid = ? AND ticket_key = ? "
-                              "AND source = 'jira-command'", (uid, key)).fetchone()
+                              "AND source = ?", (uid, key, link_source)).fetchone()
         if exists:
             continue
         conn.execute("INSERT INTO ticket_links (session_uid, tracker, ticket_key, relation, source, linked_at, "
-                     "recorded_by) VALUES (?, 'jira', ?, 'touched', 'jira-command', ?, ?)",
-                     (uid, key, recorded_at or now, BY))
+                     "recorded_by) VALUES (?, 'jira', ?, 'touched', ?, ?, ?)",
+                     (uid, key, link_source, recorded_at or now, by))
         written += 1
     for url, repository, recorded_at in cost_db.execute(
             "SELECT url, COALESCE(repository, ''), recorded_at FROM session_pr_links WHERE tool = 'claude-code' "
             "AND source_session_id = ? ORDER BY url", (source_id,)).fetchall():
         before = conn.total_changes
         conn.execute("INSERT OR IGNORE INTO session_refs (session_uid, episode, kind, repo, value, source, "
-                     "observed_at, recorded_at, recorded_by) VALUES (?, ?, 'pr', ?, ?, 'transcript', ?, ?, ?)",
-                     (uid, episode, repository, url, recorded_at or now, now, BY))
+                     "observed_at, recorded_at, recorded_by) VALUES (?, ?, 'pr', ?, ?, ?, ?, ?, ?)",
+                     (uid, episode, repository, url, source, recorded_at or now, now, by))
         written += conn.total_changes - before
     return written
 
