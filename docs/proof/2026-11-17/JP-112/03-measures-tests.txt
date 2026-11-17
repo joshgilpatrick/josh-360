@@ -1,0 +1,22 @@
+test_all_runs_every_measure (test_ledger_measures.Command.test_all_runs_every_measure) ... ok
+test_answers_hold_numbers_and_codes_not_text (test_ledger_measures.Command.test_answers_hold_numbers_and_codes_not_text) ... ok
+test_bad_input_and_a_missing_ledger_exit_2 (test_ledger_measures.Command.test_bad_input_and_a_missing_ledger_exit_2) ... usage: measures [-h] [--since SINCE] [--until UNTIL] [--finished FINISHED]
+test_it_only_reads (test_ledger_measures.Command.test_it_only_reads) ... ok
+test_loose_ends_say_they_wait_for_jp_109 (test_ledger_measures.Command.test_loose_ends_say_they_wait_for_jp_109) ... ok
+test_the_default_window_is_the_last_28_days (test_ledger_measures.Command.test_the_default_window_is_the_last_28_days) ... ok
+test_nothing_signed_off_is_no_share_not_zero (test_ledger_measures.FirstTime.test_nothing_signed_off_is_no_share_not_zero) ... ok
+test_only_sign_offs_inside_the_window_count (test_ledger_measures.FirstTime.test_only_sign_offs_inside_the_window_count) ... ok
+test_signed_off_without_being_sent_back (test_ledger_measures.FirstTime.test_signed_off_without_being_sent_back) ... ok
+test_a_ticket_nobody_says_is_finished_is_not_counted (test_ledger_measures.Headline.test_a_ticket_nobody_says_is_finished_is_not_counted) ... ok
+test_a_ticket_whose_newest_run_did_not_finish_is_not_finished (test_ledger_measures.Headline.test_a_ticket_whose_newest_run_did_not_finish_is_not_finished) ... ok
+test_a_withdrawn_fact_is_not_counted (test_ledger_measures.Headline.test_a_withdrawn_fact_is_not_counted) ... ok
+test_given_keys_beat_nothing_and_are_not_read_again (test_ledger_measures.Headline.test_given_keys_beat_nothing_and_are_not_read_again) ... ok
+test_live_status_comes_from_jira_and_an_unreadable_ticket_is_unknown (test_ledger_measures.Headline.test_live_status_comes_from_jira_and_an_unreadable_ticket_is_unknown) ... ok
+test_messages_per_finished_ticket_beside_the_first_time_share (test_ledger_measures.Headline.test_messages_per_finished_ticket_beside_the_first_time_share) ... ok
+test_a_session_with_two_episodes_is_costed_once (test_ledger_measures.SpendAndInstructions.test_a_session_with_two_episodes_is_costed_once) ... ok
+test_instruction_size_and_what_was_loaded_but_never_used (test_ledger_measures.SpendAndInstructions.test_instruction_size_and_what_was_loaded_but_never_used) ... ok
+test_no_sessions_is_no_size (test_ledger_measures.SpendAndInstructions.test_no_sessions_is_no_size) ... ok
+test_spend_and_time_per_ticket (test_ledger_measures.SpendAndInstructions.test_spend_and_time_per_ticket) ... ok
+test_the_cost_of_a_graph_step_is_listed_under_its_ticket (test_ledger_measures.SpendAndInstructions.test_the_cost_of_a_graph_step_is_listed_under_its_ticket) ... ok
+Ran 20 tests in 1.826s
+OK

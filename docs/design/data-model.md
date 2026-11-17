@@ -316,7 +316,7 @@ Hooks and scripts write the facts, never a working agent (vision guardrail 1). H
 | `session_summaries`, `model_calls` | The summary script | JP-108 |
 | `branch_marks` | `ledger/ask.py keep`, which Josh runs | JP-109 |
 | `ticket_offers`, `ticket_links` (offer) | The offer hook, through the spool | JP-110 |
-| `session_facts`, `session_usage` | The friction script | JP-112 |
+| `session_facts`, `session_usage` | The friction script (`ledger/friction.py`, written by the recorder with each episode; `ledger-friction-catchup` once for older ones) | JP-112 |
 | `debriefs`, `debrief_moments` | The debrief script, sharing the summary's call | JP-113 |
 | `graph_runs`, `step_runs`, `step_results`, `run_files`, `run_ends`, `asks`, `ticket_links` (walker) | The walker | JP-114 |
 | `decisions`, `decision_events`, `category_stages`, `memory_lookups` | The decision command (stage changes only from Josh's own command) | JP-116 |
@@ -407,7 +407,7 @@ Whether a pull request merged or a ticket is Done is not in this answer: what an
 
 ## What the measures read
 
-The measures are built as stored queries by JP-112 and shown by the phase 3 dashboard (JP-130). This design only makes sure every one of them has its rows. None needs a model.
+The measures are built as stored queries by JP-112 (`ledger/measures.py`) and shown by the phase 3 dashboard (JP-130). This design only makes sure every one of them has its rows. None needs a model. JP-112 built the headline, first-time sign-off, spend and time per ticket and instruction-size queries; loose ends wait for JP-109, and the choices made are in `docs/decisions.md`.
 
 | Measure (vision) | Reads |
 | --- | --- |

@@ -66,3 +66,10 @@ jobs:
     timeout: 60m
     report: true
     description: JP-107, once. Brings existing transcripts, Atlas lineage and titles, and cost links into the ledger. The report is counts only.
+
+  - id: ledger-friction-catchup
+    run: ledger/friction_write.py
+    every: once
+    timeout: 30m
+    report: true
+    description: JP-112, once. Writes friction facts and usage for episodes recorded before JP-112 merged, from their transcripts. Counts and codes only, no model call. The report is counts only.
