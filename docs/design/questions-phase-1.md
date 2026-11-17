@@ -237,4 +237,23 @@ The order is by how much work each answer unblocks: the ledger first (JP-107 blo
 
 ## Answers
 
-Waiting for Josh. Until he answers, every build runs on the recommended option.
+Josh answered on the answer page on 16 November 2026 at 7:26 PM. Each answer is recorded in `docs/decisions.md` and written into the design it came from.
+
+| # | Answer | What changes | Written into |
+| --- | --- | --- | --- |
+| Q1 | A, two files | Nothing; the design already had two. | `docs/design/data-model.md` |
+| Q2 | B, keep the first line of the first message | A summary line may copy it, 160 characters at most, after the patient-data check. | `docs/design/data-model.md` (JP-108 builds the summary) |
+| Q3 | A, plus an off-laptop copy | Backups as recommended, and each copy also goes to an Azure blob storage container, not OneDrive. | `docs/design/data-model.md` |
+| Q4 | C, the asking step, split on the details it names | The approval card splits by system, ticket type, shape and action. | `docs/design/data-model.md` (JP-114, JP-116) |
+| Q5 | Josh's own mapping | Charta goes under EQuIP. The shared function app and Zus go under a new seventh accountability, Internal Systems & Applications. Survey and Training stay Unassigned on purpose. Synapse stays Unassigned. | `conventions/registry.yaml`, `conventions/priorities.yaml` |
+| Q6 | B, new epics in CI | The new epics are created in CI. Creating them is a write to a team board, so it waits for Josh's yes on the epic list in the JP-106 thread, and the department convention says an epic has an end. | `conventions/priorities.yaml` once the epics exist |
+| Q7 | Yes (A) | A daemon watches Jira for tickets in a given state and launches the graph when the conditions are met, for example a Ready ticket not in the backlog goes through triage. | `docs/inventory/features.md` (JP-114, JP-120) |
+| Q8 | A, every input gets one card at first | Nothing; the design already did this. | `docs/design/ticket-creation-graph.md` |
+| Q9 | A, but the Calendar tab stays | Josh has not agreed to retire the Calendar tab. Items also flow to the ticket creation graph once it exists. | `docs/inventory/features.md` (row A3) |
+| Q10 | B, archive the wiki and its skills | Archived, not deleted. | `docs/inventory/laptop.md` |
+| Q11 | Josh still uses OpenCode | The OpenCode agent sync stays, gets Bifrost model names, and runs when the agents folder changes instead of hourly. | `docs/inventory/laptop.md` |
+| Q12 | B, with detail | Omnara is disconnected; the Tactic Remote hooks and the task-manager queue retire; QuickTasks is already gone and "quick tickets" is noted as an idea. agent-deck waits for the feature-tree review Josh asked for, which covers every feature in claude-360, action-triage and macbook-automations. | `docs/inventory/laptop.md` |
+| Q13 | B, no rclone backup | The rclone row retires. | `docs/inventory/laptop.md` |
+| Q14 | C, Josh picks | Josh ticks the skills to keep on a picker page; the rest are archived at the phase close. | `docs/inventory/laptop.md` after he picks |
+
+Josh also said, in his Q12 note, that action-triage, claude-360 and the related MacBook automations are to be melded into one application, josh-360: the features he keeps are extracted from their source repositories and rebuilt into one platform with a consistent look, not linked or nested. That direction shapes the feature-tree review and every migration ticket.
