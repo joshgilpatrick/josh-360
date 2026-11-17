@@ -18,6 +18,7 @@ The ledger: the local, append-only record of every agent session, graph run and 
 | `sessions.py`, `transcript.py`, `record.py` | The recorder: the `sessions` row at start, then episodes from transcript metadata (never message text), git and the spool. The `ledger-record` job runs it every 5 minutes. |
 | `homes.py`, `jira_read.py` | Where a session belongs, worked out with no model: ticket key, ticket links, registry, else unassigned. One read-only Jira call. |
 | `costs.py`, `state_notes.py` | Copy cost, ticket links and titles from the cost ledger, and the notes in STATE.md. Nothing is copied from a `.phi` folder. |
+| `summary.py`, `summary_sources.py` | About five summary lines for each episode that has gone quiet (JP-108): copied from the first line of the first message, the title and STATE.md, with no model; one small cheap-tier call only when those are too thin; none for a `.phi` folder. The `ledger-summary` job runs it every 5 minutes after the recorder. `summary_sources.py` is the one place message text is read. |
 | `ask.py` | The one read command for working agents: six queries, read-only, at most 20 rows and 4096 bytes. |
 | `correct.py` | Withdraws a row with a correction row (and can undo it once); rows are never edited or deleted. |
 | `backup.py`, `redact.py` | A daily verified gzip backup (14 daily, 8 weekly; the Azure copy is JP-150), and the one way to overwrite patient data found in a cell. Josh runs `redact.py` at a terminal. |
@@ -28,4 +29,4 @@ The design, with what each table is for, where today's stores go and the questio
 
 ## Status
 
-Built (JP-107, 17 November 2026): the database and its migrations, the recorder, homes, costs and notes, the read command, backup, redaction and the backfill. Proof: `docs/proof/2026-11-17/JP-107/README.md`. The design was amended by JP-148 and JP-149 (the JP-146 review's fixes, Josh's patient-data rule, local sessions only). Later tickets add the writers for the other tables (`docs/design/data-model.md`, "Who writes what"); the Azure copy of the backups is JP-150. No patient data in any file here.
+Built (JP-107, 17 November 2026): the database and its migrations, the recorder, homes, costs and notes, the read command, backup, redaction and the backfill. Proof: `docs/proof/2026-11-17/JP-107/README.md`. The design was amended by JP-148 and JP-149 (the JP-146 review's fixes, Josh's patient-data rule, local sessions only). JP-108 added the session summaries (`docs/proof/2026-11-17/JP-108/README.md`). Later tickets add the writers for the other tables (`docs/design/data-model.md`, "Who writes what"); the Azure copy of the backups is JP-150. No patient data in any file here.

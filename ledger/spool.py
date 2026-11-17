@@ -108,8 +108,8 @@ def _log(message: str) -> None:
 def main(event: str, stdin: TextIO) -> int:
     """The hook body. Always 0: a broken spool must never stop a session. Errors are logged without the input."""
     try:
-        if event not in EVENTS:
-            return 0
+        if event not in EVENTS or os.environ.get("JOSH360_INTERNAL_CALL") == "1":
+            return 0  # a call Josh 360 makes itself (JP-108) is not a session to record
         data = json.loads(stdin.read())
         session_id = data.get("session_id") if isinstance(data, dict) else None
         if not isinstance(session_id, str) or not SESSION_ID.match(session_id):
