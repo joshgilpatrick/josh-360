@@ -7,7 +7,6 @@ Deliverable format was inferred, not given by Josh. Then `gap` holds the one-sen
 
 Outcomes: clear, gap. Inputs: ticket_key, kind, deliverable_given, precedent.
 """
-import sys
 
 from lib.gate_run import execute, need
 from lib.nondev_copy import ping_before

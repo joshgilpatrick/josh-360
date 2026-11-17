@@ -6,7 +6,6 @@ carries a delivery or a resolution comment, because that means a revision or a r
 
 Outcomes: short, full. Inputs: ticket_key, kind, precedent, evidence_path.
 """
-import sys
 
 from lib.gate_run import execute, need
 

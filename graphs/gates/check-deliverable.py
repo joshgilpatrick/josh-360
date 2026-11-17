@@ -8,7 +8,6 @@ check failed, never what a file holds.
 
 Outcomes: complete, incomplete. Inputs: ticket_key, phi, deliverable_path, evidence_path.
 """
-import sys
 from pathlib import Path
 
 from lib import artifacts, evidence

@@ -9,7 +9,6 @@ On success the JP ticket gets `Shared | <recipient> | next gate: close`.
 Outcomes: shared, refused. Inputs: ticket_key, phi, deliverable_path, evidence_path.
 """
 import re
-import sys
 from pathlib import Path
 
 from lib import evidence

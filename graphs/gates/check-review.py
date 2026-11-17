@@ -8,7 +8,6 @@ read; when none are kept an existing feedback file is emptied, so old defects ar
 Outcomes: clean, rework. Inputs: ticket_key, findings, evidence_path.
 """
 import json
-import sys
 from pathlib import Path
 
 from lib import artifacts

@@ -9,7 +9,6 @@ read-ticket, or "the work needs code changes" when the researcher ended `needs_c
 Outcomes: returned. Inputs: ticket_key, reason.
 """
 import re
-import sys
 
 from lib.gate_run import execute, need, say
 from lib.nondev_copy import returned

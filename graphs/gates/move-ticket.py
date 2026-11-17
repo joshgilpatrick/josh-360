@@ -8,7 +8,6 @@ JP tickets move here: the other spaces have their own workflows.
 Outcomes: moved. Inputs: ticket_key, target_status.
 """
 import re
-import sys
 
 from lib.gate_run import GateError, execute, need
 

@@ -10,7 +10,6 @@ comment, which the walker shows on Josh's sign-off ask.
 Outcomes: delivered. Inputs: ticket_key, origin, desk_row, phi, deliverable_path, evidence_path.
 """
 import re
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 

@@ -6,7 +6,6 @@ reopens it. `ask_josh` for every other ticket. Josh's decision, 16 November 2026
 
 Outcomes: ask_josh, emailed. Inputs: origin.
 """
-import sys
 
 from lib.gate_run import execute
 

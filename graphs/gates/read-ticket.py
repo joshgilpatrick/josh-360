@@ -11,7 +11,6 @@ Outcomes: workable, not_here. Inputs: ticket_key, kind, system, phi.
 """
 import json
 import re
-import sys
 
 from lib.gate_run import GateError, execute, need
 from lib.ticket_text import is_inferred, parse_sections, words
