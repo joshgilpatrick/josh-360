@@ -1,7 +1,10 @@
+import sys
 import unittest
+from pathlib import Path
 
-from tests.ledger_helpers import LedgerCase, NOW, T
-from ledger import sessions
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from ledger_helpers import LedgerCase, NOW, T  # noqa: E402
+from ledger import sessions  # noqa: E402
 
 
 class EnsureTests(LedgerCase):
