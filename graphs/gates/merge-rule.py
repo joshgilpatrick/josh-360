@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
-"""DRAFT gate: merge-rule. Designed in docs/superpowers/specs/2026-11-17-development-graph-design.md (JP-115); built in the JP-115 build.
+"""Gate merge-rule (JP-115): may the graph merge this repository's pull requests, or does Josh?
 
-agent when the registry lets agents merge the system's repository (josh-360 only today); josh otherwise.
+`agent` when the registry system that holds the repository's bare name has `merges: agent` (only josh-360 today);
+`josh` otherwise, an unknown repository included. It reads the registry and nothing else.
 
-Outcomes: agent, josh.
-Inputs arrive as GRAPH_INPUT_<NAME>; prints one JSON line (graphs/CONVENTION.md, "Gate scripts").
-Until it is built it refuses, so no run can pass through it by accident.
+Outcomes: agent, josh. Inputs: repo.
 """
-import sys
+from lib import dev_git
+from lib.gate_run import execute, need
 
-sys.exit("merge-rule: not built yet (JP-115)")
+
+def run(inputs, deps):
+    repo = need(inputs, "repo")
+    rule = dev_git.merges_for(deps.registry_path, repo)
+    return rule, None, "{} merges {}".format("the graph" if rule == "agent" else "Josh", repo)
+
+
+if __name__ == "__main__":
+    execute(run, ["repo"])
