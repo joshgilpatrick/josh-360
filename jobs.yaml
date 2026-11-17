@@ -115,3 +115,10 @@ jobs:
     timeout: 5m
     report: true
     description: JP-119. Compares what runs on the laptop with the macbook-automations startup list and laptop/launchd-register.json, and reports any difference. Job labels and counts only; changes nothing.
+
+  - id: agent-manager-probe
+    run: scripts/agent_manager_probe_job.py
+    every: 10m
+    timeout: 5m
+    report: true
+    description: JP-117, temporary. Finds out whether a laptop job can start an Agent Manager session and whether a detached child outlives a pass, before the graph runner is built on either. Starts one throwaway session named "JP-117 probe - safe to archive". Reports help text, exit codes, field names and statuses only. Removed by the runner's build.
