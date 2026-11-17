@@ -157,6 +157,7 @@ AD runs Ready, Design/Planning, In Progress, Code Review, Validation and Done, a
 - Never delete an issue, an epic or a comment; cancel instead.
 - Read every write back and report the key and the status Jira returns.
 - Comments that record progress use `result | evidence | next gate`.
+- A comment written by a script or an agent on the system's behalf starts with the robot emoji (action-triage's agent header already does; Josh 360 scripts use `🤖 Josh 360 · <script>`). Josh 360 passes new ticket comments to the sessions working on the ticket (JP-118) and skips every comment that starts this way, so the system's own comments are not echoed back.
 - Changing Jira's own configuration (workflows, fields, automation) is not part of these conventions.
 
 ## Checking the conventions files

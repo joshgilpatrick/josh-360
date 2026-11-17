@@ -54,7 +54,12 @@ def no_call(prompt, attempt):
 
 
 class Summaries(LedgerCase):
-    tfile, start, end = rec.Recorder.tfile, rec.Recorder.start, rec.Recorder.end  # the recorder tests' helpers
+    tfile, end = rec.Recorder.tfile, rec.Recorder.end  # the recorder tests' helpers
+
+    def start(self, *args, started_by="josh", **kw):
+        """Josh's own sessions: a walker's session is part of a graph run and earns a debrief (JP-113), which
+        tests/test_ledger_debrief.py covers."""
+        return rec.Recorder.start(self, *args, started_by=started_by, **kw)
 
     def setUp(self):
         super().setUp()
@@ -81,7 +86,10 @@ class Summaries(LedgerCase):
         self.run_pass()
 
     def summarise(self, call, **kw):
-        return summary.summarise_pending(self.conn, NOW, call=call, claude_home=self.claude_home, **kw)
+        # No thresholds: these tests are about the summary, and the STATE.md they use has a U-turn, which would earn a
+        # debrief (tests/test_ledger_debrief.py covers that).
+        form = {"form_version": "t", "status": "provisional", "max_moments": 5, "friction_thresholds": {}}
+        return summary.summarise_pending(self.conn, NOW, call=call, claude_home=self.claude_home, form=form, **kw)
 
     def lines(self, episode=None):
         sql = "SELECT lines FROM session_summaries" + (" WHERE episode = {}".format(episode) if episode else "")
@@ -186,7 +194,7 @@ class Summaries(LedgerCase):
         tr.write(self.tfile(), transcript(), mtime=rec.NOW_EPOCH - 600)
         self.run_pass()
         self.assertEqual(self.summarise(no_call), {"copied": 0, "model": 0, "calls": 0, "failed": 0, "waiting": 0,
-                                                    "skipped": 0})
+                                                    "skipped": 0, "debriefs": 0, "rejected": 0})
 
     # -- the limit -----------------------------------------------------------------------------------------
 
@@ -266,7 +274,8 @@ class Summaries(LedgerCase):
         self.assertEqual(self.summarise(model, state=state)["failed"], 1)
         self.assertEqual(model.attempts, [0, 1])  # the second try uses the tier's next model
         self.assertEqual(self.summarise(model, state=state), {"copied": 1, "model": 0, "calls": 0, "failed": 0,
-                                                              "waiting": 0, "skipped": 0})
+                                                              "waiting": 0, "skipped": 0, "debriefs": 0,
+                                                              "rejected": 0})
         self.assertEqual(len(model.prompts), 2)  # a third is never made
         self.assertEqual(self.rows("SELECT method FROM session_summaries"), [("copied",)])
         self.assertEqual(state["attempts"], {})

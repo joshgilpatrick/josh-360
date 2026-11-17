@@ -1,0 +1,18 @@
+{
+  "_about": "The session debrief form (JP-113). The kinds and endings are in codes.json (debrief_kinds, debrief_ended_how). status is provisional until `python3 ledger/debrief.py finalise-form` has run on at least two weeks of real friction-fact rows; it then records the final lists and that date range in `final` and moves form_version from 1-provisional to 1. friction_thresholds say when a session's facts show friction (an episode earns a debrief when any fact reaches its number); they are starting values, and Josh may edit them.",
+  "form_version": "1-provisional",
+  "status": "provisional",
+  "max_moments": 5,
+  "min_days_of_rows": 14,
+  "friction_thresholds": {
+    "josh_interrupts": 1,
+    "repeat_failed_commands": 1,
+    "failed_commands": 5,
+    "context_exhausted": 1,
+    "compactions": 2,
+    "u_turns": 1,
+    "dead_ends": 1,
+    "josh_messages_unprompted": 4
+  },
+  "final": null
+}

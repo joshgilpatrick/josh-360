@@ -317,10 +317,10 @@ Hooks and scripts write the facts, never a working agent (vision guardrail 1). H
 | `branch_marks` | `ledger/ask.py keep`, which Josh runs | JP-109 |
 | `ticket_offers`, `ticket_links` (offer) | The offer hook, through the spool | JP-110 |
 | `session_facts`, `session_usage` | The friction script (`ledger/friction.py`, written by the recorder with each episode; `ledger-friction-catchup` once for older ones) | JP-112 |
-| `debriefs`, `debrief_moments` | The debrief script, sharing the summary's call | JP-113 |
+| `debriefs`, `debrief_moments` | The debrief script (`ledger/debrief.py`), sharing the summary's call (`ledger/summary.py`) | JP-113 |
 | `graph_runs`, `step_runs`, `step_results`, `run_files`, `run_ends`, `asks`, `ticket_links` (walker) | The walker | JP-114 |
 | `decisions`, `decision_events`, `category_stages`, `memory_lookups` | The decision command (stage changes only from Josh's own command) | JP-116 |
-| `comment_deliveries` | The comment relay | JP-118 |
+| `comment_deliveries` | The comment relay (`ledger/comments.py`) | JP-118 |
 | `graph_runs` for `pr-audit`, `ticket_links` (daemon) | action-triage's daemon, once it moves onto the ledger | JP-124 |
 | `corrections` | `ledger/correct.py` | JP-107 |
 | `redactions` | `ledger/redact.py`, Josh only | JP-107 |
@@ -594,7 +594,7 @@ The test file also checks that the schema loads into an empty database, that eve
 - A cloud database, and merging two machines' ledgers (phase 3).
 - The upload of backups to Azure (JP-150, [Storage](#storage)).
 - Cloud sessions, by Josh's decision (JP-149, [Summary](#summary)).
-- The final lists of friction facts and debrief kinds, settled from two weeks of real rows (JP-112, JP-113); `ledger/codes.json` holds the starting lists.
+- The final lists of friction facts and debrief kinds, settled from two weeks of real rows (JP-112, JP-113); `ledger/codes.json` holds the starting lists. The debrief form ships as `1-provisional` and `python3 ledger/debrief.py finalise-form` (JP-113) records the final lists with the date range of the rows once they cover 14 days; that run is owed on the laptop.
 - The layout of `cache.db` beyond which existing tables go there (JP-111).
 
 ## Choices made

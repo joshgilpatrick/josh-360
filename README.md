@@ -17,7 +17,7 @@ The requirements are in [`docs/vision-and-roadmap.md`](docs/vision-and-roadmap.m
 | Path | What it holds |
 | --- | --- |
 | `AGENTS.md` | The instructions every agent session reads first (`CLAUDE.md` links to it). |
-| `apps/` | Runnable parts, moved in from Session Atlas and action-triage later. |
+| `apps/` | Runnable parts. `apps/session-atlas` (JP-111) is the headless Session Atlas; action-triage comes later. |
 | `ledger/` | The ledger and its data model. |
 | `graphs/` | The agent graphs and the walker. |
 | `conventions/` | Ticket conventions, the system registry and the standing priorities. |

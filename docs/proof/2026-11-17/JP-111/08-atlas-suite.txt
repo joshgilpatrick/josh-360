@@ -1,0 +1,10 @@
+# tests 1075
+# suites 32
+# pass 1058
+# fail 0
+# skipped 17
+# tests 1075
+# pass 1062
+# fail 0
+# skipped 13
+(run as a non-root user in the cloud container; the 4 extra passes are permission-bit tests that skip as root)

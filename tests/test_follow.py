@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import unittest
 
 from helpers import PY, LaptopCase, run
@@ -34,15 +35,17 @@ class FollowTest(LaptopCase):
         self.assertEqual(set(status["counts"]), {"changed", "unchanged", "problems"})
         # It holds no file contents: one small status file, nothing from the repo, plus the reports of
         # report jobs (JP-96's one-time inventory: names, paths, sizes and counts only; JP-100's one-time
-        # focus dashboard retirement, which reports "not loaded" here because launchctl is a stub; JP-107's
-        # one-time ledger backfill and JP-112's one-time friction catch-up, whose reports are counts only, and which find
-        # nothing in the made-up home).
+        # focus dashboard retirement, which reports "not loaded" here because launchctl is a stub; JP-111's old Atlas
+        # retirement and its launchd service job, which only ever talk to that stub; JP-107's one-time ledger backfill
+        # and JP-112's one-time friction catch-up, whose reports are counts only, and which find nothing in the
+        # made-up home).
         tree = self.status_tree()
         self.assertEqual([p for p in tree if not p.startswith("reports/")], ["status.json"])
         self.assertEqual([p for p in tree if p.startswith("reports/")],
                          ["reports/inventory.json", "reports/ledger-backfill.json",
                           "reports/ledger-friction-catchup.json", "reports/ledger-upload.json",
-                          "reports/retire-focus-dashboard.json"])
+                          "reports/retire-focus-dashboard.json", "reports/retire-session-atlas.json",
+                          "reports/session-atlas-service.json", "reports/ticket-comments.json"])
         # And the reader a cloud session uses prints it.
         shown = self.laptop("status.py", "show", check=True)
         self.assertIn(merged, shown.stdout)
@@ -52,7 +55,11 @@ class FollowTest(LaptopCase):
         self.laptop("run_jobs.py", check=True)
         calls = self.launchctl_log.read_text().splitlines() if self.launchctl_log.exists() else []
         self.assertTrue(calls, "the retire job should have asked the stub launchctl whether the job is loaded")
-        self.assertTrue(all(c.startswith("print ") for c in calls), calls)
+        self.assertTrue(all(c.startswith(("print ", "bootstrap ", "kickstart ")) for c in calls), calls)
+        # Only the new Atlas service is ever loaded, and only into the made-up home.
+        self.assertEqual([c for c in calls if c.startswith("bootstrap ")],
+                         ["bootstrap gui/{} {}".format(os.getuid(), self.home / "Library" / "LaunchAgents"
+                                                       / "com.josh360.session-atlas.plist")])
 
     def test_nothing_new_is_not_pushed_again(self):
         self.laptop("follow.py", check=True)

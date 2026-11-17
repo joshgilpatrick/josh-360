@@ -26,7 +26,10 @@ Known events: `SessionStart`, `SessionEnd`, `UserPromptSubmit`, `PreToolUse`, `P
 | File | Event | What it does | Ticket |
 | --- | --- | --- | --- |
 | `SessionStart/20-ledger-spool`, `SessionEnd/20-ledger-spool` | SessionStart, SessionEnd | Append one line to the ledger spool. | JP-107 |
+| `PreToolUse/10-atlas-removal-guard` | PreToolUse | For the Bash tool only, runs Session Atlas's worktree removal guard (`apps/session-atlas/hooks/atlas-removal-guard.js`): `git worktree remove` of a linked worktree is allowed only when Atlas's removal check says nothing is at risk. It exits 2 to block and fails closed. It prints nothing when it allows. | JP-111 |
+| `PostToolUse/40-jira-session-link` | PostToolUse | When a `jira workitem` transition or comment names an issue key, records the link in the cost tables of `cache.db`. Prints nothing; always exits 0. | JP-111 |
 | `PreToolUse/30-ticket-offer` | PreToolUse | At a session's first commit or first new branch with no ticket linked, tells the agent to offer a ticket in one line. Once per session; never blocks. It prints JSON (`additionalContext`) only when it offers, so any later `PreToolUse` hook that also prints JSON would be ignored for that call. | JP-110 |
+| `PostToolUse/40-ticket-comments`, `UserPromptSubmit/40-ticket-comments` | PostToolUse, UserPromptSubmit | Print the session's waiting ticket comments as `additionalContext` (labelled as information, not an instruction) and mark them read. They read only the session's own inbox folder, never open the ledger, and print nothing when there is none. `PostToolUse` reaches a session between tool calls, `UserPromptSubmit` one that is waiting for Josh. | JP-118 |
 
 ## Rules for a hook
 
