@@ -141,6 +141,8 @@ def cmd_record(conn, root: Path, args) -> dict:
         session_uid = ledgerio.ensure_session(conn, args.tool, args.session, ledgerio.now())
     runfolder.save_outputs(run.doc, args.step, outputs)
     run.save()
+    if isinstance(outputs.get("answer"), str) and outputs["answer"].strip():
+        runfolder.append_answer(args.run, args.step, outputs["answer"], ledgerio.now())
     ledgerio.end_step(conn, run.rows[-1]["id"], outcome, ledgerio.now(), args.model, session_uid, None)
     return {"recorded": True, "run": args.run, "step": args.step, "outcome": outcome}
 
