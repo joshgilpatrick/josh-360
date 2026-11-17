@@ -194,6 +194,7 @@ def cmd_status(conn, root: Path, args) -> dict:
         "end": ledgerio.run_end(conn, args.run), "stopped": run.doc.get("stopped"),
         "steps": [{k: r[k] for k in ("step", "attempt", "outcome", "allowed")} for r in run.rows],
         "runs": dict(st.runs), "loops": {"{}->{}".format(a, b): n for (a, b), n in sorted(st.loops.items())},
+        "waiting": run.doc.get("waiting"),
         "jira_status": run.doc.get("jira_status"), "flag_on": bool(run.doc.get("flag_on"))}
 
 
