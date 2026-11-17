@@ -35,6 +35,7 @@ class Meta:
     compactions: int = 0
     turns: int = 0
     is_sidechain: bool = False
+    start_offset: int = 0
     end_offset: int = 0
     skipped_lines: int = 0
     lines_read: int = 0
@@ -74,7 +75,7 @@ def subagent_of(path: Path) -> Optional[Tuple[str, str]]:
 
 def read_meta(path: Path, since_offset: int = 0) -> Meta:
     """The metadata of the lines from since_offset on. end_offset is where the next read should start."""
-    meta = Meta(end_offset=since_offset)
+    meta = Meta(start_offset=since_offset, end_offset=since_offset)
     sidechain = main = 0
     with path.open("rb") as f:
         f.seek(since_offset)

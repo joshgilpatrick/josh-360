@@ -1,0 +1,76 @@
+session_facts (code, value) written for one made-up session started by Josh:
+  compactions                  1
+  context_first_turn_pct       25
+  failed_commands              3
+  josh_interrupts              1
+  josh_messages_answer         2
+  josh_messages_unprompted     2
+  max_reads_of_one_file        3
+  repeat_failed_commands       1
+  seconds_waiting_on_josh      540
+  seconds_working              660
+session_usage (kind, name, loaded, uses):
+  agent       Explore                            1 1
+  mcp-server  github                             1 1
+  skill       superpowers:brainstorming          1 1
+  tool        Agent                              1 1
+  tool        AskUserQuestion                    1 1
+  tool        Bash                               1 4
+  tool        Read                               1 4
+  tool        Skill                              1 1
+columns of session_facts: ['id', 'session_uid', 'episode', 'fact', 'value', 'recorded_at', 'recorded_by']
+columns of session_usage: ['id', 'session_uid', 'episode', 'item_kind', 'item_name', 'loaded', 'uses', 'recorded_at', 'recorded_by']
+made-up message, command and file text found anywhere in the ledger: none
+python3 ledger/measures.py headline --since 2026-11-10 --until 2026-11-17 --finished JP-901   (exit 0)
+{
+  "finished_from": {
+    "given": 1,
+    "graph_runs": 2
+  },
+  "first_time_signoff": {
+    "first_time": 3,
+    "measure": "first-time-signoff",
+    "prs": {
+      "first_time": 1,
+      "signed_off": 2
+    },
+    "share": 0.75,
+    "signed_off": 4,
+    "since": "2026-11-10T00:00:00Z",
+    "ticket_runs": {
+      "first_time": 2,
+      "signed_off": 2
+    },
+    "until": "2026-11-18T00:00:00Z"
+  },
+  "josh_messages_per_finished_ticket": {
+    "answers": 3,
+    "finished_tickets": 2,
+    "messages": 8,
+    "unprompted": 5,
+    "value": 4.0
+  },
+  "measure": "headline",
+  "since": "2026-11-10T00:00:00Z",
+  "status_unknown": [],
+  "tickets": [
+    {
+      "answers": 2,
+      "messages": 6,
+      "sessions": 2,
+      "ticket": "JP-900",
+      "unprompted": 4
+    },
+    {
+      "answers": 1,
+      "messages": 2,
+      "sessions": 1,
+      "ticket": "JP-901",
+      "unprompted": 1
+    }
+  ],
+  "truncated": false,
+  "unattributed_messages": 5,
+  "until": "2026-11-18T00:00:00Z"
+}
+

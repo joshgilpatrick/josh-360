@@ -1,0 +1,14 @@
+test_light_todo_to_one_ticket (test_ticket_creation_run.ALightRequestBecomesOneTicket.test_light_todo_to_one_ticket) ... ok
+test_nothing_is_written_before_approval (test_ticket_creation_run.ALightRequestBecomesOneTicket.test_nothing_is_written_before_approval) ... ok
+test_the_created_ticket_is_not_ready_and_carries_its_authors (test_ticket_creation_run.ALightRequestBecomesOneTicket.test_the_created_ticket_is_not_ready_and_carries_its_authors) ... ok
+test_a_finished_duplicate_gets_a_new_ticket_linked_to_it (test_ticket_creation_run.DuplicatesAndHomes.test_a_finished_duplicate_gets_a_new_ticket_linked_to_it) ... ok
+test_an_open_duplicate_gets_a_comment_and_no_ticket (test_ticket_creation_run.DuplicatesAndHomes.test_an_open_duplicate_gets_a_comment_and_no_ticket) ... ok
+test_when_no_rule_gives_a_home_josh_is_asked_and_nothing_is_written (test_ticket_creation_run.DuplicatesAndHomes.test_when_no_rule_gives_a_home_josh_is_asked_and_nothing_is_written) ... ok
+test_a_pointer_that_is_text_never_starts_a_run (test_ticket_creation_run.LimitsAndRepeats.test_a_pointer_that_is_text_never_starts_a_run) ... ok
+test_draft_runs_are_capped_at_three_and_the_fourth_goes_to_stuck (test_ticket_creation_run.LimitsAndRepeats.test_draft_runs_are_capped_at_three_and_the_fourth_goes_to_stuck) ... ok
+test_the_same_item_is_not_filed_twice (test_ticket_creation_run.LimitsAndRepeats.test_the_same_item_is_not_filed_twice) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 6.098s
+
+OK

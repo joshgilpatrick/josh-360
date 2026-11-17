@@ -143,6 +143,19 @@ class Limits(WalkerCase):
         self.assertEqual(rows[("review", 3)][4], 1)
         self.assertEqual(rows[("review", 2)][4], 0)
 
+    def test_a_step_that_runs_again_is_told_what_the_later_steps_found(self):
+        self.plan({"check-review": ["rework", "clean"]})
+        run = self.start()
+        self.walk_to_review(run)
+        first = self.do_role(run, "build", "done")
+        self.assertNotIn("so_far", first)                      # the first run has nothing to add
+        self.do_role(run, "review", "defects", {"defects": ["missing test"]})
+        again = self.do_role(run, "build", "done")
+        self.assertEqual(again["attempt"], 2)
+        self.assertEqual(again["so_far"]["defects"], ["missing test"])
+        for name in again["inputs"]:                           # what the step already gets is not repeated
+            self.assertNotIn(name, again["so_far"])
+
     def test_declining_at_the_limit_moves_on_without_the_extra_round(self):
         self.plan({"check-review": ["rework"]})
         run = self.start()

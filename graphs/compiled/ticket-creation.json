@@ -182,7 +182,11 @@
     ],
     "outputs": {
      "match_key": {
-      "description": "The open match, or the Done or Cancelled one to link",
+      "description": "The open match, or the Done or Cancelled one to link; none when there is no match",
+      "type": "string"
+     },
+     "match_status": {
+      "description": "The match's status, or none",
       "type": "string"
      }
     }
@@ -241,7 +245,10 @@
     "inputs": [
      "proposal",
      "source",
-     "source_ref"
+     "source_ref",
+     "intake_record",
+     "route",
+     "candidates"
     ],
     "needs": [
      "draft"
@@ -257,7 +264,17 @@
      "pass",
      "fixable",
      "needs_josh"
-    ]
+    ],
+    "outputs": {
+     "card": {
+      "description": "The approval card's text, or the gap question for Josh",
+      "type": "string"
+     },
+     "problems": {
+      "description": "What is missing or wrong, by ticket and section; never quotes the source",
+      "type": "list"
+     }
+    }
    },
    {
     "ask": {
@@ -341,7 +358,9 @@
     "id": "write",
     "inputs": [
      "proposal",
-     "match_key"
+     "match_key",
+     "source",
+     "source_ref"
     ],
     "needs": [
      "approve"
@@ -359,6 +378,10 @@
      "partial"
     ],
     "outputs": {
+     "missing": {
+      "description": "Tickets or links not yet confirmed, by proposal reference",
+      "type": "list"
+     },
      "ticket_keys": {
       "description": "Created keys, parent first",
       "type": "list"
@@ -385,7 +408,8 @@
     "inputs": [
      "source",
      "source_ref",
-     "ticket_keys"
+     "ticket_keys",
+     "match_key"
     ],
     "needs": [
      "write"
@@ -429,7 +453,7 @@
   }
  },
  "sources": {
-  "flows/ticket-creation.yaml": "6825fad4746510fa0b9b8a2f780ea7b2e61bb0697b3f7ce49a771965e5523602",
+  "flows/ticket-creation.yaml": "9ccd46dce61609fd36718158ce0972f4ac2dfa8b3b309adb3434beabe1d361db",
   "roles/decomposer/role.yaml": "22903280b9f5f22c2245714ddd0834905ea2f9d547d7b31b67df1d2b3808eb44",
   "roles/intake-reader/role.yaml": "e120fdcec4b38156d0e0bd8b16b8f6d8f3fd1bd8180e7f53bc9e385637fa236a",
   "roles/jira-searcher/role.yaml": "465f5d9a7010810b7ae11e05a55486eb025ee68b021c4a8397ec1cdefc8e1634",

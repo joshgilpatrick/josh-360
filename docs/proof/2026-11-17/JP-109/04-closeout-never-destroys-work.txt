@@ -1,0 +1,6 @@
+test_closeout_never_destroys_work (tests.test_closeout.Closeout.test_closeout_never_destroys_work) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.881s
+
+OK
