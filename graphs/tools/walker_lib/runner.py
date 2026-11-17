@@ -292,6 +292,10 @@ def run_action(run: Run, act: engine.Action, attempt: int) -> Dict[str, object]:
     }
     if out["agent"]:
         out["agent_folder"] = str(g.root / "agents" / out["agent"])
+    if attempt > 1:
+        # A step that loops back (a draft after a failed check) needs what the steps after it found. The checker keeps
+        # a step's declared inputs to its ancestors' outputs, so the rest comes here, named, and only on a re-run.
+        out["so_far"] = {n: v for n, v in values.items() if n not in names}
     return out
 
 
