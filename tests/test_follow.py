@@ -35,12 +35,13 @@ class FollowTest(LaptopCase):
         # It holds no file contents: one small status file, nothing from the repo, plus the reports of
         # report jobs (JP-96's one-time inventory: names, paths, sizes and counts only; JP-100's one-time
         # focus dashboard retirement, which reports "not loaded" here because launchctl is a stub; JP-107's
-        # one-time ledger backfill, whose report is counts only, and which finds nothing in the made-up home).
+        # one-time ledger backfill and JP-112's one-time friction catch-up, whose reports are counts only, and which find
+        # nothing in the made-up home).
         tree = self.status_tree()
         self.assertEqual([p for p in tree if not p.startswith("reports/")], ["status.json"])
         self.assertEqual([p for p in tree if p.startswith("reports/")],
                          ["reports/inventory.json", "reports/ledger-backfill.json",
-                          "reports/retire-focus-dashboard.json"])
+                          "reports/ledger-friction-catchup.json", "reports/retire-focus-dashboard.json"])
         # And the reader a cloud session uses prints it.
         shown = self.laptop("status.py", "show", check=True)
         self.assertIn(merged, shown.stdout)
