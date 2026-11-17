@@ -268,6 +268,9 @@ def conclude(run: Run) -> Dict[str, object]:
                                       item["path"], item["sha256"], ledgerio.now())
             ledgerio.end_run(run.conn, run.run_id, ended, g.end_score(ended), ledgerio.now())
     set_flag(run, False)
+    if run.doc.get("ended") != ended:
+        run.doc["ended"] = ended  # an entry gate (ticket-creation's intake-admitted) tells open runs from ended ones
+        run.save()
     return {"action": "done", "run": run.run_id, "end": ended, "score": g.end_score(ended)}
 
 
