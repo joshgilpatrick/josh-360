@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import List, Optional
 
 FIRST_WAVE = ("email", "todo", "session", "manual")
+WITH_STORE = ("email", "todo", "notion")      # a session or a hand-typed request has no store that can carry a key
 KEY = re.compile(r"^[A-Z][A-Z0-9]+-[1-9][0-9]*$")
 TICKET_REF = re.compile(r"^ticket:([A-Z][A-Z0-9]+-[1-9][0-9]*)$")
 
