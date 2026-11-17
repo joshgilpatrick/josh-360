@@ -1,6 +1,7 @@
 # Josh's standing priorities (JP-98). Josh edits this file by hand.
 #
-# The six he is answerable for, as he named them at a leadership forum, plus DevEx (shown only in Josh 360)
+# The six he is answerable for, as he named them at a leadership forum, and a seventh he added at the JP-106
+# sitting (Internal Systems & Applications), plus DevEx (shown only in Josh 360)
 # and Unassigned (what is left over, kept honest so time outside the six can be counted). Nothing is forced
 # into a bucket: work that matches none of the links below is Unassigned.
 #
@@ -13,12 +14,12 @@
 # to priorities does, and it picks from this list. Weekly priorities are not here: Josh marks them in Jira.
 # Check after every edit: python3 scripts/conventions.py check
 #
-# kind:      standing (one of the six), devex or unassigned.
-# shown_to:  department (the six) or josh (DevEx and Unassigned appear only in Josh 360).
+# kind:      standing (one of the seven), devex or unassigned.
+# shown_to:  department (the seven) or josh (DevEx and Unassigned appear only in Josh 360).
 # covers:    areas (names from conventions/registry.yaml), initiatives (TECH keys) and epics.
 #
 # The covers lists were seeded on 16 November 2026 from the open epics in AD, CI and JP and the initiatives in
-# TECH. Josh confirms them at JP-106. A priority with empty lists is real; nothing in Jira is tied to it yet.
+# TECH. Josh reviewed the unassigned systems at JP-106 (16 November 2026; docs/decisions.md). A priority with empty lists is real; nothing in Jira is tied to it yet.
 
 version: 1
 
@@ -78,6 +79,17 @@ priorities:
     kind: standing
     rank: 6
     shown_to: department
+    covers:
+      areas: []
+      initiatives: []
+      epics: []
+
+  - id: internal-systems-applications
+    name: Internal Systems & Applications
+    kind: standing
+    rank: 7
+    shown_to: department
+    notes: Added by Josh at the JP-106 sitting. Covers the shared function app and Zus through the registry.
     covers:
       areas: []
       initiatives: []
