@@ -44,7 +44,7 @@ def _write(path: Path, doc: dict) -> None:
 
 def create(run_id: str, doc: dict) -> None:
     base = folder(run_id)
-    for sub in ("results", "outputs", "saved"):
+    for sub in ("results", "outputs", "saved", "work"):
         (base / sub).mkdir(parents=True, exist_ok=True)
     _write(base / "run.json", doc)
 
@@ -60,6 +60,19 @@ def load(run_id: str) -> dict:
 
 def save(run_id: str, doc: dict) -> None:
     _write(folder(run_id) / "run.json", doc)
+
+
+def work_dir(run_id: str) -> Path:
+    """The run's working files (spec, evidence, feedback, answers). Outside every repository, like the run folder."""
+    return folder(run_id) / "work"
+
+
+def append_answer(run_id: str, step: str, text: str, when: str) -> None:
+    """Add an answer to work/answers.md, where the next session that needs it reads it."""
+    path = work_dir(run_id) / "answers.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(str(path), "a", encoding="utf-8") as handle:
+        handle.write("## {} \u00b7 {}\n\n{}\n\n".format(step, when, text.strip()))
 
 
 def result_file(run_id: str, step: str, attempt: int) -> Path:
@@ -79,11 +92,15 @@ def read_result(path: Path) -> Dict[str, object]:
     return {"outcome": doc["outcome"], "outputs": outputs}
 
 
-def values(doc: dict) -> Dict[str, object]:
-    """Input values, then step outputs (a later output of the same name wins)."""
+def values(doc: dict, order: Optional[List[str]] = None) -> Dict[str, object]:
+    """Input values, then step outputs in `order` (a later step's output of the same name wins). Steps not in `order`
+    come before those that are. run.json is saved with sorted keys, so without `order` the winner would be the
+    alphabetically last step, not the one that finished last."""
     merged = dict(doc.get("inputs", {}))
-    for outputs in doc.get("outputs", {}).values():
-        merged.update(outputs)
+    outputs = doc.get("outputs", {})
+    ranked = [step for step in (order or []) if step in outputs]
+    for step in [s for s in outputs if s not in ranked] + ranked:
+        merged.update(outputs[step])
     return merged
 
 
@@ -95,8 +112,9 @@ def sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def files_to_save(graph, doc: dict) -> List[dict]:
-    """Step outputs that name an existing file, with the kind their contract gives them."""
+def files_to_save(graph, doc: dict, run_id: Optional[str] = None) -> List[dict]:
+    """Step outputs that name an existing file, with the kind their contract gives them, then the work folder's
+    hardening.md and feedback/*.md (kept with no step row)."""
     found = []
     for step in graph.order:
         declared = graph.steps[step].get("outputs") or {}
@@ -105,6 +123,11 @@ def files_to_save(graph, doc: dict) -> List[dict]:
                 continue
             contract = (declared.get(name) or {}).get("contract")
             found.append({"step": step, "name": name, "path": value, "kind": SAVED_KINDS.get(contract, "output")})
+    if run_id:
+        work = work_dir(run_id)
+        for path in [work / "hardening.md"] + sorted((work / "feedback").glob("*.md")):
+            if path.is_file():
+                found.append({"step": "work", "name": path.stem, "path": str(path), "kind": "feedback"})
     return found
 
 
