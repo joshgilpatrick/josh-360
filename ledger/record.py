@@ -98,15 +98,15 @@ def _info(state: Dict[str, object], sid: str) -> Dict[str, object]:
     return state["sessions"].setdefault(sid, {})  # type: ignore[index,union-attr]
 
 
-def _find_transcripts(projects: Path, now_epoch: int) -> Dict[str, Path]:
+def _find_transcripts(projects: Path, now_epoch: int, days: Optional[int] = DISCOVER_DAYS) -> Dict[str, Path]:
     """tool_session_id -> transcript, for main sessions and subagents. A subagent's id is <parent>+<agent id>."""
     found: Dict[str, Path] = {}
     if not projects.is_dir():
         return found
-    cutoff = now_epoch - DISCOVER_DAYS * 86400
+    cutoff = now_epoch - days * 86400 if days is not None else None
     for path in list(projects.glob("*/*.jsonl")) + list(projects.glob("*/*/subagents/agent-*.jsonl")):
         try:
-            if path.stat().st_mtime < cutoff:
+            if cutoff is not None and path.stat().st_mtime < cutoff:
                 continue
         except OSError:
             continue
@@ -188,24 +188,40 @@ def _record_session(conn, state, sid, path: Path, now: str, now_epoch: int, git:
     if not (ended_at or stale):
         return  # still working: nothing is written, and the next pass reads the same lines again
 
-    folder = meta.cwd or info.get("cwd")
-    began = meta.first_at or info.get("started_at") or now
+    write_episode(conn, sid, path, meta, ended_at=ended_at, cwd_hint=info.get("cwd"),
+                  started_hint=info.get("started_at"), now=now, git=git, jira=jira, conv=conv, counts=counts,
+                  cost_db=cost_db, claude_home=claude_home)
+    counts["skipped"] += meta.skipped_lines
+    info["offset"] = meta.end_offset
+    info["last_ended_at"], info["ended_at"] = info.get("ended_at"), None  # a subagent read later still sees it
+
+
+def write_episode(conn, sid: str, path: Path, meta, *, ended_at: Optional[str], now: str, git: GitRun, jira,
+                  conv: dict, counts: Dict[str, int], cost_db=None, claude_home: Optional[Path] = None,
+                  cwd_hint: Optional[str] = None, started_hint: Optional[str] = None, by: str = BY,
+                  source: str = "transcript", title_hint=(None, None)) -> None:
+    """Write one episode of one session, with its refs, ticket link, cost, notes, facts and home, in one
+    transaction. The recorder calls it when a session goes quiet; the backfill calls it once per old transcript
+    (source "backfill"). `title_hint` is a (title, source) another system holds, used when the transcript and the cost
+    ledger have none. A session with no row yet gets one (started_by unknown, or its parent's for a subagent)."""
+    sub = transcript.subagent_of(path)
+    parent_sid = sub[0] if sub else None
+    folder = meta.cwd or cwd_hint
+    began = meta.first_at or started_hint or now
     last = meta.last_at or began
     quiet = ended_at if ended_at and ended_at >= last else _stamp(_epoch(last) + QUIET_AFTER_SECONDS)
     phi = not homes.keeps_words(folder)
     title, title_source = transcript.best_title(meta.titles)
+    if title is None and title_source is None and cost_db is not None:  # the cost ledger may know a title
+        title, title_source = costs.session_title(cost_db, sid)
+    if title is None and title_source is None:
+        title, title_source = title_hint
     if title is not None:
         title, withheld = short_text(title, 120, phi=phi)
         if withheld or title is None:
             title, title_source = None, "withheld"
     elif phi:
         title_source = "withheld"
-    if title is None and title_source is None and cost_db is not None:  # the cost ledger may know a title
-        found, found_source = costs.session_title(cost_db, sid)
-        if found is not None:
-            title, withheld = short_text(found, 120, phi=phi)
-            title_source = "withheld" if withheld or title is None else found_source
-            title = None if title_source == "withheld" else title
     facts = _git_facts(git, folder, meta.branch, began, quiet)
     started_by = "unknown"
     row = conn.execute("SELECT session_uid, started_by FROM sessions WHERE tool_session_id = ?", (sid,)).fetchone()
@@ -216,9 +232,9 @@ def _record_session(conn, state, sid, path: Path, now: str, now_epoch: int, git:
             parent_row = conn.execute("SELECT session_uid, started_by FROM sessions WHERE tool_session_id = ?",
                                       (parent_sid,)).fetchone()
             parent_uid = parent_row[0] if parent_row else _ensure(
-                conn, counts, sid=parent_sid, now=now, by=BY, started_at=began, started_by="unknown")
+                conn, counts, sid=parent_sid, now=now, by=by, started_at=began, started_by="unknown")
             started_by = parent_row[1] if parent_row else "unknown"
-        uid = row[0] if row else _ensure(conn, counts, sid=sid, now=now, by=BY, started_at=began,
+        uid = row[0] if row else _ensure(conn, counts, sid=sid, now=now, by=by, started_at=began,
                                          started_by=started_by, folder=folder, transcript_path=str(path))
         if parent_uid:
             exists = conn.execute("SELECT 1 FROM session_lineage WHERE child_uid = ?", (uid,)).fetchone()
@@ -226,20 +242,20 @@ def _record_session(conn, state, sid, path: Path, now: str, now_epoch: int, git:
                 conn.execute(
                     "INSERT INTO session_lineage (child_uid, parent_uid, root_uid, kind, confidence, discovered_at, "
                     "recorded_by) VALUES (?, ?, ?, 'subagent', 'confirmed', ?, ?)",
-                    (uid, parent_uid, _lineage_root(conn, parent_uid), now, BY))
+                    (uid, parent_uid, _lineage_root(conn, parent_uid), now, by))
         episode = _next_episode(conn, uid)
         conn.execute(
             "INSERT INTO session_episodes (session_uid, episode, began_at, last_activity_at, quiet_at, end_reason, "
             "folder, git_root, repo, branch, worktree_path, title, title_source, turns, version, recorded_at, "
             "recorded_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)",
             (uid, episode, began, last, quiet, "session-end" if ended_at else "quiet", folder, facts["git_root"],
-             facts["repo"], meta.branch, meta.worktree, title, title_source, meta.turns, now, BY))
+             facts["repo"], meta.branch, meta.worktree, title, title_source, meta.turns, now, by))
         counts["episodes"] += 1
-        counts["refs"] += _write_refs(conn, uid, episode, meta, folder, facts, began, now)
+        counts["refs"] += _write_refs(conn, uid, episode, meta, folder, facts, began, now, source, by)
         if meta.branch and homes.TICKET_BRANCH.match(meta.branch):
-            _link_ticket(conn, uid, meta.branch, conv, now)
+            _link_ticket(conn, uid, meta.branch, conv, now, by)
         counts["costs"] += costs.copy_costs(conn, cost_db, uid, sid, now)
-        counts["refs"] += costs.copy_links(conn, cost_db, uid, sid, episode, now)
+        counts["refs"] += costs.copy_links(conn, cost_db, uid, sid, episode, now, by=by, source=source)
         if not sub:  # STATE.md belongs to a main session
             wrote = state_notes.copy_notes(conn, state_notes.state_file(sid, claude_home), uid, episode,
                                            not phi, now)
@@ -247,48 +263,45 @@ def _record_session(conn, state, sid, path: Path, now: str, now_epoch: int, git:
             for kind, fact in (("u-turn", "u_turns"), ("dead-end", "dead_ends")):
                 _fact(conn, uid, episode, fact, conn.execute(
                     "SELECT COUNT(*) FROM session_state_notes WHERE session_uid = ? AND episode = ? AND kind = ?",
-                    (uid, episode, kind)).fetchone()[0], now)
-        _fact(conn, uid, episode, "compactions", meta.compactions, now)
+                    (uid, episode, kind)).fetchone()[0], now, by)
+        _fact(conn, uid, episode, "compactions", meta.compactions, now, by)
         ep = {"episode": episode, "folder": folder, "repo": facts["repo"], "branch": meta.branch}
         if homes.write_home_if_changed(conn, homes.find_home(uid, ep, conn, conv, jira), now):
             counts["homes"] += 1
-    counts["skipped"] += meta.skipped_lines
-    info["offset"] = meta.end_offset
-    info["last_ended_at"], info["ended_at"] = info.get("ended_at"), None  # a subagent read later still sees it
 
 
-def _write_refs(conn, uid, episode, meta, folder, facts, observed, now) -> int:
+def _write_refs(conn, uid, episode, meta, folder, facts, observed, now, source="transcript", by=BY) -> int:
     repo = facts["repo"] or ""
     wanted = []
     if folder:
-        wanted.append(("folder", "", folder, "transcript"))
+        wanted.append(("folder", "", folder, source))
     if meta.branch:
-        wanted.append(("branch", repo, meta.branch, "transcript"))
+        wanted.append(("branch", repo, meta.branch, source))
     if meta.worktree:
-        wanted.append(("worktree", "", meta.worktree, "transcript"))
-    wanted += [("file", "", made, "transcript") for made in meta.files_created]
-    wanted += [("pr", pr_repo, url, "transcript") for url, pr_repo in meta.pr_urls]
+        wanted.append(("worktree", "", meta.worktree, source))
+    wanted += [("file", "", made, source) for made in meta.files_created]
+    wanted += [("pr", pr_repo, url, source) for url, pr_repo in meta.pr_urls]
     wanted += [("commit", repo, sha, "git") for sha in facts["commits"]]
     added = 0
-    for kind, ref_repo, value, source in wanted:
+    for kind, ref_repo, value, ref_source in wanted:
         before = conn.total_changes
         conn.execute(
             "INSERT OR IGNORE INTO session_refs (session_uid, episode, kind, repo, value, source, observed_at, "
             "recorded_at, recorded_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (uid, episode, kind, ref_repo, value, source, observed, now, BY))
+            (uid, episode, kind, ref_repo, value, ref_source, observed, now, by))
         added += conn.total_changes - before
     return added
 
 
-def _fact(conn, uid: str, episode: int, fact: str, value: int, now: str) -> None:
+def _fact(conn, uid: str, episode: int, fact: str, value: int, now: str, by: str = BY) -> None:
     """A friction fact for the episode, when it is above zero and not already written."""
     if value > 0 and not conn.execute("SELECT 1 FROM session_facts WHERE session_uid = ? AND episode = ? AND fact = ?",
                                       (uid, episode, fact)).fetchone():
         conn.execute("INSERT INTO session_facts (session_uid, episode, fact, value, recorded_at, recorded_by) "
-                     "VALUES (?, ?, ?, ?, ?, ?)", (uid, episode, fact, value, now, BY))
+                     "VALUES (?, ?, ?, ?, ?, ?)", (uid, episode, fact, value, now, by))
 
 
-def _link_ticket(conn, uid: str, branch: str, conv: dict, now: str) -> None:
+def _link_ticket(conn, uid: str, branch: str, conv: dict, now: str, by: str = BY) -> None:
     key = homes.TICKET_BRANCH.match(branch).group(1)
     tracker = homes._tracker_for(key, conv["registry"])
     if tracker is None:
@@ -297,7 +310,7 @@ def _link_ticket(conn, uid: str, branch: str, conv: dict, now: str) -> None:
                           (uid, key)).fetchone()
     if not exists:
         conn.execute("INSERT INTO ticket_links (session_uid, tracker, ticket_key, relation, source, linked_at, "
-                     "recorded_by) VALUES (?, ?, ?, 'touched', 'branch', ?, ?)", (uid, tracker, key, now, BY))
+                     "recorded_by) VALUES (?, ?, ?, 'touched', 'branch', ?, ?)", (uid, tracker, key, now, by))
 
 
 def record_pass(conn, *, now: str, spool: Path, projects: Path, git: GitRun, jira: Callable, conventions: dict,
