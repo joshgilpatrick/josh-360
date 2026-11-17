@@ -175,10 +175,10 @@ Solid arrows are the path of a ticket. Dashed lines mark where Josh steps in. Qu
 
 | Graph | Takes in | Produces | State of the design |
 | --- | --- | --- | --- |
-| Ticket creation | A forwarded email, a Notion action item, a to-do, or a session that crossed the ticket threshold | A complete ticket, or a parent with children | Notes exist |
-| Ticket triage and sign-off | A drafted ticket | A Ready ticket routed to the right path, or a ticket sent back for more input | Designed in phase 1, built in phase 2 |
-| Development pipeline | A Ready development ticket | A reviewed pull request | Built new from the 22-step draft, which had not yet run on a real ticket. The sprint skill keeps running until this graph replaces it. |
-| Non-development pipeline | A Ready non-development ticket | The deliverable, such as an answer, a file or a draft, with its sources | Notes exist |
+| Ticket creation | A forwarded email, a Notion action item, a to-do, or a session that crossed the ticket threshold | A complete ticket, or a parent with children | Designed in phase 1 (JP-102), built in phase 1 (JP-121) |
+| Ticket triage and sign-off | A drafted ticket | A Ready ticket routed to the right path, or a ticket sent back for more input | Designed in phase 1 (JP-103), built in phase 1 (JP-122) |
+| Development pipeline | A Ready development ticket | A reviewed pull request | Built new from the 22-step draft, which had not yet run on a real ticket. Built in phase 1 (JP-115). The sprint skill keeps running until this graph replaces it. |
+| Non-development pipeline | A Ready non-development ticket | The deliverable, such as an answer, a file or a draft, with its sources | Designed in phase 1 (JP-104), built in phase 1 (JP-123) |
 
 Everything with a deliverable becomes a ticket first. Process depth still matches the weight of the task, so "find a file and email it" gets a light ticket and a short path.
 
@@ -429,21 +429,22 @@ Five parts, in order. Each ends with something Josh can check in a few minutes.
 | 1. Inventory | Every background job, hook, data store, skill and memory mechanism on the work laptop, each with a verdict: keep, migrate, build new or dismantle. A feature list for action-triage and Session Atlas, each feature with its own verdict, on the understanding that most are kept and moved onto the shared foundation. A dismantling plan for whatever is retired. | Feeds the data model and the job consolidation |
 | 2. Repository as the home | The ticket conventions for Jira and Linear, the system registry, the priorities file and a map of every DevEx surface | Unified repository |
 | 3. Data model and ledger | One schema in place of the separate local databases. Session facts, summaries and links. The loose-ends check and the closeout agent. Decision records at stage one. | Unified data model |
-| 4. Graph convention and walker | The portable parts, the neutral graph file, the checker, the walker and the Agent Manager binding. The development pipeline runs as the first graph. The other three graphs are designed. | Source of truth for agent workflows |
+| 4. Graph convention and walker | The portable parts, the neutral graph file, the checker, the walker and the Agent Manager binding. All four graphs are built: the development pipeline runs first, then ticket creation, triage and sign-off, and the non-development pipeline. | Source of truth for agent workflows |
 | 5. Background jobs | Jobs folded in or switched off piece by piece, all started from one manifest | Consolidation of background processes |
 
 Two small tickets sit around these parts. The laptop is connected to josh-360 once, at the start, so that later installs arrive by merging. And every phase 1 design question is put to Josh in one sitting, after the design tickets are done.
 
-The gate to phase 2: the development pipeline carries a real ticket to a pull request, and the stores the ledger replaces are switched off and archived.
+The gate to phase 2: the development pipeline carries a real ticket to a pull request, a forwarded email becomes a signed-off deliverable in one run, and the stores the ledger replaces are switched off and archived.
+
+Josh moved every graph build into phase 1 on 16 November 2026 ("all graphs need to be phase 1"), and on 17 November moved the forwarded-email run into this gate and gave phase 2 the gate below (JP-147).
 
 ### Phase 2: the full pipeline
 
-- Ticket creation, triage and sign-off, and the non-development pipeline all run.
 - The "needs you" queue is in place.
 - Decision memory reaches stage two for the first categories of question.
 - action-triage and Session Atlas run on the shared foundation, with every feature the inventory marked to keep.
 
-The gate to phase 3: a forwarded email becomes a signed-off deliverable in one run.
+The gate to phase 3: action-triage is archived, with its kept features running in josh-360, and the weekly review has filed its first improvement ticket.
 
 ### Phase 3: reflection
 

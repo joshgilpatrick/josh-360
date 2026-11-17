@@ -233,4 +233,4 @@ Each gate script inserts `Path(__file__).resolve().parent` on `sys.path` and imp
 - [ ] **Step 2: Run** `npm test`. Expected: FAIL.
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run** `npm test`. Expected: PASS.
-- [ ] **Step 5: Commit, push, and open the PR in draft**, with "waits for the phase 2 close" as its blocker. Its merge needs the passphrase under Josh's global rules.
+- [ ] **Step 5: Commit, push, and open the PR in draft**, with "waits for the phase 1 close (JP-120)" as its blocker. Its merge needs the passphrase under Josh's global rules.

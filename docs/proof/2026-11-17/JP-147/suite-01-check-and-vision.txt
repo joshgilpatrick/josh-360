@@ -1,0 +1,23 @@
+$ python3 scripts/check.py
+OK
+check.py: ok (0 problem(s))
+
+$ python3 -m unittest tests.test_check_vision -v
+test_graph_built_in_phase_1_passes (test_check_vision.VisionCheckTest.test_graph_built_in_phase_1_passes) ... ok
+test_graph_built_in_phase_2_fails (test_check_vision.VisionCheckTest.test_graph_built_in_phase_2_fails) ... ok
+test_proposed_marker_still_fails (test_check_vision.VisionCheckTest.test_proposed_marker_still_fails) ... ok
+test_real_vision_passes (test_check_vision.VisionCheckTest.test_real_vision_passes) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.002s
+
+OK
+
+$ grep -n -i "built in phase" docs/vision-and-roadmap.md
+178:| Ticket creation | A forwarded email, a Notion action item, a to-do, or a session that crossed the ticket threshold | A complete ticket, or a parent with children | Designed in phase 1 (JP-102), built in phase 1 (JP-121) |
+179:| Ticket triage and sign-off | A drafted ticket | A Ready ticket routed to the right path, or a ticket sent back for more input | Designed in phase 1 (JP-103), built in phase 1 (JP-122) |
+180:| Development pipeline | A Ready development ticket | A reviewed pull request | Built new from the 22-step draft, which had not yet run on a real ticket. Built in phase 1 (JP-115). The sprint skill keeps running until this graph replaces it. |
+181:| Non-development pipeline | A Ready non-development ticket | The deliverable, such as an answer, a file or a draft, with its sources | Designed in phase 1 (JP-104), built in phase 1 (JP-123) |
+
+# Old wording is refused (run against the line from origin/main):
+['graph built after phase 1 (all graphs are phase 1, JP-147): docs/vision-and-roadmap.md:1: | Ticket triage and sign-off | A drafted ticket | x | Designed in phase 1, built in phase 2 |']

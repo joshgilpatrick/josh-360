@@ -10,7 +10,7 @@ Checks:
   4. Every "](#anchor)" link in a Markdown file under docs/ or the repo root resolves to a heading in that
      file, using GitHub's anchor rule (lower case, spaces to hyphens, punctuation dropped, underscores kept).
   5. The repository layout from JP-95: the starting folders each have a README, README.md and the docs it
-     names exist, nothing in the vision is still marked Proposed, and git ignores a file inside a .phi folder.
+     names exist, nothing in the vision is still marked Proposed or places a graph build after phase 1, and git ignores a file inside a .phi folder.
   6. The feature list from JP-97 (docs/inventory/features.md): every row has one verdict, a reason and a carrier
      ticket, every retired row says what replaces it, and the Session Atlas focus summaries are retired. "Later"
      (JP-145) is a verdict too: not built now, back once the ledger is hardened.
@@ -128,6 +128,22 @@ def test_problems() -> list[str]:
 
 # A status marker, not the ordinary verb: "Proposed:", "(Proposed)", "**Proposed**", "| Proposed |".
 PROPOSED_MARKER = re.compile(r"(\*\*Proposed\*\*|\(Proposed\)|\bProposed:|\|\s*Proposed\s*\|)")
+
+
+# Josh, 16 November 2026: every graph is built in phase 1 (JP-147).
+GRAPH_BUILT_LATER = re.compile(r"\bbuilt in phase [2-9]\b", re.IGNORECASE)
+
+
+def vision_problems(text: str) -> list[str]:
+    """Lines of the vision still marked Proposed, or still placing a graph build after phase 1."""
+    problems = []
+    for n, line in enumerate(text.splitlines(), 1):
+        if PROPOSED_MARKER.search(line):
+            problems.append(f"still marked Proposed: docs/vision-and-roadmap.md:{n}: {line.strip()}")
+        if GRAPH_BUILT_LATER.search(line):
+            problems.append(f"graph built after phase 1 (all graphs are phase 1, JP-147): "
+                            f"docs/vision-and-roadmap.md:{n}: {line.strip()}")
+    return problems
 
 
 def phi_is_ignored() -> bool:
@@ -333,9 +349,7 @@ def main() -> int:
             problems.append(f"missing: {rel}")
     vision = ROOT / "docs/vision-and-roadmap.md"
     if vision.is_file():
-        for n, line in enumerate(vision.read_text(encoding="utf-8").splitlines(), 1):
-            if PROPOSED_MARKER.search(line):
-                problems.append(f"still marked Proposed: docs/vision-and-roadmap.md:{n}: {line.strip()}")
+        problems += vision_problems(vision.read_text(encoding="utf-8"))
     if (ROOT / ".git").exists() and not phi_is_ignored():
         problems.append("not ignored: a file inside a .phi folder (.gitignore needs *[Pp][Hh][Ii])")
 
