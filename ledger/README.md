@@ -18,4 +18,4 @@ The design, with what each table is for, where today's stores go and the questio
 
 ## Status
 
-Designed, not built; amended by JP-148 (17 November 2026) with the JP-146 review's five fixes. JP-107 builds the database, the recorder and the read command; later tickets add the writers for their tables (`docs/design/data-model.md`, "Who writes what"). No patient data in any file here.
+Designed, not built; amended by JP-148 (17 November 2026) with the JP-146 review's five fixes, and by JP-149 (the same day) with Josh's answers to the review's questions: his patient-data rule, and local sessions only. JP-107 builds the database, the recorder and the read command; later tickets add the writers for their tables (`docs/design/data-model.md`, "Who writes what"). No patient data in any file here.
