@@ -1,7 +1,4 @@
-# DRAFT (JP-115). The development graph as designed in docs/superpowers/specs/2026-11-17-development-graph-design.md.
-# It uses the `wait` step kind that spec proposes (two steps), so it lives here, not in graphs/flows/, until the JP-115 build adds
-# `wait` to the convention, the checker and the walker and moves this file to graphs/flows/development.yaml.
-# Until then check_draft.py checks it with its wait steps read as gate steps: docs/proof/2026-11-17/JP-115/.
+# The development graph. Design: docs/superpowers/specs/2026-11-17-development-graph-design.md (JP-115).
 convention: 1
 graph: development
 title: Development pipeline
@@ -97,6 +94,7 @@ steps:
     outputs:
       repo: { type: string, description: "owner/name of the repository, from the registry" }
       prior_spec: { type: string, description: "The spec saved by the run named in resume_from, or none" }
+      reason: { type: string, description: "Why the ticket is not workable here, when the outcome is not_here" }
     outcomes: [build, design_only, not_here]
 
   - id: return_early
@@ -104,7 +102,7 @@ steps:
     effects: [move_ticket]
     needs: [read_ticket]
     when: { step: read_ticket, outcome: not_here }
-    inputs: [ticket_key]
+    inputs: [ticket_key, reason]
     outcomes: [returned]
     on:
       returned: end
@@ -148,7 +146,7 @@ steps:
     effects: [move_ticket]
     needs: [route_question]
     when: { step: route_question, outcome: to_triage }
-    inputs: [ticket_key, work_dir, worktree, card]
+    inputs: [ticket_key, phi, work_dir, worktree, card]
     outcomes: [returned]
     on:
       returned: end
@@ -166,7 +164,7 @@ steps:
     gate: lint-spec
     needs: [ask_design]
     when: { step: design, outcome: ready }
-    inputs: [ticket_type, spec_path, plan_path, worktree, work_dir]
+    inputs: [ticket_key, ticket_type, spec_path, plan_path, worktree, work_dir]
     outcomes: [complete, incomplete]
     on:
       incomplete: { goto: design, max_loops: 2, at_limit: design_stuck }
@@ -184,7 +182,7 @@ steps:
     gate: check-review
     needs: [harden]
     when: { step: harden, outcome: defects }
-    inputs: [ticket_key, spec_path, work_dir, findings]
+    inputs: [ticket_key, spec_path, plan_path, work_dir, findings]
     outcomes: [clean, rework]
     on:
       rework: { goto: design, max_loops: 1, at_limit: design_stuck }
@@ -294,7 +292,7 @@ steps:
   - id: open_pr
     gate: open-pr
     needs: [write_pr]
-    inputs: [ticket_key, phi, repo, branch, worktree, base_branch, pr_title, pr_body]
+    inputs: [ticket_key, phi, repo, branch, worktree, work_dir, base_branch, pr_title, pr_body]
     outputs:
       pr_url: { type: string, description: "The pull request" }
       pr_number: { type: string, description: "Digits only" }
@@ -305,7 +303,7 @@ steps:
     gate: queue-audit
     effects: [set_label]
     needs: [open_pr]
-    inputs: [repo, pr_number]
+    inputs: [repo, pr_number, work_dir]
     outcomes: [queued]
 
   - id: await_review
@@ -352,7 +350,7 @@ steps:
     effects: [set_label]
     needs: [ask_fixer]
     when: { step: fix_review, outcome: fixed }
-    inputs: [ticket_key, phi, repo, pr_number, spec_path, worktree, work_dir, resolution, issue_count]
+    inputs: [ticket_key, ticket_type, phi, repo, pr_number, branch, spec_path, worktree, work_dir, resolution, issue_count]
     outcomes: [requeue, relabel, checks_failed]
     on:
       requeue: { goto: await_review, max_loops: 2, at_limit: review_stuck }
@@ -394,7 +392,7 @@ steps:
     effects: [move_ticket]
     needs: [await_merge]
     when: { step: await_merge, outcome: closed }
-    inputs: [ticket_key, worktree, branch, work_dir]
+    inputs: [ticket_key, repo, pr_url, worktree, branch, work_dir]
     outcomes: [cancelled]
     on:
       cancelled: end
@@ -410,5 +408,5 @@ steps:
     gate: close-ticket
     effects: [move_ticket]
     needs: [clean_up]
-    inputs: [ticket_key, phi, pr_url, spec_path, evidence_path]
+    inputs: [ticket_key, ticket_type, phi, pr_url, spec_path, evidence_path]
     outcomes: [closed]
