@@ -37,9 +37,10 @@ def decide(values, jira):
     state = sources.item_state(values.get("source", ""), values.get("source_ref", ""))
     if not state["known"]:
         return "open", "the source item cannot be read"
+    stored = values.get("source") in sources.WITH_STORE   # a session or manual source has nowhere to carry a key
     if proposal["action"] == "comment_on_match":
         want = proposal["match"]["key"]
-        if state["ticket_key"] != want:
+        if stored and state["ticket_key"] != want:
             return "open", f"the source item does not carry {want}"
         return "pass", f"commented on {want}"
     keys = values.get("ticket_keys") or []
@@ -53,7 +54,7 @@ def decide(values, jira):
             return "open", f"{key} cannot be read back"
         if not (issue["parent"] or (proposal.get("route") or {}).get("area") or issue["labels"]):
             return "open", f"{key} has no parent and no area"
-    if state["ticket_key"] != keys[0]:
+    if stored and state["ticket_key"] != keys[0]:
         return "open", "the source item does not carry the new key"
     return "pass", f"{len(keys)} ticket(s) exist and are linked"
 
