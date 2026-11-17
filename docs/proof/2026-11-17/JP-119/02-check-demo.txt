@@ -1,0 +1,10 @@
+$ python3 laptop/check_jobs.py   (made-up home, fake launchctl)
+stray: com.example.stray
+    on neither the startup list nor the register: put it on the list, name it in laptop/launchd-register.json with a reason, or retire it
+retired but present: com.omnara.daemon
+    JP-119, job retire-leftover-jobs (Josh's answer to question 4, 16 November) and still loaded
+known gap (transitional): com.josh360.session-atlas
+    Session Atlas is a long-running service that has to stay up, because the worktree removal guard fails closed when it cannot reach it. Until its definition is on the macbook-automations startup list, the job session-atlas-service installs it. That change to macbook-automations waits for the phase 1 close; docs/phase-1-close-checklist.md lists the two steps that move it and remove the installer. Ends with phase 1 close (JP-120).
+jobs.yaml: never run: follow, inventory, retire-focus-dashboard, ledger-record, ledger-summary, ledger-backup, ledger-upload, ledger-backfill, ledger-friction-catchup, ticket-comments, retire-session-atlas, session-atlas-service, retire-leftover-jobs, launchd-check; last run failed: none
+2 jobs on the startup list; 2 difference(s) (not clean).
+exit 1
