@@ -51,15 +51,27 @@ class LaptopCase(unittest.TestCase):
         gitconfig.write_text("[commit]\n\tgpgsign = true\n[core]\n\thooksPath = {}\n"
                              "[init]\n\tdefaultBranch = main\n".format(bad_hooks))
 
-        # Jobs that call launchctl (JP-100's retire-focus-dashboard) must never reach the real launchd when
-        # the suite runs on a Mac. This stub logs each call and says "no such job" to everything.
+        # Jobs that call launchctl (JP-100's retire-focus-dashboard, JP-111's retire-session-atlas and
+        # session-atlas-service) must never reach the real launchd when the suite runs on a Mac. This stub logs
+        # each call and says "no such job" to everything, except a job that this run itself bootstrapped.
         self.launchctl_log = self.tmp / "launchctl-calls.log"
         launchctl = self.tmp / "launchctl-stub"
-        launchctl.write_text('#!/bin/sh\necho "$@" >> "{}"\nexit 113\n'.format(self.launchctl_log))
+        launchctl.write_text('#!/bin/sh\necho "$@" >> "{log}"\n'
+                             'case "$1" in\n'
+                             '  bootstrap) touch "{log}.$(basename "$3" .plist)"; exit 0 ;;\n'
+                             '  kickstart) exit 0 ;;\n'
+                             '  print) [ -f "{log}.${{2##*/}}" ] && exit 0 ;;\n'
+                             'esac\n'
+                             'exit 113\n'.format(log=self.launchctl_log))
         launchctl.chmod(0o755)
+        # A made-up Node, so the session-atlas-service job does not depend on the machine running the suite.
+        fake_node = self.tmp / "node-stub"
+        fake_node.write_text('#!/bin/sh\necho "v22.20.0"\n')
+        fake_node.chmod(0o755)
 
         self.env = {
             "JOSH360_LAUNCHCTL": str(launchctl),
+            "JOSH360_NODE": str(fake_node),
             "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
             "HOME": str(self.home),
             "GIT_CONFIG_GLOBAL": str(gitconfig),

@@ -1,0 +1,581 @@
+{
+  "effectiveFrom": "2020-01-01T00:00:00.000Z",
+  "source": "LiteLLM model_prices_and_context_window.json (main branch) fetched 2026-10-02, overridden where Bifrost billing differs. USD per million tokens.",
+  "models": [
+    {
+      "modelId": "claude-fable-5",
+      "vendor": "anthropic",
+      "sourceNote": "Anthropic pricing page (https://platform.claude.com/docs/en/about-claude/pricing), read 2026-10-05; cache read is 0.1x input; 5m cache write is 1.25x input and 1h cache write is 2x input",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 10.0,
+          "output": 50.0,
+          "cacheRead": 1.0,
+          "cacheWrite5m": 12.5,
+          "cacheWrite1h": 20.0
+        }
+      ]
+    },
+    {
+      "modelId": "claude-fable-5-1",
+      "vendor": "anthropic",
+      "sourceNote": "LiteLLM list price (claude-fable-5-1)",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 10.0,
+          "output": 50.0,
+          "cacheRead": 0.25,
+          "cacheWrite5m": 12.5,
+          "cacheWrite1h": 20.0
+        }
+      ]
+    },
+    {
+      "modelId": "claude-haiku-4-5",
+      "vendor": "anthropic",
+      "sourceNote": "LiteLLM list price (claude-haiku-4-5)",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 1.0,
+          "output": 5.0,
+          "cacheRead": 0.1,
+          "cacheWrite5m": 1.25,
+          "cacheWrite1h": 2.0
+        }
+      ]
+    },
+    {
+      "modelId": "claude-opus-4-6",
+      "vendor": "anthropic",
+      "sourceNote": "LiteLLM list price (claude-opus-4-6)",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 5.0,
+          "output": 25.0,
+          "cacheRead": 0.5,
+          "cacheWrite5m": 6.25,
+          "cacheWrite1h": 10.0
+        }
+      ]
+    },
+    {
+      "modelId": "claude-opus-4-7",
+      "vendor": "anthropic",
+      "sourceNote": "LiteLLM list price (claude-opus-4-7)",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 5.0,
+          "output": 25.0,
+          "cacheRead": 0.5,
+          "cacheWrite5m": 6.25,
+          "cacheWrite1h": 10.0
+        }
+      ]
+    },
+    {
+      "modelId": "claude-opus-4-8",
+      "vendor": "anthropic",
+      "sourceNote": "LiteLLM list price (claude-opus-4-8)",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 5.0,
+          "output": 25.0,
+          "cacheRead": 0.5,
+          "cacheWrite5m": 6.25,
+          "cacheWrite1h": 10.0
+        }
+      ]
+    },
+    {
+      "modelId": "claude-opus-5",
+      "vendor": "anthropic",
+      "sourceNote": "LiteLLM list price (claude-opus-5)",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 5.0,
+          "output": 25.0,
+          "cacheRead": 0.5,
+          "cacheWrite5m": 6.25,
+          "cacheWrite1h": 10.0
+        }
+      ]
+    },
+    {
+      "modelId": "claude-haiku-5-5",
+      "vendor": "anthropic",
+      "sourceNote": "Anthropic pricing page and LiteLLM PR #45108 (2026-10-07); OpenRouter base rates agree, cache figures from a secondhand summary. Tier-selection assumption (checked 2026-10-08): use total prompt tokens (input + cache reads + cache writes); Anthropic says 'prompt' but does not define cache-token counting. Inference from https://platform.claude.com/docs/en/about-claude/pricing and https://platform.claude.com/docs/en/build-with-claude/prompt-caching.",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 0.1,
+          "output": 0.5,
+          "cacheRead": 0.01,
+          "cacheWrite5m": 0.125,
+          "cacheWrite1h": 0.2
+        },
+        {
+          "minPromptTokens": 100001,
+          "input": 0.5,
+          "output": 2.5,
+          "cacheRead": 0.05,
+          "cacheWrite5m": 0.625,
+          "cacheWrite1h": 1.0
+        }
+      ]
+    },
+    {
+      "modelId": "claude-opus-5-5",
+      "vendor": "anthropic",
+      "sourceNote": "LiteLLM list price (claude-opus-5-5)",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 4.0,
+          "output": 20.0,
+          "cacheRead": 0.2,
+          "cacheWrite5m": 5.0,
+          "cacheWrite1h": 8.0
+        }
+      ]
+    },
+    {
+      "modelId": "claude-sonnet-4-6",
+      "vendor": "anthropic",
+      "sourceNote": "LiteLLM list price (claude-sonnet-4-6)",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 3.0,
+          "output": 15.0,
+          "cacheRead": 0.3,
+          "cacheWrite5m": 3.75,
+          "cacheWrite1h": 6.0
+        }
+      ]
+    },
+    {
+      "modelId": "claude-sonnet-5",
+      "vendor": "anthropic",
+      "sourceNote": "LiteLLM list price (claude-sonnet-5)",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 2.0,
+          "output": 10.0,
+          "cacheRead": 0.2,
+          "cacheWrite5m": 2.5,
+          "cacheWrite1h": 4.0
+        }
+      ]
+    },
+    {
+      "modelId": "claude-sonnet-5-5",
+      "vendor": "anthropic",
+      "sourceNote": "LiteLLM list price (claude-sonnet-5-5)",
+      "effectiveTo": "2026-10-08T02:45:00.000Z",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 2.0,
+          "output": 10.0,
+          "cacheRead": 0.2,
+          "cacheWrite5m": 2.5,
+          "cacheWrite1h": 4.0
+        }
+      ],
+      "dated": [
+        {
+          "effectiveFrom": "2026-10-08T02:45:00.000Z",
+          "sourceNote": "Bifrost datasheet (getbifrost.ai/datasheet) lists 0.10; approved in A1",
+          "tiers": [
+            {
+              "minPromptTokens": 0,
+              "input": 2.0,
+              "output": 10.0,
+              "cacheRead": 0.1,
+              "cacheWrite5m": 2.5,
+              "cacheWrite1h": 4.0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "modelId": "deepseek-v4-flash",
+      "vendor": "azure",
+      "sourceNote": "LiteLLM list price (azure_ai/deepseek-v4-flash); filled cacheWrite5m=input, cacheWrite1h=cacheWrite5m",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 0.19,
+          "output": 0.51,
+          "cacheRead": 0.028,
+          "cacheWrite5m": 0.19,
+          "cacheWrite1h": 0.19
+        }
+      ]
+    },
+    {
+      "modelId": "deepseek-v4-flash-0731",
+      "vendor": "azure",
+      "sourceNote": "LiteLLM list price (azure_ai/DeepSeek-V4-Flash-0731); filled cacheWrite5m=input, cacheWrite1h=cacheWrite5m",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 0.44,
+          "output": 1.32,
+          "cacheRead": 0.014,
+          "cacheWrite5m": 0.44,
+          "cacheWrite1h": 0.44
+        }
+      ]
+    },
+    {
+      "modelId": "deepseek-v4-pro",
+      "vendor": "azure",
+      "sourceNote": "LiteLLM list price (azure_ai/deepseek-v4-pro); filled cacheWrite5m=input, cacheWrite1h=cacheWrite5m",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 1.74,
+          "output": 3.48,
+          "cacheRead": 0.145,
+          "cacheWrite5m": 1.74,
+          "cacheWrite1h": 1.74
+        }
+      ]
+    },
+    {
+      "modelId": "gpt-4.1-mini",
+      "vendor": "openai",
+      "sourceNote": "LiteLLM list price (gpt-4.1-mini); filled cacheWrite5m=input, cacheWrite1h=cacheWrite5m",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 0.4,
+          "output": 1.6,
+          "cacheRead": 0.1,
+          "cacheWrite5m": 0.4,
+          "cacheWrite1h": 0.4
+        }
+      ]
+    },
+    {
+      "modelId": "gpt-5.2",
+      "vendor": "openai",
+      "sourceNote": "LiteLLM list price (gpt-5.2); filled cacheWrite5m=input, cacheWrite1h=cacheWrite5m",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 1.75,
+          "output": 14.0,
+          "cacheRead": 0.175,
+          "cacheWrite5m": 1.75,
+          "cacheWrite1h": 1.75
+        }
+      ]
+    },
+    {
+      "modelId": "gpt-5.3-codex",
+      "vendor": "openai",
+      "sourceNote": "LiteLLM list price (gpt-5.3-codex); filled cacheWrite5m=input, cacheWrite1h=cacheWrite5m",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 1.75,
+          "output": 14.0,
+          "cacheRead": 0.175,
+          "cacheWrite5m": 1.75,
+          "cacheWrite1h": 1.75
+        }
+      ]
+    },
+    {
+      "modelId": "gpt-5.4",
+      "vendor": "openai",
+      "sourceNote": "LiteLLM list price (gpt-5.4); long-context tier above 272k prompt tokens (list, unverified); filled cacheWrite5m=input, cacheWrite1h=cacheWrite5m. Tier-selection assumption (checked 2026-10-08): use total prompt tokens, including cached input and cache writes. OpenAI does not explicitly connect usage cache fields to the 272K threshold; inference from https://developers.openai.com/api/docs/pricing and https://developers.openai.com/api/docs/guides/prompt-caching, supported by https://docs.litellm.ai/docs/completion/prompt_caching.",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 2.5,
+          "output": 15.0,
+          "cacheRead": 0.25,
+          "cacheWrite5m": 2.5,
+          "cacheWrite1h": 2.5
+        },
+        {
+          "minPromptTokens": 272001,
+          "input": 5.0,
+          "output": 22.5,
+          "cacheRead": 0.5,
+          "cacheWrite5m": 5.0,
+          "cacheWrite1h": 5.0
+        }
+      ]
+    },
+    {
+      "modelId": "gpt-5.4-mini",
+      "vendor": "openai",
+      "sourceNote": "LiteLLM list price (gpt-5.4-mini); filled cacheWrite5m=input, cacheWrite1h=cacheWrite5m",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 0.75,
+          "output": 4.5,
+          "cacheRead": 0.075,
+          "cacheWrite5m": 0.75,
+          "cacheWrite1h": 0.75
+        }
+      ]
+    },
+    {
+      "modelId": "gpt-5.5",
+      "vendor": "openai",
+      "sourceNote": "LiteLLM list price (gpt-5.5); long-context tier above 272k prompt tokens (list, unverified); filled cacheWrite5m=input, cacheWrite1h=cacheWrite5m. Tier-selection assumption (checked 2026-10-08): use total prompt tokens, including cached input and cache writes. OpenAI does not explicitly connect usage cache fields to the 272K threshold; inference from https://developers.openai.com/api/docs/pricing and https://developers.openai.com/api/docs/guides/prompt-caching, supported by https://docs.litellm.ai/docs/completion/prompt_caching.",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 5.0,
+          "output": 30.0,
+          "cacheRead": 0.5,
+          "cacheWrite5m": 5.0,
+          "cacheWrite1h": 5.0
+        },
+        {
+          "minPromptTokens": 272001,
+          "input": 10.0,
+          "output": 45.0,
+          "cacheRead": 1.0,
+          "cacheWrite5m": 10.0,
+          "cacheWrite1h": 10.0
+        }
+      ]
+    },
+    {
+      "modelId": "gpt-5.6-luna",
+      "vendor": "openai",
+      "sourceNote": "LiteLLM list price (gpt-5.6-luna); long-context tier above 272k prompt tokens (verified exact against Bifrost 2026-10-02); filled cacheWrite1h=cacheWrite5m. Tier-selection assumption (checked 2026-10-08): use total prompt tokens, including cached input and cache writes. OpenAI does not explicitly connect usage cache fields to the 272K threshold; inference from https://developers.openai.com/api/docs/pricing and https://developers.openai.com/api/docs/guides/prompt-caching, supported by https://docs.litellm.ai/docs/completion/prompt_caching.",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 0.2,
+          "output": 1.2,
+          "cacheRead": 0.02,
+          "cacheWrite5m": 0.25,
+          "cacheWrite1h": 0.25
+        },
+        {
+          "minPromptTokens": 272001,
+          "input": 0.4,
+          "output": 1.8,
+          "cacheRead": 0.04,
+          "cacheWrite5m": 0.5,
+          "cacheWrite1h": 0.5
+        }
+      ]
+    },
+    {
+      "modelId": "gpt-5.6-sol",
+      "vendor": "openai",
+      "sourceNote": "LiteLLM list price (gpt-5.6-sol); long-context tier above 272k prompt tokens (list, unverified); filled cacheWrite1h=cacheWrite5m. Tier-selection assumption (checked 2026-10-08): use total prompt tokens, including cached input and cache writes. OpenAI does not explicitly connect usage cache fields to the 272K threshold; inference from https://developers.openai.com/api/docs/pricing and https://developers.openai.com/api/docs/guides/prompt-caching, supported by https://docs.litellm.ai/docs/completion/prompt_caching.",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 4.0,
+          "output": 20.0,
+          "cacheRead": 0.4,
+          "cacheWrite5m": 5.0,
+          "cacheWrite1h": 5.0
+        },
+        {
+          "minPromptTokens": 272001,
+          "input": 8.0,
+          "output": 30.0,
+          "cacheRead": 0.8,
+          "cacheWrite5m": 10.0,
+          "cacheWrite1h": 10.0
+        }
+      ]
+    },
+    {
+      "modelId": "gpt-5.6-terra",
+      "vendor": "openai",
+      "sourceNote": "OpenAI model page (https://developers.openai.com/api/docs/models/gpt-5.6-terra), read 2026-10-05; cache write = 1.25x input; long-tier cache read/write assumed 2x like gpt-5.6-luna. Tier-selection assumption (checked 2026-10-08): use total prompt tokens, including cached input and cache writes. OpenAI does not explicitly connect usage cache fields to the 272K threshold; inference from https://developers.openai.com/api/docs/pricing and https://developers.openai.com/api/docs/guides/prompt-caching, supported by https://docs.litellm.ai/docs/completion/prompt_caching.",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 2.0,
+          "output": 12.0,
+          "cacheRead": 0.2,
+          "cacheWrite5m": 2.5,
+          "cacheWrite1h": 2.5
+        },
+        {
+          "minPromptTokens": 272001,
+          "input": 4.0,
+          "output": 18.0,
+          "cacheRead": 0.4,
+          "cacheWrite5m": 5.0,
+          "cacheWrite1h": 5.0
+        }
+      ]
+    },
+    {
+      "modelId": "gpt-6-astra",
+      "vendor": "openai",
+      "sourceNote": "LiteLLM list price (gpt-6-astra); long-context tier above 272k prompt tokens (list, unverified); filled cacheWrite1h=cacheWrite5m. Tier-selection assumption (checked 2026-10-08): use total prompt tokens, including cached input and cache writes. OpenAI does not explicitly connect usage cache fields to the 272K threshold; inference from https://developers.openai.com/api/docs/pricing and https://developers.openai.com/api/docs/guides/prompt-caching, supported by https://docs.litellm.ai/docs/completion/prompt_caching.",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 10.0,
+          "output": 50.0,
+          "cacheRead": 1.0,
+          "cacheWrite5m": 12.5,
+          "cacheWrite1h": 12.5
+        },
+        {
+          "minPromptTokens": 272001,
+          "input": 20.0,
+          "output": 75.0,
+          "cacheRead": 2.0,
+          "cacheWrite5m": 25.0,
+          "cacheWrite1h": 25.0
+        }
+      ]
+    },
+    {
+      "modelId": "gpt-6-luna",
+      "vendor": "openai",
+      "sourceNote": "OpenAI API pricing page (checked 2026-10-08); user-selected OpenAI list rates across all provider sources, including Bifrost. Tier-selection assumption: use total prompt tokens (input + cache reads + cache writes); OpenAI does not explicitly connect usage cache fields to the 272K threshold. Inference from https://developers.openai.com/api/docs/models/gpt-6-luna and https://developers.openai.com/api/docs/guides/prompt-caching, supported by https://docs.litellm.ai/docs/completion/prompt_caching.",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 0.1,
+          "output": 0.5,
+          "cacheRead": 0.01,
+          "cacheWrite5m": 0.125,
+          "cacheWrite1h": 0.125
+        },
+        {
+          "minPromptTokens": 272001,
+          "input": 0.2,
+          "output": 0.75,
+          "cacheRead": 0.02,
+          "cacheWrite5m": 0.25,
+          "cacheWrite1h": 0.25
+        }
+      ]
+    },
+    {
+      "modelId": "gpt-6-sol",
+      "vendor": "openai",
+      "sourceNote": "LiteLLM list price (gpt-6-sol); long-context tier above 272k prompt tokens (list, unverified); filled cacheWrite1h=cacheWrite5m. Tier-selection assumption (checked 2026-10-08): use total prompt tokens, including cached input and cache writes. OpenAI does not explicitly connect usage cache fields to the 272K threshold; inference from https://developers.openai.com/api/docs/pricing and https://developers.openai.com/api/docs/guides/prompt-caching, supported by https://docs.litellm.ai/docs/completion/prompt_caching.",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 2.0,
+          "output": 10.0,
+          "cacheRead": 0.2,
+          "cacheWrite5m": 2.5,
+          "cacheWrite1h": 2.5
+        },
+        {
+          "minPromptTokens": 272001,
+          "input": 4.0,
+          "output": 15.0,
+          "cacheRead": 0.4,
+          "cacheWrite5m": 5.0,
+          "cacheWrite1h": 5.0
+        }
+      ]
+    },
+    {
+      "modelId": "gpt-6.1-sol",
+      "vendor": "openai",
+      "effectiveFrom": "2026-10-01T00:00:00.000Z",
+      "sourceNote": "Azure AI Foundry price card supplied 2026-10-17; effective 2026-10-01; short-context rates through 272k prompt tokens and long-context rates above 272k.",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 2.0,
+          "output": 10.0,
+          "cacheRead": 0.1,
+          "cacheWrite5m": 2.5,
+          "cacheWrite1h": 2.5
+        },
+        {
+          "minPromptTokens": 272001,
+          "input": 4.0,
+          "output": 15.0,
+          "cacheRead": 0.2,
+          "cacheWrite5m": 5.0,
+          "cacheWrite1h": 5.0
+        }
+      ]
+    },
+    {
+      "modelId": "kimi-k2.6",
+      "vendor": "azure",
+      "sourceNote": "LiteLLM list price (azure_ai/kimi-k2.6); filled cacheWrite5m=input, cacheWrite1h=cacheWrite5m",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 0.95,
+          "output": 4.0,
+          "cacheRead": 0.16,
+          "cacheWrite5m": 0.95,
+          "cacheWrite1h": 0.95
+        }
+      ]
+    },
+    {
+      "modelId": "opencode-free",
+      "vendor": "opencode",
+      "sourceNote": "OpenCode Zen free models; OpenCode logged cost $0 for all rows (verified 2026-10-02)",
+      "tiers": [
+        {
+          "minPromptTokens": 0,
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite5m": 0,
+          "cacheWrite1h": 0
+        }
+      ]
+    }
+  ],
+  "aliases": [
+    {
+      "alias": "claude-haiku-4-5-20251001",
+      "modelId": "claude-haiku-4-5",
+      "sourceNote": "observed raw name, mapped 2026-10-02"
+    },
+    {
+      "alias": "big-pickle",
+      "modelId": "opencode-free",
+      "sourceNote": "observed raw name, mapped 2026-10-02"
+    },
+    {
+      "alias": "minimax-m2.5-free",
+      "modelId": "opencode-free",
+      "sourceNote": "observed raw name, mapped 2026-10-02"
+    },
+    {
+      "alias": "hy3-preview-free",
+      "modelId": "opencode-free",
+      "sourceNote": "observed raw name, mapped 2026-10-02"
+    },
+    {
+      "alias": "fledge-alpha-free",
+      "modelId": "opencode-free",
+      "sourceNote": "observed raw name, mapped 2026-10-02"
+    }
+  ]
+}
