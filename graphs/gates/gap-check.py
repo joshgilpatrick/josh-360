@@ -1,12 +1,33 @@
 #!/usr/bin/env python3
-"""DRAFT gate: gap-check. Designed in docs/design/non-development-graph.md (JP-104); built in JP-123.
+"""Gate gap-check (JP-104 design, built in JP-123): is there a reason to ask Josh before any work starts?
 
-Fires on observable signals only, never on a model's confidence: no precedent and a Deliverable format that was inferred, not given by Josh. Outputs gap, one sentence: the restated question, the deliverable assumed, and the assumption to confirm.
+Fires only on signals a script can see, never on a model's confidence: no precedent was found AND the ticket's
+Deliverable format was inferred, not given by Josh. Then `gap` holds the one-sentence question (spec, "Exact copy"), and
+`card` the same text, which the walker shows on the ask.
 
-Outcomes: clear, gap.
-Inputs arrive as GRAPH_INPUT_<NAME>; prints one JSON line (graphs/CONVENTION.md, "Gate scripts").
-Until it is built it refuses, so no run can pass through it by accident.
+Outcomes: clear, gap. Inputs: ticket_key, kind, deliverable_given, precedent.
 """
 import sys
 
-sys.exit("gap-check: not built yet (JP-123)")
+from lib.gate_run import execute, need
+from lib.nondev_copy import ping_before
+from lib.ticket_text import as_bool, parse_sections, shorten, strip_marker
+
+
+def run(inputs, deps):
+    key = need(inputs, "ticket_key")
+    precedent = (inputs.get("precedent") or "none").strip().lower()
+    if precedent != "none" or as_bool(inputs.get("deliverable_given"), default=True):
+        return "clear", None, "no gap"
+    sections = parse_sections(deps.ticket.read(key).description)
+    kind = (inputs.get("kind") or "research").strip()
+    text = ping_before(
+        key,
+        shorten(sections.get("Question", ""), 240),
+        shorten(strip_marker(sections.get("Deliverable format", "")), 160) or "the format I think fits",
+        "that format fits, since the ticket did not give one (I worked it out from the kind of work: {})".format(kind))
+    return "gap", {"gap": text, "card": text}, "gap: no precedent and the deliverable was inferred"
+
+
+if __name__ == "__main__":
+    execute(run, ["ticket_key", "kind", "deliverable_given", "precedent"])
