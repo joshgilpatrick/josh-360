@@ -32,6 +32,7 @@ Decided by Josh on 15 November 2026.
 | What waits for the close of a phase | Merges to Josh's other repositories, deletion lists and proof pages. |
 | PR review is Josh's laptop audit (16 November 2026) | A thread labels its PR `review:needs-agent-audit` and Josh's laptop automation (the action-triage PR audit) audits it and comments. No cloud review thread and no PR review watcher; the rest of the ceremony stands (`docs/WORKFLOW.md` §4). This answers question 1 in `docs/inventory/features.md`. |
 | Instruction files | Written as `AGENTS.md`. |
+| All graphs are built in phase 1 (16 November 2026) | Josh: "all graphs need to be phase 1". The ticket creation, triage and sign-off, and non-development graph builds (JP-121, JP-122, JP-123) moved from phase 2 to phase 1 and now block the phase 1 close (JP-120). The gates changed with them (Josh, 17 November 2026, JP-147): the forwarded-email run joins the gate to phase 2, and the gate to phase 3 is action-triage archived with its kept features in josh-360 plus the weekly review's first improvement ticket. |
 
 ## The question round
 
