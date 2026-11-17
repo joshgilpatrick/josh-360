@@ -51,7 +51,14 @@ jobs:
     run: ledger/backup.py
     every: 1d
     timeout: 10m
-    description: JP-107. Copies the ledger with SQLite's backup call, checks the copy, gzips it, keeps 14 daily and 8 weekly. No upload.
+    description: JP-107. Copies the ledger with SQLite's backup call, checks the copy, gzips it, keeps 14 daily and 8 weekly. No upload (that is ledger-upload).
+
+  - id: ledger-upload
+    run: ledger/upload.py
+    every: 1d
+    timeout: 30m
+    report: true
+    description: JP-150. Makes the Azure blob container hold the same daily backups as the laptop (14 daily, 8 weekly), signed in as Josh through az login, no stored secret. Does any redaction the uploaded copies still owe. The report says ok, failed or not-configured and when the last upload worked; it never fails the backup.
 
   - id: ledger-backfill
     run: ledger/backfill.py

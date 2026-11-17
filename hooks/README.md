@@ -6,6 +6,7 @@ Claude Code hooks that Josh 360 adds to every session on the laptop (JP-105).
 
 - [How they load](#how-they-load)
 - [Adding a hook](#adding-a-hook)
+- [Hooks in this folder](#hooks-in-this-folder)
 - [Rules for a hook](#rules-for-a-hook)
 
 ## How they load
@@ -19,6 +20,13 @@ Known events: `SessionStart`, `SessionEnd`, `UserPromptSubmit`, `PreToolUse`, `P
 1. Put an executable file in `hooks/<Event>/`, named with a number first so the order is clear, for example `hooks/SessionEnd/10-record-facts.py`.
 2. Give it a test under `tests/`.
 3. Merge. The laptop runs it from its next follow pass (within 10 minutes).
+
+## Hooks in this folder
+
+| File | Event | What it does | Ticket |
+| --- | --- | --- | --- |
+| `SessionStart/20-ledger-spool`, `SessionEnd/20-ledger-spool` | SessionStart, SessionEnd | Append one line to the ledger spool. | JP-107 |
+| `PreToolUse/30-ticket-offer` | PreToolUse | At a session's first commit or first new branch with no ticket linked, tells the agent to offer a ticket in one line. Once per session; never blocks. It prints JSON (`additionalContext`) only when it offers, so any later `PreToolUse` hook that also prints JSON would be ignored for that call. | JP-110 |
 
 ## Rules for a hook
 

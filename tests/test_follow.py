@@ -39,7 +39,7 @@ class FollowTest(LaptopCase):
         tree = self.status_tree()
         self.assertEqual([p for p in tree if not p.startswith("reports/")], ["status.json"])
         self.assertEqual([p for p in tree if p.startswith("reports/")],
-                         ["reports/inventory.json", "reports/ledger-backfill.json",
+                         ["reports/inventory.json", "reports/ledger-backfill.json", "reports/ledger-upload.json",
                           "reports/retire-focus-dashboard.json"])
         # And the reader a cloud session uses prints it.
         shown = self.laptop("status.py", "show", check=True)

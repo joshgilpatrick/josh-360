@@ -1,0 +1,6 @@
+# Scenario 4: a question-only session
+test_a_question_only_session_makes_no_offer (tests.test_ledger_offer.NoOffer.test_a_question_only_session_makes_no_offer) ... ok
+test_bad_input_exits_0_and_says_nothing (tests.test_ledger_offer.NoOffer.test_bad_input_exits_0_and_says_nothing) ... ok
+----------------------------------------------------------------------
+Ran 2 tests in 1.010s
+OK

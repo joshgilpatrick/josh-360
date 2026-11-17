@@ -1,0 +1,11 @@
+# Scenario 3: a ticket is already linked (branch key, creating a keyed branch, ledger link, started with a ticket)
+test_a_branch_named_after_a_ticket_key (tests.test_ledger_offer.NoOffer.test_a_branch_named_after_a_ticket_key) ... ok
+test_creating_a_branch_named_after_a_ticket_key (tests.test_ledger_offer.NoOffer.test_creating_a_branch_named_after_a_ticket_key) ... ok
+test_sessions_started_with_a_ticket_have_one (tests.test_ledger_offer.NoOffer.test_sessions_started_with_a_ticket_have_one) ... ok
+test_a_session_with_no_link_is_offered (tests.test_ledger_offer.WithTheLedger.test_a_session_with_no_link_is_offered) ... ok
+test_a_withdrawn_link_does_not_count (tests.test_ledger_offer.WithTheLedger.test_a_withdrawn_link_does_not_count) ... ok
+test_each_trusted_source_counts (tests.test_ledger_offer.WithTheLedger.test_each_trusted_source_counts) ... ok
+test_the_hook_does_not_write_the_database (tests.test_ledger_offer.WithTheLedger.test_the_hook_does_not_write_the_database) ... ok
+----------------------------------------------------------------------
+Ran 7 tests in 1.631s
+OK
