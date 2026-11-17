@@ -1,0 +1,593 @@
+{
+  "checks": [
+    {
+      "auto_fix": null,
+      "detail": "Python 3.9.6 (/Library/Developer/CommandLineTools/usr/bin/python3)",
+      "fix": "",
+      "group": "install",
+      "id": "install.python",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "~/.josh-360 has state/ and logs/",
+      "fix": "",
+      "group": "install",
+      "id": "install.home",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "~/.josh-360/repo is a git checkout",
+      "fix": "",
+      "group": "install",
+      "id": "install.copy",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "the doctor runs from the laptop's copy",
+      "fix": "",
+      "group": "install",
+      "id": "install.runs-from-copy",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "on main at 97ae6ed, no local changes",
+      "fix": "",
+      "group": "install",
+      "id": "install.follows-main",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "the install record matches the copy (97ae6ed)",
+      "fix": "",
+      "group": "install",
+      "id": "install.installed-commit",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "the follow job ran 83s ago and exited 0",
+      "fix": "",
+      "group": "install",
+      "id": "install.follow-ran",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "no PAUSED file",
+      "fix": "",
+      "group": "install",
+      "id": "install.not-paused",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "com.jgilpatrick.josh-360-jobs is loaded in launchd",
+      "fix": "",
+      "group": "install",
+      "id": "install.runner-launchd",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "jobs.yaml lists 15 jobs",
+      "fix": "",
+      "group": "install",
+      "id": "install.jobs-file",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "ran 54s ago, exit 0",
+      "fix": "",
+      "group": "jobs",
+      "id": "jobs.ledger-record",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "ran 2s ago, exit 0",
+      "fix": "",
+      "group": "jobs",
+      "id": "jobs.ledger-summary",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "ran 5 h ago, exit 0",
+      "fix": "",
+      "group": "jobs",
+      "id": "jobs.ledger-backup",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "ran 43 min ago, exit 0",
+      "fix": "",
+      "group": "jobs",
+      "id": "jobs.ledger-upload",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "ran 0s ago, exit 0",
+      "fix": "",
+      "group": "jobs",
+      "id": "jobs.ticket-comments",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "ran 51 min ago, exit 0",
+      "fix": "",
+      "group": "jobs",
+      "id": "jobs.session-atlas-service",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "has not run yet (runs every 1440 min)",
+      "fix": "wait for the next runner pass, or: python3 ~/.josh-360/repo/laptop/run_jobs.py",
+      "group": "jobs",
+      "id": "jobs.launchd-check",
+      "status": "warn"
+    },
+    {
+      "auto_fix": null,
+      "detail": "succeeded 24 h ago",
+      "fix": "",
+      "group": "backfills",
+      "id": "backfills.inventory",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "succeeded 21 h ago",
+      "fix": "",
+      "group": "backfills",
+      "id": "backfills.retire-focus-dashboard",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "succeeded 5 h ago; 35111 sessions in the ledger",
+      "fix": "",
+      "group": "backfills",
+      "id": "backfills.ledger-backfill",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "succeeded 2 h ago; 12778 friction facts in the ledger",
+      "fix": "",
+      "group": "backfills",
+      "id": "backfills.ledger-friction-catchup",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "last try 51 min ago exited 1; it retries hourly",
+      "fix": "read ~/.josh-360/logs/retire-session-atlas.log",
+      "group": "backfills",
+      "id": "backfills.retire-session-atlas",
+      "status": "fail"
+    },
+    {
+      "auto_fix": null,
+      "detail": "has not run yet",
+      "fix": "wait for the next runner pass, or: python3 ~/.josh-360/repo/laptop/run_jobs.py",
+      "group": "backfills",
+      "id": "backfills.retire-leftover-jobs",
+      "status": "warn"
+    },
+    {
+      "auto_fix": null,
+      "detail": "~/.claude/settings.json is readable",
+      "fix": "",
+      "group": "hooks",
+      "id": "hooks.settings",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "SessionStart runs hooks/dispatch (20-ledger-spool)",
+      "fix": "",
+      "group": "hooks",
+      "id": "hooks.dispatch-SessionStart",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "SessionEnd runs hooks/dispatch (20-ledger-spool)",
+      "fix": "",
+      "group": "hooks",
+      "id": "hooks.dispatch-SessionEnd",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "UserPromptSubmit runs hooks/dispatch (40-ticket-comments)",
+      "fix": "",
+      "group": "hooks",
+      "id": "hooks.dispatch-UserPromptSubmit",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "PreToolUse runs hooks/dispatch (10-atlas-removal-guard, 30-ticket-offer)",
+      "fix": "",
+      "group": "hooks",
+      "id": "hooks.dispatch-PreToolUse",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "PostToolUse runs hooks/dispatch (40-jira-session-link, 40-ticket-comments)",
+      "fix": "",
+      "group": "hooks",
+      "id": "hooks.dispatch-PostToolUse",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "Notification runs hooks/dispatch (no hook files yet)",
+      "fix": "",
+      "group": "hooks",
+      "id": "hooks.dispatch-Notification",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "Stop runs hooks/dispatch (no hook files yet)",
+      "fix": "",
+      "group": "hooks",
+      "id": "hooks.dispatch-Stop",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "SubagentStop runs hooks/dispatch (no hook files yet)",
+      "fix": "",
+      "group": "hooks",
+      "id": "hooks.dispatch-SubagentStop",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "PreCompact runs hooks/dispatch (no hook files yet)",
+      "fix": "",
+      "group": "hooks",
+      "id": "hooks.dispatch-PreCompact",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "PostCompact runs hooks/dispatch (no hook files yet)",
+      "fix": "",
+      "group": "hooks",
+      "id": "hooks.dispatch-PostCompact",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "hooks/dispatch and every hook file are executable",
+      "fix": "",
+      "group": "hooks",
+      "id": "hooks.files",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "JP-107: SessionStart, SessionEnd present and registered",
+      "fix": "",
+      "group": "hooks",
+      "id": "hooks.ledger-spool",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "JP-110: PreToolUse present and registered",
+      "fix": "",
+      "group": "hooks",
+      "id": "hooks.ticket-offer",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "JP-118: PostToolUse, UserPromptSubmit present and registered",
+      "fix": "",
+      "group": "hooks",
+      "id": "hooks.ticket-comments",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "JP-111: PreToolUse, PostToolUse present and registered",
+      "fix": "",
+      "group": "hooks",
+      "id": "hooks.atlas-guard",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "settings.json still has hook entries of the old Session Atlas (JP-111)",
+      "fix": "it is removed by the retire-session-atlas job once ledger-backfill has succeeded; check backfills.retire-session-atlas",
+      "group": "hooks",
+      "id": "hooks.old-atlas",
+      "status": "fail"
+    },
+    {
+      "auto_fix": null,
+      "detail": "hooks that failed in the last 24 hours: failed x2",
+      "fix": "read ~/.josh-360/logs/hooks.log",
+      "group": "hooks",
+      "id": "hooks.log",
+      "status": "warn"
+    },
+    {
+      "auto_fix": null,
+      "detail": "schema version 1 (current), integrity ok",
+      "fix": "",
+      "group": "data",
+      "id": "data.ledger",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "all 31 tables and 79 triggers from schema.sql are there",
+      "fix": "",
+      "group": "data",
+      "id": "data.ledger-shape",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "ledger/db.py sets it on every connection and SQLite 3.54.0 honours it",
+      "fix": "",
+      "group": "data",
+      "id": "data.recursive-triggers",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "~/.josh-360/state/cache.db does not exist yet; the headless Session Atlas creates it",
+      "fix": "check backfills.retire-session-atlas and services.atlas-launchd",
+      "group": "data",
+      "id": "data.cache-db",
+      "status": "warn"
+    },
+    {
+      "auto_fix": null,
+      "detail": "1 backups kept, newest made 5 h ago",
+      "fix": "",
+      "group": "data",
+      "id": "data.backups",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "35111 sessions and 3332 episodes recorded",
+      "fix": "",
+      "group": "data",
+      "id": "data.ledger-content",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "1 ticket offers (JP-110) recorded",
+      "fix": "",
+      "group": "evidence",
+      "id": "evidence.ticket-offer",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "no ticket comment deliveries (JP-118) yet in the ledger (comment_deliveries)",
+      "fix": "not yet seen: the manual check is in the list below (comment on a ticket a session is working on)",
+      "group": "evidence",
+      "id": "evidence.ticket-comments",
+      "status": "warn"
+    },
+    {
+      "auto_fix": null,
+      "detail": "843 session summaries (JP-108) recorded",
+      "fix": "",
+      "group": "evidence",
+      "id": "evidence.summaries",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "12778 friction facts (JP-112) recorded",
+      "fix": "",
+      "group": "evidence",
+      "id": "evidence.friction",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "20 debriefs recorded",
+      "fix": "",
+      "group": "evidence",
+      "id": "evidence.debriefs",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "waits for the retire-session-atlas job to succeed (see backfills.retire-session-atlas)",
+      "fix": "",
+      "group": "services",
+      "id": "services.atlas-launchd",
+      "status": "skip"
+    },
+    {
+      "auto_fix": null,
+      "detail": "the old Session Atlas is not loaded",
+      "fix": "",
+      "group": "services",
+      "id": "services.old-atlas-gone",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "waits for the retire-session-atlas job to succeed",
+      "fix": "",
+      "group": "services",
+      "id": "services.atlas-health",
+      "status": "skip"
+    },
+    {
+      "auto_fix": null,
+      "detail": "no Atlas log yet",
+      "fix": "",
+      "group": "services",
+      "id": "services.atlas-log",
+      "status": "skip"
+    },
+    {
+      "auto_fix": null,
+      "detail": "Node v26.10.0 at /opt/homebrew/bin/node",
+      "fix": "",
+      "group": "services",
+      "id": "services.node",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "account and container are set (account stjosh360ledger, container ledger-backups)",
+      "fix": "",
+      "group": "accounts",
+      "id": "accounts.azure-config",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "az is signed in",
+      "fix": "",
+      "group": "accounts",
+      "id": "accounts.az-login",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "a redaction is waiting to reach the uploaded copies (last upload 43 min ago)",
+      "fix": "it finishes on the next daily upload once az login works",
+      "group": "accounts",
+      "id": "accounts.azure-upload",
+      "status": "warn"
+    },
+    {
+      "auto_fix": "jira-email",
+      "detail": "no Jira account email is set: ticket links and comment delivery cannot read Jira",
+      "fix": "put your Atlassian email on one line in ~/.josh-360/state/jira-email (or: doctor --fix --jira-email you@example.com)",
+      "group": "accounts",
+      "id": "accounts.jira-email",
+      "status": "fail"
+    },
+    {
+      "auto_fix": null,
+      "detail": "the keychain item jira-claude-api-key exists (asked about, not read)",
+      "fix": "",
+      "group": "accounts",
+      "id": "accounts.jira-token",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "claude found at ~/.local/bin/claude",
+      "fix": "",
+      "group": "accounts",
+      "id": "accounts.claude-cli",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "3 graphs, each compiled copy matches its source files",
+      "fix": "",
+      "group": "graphs",
+      "id": "graphs.compiled",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "the walker starts on this Python",
+      "fix": "",
+      "group": "graphs",
+      "id": "graphs.walker",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "the debrief form is provisional; finalise it on or after 2026-12-01 (two weeks of friction rows, JP-113)",
+      "fix": "",
+      "group": "owed",
+      "id": "owed.debrief-form",
+      "status": "skip"
+    }
+  ],
+  "fixes": [],
+  "laptop_copy": "~/.josh-360/repo",
+  "manual": [
+    {
+      "how": "In a throwaway folder with no ticket, start a Claude Code session, ask it to create a file and make a commit. Its next message should say \"This has become ticket-sized work, want me to open a ticket?\". Then evidence.ticket-offer turns green after the recorder's next pass.",
+      "id": "ticket-offer",
+      "ticket": "JP-110",
+      "what": "A session at its first commit with no ticket is offered one, once, and the commit still goes ahead."
+    },
+    {
+      "how": "Start a session on a branch named after a made-up test ticket, then comment on that ticket in Jira. Within about 10 minutes the session's next tool call should show the comment under \"Josh 360: new comment(s) on a ticket you are working on\". Then evidence.ticket-comments turns green.",
+      "id": "ticket-comments",
+      "ticket": "JP-118",
+      "what": "A new Jira comment reaches the session working on that ticket."
+    },
+    {
+      "how": "In a Claude Code session run `git worktree remove --force /tmp/x`. It should be blocked with a reason.",
+      "id": "removal-guard",
+      "ticket": "JP-111",
+      "what": "Session Atlas's guard blocks a worktree removal that would lose work."
+    },
+    {
+      "how": "Use the laptop normally for a day with Atlas running and watch for slowness; `npm run artifacts -- status` in ~/.josh-360/repo/apps/session-atlas shows the first scan's progress.",
+      "id": "atlas-macos-gates",
+      "ticket": "JP-111",
+      "what": "The moved Atlas behaves on macOS: the FSEvents burst, Finder and foreground-responsiveness gates claude-360 listed."
+    },
+    {
+      "how": "python3 ~/.josh-360/repo/ledger/loose_ends.py --fetch (long at first, about 1,000 before the ledger); then /closeout in a Claude Code session and watch the `by: josh` items it asks about.",
+      "id": "closeout",
+      "ticket": "JP-109",
+      "what": "The loose-ends list is real and the closeout agent's first run is sensible."
+    },
+    {
+      "how": "python3 ~/.josh-360/repo/graphs/gates/set-flag.py --ticket JP-121 --on, then the same with --off.",
+      "id": "jira-flag",
+      "ticket": "JP-121",
+      "what": "The shared Jira library can set and clear the Flagged field on a real ticket."
+    },
+    {
+      "how": "python3 ~/.josh-360/repo/graphs/intake/submit.py --source todo --ref <id> against the JP space, approve the card in the Needs you tab, confirm the ticket in Jira, then cancel it.",
+      "id": "intake-run",
+      "ticket": "JP-121",
+      "what": "A made-up to-do runs through the ticket creation graph to a real Jira ticket, then is cancelled."
+    },
+    {
+      "how": "cd ~/.josh-360/repo/tests && /usr/bin/python3 -B -m unittest test_install test_follow test_hooks (ends with OK).",
+      "id": "laptop-tests",
+      "ticket": "JP-105",
+      "what": "The laptop tests pass on the Mac's own Python 3.9."
+    }
+  ],
+  "ok": false,
+  "schema": 1,
+  "summary": {
+    "fail": 3,
+    "pass": 53,
+    "skip": 4,
+    "warn": 6
+  },
+  "time": "2026-11-17T21:34:30Z"
+}
