@@ -32,7 +32,7 @@ if log:
                             "ticket": os.environ.get("GRAPH_INPUT_TICKET_KEY"), "run": os.environ.get("JOSH360_RUN_ID"),
                             "runs": os.environ.get("JOSH360_RUNS")}) + "\\n")
 plan_path = os.environ["WALKER_TEST_PLAN"]
-default = {"move-ticket": "moved", "check-review": "clean"}.get(name, "pass")
+default = {"move-ticket": "moved", "check-review": "clean", "pr-state": "merged"}.get(name, "pass")
 plan = json.load(open(plan_path)).get(name, [default])
 count_path = plan_path + "." + name
 n = int(open(count_path).read()) if os.path.exists(count_path) else 0
@@ -71,7 +71,7 @@ class WalkerCase(unittest.TestCase):
         db.ensure(home / "state" / "ledger.db", home / "backups", NOW)
         self.root = self.tmp / "graphs"
         shutil.copytree(str(FIXTURE), str(self.root))
-        for gate in ("lint-spec", "check-review", "move-ticket", "ready", "no-loose-ends"):
+        for gate in ("lint-spec", "check-review", "move-ticket", "ready", "no-loose-ends", "pr-state"):
             (self.root / "gates" / (gate + ".py")).write_text(SCRIPTED)
         for effect in ("set-flag", "post-comment"):
             (self.root / "gates" / (effect + ".py")).write_text(EFFECT)
