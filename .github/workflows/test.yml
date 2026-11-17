@@ -30,6 +30,11 @@ jobs:
         with:
           python-version: '3.12'
       # Tickets that add code add their install and test steps here, and in .claude/workflow.config.md.
+      # JP-111: Session Atlas (apps/session-atlas) is Node 22.18 or newer, runs TypeScript directly and has no runtime
+      # dependency. The hook tests in tests/ also start Node.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - name: Install
         run: pip install -r requirements.txt
       - name: Fast checks
@@ -38,3 +43,9 @@ jobs:
       # scripts/check.py checks by parsing).
       - name: Full suite
         run: python3 -m unittest discover -s tests -v
+      - name: Session Atlas install
+        run: npm ci --prefix apps/session-atlas
+      - name: Session Atlas typecheck
+        run: npm run typecheck --prefix apps/session-atlas
+      - name: Session Atlas tests
+        run: npm test --prefix apps/session-atlas

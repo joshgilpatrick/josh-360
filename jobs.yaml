@@ -45,7 +45,7 @@ jobs:
     run: ledger/summary.py
     every: 5m
     timeout: 15m
-    description: JP-108. Writes about five summary lines for each episode that has gone quiet. Copies from the title, the first line of the first message and STATE.md; one small cheap-tier call only when those are too thin; none for a .phi folder.
+    description: JP-108. Writes about five summary lines for each episode that has gone quiet. Copies from the title, the first line of the first message and STATE.md; one small cheap-tier call only when those are too thin. JP-113: the same call also fills in the debrief form for an episode that earns one (a graph run, or friction facts at a threshold), and an episode that earns a debrief but can be copied gets a debrief-only call. At most one model call per episode; none for a .phi folder.
 
   - id: ledger-backup
     run: ledger/backup.py
@@ -80,3 +80,17 @@ jobs:
     timeout: 5m
     report: true
     description: JP-118. Passes new Jira comments on a ticket to the sessions and graph runs working on it (a file the session's hook reads; a folder in the run for the binding), once each, recorded in the ledger. Skips comments the system wrote. No model call. The report is counts only.
+
+  - id: retire-session-atlas
+    run: scripts/retire_session_atlas.py
+    every: once
+    timeout: 10m
+    report: true
+    description: JP-111, once, after the ledger backfill has finished. Stops the old Session Atlas, takes its hook entries out of ~/.claude/settings.json (backup kept), seeds cache.db from the old cost ledger and archives atlas.db and the old cost ledger under ~/Archive/josh-360-retired/. Reversible; deletes nothing.
+
+  - id: session-atlas-service
+    run: scripts/atlas_service.py
+    every: 1h
+    timeout: 5m
+    report: true
+    description: JP-111. Keeps the headless Session Atlas (apps/session-atlas) loaded in launchd on the latest code. It waits until retire-session-atlas has succeeded. No model call.

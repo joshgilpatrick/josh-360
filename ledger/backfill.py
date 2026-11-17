@@ -158,7 +158,7 @@ def main() -> int:
     fetch = jira_read.make_fetch(os.environ)
     conn = db.connect_existing(db.ledger_path())
     atlas = open_atlas(home / "atlas" / "atlas.db")
-    cost_db = costs.open_cost_ledger(home / "cost-ledger" / "ledger.db")
+    cost_db = costs.open_cost_ledger(costs.default_path(home))
     try:
         report = backfill(conn, atlas=atlas, cost_db=cost_db, projects=home / "projects", now=common.now_utc(),
                           git=record.real_git, jira=lambda key: jira_read.ticket_context(key, fetch, names),
