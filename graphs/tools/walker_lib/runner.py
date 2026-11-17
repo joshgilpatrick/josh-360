@@ -17,6 +17,7 @@ from . import engine, gates, ledgerio, questions, runfolder
 from .graphfile import SHORT_CODE, Graph
 
 MAX_STEPS_PER_CALL = 200
+PENDING = "pending"   # what a wait answers while it waits (graphs/CONVENTION.md, "Wait steps")
 
 
 class Run:
@@ -130,6 +131,11 @@ def run_gate_step(run: Run, step: str, name: str, names: List[str], outcomes: Op
     g = run.graph
     row_id = _start(run, step, "gate")
     result = gates.run_gate(g.root, name, run.env(names, step), run.cwd(), outcomes)
+    return _finish_gate(run, step, row_id, result, declared)
+
+
+def _finish_gate(run: Run, step: str, row_id: int, result: gates.GateResult, declared: Optional[dict]) -> engine.State:
+    g = run.graph
     if result.error:
         _end(run, row_id, engine.ERROR, result.error)
         run.doc["stopped"] = {"step": step, "reason": result.error}
@@ -143,6 +149,28 @@ def run_gate_step(run: Run, step: str, name: str, names: List[str], outcomes: Op
     run.save()
     _end(run, row_id, result.outcome, result.summary)
     return run.state
+
+
+def run_wait_step(run: Run, step: str) -> Optional[Dict[str, object]]:
+    """Run a wait's script before anything is written. `pending` writes nothing and returns the `waiting` answer;
+    any declared outcome (or an error) writes one row, as a gate does, and returns None so the run goes on."""
+    g = run.graph
+    s = g.steps[step]
+    result = gates.run_gate(g.root, s["wait"], run.env(list(s.get("inputs") or []), step), run.cwd(),
+                            g.outcomes(step) + [PENDING])
+    if result.error is None and result.outcome == PENDING:
+        now = ledgerio.now()
+        before = run.doc.get("waiting") or {}
+        since = before.get("since") if before.get("step") == step else now
+        run.doc["waiting"] = {"step": step, "since": since, "checked": now}
+        run.save()
+        return {"action": "waiting", "run": run.run_id, "step": step, "gate": s["wait"],
+                "summary": _note(run, result.summary), "waiting_since": since}
+    row_id = _start(run, step, "gate")
+    if run.doc.pop("waiting", None) is not None:
+        run.save()
+    _finish_gate(run, step, row_id, result, s.get("outputs") or {})
+    return None
 
 
 # --- Asks --------------------------------------------------------------------------------------------------------
@@ -333,6 +361,12 @@ def advance(run: Run) -> Dict[str, object]:
             s = g.steps[act.step]
             run_gate_step(run, act.step, s["gate"], list(s.get("inputs") or []), g.outcomes(act.step),
                           s.get("outputs") or {})
+            continue
+        if act.kind == "wait":
+            ensure_status(run, act.step)
+            waiting = run_wait_step(run, act.step)
+            if waiting is not None:
+                return _with_warnings(run, waiting)
             continue
         if act.kind == "ask":
             ensure_status(run, act.step)
