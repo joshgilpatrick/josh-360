@@ -383,7 +383,7 @@ These rules were settled in the brainstorm and apply across everything above.
 | Relaxing the write rule | Later, through the same staged trust as decisions, once staging and development conventions make testing safe. |
 | Retiring something | Two moves. First it is switched off and archived, which is reversible and needs nobody. Permanent deletion is collected into one list per phase that Josh approves in one sitting. |
 | Background services | Josh 360's services start from the one startup manifest in macbook-automations, with no installers of their own. |
-| Patient data | No patient data in the ledger, the summaries or the decision records. This extends Josh's existing rule of no PHI in logs. |
+| Patient data | Every system may hold patient data. Nothing that identifies a patient goes to GitHub or Jira. The ledger, the summaries and the decision records avoid patient names, dates of birth, social security numbers and phone numbers; unique identifiers are fine. Data goes only through platforms Josh's organisation owns or has a BAA with. This extends Josh's existing rule of no PHI in logs (Josh, 17 November 2026, JP-149; `docs/design/data-model.md`, "Patient data"). |
 
 ## What exists today
 
