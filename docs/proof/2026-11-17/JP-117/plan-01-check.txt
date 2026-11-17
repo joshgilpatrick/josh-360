@@ -1,0 +1,18 @@
+# The plan's own checks: every link in it resolves, every heading is in Contents, no placeholder words
+bad anchors: []
+headings not in contents: []
+TBD 0
+TODO 0
+handle edge 0
+appropriate 0
+
+$ python3 scripts/check.py   (branch JP-117-runner-plan, full suite)
+OK
+check.py: ok (0 problem(s))
+
+
+$ python3 scripts/check.py --fast   (after the last edit to the plan)
+check.py: ok (0 problem(s))
+
+$ python3 scripts/decisions.py list --ticket JP-117 | wc -l
+21
