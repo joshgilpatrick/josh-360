@@ -1,12 +1,19 @@
 #!/usr/bin/env python3
-"""DRAFT gate: question-route. Designed in docs/superpowers/specs/2026-11-17-development-graph-design.md (JP-115); built in the JP-115 build.
+"""Gate question-route (JP-115): where a designer's question goes.
 
-Decides where a designer's question goes: to_triage for a build ticket (JP-103's return door), to_josh for a Research ticket, whose questions are its work.
+`to_triage` for a build ticket (a Story, Bug or Task goes back to triage, which answers from its sources first), `to_josh`
+for a Research ticket, whose questions are its work. No Jira call: the ticket type is an input.
 
-Outcomes: to_triage, to_josh.
-Inputs arrive as GRAPH_INPUT_<NAME>; prints one JSON line (graphs/CONVENTION.md, "Gate scripts").
-Until it is built it refuses, so no run can pass through it by accident.
+Outcomes: to_triage, to_josh. Inputs: ticket_type.
 """
-import sys
+from lib.gate_run import execute, need
 
-sys.exit("question-route: not built yet (JP-115)")
+
+def run(inputs, deps):
+    research = need(inputs, "ticket_type") == "Research"
+    return ("to_josh" if research else "to_triage"), None, "a Research ticket's question is Josh's" if research \
+        else "a build ticket's question goes back to triage"
+
+
+if __name__ == "__main__":
+    execute(run, ["ticket_type"])
