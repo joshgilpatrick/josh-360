@@ -96,6 +96,40 @@ def problems(registry=None, priorities=None):
     return conventions.validate(registry or SAMPLE_REGISTRY, priorities or SAMPLE_PRIORITIES)
 
 
+class WhoMerges(unittest.TestCase):
+    """JP-115: a system says whether agents may merge their own pull requests there (`merges: agent`)."""
+
+    def registry_with(self, merges):
+        registry = copy.deepcopy(SAMPLE_REGISTRY)
+        registry["systems"][0]["merges"] = merges
+        return registry
+
+    def test_merges_agent_is_accepted(self):
+        self.assertEqual(problems(self.registry_with("agent")), [])
+        self.assertEqual(problems(self.registry_with("josh")), [])
+
+    def test_merges_other_value_is_a_problem(self):
+        found = problems(self.registry_with("anyone"))
+        self.assertTrue(any("sample-app" in p and "merges" in p for p in found), found)
+
+    def test_lookup_gives_josh_by_default(self):
+        self.assertEqual(conventions.lookup_repo(SAMPLE_REGISTRY, "sample-app")["merges"], "josh")
+        self.assertEqual(conventions.lookup_repo(SAMPLE_REGISTRY, "not-a-listed-repo")["merges"], "josh")
+        self.assertEqual(conventions.lookup_folder(SAMPLE_REGISTRY, f"{HOME}/Development/active/sample-app",
+                                                   home=HOME)["merges"], "josh")
+
+    def test_lookup_returns_agent_when_the_system_says_so(self):
+        registry = self.registry_with("agent")
+        self.assertEqual(conventions.lookup_repo(registry, "sample-app")["merges"], "agent")
+        self.assertEqual(conventions.lookup_folder(registry, f"{HOME}/Development/active/sample-app",
+                                                   home=HOME)["merges"], "agent")
+
+    def test_only_josh_360_lets_agents_merge(self):
+        registry = conventions.load(conventions.REGISTRY)
+        agents = [s["name"] for s in registry["systems"] if s.get("merges") == "agent"]
+        self.assertEqual(agents, ["josh-360"])
+
+
 class AKnownFolderResolves(unittest.TestCase):
     """Scenario: A known folder resolves."""
 
