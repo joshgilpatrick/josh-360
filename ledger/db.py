@@ -19,6 +19,7 @@ from typing import Iterator, List, Tuple
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from ledger import _repo  # noqa: E402,F401  (puts the repo root and graphs/gates on sys.path)
+from ledger import backup  # noqa: E402
 from laptop import common  # noqa: E402
 
 ROOT = _repo.ROOT
@@ -128,15 +129,6 @@ def check_migration(sql: str) -> None:
                 raise ValueError("new table {} needs its trigger {}_{}".format(table, table, suffix))
 
 
-def _backup(conn: sqlite3.Connection, dest: Path) -> None:
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    target = sqlite3.connect(str(dest))
-    try:
-        conn.backup(target)
-    finally:
-        target.close()
-
-
 def _create(path: Path, now: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = connect(path)
@@ -169,7 +161,7 @@ def ensure(path: Path, backups: Path, now: str, migrations: Path = MIGRATIONS) -
         for _, _, file in todo:  # refuse every file before touching the database
             check_migration(file.read_text(encoding="utf-8"))
         stamp = now.replace(":", "")
-        _backup(conn, backups / "pre-migration-{}-{}.db".format(current, stamp))
+        backup.copy_to(conn, backups / "pre-migration-{}-{}.db.gz".format(current, stamp))
         for number, name, file in todo:
             sql = file.read_text(encoding="utf-8")
             script = "BEGIN;\n{}\nINSERT INTO schema_migrations (version, name, applied_at) VALUES ({}, '{}', '{}');\n" \
