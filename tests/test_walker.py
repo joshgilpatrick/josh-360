@@ -363,6 +363,15 @@ class TypedAnswers(WalkerCase):
         self.assertIn("patient-data screen", out["warnings"][0])
         self.assertNotIn("555", json.dumps(out))
 
+    def test_a_typed_answer_on_a_phi_run_is_never_posted(self):
+        run = self.walker("start", "--graph", "typed", "--ticket", "JP-906", "--phi")["run"]
+        self.walker("next", "--run", run)
+        self.answer_in_app(run, "q", "Use the second option, then close it")
+        out = self.walker("next", "--run", run)
+        self.assertEqual(out["action"], "run")
+        self.assertEqual([e for e in self.log() if e.get("effect") == "post-comment.py"], [])
+        self.assertIn("patient-data screen", out["warnings"][0])
+
     def test_a_failed_jira_effect_is_a_warning_and_the_run_goes_on(self):
         os.environ["WALKER_TEST_EFFECT_FAILS"] = "1"
         run = self.parked("Go ahead")
