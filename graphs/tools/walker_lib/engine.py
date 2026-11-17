@@ -29,7 +29,7 @@ class Forced(NamedTuple):
 
 
 class Action(NamedTuple):
-    kind: str         # done, run, gate, ask, exit, stopped
+    kind: str         # done, run, gate, wait, ask, exit, stopped
     step: Optional[str] = None
     allowed: bool = False       # a run past the cap that Josh allowed
     forced: Optional[Forced] = None
@@ -168,7 +168,7 @@ def replay(g: Graph, rows: List[dict]) -> State:
             if row.get("allowed"):   # an `allow` from Josh is not in the ledger; the flag on the row is its trace
                 st.grants[step] = max(1, st.grants.get(step, 0))
             expected = decide(g, st)
-            if expected.step != step or expected.kind not in ("run", "gate", "ask"):
+            if expected.step != step or expected.kind not in ("run", "gate", "wait", "ask"):
                 raise Corrupt("the ledger has step '{}' where the graph says '{}' comes next".format(
                     step, expected.step or expected.kind))
         if attempt != st.runs.get(step, 0) + 1:
