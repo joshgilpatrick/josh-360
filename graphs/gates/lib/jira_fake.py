@@ -99,6 +99,9 @@ class FileTransport:
         if method == "POST" and parts[-1] == "transitions":
             issues[parts[4]]["fields"]["status"] = {"name": "In Progress"}
             return 204, None
+        if method == "GET" and bare == "/rest/api/3/issueLinkType":
+            return 200, {"issueLinkTypes": [{"name": "Blocks", "inward": "is blocked by", "outward": "blocks"},
+                                            {"name": "Relates", "inward": "relates to", "outward": "relates to"}]}
         if method == "POST" and bare == "/rest/api/3/issueLink":
             link = {"type": {"name": data["type"]["name"]}, "outwardIssue": data["inwardIssue"]}
             issues[data["outwardIssue"]["key"]]["fields"]["issuelinks"].append(link)
