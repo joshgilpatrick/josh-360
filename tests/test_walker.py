@@ -257,6 +257,19 @@ class Asking(WalkerCase):
         again = json.loads((self.tmp / "questions" / (parked["question_id"] + ".json")).read_text())
         self.assertEqual(again, record)
 
+    def test_parking_the_same_step_again_keeps_an_answer_josh_already_gave(self):
+        run = self.start()
+        self.do_role(run, "design", "ready", {"spec_path": "spec-1"})
+        parked = self.walker("next", "--run", run)
+        qid = parked["question_id"]
+        self.assertTrue(questions.answer(qid, "build", "2026-11-17T22:00:00Z"))
+        before = json.loads((self.tmp / "questions" / (qid + ".json")).read_text())
+        questions.create(qid, run, "JP-901", str(self.tmp), "approve_spec", "again", ["build", "drop"],
+                         "2026-11-17T22:05:00Z")                            # the walker parks the same step again
+        after = json.loads((self.tmp / "questions" / (qid + ".json")).read_text())
+        self.assertEqual(after, before)
+        self.assertEqual((after["state"], after["answers"][after["questions"][0]["question"]]), ("answered", "build"))
+
     def test_the_answer_is_saved_as_a_decision_in_its_category(self):
         run = self.start()
         self.do_role(run, "design", "ready", {"spec_path": "spec-1"})
