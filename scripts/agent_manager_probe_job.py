@@ -19,6 +19,8 @@ reports/agent-manager-probe.json on laptop-status. What it does, once each, reco
 - reads the `sessions` table's columns and the status values in use from Agent Manager's database, read-only;
 - starts one throwaway session, named "JP-117 probe - safe to archive", asking it to reply OK and stop
   (`--model` is not given, so it uses Josh's saved default), and on later passes reads that session's status;
+  the spawn runs with claude's folder first on PATH, because launchd's PATH leaves out ~/.local/bin and the first
+  try was refused with "claude is not installed";
 - starts a detached `sleep` that writes a marker file after 90 seconds, and on the next pass reports whether it
   survived.
 
@@ -83,10 +85,10 @@ def first_line(text: str) -> str:
     return ""
 
 
-def call(argv: List[str], timeout: int = CALL_TIMEOUT) -> Dict[str, object]:
+def call(argv: List[str], timeout: int = CALL_TIMEOUT, env: Optional[Dict[str, str]] = None) -> Dict[str, object]:
     try:
         r = subprocess.run(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.DEVNULL,
-                           universal_newlines=True, timeout=timeout)
+                           universal_newlines=True, timeout=timeout, env=env)
         return {"code": r.returncode, "out": r.stdout, "err": r.stderr}
     except subprocess.TimeoutExpired:
         return {"code": 124, "out": "", "err": "timed out after {}s".format(timeout)}
@@ -174,9 +176,26 @@ def save_state(state: Dict[str, object]) -> None:
     tmp.replace(probe_dir() / "state.json")
 
 
-def spawn_once(am: str, state: Dict[str, object]) -> Dict[str, object]:
-    earlier = state.get("spawn")
-    attempts = int(state.get("spawn_attempts") or 0)
+def spawn_env(claude: Optional[str]) -> Dict[str, str]:
+    """The job's environment with claude's folder put first on PATH.
+
+    launchd gives a job PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin, which leaves out
+    ~/.local/bin, so the first probe's spawn was refused with "claude is not installed". The runner will need the
+    same: Agent Manager looks the CLI up on the caller's PATH.
+    """
+    env = dict(os.environ)
+    if claude:
+        folder = str(Path(claude).parent)
+        parts = [p for p in env.get("PATH", "").split(os.pathsep) if p and p != folder]
+        env["PATH"] = os.pathsep.join([folder] + parts)
+    return env
+
+
+def spawn_once(am: str, claude: Optional[str], state: Dict[str, object]) -> Dict[str, object]:
+    # The first probe (before claude's folder was put on PATH) kept its answer under "spawn"; that answer stays in
+    # the state file, and this one is counted afresh under its own keys.
+    earlier = state.get("spawn_with_path")
+    attempts = int(state.get("spawn_with_path_attempts") or 0)
     # A spawn that worked is never repeated. One that was refused is tried at most SPAWN_TRIES times in all, in
     # case Agent Manager was simply not running; a refusal creates no session, so a retry cannot make two.
     # A spawn that timed out, or whose pass was killed before its answer was saved (`pending`), may have made a
@@ -185,14 +204,16 @@ def spawn_once(am: str, state: Dict[str, object]) -> Dict[str, object]:
                                       or attempts >= SPAWN_TRIES):
         return earlier
     # Saved before the call: if the pass dies during or after the spawn, the next pass sees it as pending.
-    state["spawn_attempts"] = attempts + 1
-    state["spawn"] = {"attempt": attempts + 1, "pending": True}
+    state["spawn_with_path_attempts"] = attempts + 1
+    state["spawn_with_path"] = {"attempt": attempts + 1, "pending": True}
     save_state(state)
     folder = home() / "state"
     argv = [am, "spawn", "--name", PROBE_NAME, "--tool", "claude", "--directory", str(folder),
             "--prompt", PROBE_PROMPT, "--json"]
-    r = call(argv, timeout=SPAWN_TIMEOUT)
-    result: Dict[str, object] = {"attempt": attempts + 1, "code": r["code"], "error": first_line(str(r["err"]))}
+    env = spawn_env(claude)
+    r = call(argv, timeout=SPAWN_TIMEOUT, env=env)
+    result: Dict[str, object] = {"attempt": attempts + 1, "code": r["code"], "error": first_line(str(r["err"])),
+                                 "path_first": env.get("PATH", "").split(os.pathsep)[0]}
     if r["code"] == 0:
         result.update(shape(str(r["out"])))
         try:
@@ -201,7 +222,7 @@ def spawn_once(am: str, state: Dict[str, object]) -> Dict[str, object]:
             result["session_id"] = str(sid) if sid else None
         except ValueError:
             result["session_id"] = None
-    state["spawn"] = result
+    state["spawn_with_path"] = result
     save_state(state)
     return result
 
@@ -244,7 +265,9 @@ def build_report() -> Dict[str, object]:
     report["agent_manager"] = {"path": am}
     if am:
         # The spawn goes first, so the slow help calls can never push it past the job's timeout.
-        report["spawn"] = spawn_once(am, state)
+        report["spawn"] = spawn_once(am, claude, state)
+        if isinstance(state.get("spawn"), dict):
+            report["first_spawn"] = state["spawn"]
         report["agent_manager"].update(read_cli(am))  # type: ignore[union-attr]
     spawned = report.get("spawn") or {}
     report["database"] = read_db(spawned.get("session_id") if isinstance(spawned, dict) else None)
