@@ -181,9 +181,9 @@ Entry gate `ready` (JP-103); exit gate `no-loose-ends` (JP-109).
 
 The draft built one phase per builder session and looped back for the next. Josh's run cap (JP-139) counts every run of a role step in a graph run, loops included: cheap 5, mid 3, gate 2. A five-phase ticket would spend all five Haiku runs on its first pass and leave none for a retry. Josh also chose (16 November) not to pick a tier per phase, so the draft's cheap and mid builders become one.
 
-**Recommended, and drawn in the draft (Josh's decision, pending):** one builder session builds every phase in spec order. It hands each phase to a fresh helper with only that phase's tasks and checks, so no phase inherits another's context, which is how this project's own build threads work. Then `verify` runs every phase's checks on the final tree. A failing phase gets a feedback file and the builder runs again, doing only those items. The builder's five runs are all retries after the first. The per-phase record is kept in `work/state.json` and the evidence file, so the ledger can still say which phases failed first time.
+**Chosen by Josh on 17 November, and drawn in the draft:** one builder session builds every phase in spec order. It hands each phase to a fresh helper with only that phase's tasks and checks, so no phase inherits another's context, which is how this project's own build threads work. Then `verify` runs every phase's checks on the final tree. A failing phase gets a feedback file and the builder runs again, doing only those items. The builder's five runs are all retries after the first. The per-phase record is kept in `work/state.json` and the evidence file, so the ledger can still say which phases failed first time.
 
-The two alternatives on the decision card, and what each would change:
+The two alternatives he turned down, and what each would have changed:
 
 - **One run per phase, cap counted per phase.** The convention gains a way to count a step's cap per phase (and to mark the loop that moves to the next phase as progress, not a retry), and the checker and walker change with it. The graph gets the draft's `pick_phase` loop back.
 - **One run per phase, at most three phases.** No rule changes; `lint-spec` refuses a spec with more phases than the cap leaves room for, and the designer returns the ticket to triage to be split.
@@ -448,7 +448,9 @@ The binding to Agent Manager and the first real ticket are JP-117.
 
 ## Questions for Josh
 
-1. **How should the builder work through a ticket's phases, given the run caps?** On a card in the thread. Recommended: one builder run per ticket, building every phase in order. Alternatives: one run per phase with the cap counted per phase (a convention change), or one run per phase with at most three phases. See [Building every phase](#building-every-phase). The draft follows the recommendation until he answers.
+1. **How should the builder work through a ticket's phases, given the run caps?** Answered on 17 November: one builder run per ticket, building every phase in order (the recommended option). See [Building every phase](#building-every-phase).
+
+No questions are open. The design itself waits for Josh's approval.
 
 ## Choices made by default
 
