@@ -41,6 +41,12 @@ jobs:
     timeout: 10m
     description: JP-107. Writes sessions, episodes, refs and homes to the ledger from the hook spool, transcript metadata and git. No model call.
 
+  - id: ledger-summary
+    run: ledger/summary.py
+    every: 5m
+    timeout: 15m
+    description: JP-108. Writes about five summary lines for each episode that has gone quiet. Copies from the title, the first line of the first message and STATE.md; one small cheap-tier call only when those are too thin; none for a .phi folder.
+
   - id: ledger-backup
     run: ledger/backup.py
     every: 1d
