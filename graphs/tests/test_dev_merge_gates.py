@@ -103,6 +103,13 @@ class MergePr(MergeCase):
         with self.assertRaises(GateError):
             self.merge()
 
+    def test_merge_pr_refuses_only_a_skipped_check(self):
+        self.github.labels = [RD]
+        self.github.check_rows = [Check("suite", "skipping", "2026-11-17T11:00:00Z")]
+        with self.assertRaises(GateError):
+            self.merge()
+        self.assertEqual(self.calls("merge_squash"), [])
+
     def test_merge_pr_refuses_a_red_check(self):
         self.github.labels = [RD]
         self.github.check_rows = [Check("suite", "fail", "2026-11-17T11:00:00Z")]
