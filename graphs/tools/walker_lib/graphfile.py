@@ -40,7 +40,7 @@ class Graph:
 
     def kind(self, step: str) -> str:
         s = self.steps[step]
-        return "role" if "role" in s else "gate" if "gate" in s else "ask"
+        return "role" if "role" in s else "gate" if "gate" in s else "wait" if "wait" in s else "ask"
 
     def needs(self, step: str) -> List[str]:
         return list(self.steps[step].get("needs") or [])
