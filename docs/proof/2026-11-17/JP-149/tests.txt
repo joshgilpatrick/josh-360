@@ -1,0 +1,39 @@
+$ python3 -m unittest discover -s graphs/tests -p test_patient_data.py -v
+test_labelled_record_number_passes (test_patient_data.AUniqueIdentifierIsAllowedInTheLedger.test_labelled_record_number_passes) ... ok
+test_long_number_passes (test_patient_data.AUniqueIdentifierIsAllowedInTheLedger.test_long_number_passes) ... ok
+test_patient_as_a_word_passes (test_patient_data.AUniqueIdentifierIsAllowedInTheLedger.test_patient_as_a_word_passes) ... ok
+test_work_text_passes (test_patient_data.AUniqueIdentifierIsAllowedInTheLedger.test_work_text_passes) ... ok
+test_josh_list_still_applies_externally (test_patient_data.GitHubAndJiraAreTheFirmGuard.test_josh_list_still_applies_externally) ... ok
+test_labelled_record_number_is_refused_externally (test_patient_data.GitHubAndJiraAreTheFirmGuard.test_labelled_record_number_is_refused_externally) ... ok
+test_a_copied_run_of_ten_characters_is_a_problem (test_patient_data.TheCopyCheck.test_a_copied_run_of_ten_characters_is_a_problem) ... ok
+test_flagged_makes_every_text_a_problem (test_patient_data.TheCopyCheck.test_flagged_makes_every_text_a_problem) ... ok
+test_nine_characters_are_not_a_copy (test_patient_data.TheCopyCheck.test_nine_characters_are_not_a_copy) ... ok
+test_problems_never_hold_the_text (test_patient_data.TheCopyCheck.test_problems_never_hold_the_text) ... ok
+test_whitespace_is_collapsed_before_comparing (test_patient_data.TheCopyCheck.test_whitespace_is_collapsed_before_comparing) ... ok
+test_labelled_date_of_birth (test_patient_data.TheIdentifierScreenMatchesJoshsList.test_labelled_date_of_birth) ... ok
+test_labelled_name (test_patient_data.TheIdentifierScreenMatchesJoshsList.test_labelled_name) ... ok
+test_old_date_is_a_date_of_birth_net (test_patient_data.TheIdentifierScreenMatchesJoshsList.test_old_date_is_a_date_of_birth_net) ... ok
+test_phone_number_shapes (test_patient_data.TheIdentifierScreenMatchesJoshsList.test_phone_number_shapes) ... ok
+test_scan_withholds (test_patient_data.TheIdentifierScreenMatchesJoshsList.test_scan_withholds) ... ok
+test_ssn_shape (test_patient_data.TheIdentifierScreenMatchesJoshsList.test_ssn_shape) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.001s
+
+OK
+
+$ python3 -m unittest tests.test_ledger_schema.PatientDataRule tests.test_conventions.NoSystemIsSetApartForPatientData -v
+test_a_home_says_nothing_about_patient_data (tests.test_ledger_schema.PatientDataRule.test_a_home_says_nothing_about_patient_data) ... ok
+test_a_session_keeps_its_own_words_whatever_its_system (tests.test_ledger_schema.PatientDataRule.test_a_session_keeps_its_own_words_whatever_its_system)
+JP-149 scenario: a session homed to any registry system stores its title and summary lines. ... ok
+test_a_withheld_title_holds_no_text (tests.test_ledger_schema.PatientDataRule.test_a_withheld_title_holds_no_text) ... ok
+test_a_lookup_says_nothing_about_patient_data (tests.test_conventions.NoSystemIsSetApartForPatientData.test_a_lookup_says_nothing_about_patient_data) ... ok
+test_no_real_system_carries_the_old_flag (tests.test_conventions.NoSystemIsSetApartForPatientData.test_no_real_system_carries_the_old_flag) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.027s
+
+OK
+
+$ python3 scripts/check.py
+check.py: ok (0 problem(s))
