@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
@@ -36,7 +37,8 @@ class FileTransport:
             state = json.loads((self.folder / MARKER).read_text(encoding="utf-8"))
         except (OSError, ValueError):
             state = {}
-        for name, empty in (("issues", {}), ("comments", {}), ("properties", {}), ("next_id", 1)):
+        for name, empty in (("issues", {}), ("comments", {}), ("properties", {}), ("changelogs", {}), ("next_id", 1),
+                            ("tick", 0)):
             state.setdefault(name, empty)
         return state
 
@@ -54,6 +56,18 @@ class FileTransport:
         status, payload = self._handle(state, method, path, data)
         self._save(state)
         return status, (json.dumps(payload).encode() if payload is not None else b""), {}
+
+    @staticmethod
+    def _now(state: dict) -> str:
+        """A timestamp that moves forward by a minute with every call that asks for one (tests set `clock` to start)."""
+        state["tick"] += 1
+        start = datetime.strptime(state.get("clock", "2026-11-17T12:00:00"), "%Y-%m-%dT%H:%M:%S")
+        return (start + timedelta(minutes=state["tick"])).strftime("%Y-%m-%dT%H:%M:%S.000+0000")
+
+    def _log_change(self, state: dict, key: str, field: str, before=None, after=None) -> None:
+        state["changelogs"].setdefault(key, []).append({
+            "created": self._now(state), "author": {"accountId": state.get("myself", "acct-josh")},
+            "items": [{"field": field, "fromString": before, "toString": after}]})
 
     def _handle(self, state: dict, method: str, path: str, data: Optional[dict]):
         bare = path.split("?")[0]
@@ -74,7 +88,7 @@ class FileTransport:
         if method == "POST" and parts[-1] == "comment":
             cid = str(state["next_id"])
             state["next_id"] += 1
-            comments.setdefault(parts[4], []).append({"id": cid, "body": data["body"]})
+            comments.setdefault(parts[4], []).append({"id": cid, "body": data["body"], "created": self._now(state)})
             return 201, {"id": cid}
         if method == "GET" and len(parts) == 7 and parts[5] == "comment":
             for row in comments.get(parts[4], []):
@@ -82,7 +96,7 @@ class FileTransport:
                     return 200, row
             return 404, {}
         if method == "GET" and parts[-1] == "comment":
-            rows = [dict(r, author={"displayName": "Josh"}, created="2026-11-17T00:00:00.000+0000")
+            rows = [dict({"author": {"displayName": "Josh"}, "created": "2026-11-17T00:00:00.000+0000"}, **r)
                     for r in comments.get(parts[4], [])]
             return 200, {"comments": rows, "total": len(rows)}
         if method == "PUT" and parts[5:6] == ["properties"]:
@@ -92,13 +106,27 @@ class FileTransport:
             name = "{}|{}".format(parts[4], parts[6])
             return (200, {"key": parts[6], "value": props[name]}) if name in props else (404, {})
         if method == "PUT" and len(parts) == 5 and parts[4] in issues:
+            for name in (data.get("fields") or {}):
+                if name == "description":
+                    self._log_change(state, parts[4], "description")
             issues[parts[4]]["fields"].update(data.get("fields") or {})
             return 204, None
         if method == "GET" and parts[-1] == "transitions":
-            return 200, {"transitions": [{"id": "21", "to": {"name": "In Progress"}}]}
+            names = state.get("statuses") or ["Not Started", "Ready", "In Progress", "Done"]
+            return 200, {"transitions": [{"id": "21", "to": {"name": "In Progress"}}]
+                         + [{"id": "t:" + n, "to": {"name": n}} for n in names]}
         if method == "POST" and parts[-1] == "transitions":
-            issues[parts[4]]["fields"]["status"] = {"name": "In Progress"}
+            wanted = data["transition"]["id"]
+            name = "In Progress" if wanted == "21" else wanted[2:]
+            before = (issues[parts[4]]["fields"].get("status") or {}).get("name")
+            issues[parts[4]]["fields"]["status"] = {"name": name}
+            self._log_change(state, parts[4], "status", before, name)
             return 204, None
+        if method == "GET" and bare == "/rest/api/3/myself":
+            return 200, {"accountId": state.get("myself", "acct-josh")}
+        if method == "GET" and parts[-1] == "changelog":
+            rows = [dict(r, author=r["author"]) for r in state["changelogs"].get(parts[4], [])]
+            return 200, {"values": rows, "total": len(rows), "isLast": True}
         if method == "GET" and bare == "/rest/api/3/issueLinkType":
             return 200, {"issueLinkTypes": [{"name": "Blocks", "inward": "is blocked by", "outward": "blocks"},
                                             {"name": "Relates", "inward": "relates to", "outward": "relates to"}]}

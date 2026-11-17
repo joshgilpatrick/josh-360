@@ -5,6 +5,7 @@
 - [What it is](#what-it-is)
 - [Fields](#fields)
 - [Example](#example)
+- [A revision](#a-revision)
 
 ## What it is
 
@@ -78,5 +79,38 @@ Made-up data.
     "session-a",
     "session-b"
   ]
+}
+```
+
+## A revision
+
+Triage's `revise` step (JP-103, built in JP-122) writes a proposal with `action: revise` to close the gaps on a ticket that already exists. Ticket creation refuses it: its gates accept only `create` and `comment_on_match`.
+
+| Field | What it holds |
+| --- | --- |
+| `action` | `revise` |
+| `tickets` | Exactly one entry: the whole ticket as it should read, in the same shape as above, plus `key`, the existing ticket (`JP-140`). Its `sections`, `repository` and `where_it_runs` replace the description; the summary, type, labels and links are not touched. |
+| `closes` | The numbers of the gaps (`send-back` contract) this revision answers, as a list of integers |
+| `authors` | Session ids of the steps that wrote the revision; the `apply-revision` script adds them to the ticket's `josh360.authors` |
+| `needs_josh` | Only when the step ends `needs_josh` (then there is no `tickets`, `closes` or `authors`): `question` (one sentence, ending in a question mark), `recommendation` and `reason`. The `post-question` script writes it on the ticket before Josh is asked. |
+
+`apply-revision` writes the description only when the ticket still has the version the drafter was given. It never edits a ticket whose creator is not an allowed account.
+
+```json
+{
+  "action": "revise",
+  "tickets": [
+    {
+      "key": "JP-9001",
+      "type": "Story",
+      "repository": "josh-360",
+      "where_it_runs": "Cloud session",
+      "sections": {"goal": "...", "first_step": "...", "why": "...", "in_scope": ["..."], "not_in_scope": ["..."],
+                   "acceptance_criteria": "Feature: ...", "parent_or_related": "Parent: JP-94",
+                   "decisions_already_made": []}
+    }
+  ],
+  "closes": [1, 2],
+  "authors": ["session-c"]
 }
 ```
