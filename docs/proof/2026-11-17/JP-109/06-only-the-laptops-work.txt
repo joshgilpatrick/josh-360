@@ -1,0 +1,6 @@
+test_only_the_laptops_work_is_listed (tests.test_loose_ends.Scenarios.test_only_the_laptops_work_is_listed) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.387s
+
+OK

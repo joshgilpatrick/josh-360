@@ -1,0 +1,81 @@
+$ loose_ends.py
+Loose ends: 7 as of 2026-11-17T12:00:00Z (this laptop's sessions only)
+
+commits-unhoused (1)
+     1d  josh_360  e0b1785d7  1 commit on no branch and in no pull request  [1 session]
+
+unpushed-branch (2)
+    16d  josh_360  JP-900/unpushed  local branch with commits that are on no remote branch  [1 session]
+     3d  josh_360  JP-903/parallel  local branch with commits that are on no remote branch  [1 session]
+
+ticket-not-done (2)
+    16d    JP-900  JP-900 is In Progress  [1 session]
+     5d    JP-902  JP-902 is Code Review  [1 session]
+
+open-pr (1)
+     5d    https://example.test/o/r/pull/12  pull request is open  [1 session]
+
+orphaned-branch (1)
+     7d  josh_360  JP-901/merged-left  merged into the default branch, no remote copy  [1 session]
+(exit 0)
+
+$ loose_ends.py keep --folder <repo> --branch JP-903/parallel --note 'parallel feature'
+kept JP-903/parallel in <tmp>/work/josh_360
+(exit 0)
+
+$ loose_ends.py --session sess-0004   (kept, so nothing)
+Loose ends for session sess-0004: 0 as of 2026-11-17T12:00:00Z (this laptop's sessions only)
+Nothing is loose.
+(exit 0)
+
+$ closeout.py   (dry run)
+Closeout: 6 loose ends as of 2026-11-17T12:00:00Z
+
+I can do these (reversible) (3)
+  16d  unpushed-branch:<tmp>/work/josh_360:JP-900/unpushed  ->  push the branch to origin  (it exists only on this laptop)
+  7d  orphaned-branch:<tmp>/work/josh_360:JP-901/merged-left  ->  delete the local branch  (it is already merged; its tip is kept in this output for recovery)
+  1d  commits-unhoused:<tmp>/work/josh_360:e0b1785d72f9ce7028da6390f720125b72be9971  ->  save the commits on branch rescue/e0b1785d7  (they are on no branch; check GitHub first if the work may have been squash-merged)
+
+The closeout agent checks these (2)
+  16d  ticket-not-done:JP-900  ->  check the merged work, then move the ticket to Done  (only when a merged pull request or commits on the default branch prove it)
+  5d  ticket-not-done:JP-902  ->  check the merged work, then move the ticket to Done  (only when a merged pull request or commits on the default branch prove it)
+
+Josh decides these (1)
+  5d  open-pr:https://example.test/o/r/pull/12  ->  merge or close the pull request  (that is Josh's call)
+(exit 0)
+
+$ closeout.py --apply
+Closeout: 6 loose ends as of 2026-11-17T12:00:00Z
+
+I can do these (reversible) (3)
+  16d  unpushed-branch:<tmp>/work/josh_360:JP-900/unpushed  ->  push the branch to origin  (it exists only on this laptop)
+  7d  orphaned-branch:<tmp>/work/josh_360:JP-901/merged-left  ->  delete the local branch  (it is already merged; its tip is kept in this output for recovery)
+  1d  commits-unhoused:<tmp>/work/josh_360:e0b1785d72f9ce7028da6390f720125b72be9971  ->  save the commits on branch rescue/e0b1785d7  (they are on no branch; check GitHub first if the work may have been squash-merged)
+
+The closeout agent checks these (2)
+  16d  ticket-not-done:JP-900  ->  check the merged work, then move the ticket to Done  (only when a merged pull request or commits on the default branch prove it)
+  5d  ticket-not-done:JP-902  ->  check the merged work, then move the ticket to Done  (only when a merged pull request or commits on the default branch prove it)
+
+Josh decides these (1)
+  5d  open-pr:https://example.test/o/r/pull/12  ->  merge or close the pull request  (that is Josh's call)
+DONE unpushed-branch:<tmp>/work/josh_360:JP-900/unpushed: To <tmp>/origin.git
+ * [new branch]      JP-900/unpushed -> JP-900/unpushed
+branch 'JP-900/unpushed' set up to track 'origin/JP-900/unpushed'.
+DONE orphaned-branch:<tmp>/work/josh_360:JP-901/merged-left: Deleted branch JP-901/merged-left (was 26b4b0d). (branch tip was 26b4b0d406e4a3d1976a18648f314556c6ccab5a)
+DONE commits-unhoused:<tmp>/work/josh_360:e0b1785d72f9ce7028da6390f720125b72be9971: 
+(exit 0)
+
+$ loose_ends.py   (after)
+Loose ends: 4 as of 2026-11-17T12:00:00Z (this laptop's sessions only)
+
+ticket-not-done (2)
+    16d    JP-900  JP-900 is In Progress  [1 session]
+     5d    JP-902  JP-902 is Code Review  [1 session]
+
+open-pr (1)
+     5d    https://example.test/o/r/pull/12  pull request is open  [1 session]
+
+orphaned-branch (1)
+    16d  josh_360  JP-900/unpushed  pushed, not merged, and no open pull request  [1 session]
+(exit 0)
+

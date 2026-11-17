@@ -369,6 +369,8 @@ There is no table of loose ends, and the test fails if one appears. The ledger o
 
 A day when Josh skips the system loses nothing, because nothing was owed.
 
+**As built (JP-109).** `ledger/loose_ends.py` reads those inputs and checks them live; `ledger/closeout.py` and the `closeout` agent work through the list. Where the build differs from the table: an item is one thing (a branch, a ticket, a pull request, a worktree, or the tip of a run of commits) naming every session that touched it; "an orphaned branch" is a local branch a session touched that is merged and left behind, or pushed and forgotten, with no open pull request and not in use; a check that cannot be made is listed as unchecked, never clean; kept marks are keyed by the repository's main checkout, so a mark made from inside a worktree holds; and sessions whose pull request the ledger recorded are not asked about their commits. The choices are rows in `docs/decisions.md`.
+
 ## Queries agents may call
 
 Memory is pull only, and answers are small. Working agents get one command, `ledger/ask.py`, with six named queries and nothing else: no SQL, no file path. Each answer is at most 20 rows and 4 KB of JSON, and none returns friction facts, usage, debriefs, costs or measures (JP-112: working agents never see the measures).
