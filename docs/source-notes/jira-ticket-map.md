@@ -58,7 +58,7 @@ Epic: [JP-94](https://eventuswh-analytics.atlassian.net/browse/JP-94), Josh 360:
 | [JP-126](https://eventuswh-analytics.atlassian.net/browse/JP-126) | Story | Decision memory stage two: suggest and confirm with precedent | JP-125 |
 | [JP-127](https://eventuswh-analytics.atlassian.net/browse/JP-127) | Story | Run the weekly review that turns repeated friction into improvement tickets | JP-113, JP-120 |
 | [JP-128](https://eventuswh-analytics.atlassian.net/browse/JP-128) | Task | Retire the sprint skill once the new graph has replaced it | JP-120 |
-| [JP-129](https://eventuswh-analytics.atlassian.net/browse/JP-129) | Task | Close phase 2: prove the full pipeline and collect the deletion list | JP-121, JP-122, JP-123, JP-126, JP-127, JP-128 |
+| [JP-129](https://eventuswh-analytics.atlassian.net/browse/JP-129) | Task | Close phase 2: prove action-triage is archived and the weekly review works, and collect the deletion list | JP-121, JP-122, JP-123, JP-126, JP-127, JP-128 |
 
 ## Phase 3: reflection
 
@@ -71,6 +71,6 @@ Epic: [JP-94](https://eventuswh-analytics.atlassian.net/browse/JP-94), Josh 360:
 
 ## How to read this
 
-JP-121, JP-122 and JP-123 moved from phase 2 to phase 1 on 16 November 2026, when Josh said all graphs are phase 1 (JP-147). They still block JP-129, whose email run uses them.
+JP-121, JP-122 and JP-123 moved from phase 2 to phase 1 on 16 November 2026, when Josh said all graphs are phase 1 (JP-147). Their links to JP-129 are kept from before. On 17 November Josh moved the forwarded-email run into the phase 1 close (JP-120), and JP-129 now proves action-triage archived and the weekly review's first improvement ticket.
 
 "Blocked by" lists only the direct blockers, which are the Blocks links in Jira. A ticket can start when every ticket in that column is Done. Josh is needed at five points: the laptop hookup (JP-105), the phase 1 design questions (JP-106), and the close of each phase (JP-120, JP-129 and JP-133).
