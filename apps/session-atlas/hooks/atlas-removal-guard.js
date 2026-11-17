@@ -46,6 +46,10 @@
 // Known limits (documented, not intercepted): a command name computed in the middle of a word (`a${c}m`), a target computed by
 // a command other than pwd or `git rev-parse --show-toplevel`, deletion through a program that names no path in the command,
 // and a worktree more than one folder below a target when the Atlas catalog does not register it.
+// JP-157 (decisions/JP-157.md): the "appears to target" rules apply only to a command with a deleting or moving word (rm, rmdir, unlink,
+// shred, trash, srm, rimraf, rmtree, -delete, -exec, git clean, mv, a computed command name, a shell or eval); any other command is
+// allowed. Quoted text after a command that does not run it (echo, printf, git commit, gh, an interpreter without -c/-e) is data and
+// is not inspected, unless its output goes to a pipe, a redirection or a substitution, or it holds $( ) or a backtick.
 
 const fs = require('node:fs')
 const path = require('node:path')
@@ -151,7 +155,7 @@ function blockText(code, detail, next, extra) {
 
 // ---------------------------------------------------------------------------------------------------------- relevance
 
-const MARKER_RE = /worktree|\b(?:rm|unlink|shred|trash|srm)|rimraf|rmtree|-delete\b/i
+const MARKER_RE = /worktree|\b(?:rm|unlink|shred|trash|srm)|\bmv\b|rimraf|rmtree|-delete\b/i
 // A command name that is itself an expansion at the start of a simple command: `$x -rf ...`, `${c}m ...`, `` `cmd` ... ``.
 // The blanks after the separator exclude the newline: a newline is a separator of its own, so letting `\s*` consume it as well made
 // a run of N newlines cost O(N^2) (C1, final review: 160,000 newlines took 24.8 s, past the hook timeout, which lets the command run).
@@ -273,6 +277,40 @@ function outOfScopeWorktreeCommand(words) {
 
 const CODE_LIKE = /[\s;&|()<>`$]/
 
+// JP-157. Commands whose quoted text is data, not code: it is never run by them. Anything not listed (a shell, eval, sudo, env,
+// xargs, find, ssh, tmux, an unknown program, a quote that starts a command) is an executor and its quoted text is read as code.
+const DATA_INTERPRETER_RE = /^(?:python[\d.]*|node|nodejs|deno|bun|ruby|perl|php)$/
+const CODE_FLAG_RE = /^(?:eval|--(?:eval|print|command|exec)|-[a-z]*[cepr][a-z]*)$/i
+const DATA_GIT_COMMANDS = new Set(['commit', 'tag', 'log', 'show', 'notes', 'merge', 'stash', 'status', 'diff', 'branch', 'add', 'describe',
+  'shortlog', 'blame', 'rev-parse', 'rev-list', 'ls-files', 'cherry-pick', 'revert', 'am', 'apply', 'checkout', 'switch', 'reset'])
+const DATA_GH_COMMANDS = new Set(['api', 'pr', 'issue', 'run', 'repo', 'release', 'workflow', 'label', 'gist', 'search', 'project'])
+
+/**
+ * Whether quoted text is data for the command that owns it (`tokens` are its words so far; none yet means the quote starts the
+ * command, which is code). A double-quoted `$(...)` or backtick runs even under echo, so it is always code. An interpreter is a
+ * data owner only when no code flag (-c, -e, -p, -r, --eval) came before the quote.
+ */
+function quotedIsData(tokens, quote, text) {
+  if (quote === '"' && /\$\(|`/.test(text)) return false
+  let v = 0
+  while (v < tokens.length && ASSIGNMENT_RE.test(tokens[v].text)) v++
+  if (v >= tokens.length) return false
+  const verb = path.basename(tokens[v].text).toLowerCase()
+  const rest = tokens.slice(v + 1).map(t => t.text.toLowerCase())
+  if (READ_ONLY_VERBS.has(verb) || verb === 'printf') return true
+  if (DATA_INTERPRETER_RE.test(verb)) return !rest.some(w => CODE_FLAG_RE.test(w))
+  if (verb === 'git' || verb === 'gh') {
+    for (let k = 0; k < rest.length; k++) {
+      if (rest[k].startsWith('-')) {
+        if (verb === 'git' && GIT_VALUE_OPTIONS.has(rest[k])) k++
+        continue
+      }
+      return (verb === 'git' ? DATA_GIT_COMMANDS : DATA_GH_COMMANDS).has(rest[k])
+    }
+  }
+  return false
+}
+
 /**
  * The simple commands of any shell text, for the "appears to target" rule, never for execution. Each segment is
  * `{ tokens, end, sub, redirect }`: `end` is the operator that ended it (';', '\n', '&&', '||', '|', '&', '(', ')', '`' or ''),
@@ -292,6 +330,7 @@ function lexSegments(text, depth = 0) {
   let quote = null
   let quotedText = ''
   let nested = []
+  let dataTexts = []
   const open = () => { seg = { tokens: [], end: '', sub: backtick || parens.includes(true), redirect: false } }
   const flush = () => {
     if (cur !== '') seg.tokens.push({ text: cur, mask: literalBrackets(cur, mask) })
@@ -304,15 +343,26 @@ function lexSegments(text, depth = 0) {
     if (seg.tokens.length > 0) segments.push(seg)
     for (const s of nested) segments.push(s)
     nested = []
+    // Data after a non-executing command is read as code only when its output goes somewhere that may run it (see quotedIsData).
+    if (seg.sub || op === '|' || seg.redirect) for (const t of dataTexts) nested.push(...lexSegments(t, depth + 1))
+    for (const s of nested) segments.push(s)
+    nested = []
+    dataTexts = []
   }
-  const relex = () => { if (depth < 2 && CODE_LIKE.test(quotedText)) nested.push(...lexSegments(quotedText, depth + 1)) }
+  // JP-157: quoted text is read as code only when the command it belongs to runs it; after echo, git commit and the like it is data.
+  const relex = closing => {
+    if (depth >= 2 || !CODE_LIKE.test(quotedText)) return
+    if (quotedIsData(seg.tokens, closing, quotedText)) dataTexts.push(quotedText)
+    else nested.push(...lexSegments(quotedText, depth + 1))
+  }
   open()
   for (let i = 0; i < text.length; i++) {
     const c = text[i]
     if (quote !== null) {
       if (c === quote) {
+        const closing = quote
         quote = null
-        relex()
+        relex(closing)
         continue
       }
       let ch = c
@@ -382,7 +432,7 @@ function lexSegments(text, depth = 0) {
       mask += c === '$' || c === '*' || c === '?' || c === '[' || c === '{' || (c === '~' && cur.length === 1) ? 'd' : '.'
     }
   }
-  if (quote !== null) relex()
+  if (quote !== null) relex(quote)
   end('')
   return segments
 }
@@ -1123,6 +1173,37 @@ function gitMayBeWorktree(words) {
   return false
 }
 
+// JP-157: words that may delete, move or prune something, in a command or in code text (os.remove, shutil.rmtree, fs.rmSync). Matching more
+// than needed is safe: it only opens the gate to the path rules below, which are unchanged.
+const DELETING_WORD_RE = /(?:^|[./])(?:rm|rmdir|unlink|shred|trash|trash-put|srm|rimraf|rmtree|rmsync|remove|removesync|prune|rename|move|mv)$|rmtree|rimraf|^-+delete|^-exec/i
+const DELETING_CODE_RE = /rm_r|rm_f|rmdir|rmtree|rimraf|rmsync|unlink|remove|delete|shred|trash|rename|move/i
+const RUNS_ARBITRARY_RE = /^(?:eval|exec|source|\.|sh|bash|zsh|dash|ksh|csh|fish)$/
+
+/** The deletion gate (JP-157): the first word of a segment that may delete or move something, a computed command name included, or null. */
+function deletingWord(seg, skipped) {
+  if (skipped) return null
+  let v = 0
+  while (v < seg.tokens.length && ASSIGNMENT_RE.test(seg.tokens[v].text)) v++
+  // A computed command name (`$x`, `${c}m`, `$'\x72m'`), as the command or right after a wrapper such as sudo, may be anything.
+  for (const t of seg.tokens.slice(v, v + 2)) {
+    if ((t.mask.includes('d') && !t.text.includes('/')) || RUNS_ARBITRARY_RE.test(t.text.toLowerCase())) return t.text
+  }
+  const words = new Set(seg.tokens.map(t => t.text.toLowerCase()))
+  if (words.has('git') && words.has('clean')) return 'git clean'
+  // Code text (an interpreter one-liner) glues the call to its object: FileUtils.rm_rf, File.delete, Deno.removeSync. A token with no
+  // blank and no slash (so not a path and not prose) opens the gate on the name anywhere inside it.
+  for (const t of seg.tokens) if (DELETING_WORD_RE.test(t.text) || (!/[\s/]/.test(t.text) && DELETING_CODE_RE.test(t.text))) return t.text
+  return null
+}
+
+/** Ruling R58: a read-only simple command whose output goes nowhere and that deletes nothing; its words do not count. */
+function readOnlySkip(seg) {
+  let v = 0
+  while (v < seg.tokens.length && ASSIGNMENT_RE.test(seg.tokens[v].text)) v++
+  const verb = v < seg.tokens.length ? path.basename(seg.tokens[v].text).toLowerCase() : ''
+  return READ_ONLY_VERBS.has(verb) && !seg.sub && seg.end !== '|' && !seg.redirect && !deletesSomething(new Set(seg.tokens.map(t => t.text.toLowerCase())))
+}
+
 /**
  * Rulings R57, R58 and R60 for a command outside the accepted grammar: blocked only when its text appears to target a managed
  * worktree or the home folder. The simple commands are walked in order. A cd/pushd operand and the value of -C, --work-tree and
@@ -1135,6 +1216,10 @@ async function appearsToTarget(command, words, cwd, git, catalog) {
   for (const [re, to] of SUBSTITUTIONS) text = text.replace(re, () => to)
   const segments = lexSegments(text)
   if (segments.reduce((n, s) => n + s.tokens.length, 0) > MAX_TOKENS) return decline('manual-resolution', 'the command is too long for the guard to check', manualNext(null))
+  // JP-157: a command that deletes, moves or prunes nothing is not this guard's business. The path, anchor and checkout-count rules
+  // below (and their Git and filesystem work) run only for a command with a deleting word.
+  const gateWord = segments.map(seg => deletingWord(seg, readOnlySkip(seg))).find(w => w !== null)
+  if (gateWord === undefined) return ALLOW
   const known = worktreeSet(git, catalog)
   await known.addRepositoryOf(cwd)
   const homes = await homeEntries()
@@ -1151,13 +1236,15 @@ async function appearsToTarget(command, words, cwd, git, catalog) {
   }
   const considered = []
   const consideredBySegment = []
+  const snippets = []
   const candidates = []
   for (const seg of segments) {
     const toks = seg.tokens
     let v = 0
     while (v < toks.length && ASSIGNMENT_RE.test(toks[v].text)) v++
     const verb = v < toks.length ? path.basename(toks[v].text).toLowerCase() : ''
-    const skip = READ_ONLY_VERBS.has(verb) && !seg.sub && seg.end !== '|' && !seg.redirect && !deletesSomething(new Set(toks.map(t => t.text.toLowerCase())))
+    const skip = readOnlySkip(seg)
+    const shown = deletingWord(seg, skip) || verb
     const operands = new Set()
     if (verb === 'cd' || verb === 'pushd') {
       let k = v + 1
@@ -1187,23 +1274,26 @@ async function appearsToTarget(command, words, cwd, git, catalog) {
       mine.push(t.text.toLowerCase())
       for (const piece of piecesOf(t)) {
         const c = await candidate(piece, ctx)
-        if (c) candidates.push(c)
+        if (c) candidates.push(Object.assign(c, { verb: shown, word: t.text }))
       }
     }
     consideredBySegment.push(mine)
+    snippets.push(clip(toks.map(t => t.text).join(' '), 120))
   }
   const lower = new Set(considered.map(t => t.text.toLowerCase()))
   if ((lower.has('remove') || lower.has('prune')) && (lower.has('worktree') || consideredBySegment.some(gitMayBeWorktree))) {
-    return decline('manual-resolution', 'it removes or prunes Git worktrees (or runs a git command that may be an alias of worktree) in a form the guard cannot check', manualNext(null))
+    const at = consideredBySegment.findIndex(w => w.includes('remove') || w.includes('prune'))
+    return decline('manual-resolution', `${quoted(snippets[at] || '')} removes or prunes Git worktrees (or runs a git command that may be an alias of worktree) in a form the guard cannot check`, manualNext(null))
   }
   if (deletesSomething(lower) && considered.some(t => /worktree/i.test(t.text))) {
-    return decline('manual-resolution', 'it deletes something and mentions a worktree, in a form the guard cannot check', manualNext(null))
+    return decline('manual-resolution', `${quoted(gateWord)} deletes something and ${quoted(considered.find(t => /worktree/i.test(t.text)).text)} mentions a worktree, in a form the guard cannot check`, manualNext(null))
   }
+  let by = null
   const firstHit = () => {
     const protectedPaths = [...known.list, ...homes]
     for (const c of candidates) {
       const hit = candidateHit(c, protectedPaths)
-      if (hit) return hit
+      if (hit) { by = c; return hit }
     }
     return null
   }
@@ -1220,7 +1310,8 @@ async function appearsToTarget(command, words, cwd, git, catalog) {
     return decline('direct-rm', `it would delete the ${kindOf(hit)} ${quoted(hit.worktreePath)} (or a folder containing it) without any check`,
       hit.isMain ? NEXT_MAIN : `do not delete worktrees with rm. ${flowFor(hit)}`)
   }
-  return decline('manual-resolution', `it appears to target the ${kindOf(hit)} ${quoted(hit.worktreePath)} in a form the guard cannot check`, manualNext(hit))
+  const via = by ? `${quoted(by.verb)} (word ${quoted(by.word)})` : quoted(gateWord)
+  return decline('manual-resolution', `${via} appears to target the ${kindOf(hit)} ${quoted(hit.worktreePath)} in a form the guard cannot check`, manualNext(hit))
 }
 
 async function analyze(command, cwdGiven, requestedChecker) {
