@@ -1,0 +1,731 @@
+{
+ "agents": {
+  "answerer": {
+   "fills": "researcher",
+   "title": "Answerer"
+  },
+  "drafter": {
+   "fills": "researcher",
+   "title": "Drafter"
+  },
+  "finder": {
+   "fills": "researcher",
+   "title": "Finder"
+  }
+ },
+ "compiled": 1,
+ "graph": {
+  "convention": 1,
+  "description": "Takes a Ready non-development ticket in JP (an answer, a document, a reply to draft, a file to find) and ends with its deliverable saved outside any working folder, the sources behind it in an evidence file, Josh's sign-off (or, for an emailed ask, the answer emailed to him, reopened only by his reply), and a resolution comment that the next run's lookup can find. Nothing is sent to anyone but Josh, and a shared write runs only on his yes.\n",
+  "graph": "non-development",
+  "header": {
+   "access": {
+    "check_deliverable": "read",
+    "check_gaps": "read",
+    "check_review": "josh",
+    "close": "josh",
+    "close_emailed": "josh",
+    "decide_stuck": "read",
+    "deliver": "josh",
+    "do_work": "josh",
+    "find_precedent": "read",
+    "judge_precedent": "read",
+    "pick_path": "read",
+    "pick_sign_off": "read",
+    "ping_before": "read",
+    "ping_during": "read",
+    "read_ticket": "read",
+    "return_early": "josh",
+    "return_late": "josh",
+    "review_work": "read",
+    "share_out": "shared",
+    "sign_off": "read",
+    "start_run": "josh",
+    "to_validation": "josh"
+   },
+   "asks_josh": [
+    "ping_before",
+    "ping_during",
+    "sign_off",
+    "decide_stuck"
+   ],
+   "end_states": {
+    "close_emailed.closed": "success",
+    "decide_stuck.stop": "needs-josh",
+    "finished": "success",
+    "return_early.returned": "neutral",
+    "return_late.returned": "neutral"
+   },
+   "entry_gate": "ready",
+   "exit_gate": "no-loose-ends",
+   "jira": [
+    {
+     "status": "Ready",
+     "steps": [
+      "read_ticket"
+     ]
+    },
+    {
+     "status": "Not Started",
+     "steps": [
+      "return_early",
+      "return_late"
+     ]
+    },
+    {
+     "status": "In Progress",
+     "steps": [
+      "start_run",
+      "find_precedent",
+      "judge_precedent",
+      "check_gaps",
+      "ping_before",
+      "do_work",
+      "ping_during",
+      "check_deliverable",
+      "pick_path",
+      "review_work",
+      "check_review",
+      "decide_stuck"
+     ]
+    },
+    {
+     "status": "Validation",
+     "steps": [
+      "to_validation",
+      "deliver",
+      "pick_sign_off",
+      "sign_off",
+      "share_out"
+     ]
+    },
+    {
+     "status": "Done",
+     "steps": [
+      "close_emailed",
+      "close"
+     ]
+    }
+   ],
+   "ledger": [
+    "run",
+    "step",
+    "outcome",
+    "loop_count",
+    "session",
+    "tier",
+    "ticket",
+    "started_at",
+    "ended_at",
+    "graph_version",
+    "model"
+   ]
+  },
+  "inputs": {
+   "desk_row": {
+    "default": "none",
+    "description": "The desk ledger row of the email thread, when origin is email",
+    "type": "string"
+   },
+   "kind": {
+    "default": "research",
+    "description": "The work kind from the ticket's action-triage.spec property (research, doc, email, meeting, misc); research when the ticket has none. Picks the agent.\n",
+    "type": "string"
+   },
+   "origin": {
+    "default": "ticket",
+    "description": "email when the ticket came through the Email Research Desk, else ticket",
+    "type": "string"
+   },
+   "phi": {
+    "default": true,
+    "description": "The ticket's phi_risk; true when the ticket does not say",
+    "type": "boolean"
+   },
+   "system": {
+    "default": "none",
+    "description": "The registry system triage recorded, or none",
+    "type": "string"
+   },
+   "ticket_key": {
+    "description": "The JP ticket, for example JP-140",
+    "required": true,
+    "type": "string"
+   }
+  },
+  "outputs": {
+   "deliverable_path": {
+    "description": "Where the deliverable is saved, outside any working folder",
+    "type": "string"
+   },
+   "evidence_path": {
+    "description": "The evidence file beside it",
+    "type": "string"
+   }
+  },
+  "steps": [
+   {
+    "gate": "read-ticket",
+    "id": "read_ticket",
+    "inputs": [
+     "ticket_key",
+     "kind",
+     "system",
+     "phi"
+    ],
+    "outcomes": [
+     "workable",
+     "not_here"
+    ],
+    "outputs": {
+     "deliverable_given": {
+      "description": "True when the Deliverable format came from Josh, not inferred",
+      "type": "boolean"
+     },
+     "search_terms": {
+      "description": "Words and synonyms for the lookup, from the ticket",
+      "type": "list"
+     }
+    }
+   },
+   {
+    "effects": [
+     "move_ticket"
+    ],
+    "gate": "return-to-triage",
+    "id": "return_early",
+    "inputs": [
+     "ticket_key"
+    ],
+    "needs": [
+     "read_ticket"
+    ],
+    "on": {
+     "returned": "end"
+    },
+    "outcomes": [
+     "returned"
+    ],
+    "when": {
+     "outcome": "not_here",
+     "step": "read_ticket"
+    }
+   },
+   {
+    "effects": [
+     "move_ticket"
+    ],
+    "gate": "move-ticket",
+    "id": "start_run",
+    "inputs": [
+     "ticket_key"
+    ],
+    "needs": [
+     "return_early"
+    ],
+    "outcomes": [
+     "moved"
+    ],
+    "when": {
+     "outcome": "workable",
+     "step": "read_ticket"
+    }
+   },
+   {
+    "brief": "Search JP for tickets that already answered the question on {{ inputs.ticket_key }}. A match is a ticket asking the same question; list closed ones with a Resolution comment first, then open ones.",
+    "id": "find_precedent",
+    "inputs": [
+     "ticket_key",
+     "search_terms"
+    ],
+    "needs": [
+     "start_run"
+    ],
+    "outcomes": [
+     "found",
+     "none"
+    ],
+    "outputs": {
+     "candidates": {
+      "description": "The role's JSON list of {key, summary, status, is_match, why}, best first",
+      "type": "list"
+     }
+    },
+    "role": "jira-searcher"
+   },
+   {
+    "id": "judge_precedent",
+    "inputs": [
+     "ticket_key",
+     "candidates"
+    ],
+    "needs": [
+     "find_precedent"
+    ],
+    "outcomes": [
+     "answers",
+     "related_only"
+    ],
+    "outputs": {
+     "precedent": {
+      "description": "The one ticket whose resolution answers this one, or none",
+      "type": "string"
+     }
+    },
+    "role": "precedent-judge",
+    "when": {
+     "outcome": "found",
+     "step": "find_precedent"
+    }
+   },
+   {
+    "gate": "gap-check",
+    "id": "check_gaps",
+    "inputs": [
+     "ticket_key",
+     "kind",
+     "deliverable_given",
+     "precedent"
+    ],
+    "needs": [
+     "judge_precedent"
+    ],
+    "outcomes": [
+     "clear",
+     "gap"
+    ],
+    "outputs": {
+     "gap": {
+      "description": "The one thing to ask, in one sentence, when the outcome is gap",
+      "type": "string"
+     }
+    }
+   },
+   {
+    "ask": {
+     "choices": [
+      "answered"
+     ],
+     "question": "Before I start {{ inputs.ticket_key }}: is the deliverable I assumed the right one? (One sentence is enough.)"
+    },
+    "id": "ping_before",
+    "needs": [
+     "check_gaps"
+    ],
+    "when": {
+     "outcome": "gap",
+     "step": "check_gaps"
+    }
+   },
+   {
+    "agent": {
+     "by": "kind",
+     "default": "answerer",
+     "map": {
+      "doc": "drafter",
+      "email": "drafter",
+      "misc": "finder",
+      "research": "answerer"
+     }
+    },
+    "brief": "Ticket {{ inputs.ticket_key }}, system {{ inputs.system }}. Read the ticket and its comments, including any answer from Josh.",
+    "id": "do_work",
+    "inputs": [
+     "ticket_key",
+     "system",
+     "phi",
+     "precedent"
+    ],
+    "needs": [
+     "ping_before"
+    ],
+    "outcomes": [
+     "done",
+     "blocked",
+     "needs_code"
+    ],
+    "outputs": {
+     "deliverable_path": {
+      "description": "The deliverable, saved in Josh's artifacts folder",
+      "type": "string"
+     },
+     "evidence_path": {
+      "contract": "evidence",
+      "type": "string"
+     }
+    },
+    "role": "researcher"
+   },
+   {
+    "ask": {
+     "choices": [
+      "answered"
+     ],
+     "question": "{{ inputs.ticket_key }} is stuck on one missing fact, named in the ticket's last comment. What is it?"
+    },
+    "id": "ping_during",
+    "needs": [
+     "do_work"
+    ],
+    "on": {
+     "answered": {
+      "at_limit": "decide_stuck",
+      "goto": "do_work",
+      "max_loops": 2
+     }
+    },
+    "when": {
+     "outcome": "blocked",
+     "step": "do_work"
+    }
+   },
+   {
+    "effects": [
+     "move_ticket"
+    ],
+    "gate": "return-to-triage",
+    "id": "return_late",
+    "inputs": [
+     "ticket_key"
+    ],
+    "needs": [
+     "do_work"
+    ],
+    "on": {
+     "returned": "end"
+    },
+    "outcomes": [
+     "returned"
+    ],
+    "when": {
+     "outcome": "needs_code",
+     "step": "do_work"
+    }
+   },
+   {
+    "gate": "check-deliverable",
+    "id": "check_deliverable",
+    "inputs": [
+     "ticket_key",
+     "phi",
+     "deliverable_path",
+     "evidence_path"
+    ],
+    "needs": [
+     "ping_during",
+     "return_late"
+    ],
+    "on": {
+     "incomplete": {
+      "at_limit": "decide_stuck",
+      "goto": "do_work",
+      "max_loops": 2
+     }
+    },
+    "outcomes": [
+     "complete",
+     "incomplete"
+    ],
+    "when": {
+     "outcome": "done",
+     "step": "do_work"
+    }
+   },
+   {
+    "gate": "pick-path",
+    "id": "pick_path",
+    "inputs": [
+     "ticket_key",
+     "kind",
+     "precedent",
+     "evidence_path"
+    ],
+    "needs": [
+     "check_deliverable"
+    ],
+    "outcomes": [
+     "short",
+     "full"
+    ]
+   },
+   {
+    "id": "review_work",
+    "inputs": [
+     "ticket_key",
+     "deliverable_path",
+     "evidence_path"
+    ],
+    "needs": [
+     "pick_path"
+    ],
+    "outcomes": [
+     "pass",
+     "defects"
+    ],
+    "outputs": {
+     "findings": {
+      "contract": "feedback",
+      "description": "Defects, each quoting the ticket's Question or Deliverable format",
+      "type": "list"
+     }
+    },
+    "role": "work-checker",
+    "when": {
+     "outcome": "full",
+     "step": "pick_path"
+    }
+   },
+   {
+    "gate": "check-review",
+    "id": "check_review",
+    "inputs": [
+     "ticket_key",
+     "findings"
+    ],
+    "needs": [
+     "review_work"
+    ],
+    "on": {
+     "rework": {
+      "at_limit": "decide_stuck",
+      "goto": "do_work",
+      "max_loops": 2
+     }
+    },
+    "outcomes": [
+     "clean",
+     "rework"
+    ],
+    "when": {
+     "outcome": "full",
+     "step": "pick_path"
+    }
+   },
+   {
+    "ask": {
+     "choices": [
+      "retry",
+      "stop"
+     ],
+     "on_limit_only": true,
+     "question": "{{ inputs.ticket_key }} has used its work runs (three per run) without a usable deliverable. Allow one more run, or stop and leave it with me?"
+    },
+    "id": "decide_stuck",
+    "on": {
+     "retry": {
+      "at_limit": "decide_stuck",
+      "goto": "do_work",
+      "max_loops": 1
+     },
+     "stop": "end"
+    }
+   },
+   {
+    "effects": [
+     "move_ticket"
+    ],
+    "gate": "move-ticket",
+    "id": "to_validation",
+    "inputs": [
+     "ticket_key"
+    ],
+    "needs": [
+     "check_review"
+    ],
+    "outcomes": [
+     "moved"
+    ]
+   },
+   {
+    "gate": "deliver",
+    "id": "deliver",
+    "inputs": [
+     "ticket_key",
+     "origin",
+     "desk_row",
+     "phi",
+     "deliverable_path",
+     "evidence_path"
+    ],
+    "needs": [
+     "to_validation"
+    ],
+    "outcomes": [
+     "delivered"
+    ]
+   },
+   {
+    "gate": "sign-off-rule",
+    "id": "pick_sign_off",
+    "inputs": [
+     "origin"
+    ],
+    "needs": [
+     "deliver"
+    ],
+    "outcomes": [
+     "ask_josh",
+     "emailed"
+    ]
+   },
+   {
+    "effects": [
+     "move_ticket"
+    ],
+    "gate": "close-ticket",
+    "id": "close_emailed",
+    "inputs": [
+     "ticket_key",
+     "phi",
+     "evidence_path"
+    ],
+    "needs": [
+     "pick_sign_off"
+    ],
+    "on": {
+     "closed": "end"
+    },
+    "outcomes": [
+     "closed"
+    ],
+    "when": {
+     "outcome": "emailed",
+     "step": "pick_sign_off"
+    }
+   },
+   {
+    "ask": {
+     "approves": [
+      "share_out"
+     ],
+     "approves_on": [
+      "accept_and_share"
+     ],
+     "choices": [
+      "accept",
+      "accept_and_share",
+      "revise"
+     ],
+     "question": "The deliverable for {{ inputs.ticket_key }} is ready (path and summary in the ticket). Sign it off?"
+    },
+    "id": "sign_off",
+    "needs": [
+     "close_emailed"
+    ],
+    "on": {
+     "revise": {
+      "at_limit": "decide_stuck",
+      "goto": "do_work",
+      "max_loops": 2
+     }
+    }
+   },
+   {
+    "gate": "share",
+    "id": "share_out",
+    "inputs": [
+     "ticket_key",
+     "phi",
+     "deliverable_path",
+     "evidence_path"
+    ],
+    "needs": [
+     "sign_off"
+    ],
+    "outcomes": [
+     "shared",
+     "refused"
+    ],
+    "when": {
+     "outcome": "accept_and_share",
+     "step": "sign_off"
+    }
+   },
+   {
+    "effects": [
+     "move_ticket"
+    ],
+    "gate": "close-ticket",
+    "id": "close",
+    "inputs": [
+     "ticket_key",
+     "phi",
+     "evidence_path"
+    ],
+    "needs": [
+     "share_out"
+    ],
+    "outcomes": [
+     "closed"
+    ]
+   }
+  ],
+  "title": "Non-development pipeline"
+ },
+ "max_runs": {
+  "cheap": 5,
+  "gate": 2,
+  "mid": 3
+ },
+ "roles": {
+  "jira-searcher": {
+   "may_change": false,
+   "reviewer": false,
+   "tier": "cheap",
+   "title": "Jira searcher"
+  },
+  "precedent-judge": {
+   "may_change": false,
+   "reviewer": false,
+   "tier": "mid",
+   "title": "Precedent judge"
+  },
+  "researcher": {
+   "may_change": true,
+   "reviewer": false,
+   "tier": "mid",
+   "title": "Researcher"
+  },
+  "work-checker": {
+   "may_change": false,
+   "reviewer": true,
+   "tier": "mid",
+   "title": "Work checker"
+  }
+ },
+ "sources": {
+  "agents/answerer/agent.yaml": "0f51692d8064755fb71cae3b97156e9d3fb799352575a72f8b4000bee524a86a",
+  "agents/drafter/agent.yaml": "e2d01f330a8146414681bde4a43df4f520c74c9732f6a91620419e486a834e21",
+  "agents/finder/agent.yaml": "4c57438151cc4e1faf5ff55f52a41a7d2f0ed27db202eae293bb2e2f730eb981",
+  "flows/non-development.yaml": "08a193811b21f19836f4b9cf4d50f3553e66fb5a0d8fff0f47295c464b5baffe",
+  "roles/jira-searcher/role.yaml": "465f5d9a7010810b7ae11e05a55486eb025ee68b021c4a8397ec1cdefc8e1634",
+  "roles/precedent-judge/role.yaml": "9d13931e45b14b73920bbc770650b0710a6c159af45ed15f1833c7792641e2ed",
+  "roles/researcher/role.yaml": "51d99a5329ef887ec56ee34d8e817c1a64f54213838fd07a6f59aaecc6afe4e4",
+  "roles/work-checker/role.yaml": "4c5fe4f5403b3ac74392debc22a170f59fc247db700f55c8ff6dbd543468a7ab",
+  "tiers.yaml": "af81c945dec4862af3be1d3957865dd692e7c77e42df42fa43b35c1fe3a14d44"
+ },
+ "tiers": {
+  "cheap": [
+   {
+    "effort": "high",
+    "model": "claude-haiku-5-5"
+   },
+   {
+    "effort": "medium",
+    "model": "claude-sonnet-5-5"
+   }
+  ],
+  "gate": [
+   {
+    "effort": "high",
+    "model": "claude-opus-5-5"
+   }
+  ],
+  "mid": [
+   {
+    "effort": "medium",
+    "model": "claude-sonnet-5-5"
+   }
+  ]
+ }
+}

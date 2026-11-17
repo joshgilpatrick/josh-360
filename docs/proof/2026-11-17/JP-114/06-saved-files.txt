@@ -1,0 +1,7 @@
+$ cd tests && python3 -m unittest -v test_walker.WalkingAGraph.test_the_files_a_run_made_are_saved_with_it_outside_the_repository
+test_the_files_a_run_made_are_saved_with_it_outside_the_repository (test_walker.WalkingAGraph.test_the_files_a_run_made_are_saved_with_it_outside_the_repository) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.728s
+
+OK

@@ -1,0 +1,12 @@
+$ cd tests && python3 -m unittest -v test_walker.Limits
+test_a_loop_limit_ends_at_a_human_and_josh_s_yes_buys_one_more_round (test_walker.Limits.test_a_loop_limit_ends_at_a_human_and_josh_s_yes_buys_one_more_round) ... ok
+test_a_step_abandoned_past_its_cap_stops_the_run_until_josh_allows_one_more (test_walker.Limits.test_a_step_abandoned_past_its_cap_stops_the_run_until_josh_allows_one_more) ... ok
+test_declining_at_the_limit_moves_on_without_the_extra_round (test_walker.Limits.test_declining_at_the_limit_moves_on_without_the_extra_round) ... ok
+test_declining_to_revise_at_the_cap_moves_on (test_walker.Limits.test_declining_to_revise_at_the_cap_moves_on) ... ok
+test_the_run_cap_counts_every_loop_that_reaches_a_step_together (test_walker.Limits.test_the_run_cap_counts_every_loop_that_reaches_a_step_together) ... ok
+test_the_sixth_run_on_a_ticket_in_a_day_is_refused_unless_josh_says_so (test_walker.Limits.test_the_sixth_run_on_a_ticket_in_a_day_is_refused_unless_josh_says_so) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 3.750s
+
+OK
