@@ -30,11 +30,12 @@ STANDING_IDS = ("athena", "equip", "pims", "ma-clinical-data-transfer", "clinici
                 "ai-scribing-utilization", "internal-systems-applications")
 KINDS = {"standing", "devex", "unassigned"}
 TRACKERS = {"jira", "linear"}
+MERGES = ("agent", "josh")  # who merges a pull request in the system; absent means josh (JP-115)
 INITIATIVE_SPACE = "TECH"  # holds initiatives only; never a ticket's space or a system's
 KEY = re.compile(r"^[A-Z][A-Z0-9]+-[1-9][0-9]*$")
 LABEL = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 SYSTEM_KEYS = {"name", "description", "repositories", "folders", "area", "tracker", "jira_space",
-               "linear_team", "default_epic", "priority", "notes"}
+               "linear_team", "default_epic", "priority", "merges", "notes"}
 PRIORITY_KEYS = {"id", "name", "kind", "rank", "shown_to", "covers", "notes"}
 COVER_KEYS = {"areas", "initiatives", "epics"}
 
@@ -183,6 +184,8 @@ def _system_problems(system: dict, name: str, where: str, n: int, seen_names: se
         else:
             folder_owner[norm] = name
 
+    if "merges" in system and system["merges"] not in MERGES:
+        problems.append(f"{where}: merges must be one of {list(MERGES)}, not {system['merges']!r}")
     tracker = system.get("tracker")
     if tracker not in TRACKERS:
         problems.append(f"{where}: tracker must be one of {sorted(TRACKERS)}, not {tracker!r}")
@@ -324,11 +327,11 @@ def _answer(registry: dict, system: dict | None, matched: str | None) -> dict:
     if system is None:
         return {"system": None, "area": None, "tracker": "jira", "jira_space": fallback.get("jira_space"),
                 "linear_team": None, "default_epic": None, "priority": fallback.get("priority"),
-                "unassigned": True, "matched": None}
+                "merges": "josh", "unassigned": True, "matched": None}
     return {"system": system["name"], "area": system.get("area"), "tracker": system.get("tracker"),
             "jira_space": system.get("jira_space"), "linear_team": system.get("linear_team"),
             "default_epic": system.get("default_epic"), "priority": system.get("priority"),
-            "unassigned": False, "matched": matched}
+            "merges": system.get("merges") or "josh", "unassigned": False, "matched": matched}
 
 
 def lookup_folder(registry: dict, folder: str, home: str | None = None) -> dict:
