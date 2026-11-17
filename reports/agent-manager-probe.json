@@ -1,0 +1,148 @@
+{
+  "agent_manager": {
+    "help": {
+      "(top)": {
+        "code": 0,
+        "text": "Usage: agent-manager [command]\n\nRun the interactive manager when no command is given.\n\nagent-manager runs your session beside the user's other agents and terminals.\nWork with those other agents only when the user asks: on your own, do not list, message, spawn or wait on them, or create or claim shared tasks.\nupdate and settings need no caller, and issue and feature use only the exported session id. Every other command acts as the session or terminal whose pane started it, so run them from your own shell, not from a daemon or a process that outlived its pane. The exception is a Claude conversation Agent Manager launched that /background, /fork or the agent view moved out of its pane: it still acts as the session that launched it, while one started by hand has no caller. sessions, groups, snapshot, spawn, read, wait, kill, revive, archive, move, create-group and delete-group also run from a script outside Agent Manager, where spawn defaults to the CLI picked in settings, the root group and the script's directory. So do send with --from <name>, whose message says no reply can reach the sender, and terminal create, send, read and close, which there open a terminal under no session and drive only terminals under none. type runs only there: it is the user's own quick bar prompt from another machine, so an agent never uses it.\n\nAgent sessions\n  agent-manager sessions [--json]\n      list every agent session with its id, CLI, group, directory and status; call it before delegating anything\n  agent-manager snapshot --json\n      print every session, terminal and group on this host, archived ones included, and whether a manager is running here, as one JSON document another manager reads over SSH\n  agent-manager spawn [--name <name>] [--prompt <text>] [--saved <name>] [--tool <cli>] [--model <model>] [--effort <level>] [--profile <name>] [--env <name>] [--group <path>] [--directory <path>] [--worktree] [--resume <id>] [--json]\n      start another agent CLI on a task of its own, so independent work runs beside you instead of queued behind you\n  agent-manager send <session-id> [\"<message>\"] [--saved <name>] [--from <name>] [--json]\n      queue a message for another agent; it is typed in once that agent is at rest, so it never lands on an approval prompt\n  agent-manager type <session-id> \"<prompt>\" [--json]\n      type a prompt into an agent's pane and submit it now, as the user's quick bar does; only for a caller with no session here, such as a manager on another machine over SSH\n  agent-manager read <session-id> [--styled] [--json]\n      read what another agent's screen currently shows\n  agent-manager wait <session-id> [--until <state>] [--timeout <duration>] [--json]\n      park until another session stops working, instead of reading its screen in a loop; exits non-zero when it timed out\n  agent-manager message-status <message-id> [--json]\n      check whether a message you sent is queued, held, delivered, dropped or answered\n  agent-manager kill <session-id> [--json]\n      stop another agent's process, ending whatever it is doing; its row keeps the last screen\n  agent-manager revive <session-id> [--json]\n      bring a dead session back on its old row, resuming the conversation it held; an agent that quit inside a live pane comes back there\n  agent-manager archive <session-id> [--restore] [--json]\n      file a finished session out of the active list, or restore it with --restore\n  agent-manager move <session-id> <group> [--json]\n      file a session under another existing group, the way the move key does; an empty group is the root\n  agent-manager archive-self [--cancel] [--json]\n      archive this session once the current turn ends, the way the archive key does; --cancel withdraws a pending archive or kill\n  agent-manager kill-self [--cancel] [--json]\n      stop this session's agent once the current turn ends, keeping its row for revive; --cancel withdraws a pending archive or kill\n  agent-manager groups [--json]\n      list the groups session"
+      },
+      "archive": {
+        "code": 0,
+        "text": "usage: agent-manager archive <session-id> [--restore] [--json]\n  -json\n    \tprint the raw result as JSON instead of a sentence\n  -restore\n    \tput an archived session back on the active list\n"
+      },
+      "kill": {
+        "code": 0,
+        "text": "usage: agent-manager kill <session-id> [--json]\n  -json\n    \tprint the raw result as JSON instead of a sentence\n"
+      },
+      "read": {
+        "code": 0,
+        "text": "usage: agent-manager read <session-id> [--styled] [--json]\n  -json\n    \tprint the raw result as JSON instead of a sentence\n  -styled\n    \tkeep the screen's color escape sequences\n"
+      },
+      "send": {
+        "code": 0,
+        "text": "usage: agent-manager send <session-id> [\"<message>\"] [--saved <name>] [--from <name>] [--json]\n  -from string\n    \tname to send as when this runs outside any session on this machine, as an agent on another machine does over SSH; the message says no reply can reach it\n  -json\n    \tprint the raw result as JSON instead of a sentence\n  -saved string\n    \tsaved prompt to put in front of the message; the message can be omitted when this is set\n"
+      },
+      "sessions": {
+        "code": 0,
+        "text": "usage: agent-manager sessions [--json]\n  -json\n    \tprint the raw result as JSON instead of a sentence\n"
+      },
+      "spawn": {
+        "code": 0,
+        "text": "usage: agent-manager spawn [--name <name>] [--prompt <text>] [--saved <name>] [--tool <cli>] [--model <model>] [--effort <level>] [--profile <name>] [--env <name>] [--group <path>] [--directory <path>] [--worktree] [--resume <id>] [--json]\n  -directory string\n    \texisting directory it works in; defaults to yours, or to the group's inherited path\n  -effort string\n    \treasoning effort, one the model takes; defaults to the CLI's own\n  -env string\n    \tenvironment profile to launch under; defaults to the group's, else to yours; pass an empty string for none\n  -group string\n    \texisting group path to file it under; pass an empty string for the root group\n  -json\n    \tprint the raw result as JSON instead of a sentence\n  -model string\n    \tmodel to run it on, one the CLI lists; defaults to the CLI's own, and a restart, revive or fork keeps it\n  -name string\n    \tkebab-case name naming the work it will do; the new agent names itself when this is empty\n  -profile string\n    \tprofile to launch the CLI under, for a CLI that has them\n  -prompt string\n    \tfirst task to hand it, written as a full instruction, since it cannot see your conversation\n  -resume string\n    \tconversation id the CLI saved earlier, to open instead of a new one; pass the directory it was saved in\n  -saved string\n    \tsaved prompt to put in front of the first task; resolved when creating the session\n  -tool string\n    \tagent CLI to run; defaults to the caller's CLI, or to the one picked in settings from a terminal or with no caller\n  -worktree\n    \tgive it its own git worktree and branch, which is what keeps parallel agents off each other's files\n"
+      },
+      "terminal": {
+        "code": 0,
+        "text": "  agent-manager terminal list [--json]\n      find a running terminal to reuse before opening another one\n  agent-manager terminal create [--group <path>] [--directory <path>] [--nest=false] [--json]\n      open a terminal for work the user should see, such as SSH into a host; it hangs under this session unless --nest=false\n  agent-manager terminal send <terminal-id> --command \"<text>\" | --keys <key,key> [--json]\n      run a command there, or send exact tmux keys such as C-c to control what is running\n  agent-manager terminal read <terminal-id> [--styled] [--json]\n      read what that terminal's screen currently shows\n  agent-manager terminal close <terminal-id>\n      close a terminal opened under this session once its job is done, killing the pane and deleting the row\n"
+      },
+      "wait": {
+        "code": 0,
+        "text": "usage: agent-manager wait <session-id> [--until <state>] [--timeout <duration>] [--json]\n  -json\n    \tprint the raw result as JSON instead of a sentence\n  -timeout duration\n    \thow long to wait before giving up, default 50s, maximum 5m0s\n  -until value\n    \tstate that ends the wait, repeatable or comma separated; defaults to every state meaning the session stopped working\n"
+      }
+    },
+    "path": "/opt/homebrew/bin/agent-manager",
+    "sessions": {
+      "any_rows": true,
+      "code": 0,
+      "error": "",
+      "fields": [
+        "agent_session_id",
+        "archived",
+        "directory",
+        "group",
+        "id",
+        "name",
+        "running",
+        "self",
+        "status",
+        "tool"
+      ],
+      "json": true
+    },
+    "terminal_list": {
+      "code": 1,
+      "error": "agent-manager: not inside an Agent Manager session or terminal (this process does not run in a pane Agent Manager runs, and AGENT_MANAGER_SESSION_ID is unset or was inherited by a process outside one, such as a daemon)"
+    },
+    "version": "agent-manager 0.47.1"
+  },
+  "claude": {
+    "path": "/Users/jgilpatrick/.local/bin/claude",
+    "version": "2.1.326 (Claude Code)"
+  },
+  "database": {
+    "exists": true,
+    "probe_session": null,
+    "session_statuses": [
+      "dead",
+      "finished",
+      "idle",
+      "starting",
+      "waiting",
+      "working"
+    ],
+    "sessions_columns": [
+      "id",
+      "name",
+      "tool",
+      "cwd",
+      "group_name",
+      "status",
+      "archived",
+      "created_at",
+      "last_status_at",
+      "agent_session_id",
+      "pending_inputs",
+      "pending_claimed",
+      "launch_prompt",
+      "sort_order",
+      "acked",
+      "snapshot",
+      "worktree_repo",
+      "worktree_branch",
+      "agent_launched_at",
+      "retired_agent_session_id",
+      "parent_id",
+      "tmux_socket",
+      "last_prompt",
+      "relaunch_snapshot",
+      "model_provider",
+      "model",
+      "effort",
+      "profile",
+      "after_turn",
+      "after_turn_at",
+      "opened_without_session",
+      "environment",
+      "released_agent_session_id",
+      "released_launch"
+    ],
+    "tables": [
+      "connections",
+      "conversation_owners",
+      "env_profiles",
+      "file_reservations",
+      "groups",
+      "remote_terminals",
+      "review_bases",
+      "review_scopes",
+      "review_states",
+      "review_targets",
+      "session_inbox",
+      "session_presets",
+      "sessions",
+      "settings",
+      "sqlite_sequence",
+      "task_deps",
+      "tasks"
+    ]
+  },
+  "detached": {
+    "started": 1794957849.2667782
+  },
+  "env_names": [],
+  "job": "agent-manager-probe",
+  "path": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+  "spawn": {
+    "attempt": 1,
+    "code": 1,
+    "error": "agent-manager: claude is not installed; install it with: curl -fsSL https://claude.ai/install.sh | bash"
+  }
+}
