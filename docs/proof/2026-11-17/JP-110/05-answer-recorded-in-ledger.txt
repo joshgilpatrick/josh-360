@@ -1,0 +1,16 @@
+# The answer and the ledger rows (offer, yes, no, written once, never by the agent)
+test_a_bad_key_or_session_is_refused_and_nothing_is_written (tests.test_ledger_offer.Answering.test_a_bad_key_or_session_is_refused_and_nothing_is_written) ... ok
+test_an_answer_needs_an_open_offer (tests.test_ledger_offer.Answering.test_an_answer_needs_an_open_offer) ... ok
+test_no_is_spooled (tests.test_ledger_offer.Answering.test_no_is_spooled) ... ok
+test_only_the_first_answer_counts (tests.test_ledger_offer.Answering.test_only_the_first_answer_counts) ... ok
+test_yes_is_spooled_with_the_ticket_key (tests.test_ledger_offer.Answering.test_yes_is_spooled_with_the_ticket_key) ... ok
+test_a_decline_writes_no_link (tests.test_ledger_offer.Recording.test_a_decline_writes_no_link) ... ok
+test_a_key_outside_any_known_space_is_kept_as_the_answer_but_not_linked (tests.test_ledger_offer.Recording.test_a_key_outside_any_known_space_is_kept_as_the_answer_but_not_linked) ... ok
+test_a_malformed_line_is_skipped_and_the_rest_are_written (tests.test_ledger_offer.Recording.test_a_malformed_line_is_skipped_and_the_rest_are_written) ... ok
+test_an_unanswered_offer_stays_an_offer (tests.test_ledger_offer.Recording.test_an_unanswered_offer_stays_an_offer) ... ok
+test_offer_and_answer_become_rows (tests.test_ledger_offer.Recording.test_offer_and_answer_become_rows) ... ok
+test_reading_the_same_lines_twice_writes_nothing_twice (tests.test_ledger_offer.Recording.test_reading_the_same_lines_twice_writes_nothing_twice) ... ok
+test_the_session_start_line_and_offer_lines_share_the_spool (tests.test_ledger_offer.Recording.test_the_session_start_line_and_offer_lines_share_the_spool) ... ok
+----------------------------------------------------------------------
+Ran 12 tests in 1.643s
+OK

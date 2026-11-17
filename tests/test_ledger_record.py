@@ -139,7 +139,7 @@ class Recorder(LedgerCase):
                                               "ticket_links")}
         again = self.run_pass()
         self.assertEqual(again, {"sessions": 0, "episodes": 0, "refs": 0, "homes": 0, "skipped": 0, "costs": 0,
-                                 "notes": 0})
+                                 "notes": 0, "offers": 0})
         self.assertEqual(before, {t: self.count(t) for t in before})
 
     def test_a_lost_mark_does_not_record_the_same_stretch_twice(self):
