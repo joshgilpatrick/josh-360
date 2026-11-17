@@ -254,6 +254,6 @@ Josh answered on the answer page on 16 November 2026 at 7:26 PM. Each answer is 
 | Q11 | Josh still uses OpenCode | The OpenCode agent sync stays, gets Bifrost model names, and runs when the agents folder changes instead of hourly. | `docs/inventory/laptop.md` |
 | Q12 | B, with detail | Omnara is disconnected; the Tactic Remote hooks and the task-manager queue retire; QuickTasks is already gone and "quick tickets" is noted as an idea. agent-deck waits for the feature-tree review Josh asked for, which covers every feature in claude-360, action-triage and macbook-automations. | `docs/inventory/laptop.md` |
 | Q13 | B, no rclone backup | The rclone row retires. | `docs/inventory/laptop.md` |
-| Q14 | C, Josh picks | Josh ticks the skills to keep on a picker page; the rest are archived at the phase close. | `docs/inventory/laptop.md` after he picks |
+| Q14 | C, Josh picks | Josh picked them: 67 kept (including three that kept skills depend on), 64 archived at the phase close. | `docs/inventory/laptop.md` (appendix) |
 
 Josh also said, in his Q12 note, that action-triage, claude-360 and the related MacBook automations are to be melded into one application, josh-360: the features he keeps are extracted from their source repositories and rebuilt into one platform with a consistent look, not linked or nested. That direction shapes the feature-tree review and every migration ticket.
