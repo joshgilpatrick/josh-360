@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Gate prepare-worktree (JP-115): a worktree for the ticket, cut from a fresh origin base, and the run's work folder.
 
-Fetches the clone, then: no branch named <KEY>-* gives a new <KEY>-<slug of the ticket's summary> cut from
+Fetches the clone, then: no branch named <KEY>-* gives a new <KEY>-<slug> (the slug is the ticket's summary) cut from
 origin/<base_branch>; one is reused; more than one is a GateError naming them. A summary the patient-data screen flags
 gives the slug `work`. The clone's own checkout is never touched. The work folder is the run's, outside every
 repository, and is made when missing.
