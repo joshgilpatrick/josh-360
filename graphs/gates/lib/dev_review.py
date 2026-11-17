@@ -115,7 +115,8 @@ def count_findings(body: str) -> Optional[int]:
 
 
 def check_state(checks: List[Check]) -> str:
-    """none, pending, failed or green, counting only the latest-started check of each name."""
+    """none, pending, failed or green, counting only the latest-started check of each name. Skipped checks do not
+    count either way; a set with nothing but skips is `none`."""
     latest = {}
     for c in checks:
         if c.name not in latest or (parse_time(c.started) or datetime.min.replace(tzinfo=timezone.utc)) >= \
@@ -123,10 +124,14 @@ def check_state(checks: List[Check]) -> str:
             latest[c.name] = c
     if not latest:
         return "none"
-    buckets = [c.bucket for c in latest.values()]
+    # A skipped run is not a pass: josh-360's `suite` job skips on every label but ready-for-human, so a skipped run is
+    # always on the pull request before the real one is registered. Skips are ignored; nothing else left means none.
+    buckets = [c.bucket for c in latest.values() if c.bucket != "skipping"]
+    if not buckets:
+        return "none"
     if any(b in ("fail", "cancel") for b in buckets):
         return "failed"
-    if all(b in ("pass", "skipping") for b in buckets):
+    if all(b == "pass" for b in buckets):
         return "green"
     return "pending"
 
