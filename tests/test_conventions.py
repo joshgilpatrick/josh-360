@@ -31,6 +31,7 @@ SAMPLE_REGISTRY = {
     "systems": [
         {
             "name": "sample-app",
+            "patient_data": True,
             "description": "A sample app",
             "repositories": ["sample-app"],
             "folders": ["~/Development/active/sample-app"],
@@ -42,6 +43,7 @@ SAMPLE_REGISTRY = {
         },
         {
             "name": "sample-monorepo",
+            "patient_data": False,
             "description": "A folder that holds another system",
             "repositories": ["sample-monorepo"],
             "folders": ["~/Development/active/sample-monorepo"],
@@ -53,6 +55,7 @@ SAMPLE_REGISTRY = {
         },
         {
             "name": "sample-nested",
+            "patient_data": True,
             "description": "A system inside sample-monorepo",
             "repositories": ["sample-nested"],
             "folders": ["~/Development/active/sample-monorepo/sample-nested"],
@@ -64,6 +67,7 @@ SAMPLE_REGISTRY = {
         },
         {
             "name": "sample-personal",
+            "patient_data": False,
             "description": "A personal system",
             "repositories": ["sample-personal"],
             "folders": ["~/development/personal/sample-personal"],
@@ -203,6 +207,23 @@ class AnUnknownFolderStaysUnassigned(unittest.TestCase):
         self.assertEqual(json.loads(out.getvalue())["priority"], "unassigned")
 
 
+class EverySystemSaysWhetherItHoldsPatientData(unittest.TestCase):
+    """JP-148 (review finding A2): the per-system patient-data flag, and what a lookup says without a system."""
+
+    def test_every_real_system_states_the_flag(self):
+        registry = conventions.load(conventions.REGISTRY)
+        for system in registry["systems"]:
+            self.assertIsInstance(system.get("patient_data"), bool, system["name"])
+
+    def test_a_lookup_carries_the_flag(self):
+        flagged = conventions.lookup_repo(SAMPLE_REGISTRY, "sample-app")
+        clear = conventions.lookup_repo(SAMPLE_REGISTRY, "sample-monorepo")
+        self.assertEqual((flagged["patient_data"], clear["patient_data"]), (True, False))
+
+    def test_no_home_counts_as_patient_data(self):
+        self.assertTrue(conventions.lookup_folder(SAMPLE_REGISTRY, "/tmp/not-a-system", home=HOME)["patient_data"])
+
+
 class TheCheckerRefusesABadRegistry(unittest.TestCase):
     """Scenario: The checker refuses a bad registry."""
 
@@ -256,6 +277,8 @@ class TheCheckerRefusesABadRegistry(unittest.TestCase):
         def bad_fallback(r): r["fallback"]["jira_space"] = "ZZ"
         def area_disagrees(r): r["systems"][0]["area"] = "DevEx area"
         def repos_and_folders_missing(r): r["systems"][0]["repositories"] = r["systems"][0]["folders"] = []
+        def no_patient_data_flag(r): del r["systems"][0]["patient_data"]
+        def patient_data_not_a_boolean(r): r["systems"][1]["patient_data"] = "no"
         self.refused(unknown_space, "sample-app", "jira_space", "ZZ")
         self.refused(tech_space, "sample-app", "TECH")
         self.refused(unknown_priority, "sample-app", "priority", "nope")
@@ -271,6 +294,8 @@ class TheCheckerRefusesABadRegistry(unittest.TestCase):
         self.refused(bad_fallback, "fallback", "ZZ")
         self.refused(area_disagrees, "sample-app", "disagrees", "devex")
         self.refused(repos_and_folders_missing, "sample-app", "nothing can resolve")
+        self.refused(no_patient_data_flag, "sample-app", "patient_data")
+        self.refused(patient_data_not_a_boolean, "sample-monorepo", "patient_data", "true or false")
 
     def test_wrong_types_are_refused_by_name_without_a_traceback(self):
         def covers_is_a_list(p): p["priorities"][0]["covers"] = ["x"]
