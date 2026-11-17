@@ -1,10 +1,12 @@
 import json
+import sys
 import unittest
 from pathlib import Path
 
-from tests import ledger_transcripts as tr
-from tests.ledger_helpers import LedgerCase
-from ledger import transcript
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import ledger_transcripts as tr  # noqa: E402
+from ledger_helpers import LedgerCase  # noqa: E402
+from ledger import transcript  # noqa: E402
 
 
 class ReadMetaTests(LedgerCase):
