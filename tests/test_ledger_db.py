@@ -120,7 +120,11 @@ class Migrating(LedgerDbCase):
         conn = db.connect(self.path)
         self.assertEqual(db.user_version(conn), 2)
         self.assertEqual([r[0] for r in conn.execute("SELECT version FROM schema_migrations ORDER BY version")], [1, 2])
-        self.assertEqual(len(list(self.backups.iterdir())), 1)
+        saved = list(self.backups.iterdir())
+        self.assertEqual([p.name for p in saved], ["pre-migration-1-2026-11-18T010203Z.db.gz"])
+        import gzip
+        with gzip.open(str(saved[0]), "rb") as f:
+            self.assertTrue(f.read(16).startswith(b"SQLite format 3"))
         with self.assertRaisesRegex(sqlite3.DatabaseError, "append-only"):
             conn.execute("INSERT INTO x DEFAULT VALUES")
             conn.execute("DELETE FROM x")
