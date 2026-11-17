@@ -40,11 +40,12 @@ class FollowTest(LaptopCase):
         # and JP-112's one-time friction catch-up, whose reports are counts only, and which find nothing in the
         # made-up home; JP-119's one-time retirement of three leftover jobs, which talks only to the stub, and its
         # daily startup-list check, whose report is job labels and counts; JP-152's daily doctor, whose report is
-        # check results with names, counts and paths only).
+        # check results with names, counts and paths only; JP-117's temporary Agent Manager probe, which finds no
+        # agent-manager here and reports help text, exit codes and field names only).
         tree = self.status_tree()
         self.assertEqual([p for p in tree if not p.startswith("reports/")], ["status.json"])
         self.assertEqual([p for p in tree if p.startswith("reports/")],
-                         ["reports/doctor.json", "reports/inventory.json", "reports/launchd-check.json",
+                         ["reports/agent-manager-probe.json", "reports/doctor.json", "reports/inventory.json", "reports/launchd-check.json",
                           "reports/ledger-backfill.json",
                           "reports/ledger-friction-catchup.json", "reports/ledger-upload.json",
                           "reports/retire-focus-dashboard.json", "reports/retire-leftover-jobs.json",
