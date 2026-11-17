@@ -62,6 +62,7 @@ steps:
     ask:
       question: "The spec for {{ inputs.ticket_key }} is ready. Start building?"
       choices: [build, revise, drop]
+      split: [system, spec_path]   # one category per system and spec kind (JP-148)
     on:
       revise: { goto: design, max_loops: 2, at_limit: approve_spec }
       drop: end

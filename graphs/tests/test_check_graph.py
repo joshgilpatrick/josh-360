@@ -466,6 +466,26 @@ class Rules(unittest.TestCase):
         del step(data, "approve_note")["ask"]["approves_on"]
         self.assertProblem(data, "ask step 'approve_note' approves steps, so it needs approves_on")
 
+    # Category split (JP-106 question 4; JP-148)
+    def test_a_split_names_inputs_or_outputs_above_the_ask(self):
+        data = valid_data()
+        self.assertEqual(step(data, "approve_spec")["ask"]["split"], ["system", "spec_path"])
+        step(data, "approve_spec")["ask"]["split"] = ["system", "defects"]
+        self.assertProblem(data, "ask step 'approve_spec' splits on 'defects', which is not a graph input or an "
+                                 "output of a step above it")
+
+    def test_a_split_is_a_list_of_distinct_names(self):
+        data = valid_data()
+        step(data, "approve_spec")["ask"]["split"] = "system"
+        self.assertProblem(data, "ask step 'approve_spec': split must be a list of names")
+        step(data, "approve_spec")["ask"]["split"] = ["system", "system"]
+        self.assertProblem(data, "ask step 'approve_spec': split names a detail more than once")
+
+    def test_an_ask_without_a_split_is_one_category(self):
+        data = valid_data()
+        del step(data, "approve_spec")["ask"]["split"]
+        self.assertEqual(self.problems(data), [])
+
     def test_approves_on_must_leave_a_no(self):
         data = valid_data()
         step(data, "approve_note")["ask"]["approves_on"] = ["post", "skip"]

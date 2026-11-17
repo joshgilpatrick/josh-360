@@ -1,6 +1,7 @@
 -- Josh 360 ledger: draft schema (JP-99). Design: docs/design/data-model.md.
 --
 -- DRAFT. JP-107 creates the database from this file after Josh's JP-106 sitting. Nothing reads or writes it yet.
+-- Amended by JP-148 (the JP-146 review's fixes A1 to A5) before the database first exists.
 --
 -- This is ledger.db, the one append-only record of facts on one machine. The large, rebuildable working tables
 -- (the message-level cost import, prices, scan marks, the artifact catalog) live in a second file, cache.db,
@@ -8,8 +9,13 @@
 --
 -- Rules every table follows (design, "The append-only rule"):
 --   * Rows are only ever inserted. Every table has two triggers that refuse UPDATE and DELETE.
---   * A wrong row is retracted by a row in `corrections`, never edited. Views named current_* leave retracted
---     rows out and, where a newer row replaces an older one, keep only the newest.
+--   * A wrong row is retracted by a row in `corrections`, never edited. A correction can itself be withdrawn,
+--     which brings the row back; `live_corrections` holds the corrections still in force, and every view reads it.
+--     Views named current_* leave retracted rows out and, where a newer row replaces an older one, keep only the
+--     newest.
+--   * Five tables hold one row per natural key (an episode, its summary and debrief, a step's result, a run's end).
+--     They carry a `version`: a withdrawn row is replaced by the next version, which a trigger allows only once the
+--     version before it is withdrawn (JP-148, review finding A3).
 --   * Times are UTC text, ISO 8601 with a trailing Z (2026-11-16T22:09:38Z).
 --   * recorded_by names the script that wrote the row (recorder, walker, summary, decision-cli, ...).
 --   * No column holds transcript text, message text or file contents. The few short text columns are capped
@@ -32,7 +38,7 @@ CREATE TABLE schema_migrations (
   name        TEXT    NOT NULL,
   applied_at  TEXT    NOT NULL
 );
-INSERT INTO schema_migrations (version, name, applied_at) VALUES (1, 'draft schema (JP-99)', '2026-11-16T00:00:00Z');
+INSERT INTO schema_migrations (version, name, applied_at) VALUES (1, 'draft schema (JP-99, amended by JP-148)', '2026-11-16T00:00:00Z');
 
 -- One row for the machine this ledger lives on, written when the ledger is created. A ledger merged in from another
 -- machine later brings its own row. Every session and run names its machine, so two ledgers never clash.
@@ -44,7 +50,11 @@ CREATE TABLE machines (
   recorded_by  TEXT NOT NULL
 );
 
--- A wrong row is retracted here. replacement_row_id points at the row that replaces it, in the same table, if any.
+-- A wrong row is retracted here. replacement_row_id points at the row that replaces it, in the same table, if one
+-- already exists; in the five versioned tables the replacement is simply the next version, written after this row.
+-- A correction can be withdrawn by a correction naming table 'corrections', which brings its row back; that second
+-- correction cannot itself be withdrawn, and a row is withdrawn again with a new correction. A row has at most one
+-- correction in force at a time (triggers below).
 CREATE TABLE corrections (
   id                  INTEGER PRIMARY KEY,
   table_name          TEXT    NOT NULL,
@@ -53,8 +63,7 @@ CREATE TABLE corrections (
   replacement_row_id  INTEGER,
   corrected_at        TEXT    NOT NULL,
   corrected_by        TEXT    NOT NULL CHECK (corrected_by IN ('josh', 'script')),
-  recorded_by         TEXT    NOT NULL,
-  UNIQUE (table_name, row_id)
+  recorded_by         TEXT    NOT NULL
 );
 
 -- The one exception to the append-only rule: patient data found in a text column is overwritten in place by
@@ -73,8 +82,12 @@ CREATE TABLE redactions (
 -- Sessions
 -- ---------------------------------------------------------------------------------------------------------------
 
--- One row per session, written once, the first time the recorder sees it. session_uid is
--- "<machine_id>:<tool>:<tool_session_id>". A subagent is a session of its own, tied to its parent by session_lineage.
+-- One row per session, written once, when the session starts (JP-148, review finding A1): the recorder writes it from
+-- the SessionStart spool line on its next pass, and the walker, the recorder and the backfill add it with
+-- `ledger.sessions.ensure` whenever they meet a session that has no row yet. Six tables point at it while the session
+-- is still running (step runs, step results, asks, ticket links, comment deliveries, model calls), so it cannot wait
+-- for the session to go quiet. session_uid is "<machine_id>:<tool>:<tool_session_id>". A subagent is a session of
+-- its own, tied to its parent by session_lineage.
 CREATE TABLE sessions (
   id               INTEGER PRIMARY KEY,
   session_uid      TEXT NOT NULL UNIQUE,
@@ -107,7 +120,9 @@ CREATE TABLE session_lineage (
 );
 
 -- One row each time a session goes quiet. A resumed session that goes quiet again gets episode 2, and so on, so
--- nothing about the earlier stretch is rewritten.
+-- nothing about the earlier stretch is rewritten. A withdrawn episode row is replaced by version 2 of the same
+-- episode. title is empty, with title_source 'withheld', when the patient-data rule keeps the session's words out
+-- (a system the registry flags, a session with no home, or a .phi folder; design, "Patient data").
 CREATE TABLE session_episodes (
   id                INTEGER PRIMARY KEY,
   session_uid       TEXT    NOT NULL REFERENCES sessions (session_uid),
@@ -122,17 +137,20 @@ CREATE TABLE session_episodes (
   branch            TEXT CHECK (branch IS NULL OR length(branch) <= 250),
   worktree_path     TEXT,
   title             TEXT CHECK (title IS NULL OR length(title) <= 120),
-  title_source      TEXT CHECK (title_source IS NULL OR title_source IN ('custom', 'ai', 'agent-name', 'tool', 'fallback')),
+  title_source      TEXT CHECK (title_source IS NULL OR title_source IN ('custom', 'ai', 'agent-name', 'tool', 'fallback',
+                                                                    'withheld')),
   turns             INTEGER CHECK (turns IS NULL OR turns >= 0),
+  version           INTEGER NOT NULL DEFAULT 1 CHECK (version >= 1),
   recorded_at       TEXT    NOT NULL,
   recorded_by       TEXT    NOT NULL,
-  UNIQUE (session_uid, episode)
+  UNIQUE (session_uid, episode, version),
+  CHECK (title_source IS NOT 'withheld' OR title IS NULL)
 );
 
 -- What a session touched, by name or path only: the facts the loose-ends check reads git against.
 CREATE TABLE session_refs (
   id           INTEGER PRIMARY KEY,
-  session_uid  TEXT    NOT NULL,
+  session_uid  TEXT    NOT NULL REFERENCES sessions (session_uid),
   episode      INTEGER NOT NULL,
   kind         TEXT    NOT NULL CHECK (kind IN ('folder', 'branch', 'commit', 'pr', 'worktree', 'file')),
   repo         TEXT    NOT NULL DEFAULT '',          -- owner/name, or '' where none applies
@@ -141,7 +159,6 @@ CREATE TABLE session_refs (
   observed_at  TEXT    NOT NULL,
   recorded_at  TEXT    NOT NULL,
   recorded_by  TEXT    NOT NULL,
-  FOREIGN KEY (session_uid, episode) REFERENCES session_episodes (session_uid, episode),
   UNIQUE (session_uid, kind, repo, value)
 );
 
@@ -161,7 +178,8 @@ CREATE TABLE ticket_links (
 
 -- Where a session belongs, worked out with no model (design, "How a session finds its home"). Written when the
 -- session goes quiet and again whenever the answer changes (a ticket moved epic, the registry changed). The newest
--- row wins.
+-- row wins. patient_data is 1 when the home's system is flagged `patient_data: true` in conventions/registry.yaml,
+-- when the system is not known, and always for a session with no home: such a session stores none of its own words.
 CREATE TABLE session_homes (
   id                   INTEGER PRIMARY KEY,
   session_uid          TEXT    NOT NULL REFERENCES sessions (session_uid),
@@ -177,12 +195,13 @@ CREATE TABLE session_homes (
   evidence             TEXT    NOT NULL CHECK (length(evidence) <= 300),   -- the branch, the link id or the folder used
   conventions_version  TEXT    NOT NULL,   -- commit of conventions/ the answer was read from
   jira_read            TEXT    NOT NULL CHECK (jira_read IN ('ok', 'failed', 'not-needed')),
+  patient_data         INTEGER NOT NULL CHECK (patient_data IN (0, 1)),
   derived_at           TEXT    NOT NULL,
   recorded_by          TEXT    NOT NULL,
-  FOREIGN KEY (session_uid, episode) REFERENCES session_episodes (session_uid, episode),
   CHECK (method NOT IN ('branch', 'ticket-link') OR ticket_key IS NOT NULL),
   CHECK (method <> 'registry' OR (system IS NOT NULL AND ticket_key IS NULL)),
-  CHECK (method <> 'unassigned' OR (priority = 'unassigned' AND ticket_key IS NULL AND system IS NULL))
+  CHECK (method <> 'unassigned' OR (priority = 'unassigned' AND ticket_key IS NULL AND system IS NULL)),
+  CHECK (system IS NOT NULL OR patient_data = 1)
 );
 
 -- Cost per session and model, copied from the cost import when the session goes quiet, and again after a
@@ -218,73 +237,73 @@ CREATE TABLE model_calls (
   recorded_by          TEXT NOT NULL
 );
 
--- About five lines that say what the session was about and how it ended (JP-108). One per episode.
+-- About five lines that say what the session was about and how it ended (JP-108). One per episode (the newest
+-- version not withdrawn). For a session the patient-data rule covers, the lines are built only from the ledger's own
+-- keys and counts (ticket, branch, pull request, turns), never from the session's words (design, "Patient data").
 CREATE TABLE session_summaries (
   id             INTEGER PRIMARY KEY,
-  session_uid    TEXT    NOT NULL,
+  session_uid    TEXT    NOT NULL REFERENCES sessions (session_uid),
   episode        INTEGER NOT NULL,
   method         TEXT    NOT NULL CHECK (method IN ('copied', 'model')),
   model_call_id  INTEGER REFERENCES model_calls (id),
   lines          TEXT    NOT NULL CHECK (length(lines) BETWEEN 1 AND 800
                                          AND length(lines) - length(replace(lines, char(10), '')) <= 4),
   lines_withheld INTEGER NOT NULL DEFAULT 0 CHECK (lines_withheld >= 0),   -- lines dropped by the patient-data check
+  version        INTEGER NOT NULL DEFAULT 1 CHECK (version >= 1),         -- a withdrawn summary's replacement is 2
   written_at     TEXT    NOT NULL,
   recorded_by    TEXT    NOT NULL,
-  FOREIGN KEY (session_uid, episode) REFERENCES session_episodes (session_uid, episode),
-  UNIQUE (session_uid, episode),
+  UNIQUE (session_uid, episode, version),
   CHECK (method <> 'model' OR model_call_id IS NOT NULL)
 );
 
--- The U-turns, dead ends and untold findings copied from the session's STATE.md before its 30-day clean-up.
+-- The U-turns, dead ends and untold findings copied from the session's STATE.md before its 30-day clean-up. None is
+-- copied for a session the patient-data rule covers.
 CREATE TABLE session_state_notes (
   id           INTEGER PRIMARY KEY,
-  session_uid  TEXT    NOT NULL,
+  session_uid  TEXT    NOT NULL REFERENCES sessions (session_uid),
   episode      INTEGER NOT NULL,
   kind         TEXT    NOT NULL CHECK (kind IN ('u-turn', 'dead-end', 'untold-finding')),
   note         TEXT    NOT NULL CHECK (length(note) BETWEEN 1 AND 300),
   copied_at    TEXT    NOT NULL,
-  recorded_by  TEXT    NOT NULL,
-  FOREIGN KEY (session_uid, episode) REFERENCES session_episodes (session_uid, episode)
+  recorded_by  TEXT    NOT NULL
 );
 
 -- Friction facts (JP-112): one number per code per episode. Codes are listed in ledger/codes.json.
 CREATE TABLE session_facts (
   id           INTEGER PRIMARY KEY,
-  session_uid  TEXT    NOT NULL,
+  session_uid  TEXT    NOT NULL REFERENCES sessions (session_uid),
   episode      INTEGER NOT NULL,
   fact         TEXT    NOT NULL CHECK (fact GLOB '[a-z]*' AND length(fact) <= 60),
   value        INTEGER NOT NULL,
   recorded_at  TEXT    NOT NULL,
-  recorded_by  TEXT    NOT NULL,
-  FOREIGN KEY (session_uid, episode) REFERENCES session_episodes (session_uid, episode)
+  recorded_by  TEXT    NOT NULL
 );
 
 -- Skills, agents, tools and MCP servers a session loaded and used, by name (JP-112: "used against loaded").
 CREATE TABLE session_usage (
   id           INTEGER PRIMARY KEY,
-  session_uid  TEXT    NOT NULL,
+  session_uid  TEXT    NOT NULL REFERENCES sessions (session_uid),
   episode      INTEGER NOT NULL,
   item_kind    TEXT    NOT NULL CHECK (item_kind IN ('skill', 'agent', 'tool', 'mcp-server', 'hook', 'rule-file')),
   item_name    TEXT    NOT NULL CHECK (length(item_name) <= 120),
   loaded       INTEGER NOT NULL CHECK (loaded IN (0, 1)),
   uses         INTEGER NOT NULL DEFAULT 0 CHECK (uses >= 0),
   recorded_at  TEXT    NOT NULL,
-  recorded_by  TEXT    NOT NULL,
-  FOREIGN KEY (session_uid, episode) REFERENCES session_episodes (session_uid, episode)
+  recorded_by  TEXT    NOT NULL
 );
 
 -- The debrief form (JP-113): how the session ended and up to five moments, as codes and pointers.
 CREATE TABLE debriefs (
   id             INTEGER PRIMARY KEY,
-  session_uid    TEXT    NOT NULL,
+  session_uid    TEXT    NOT NULL REFERENCES sessions (session_uid),
   episode        INTEGER NOT NULL,
   model_call_id  INTEGER NOT NULL REFERENCES model_calls (id),
   form_version   TEXT    NOT NULL,
   ended_how      TEXT    NOT NULL CHECK (ended_how GLOB '[a-z]*' AND length(ended_how) <= 40),
+  version        INTEGER NOT NULL DEFAULT 1 CHECK (version >= 1),
   written_at     TEXT    NOT NULL,
   recorded_by    TEXT    NOT NULL,
-  FOREIGN KEY (session_uid, episode) REFERENCES session_episodes (session_uid, episode),
-  UNIQUE (session_uid, episode)
+  UNIQUE (session_uid, episode, version)
 );
 
 CREATE TABLE debrief_moments (
@@ -371,16 +390,19 @@ CREATE TABLE step_runs (
   CHECK ((step_kind = 'role') = (tier IS NOT NULL))
 );
 
--- One row when a step ends. A started step with no result was cut off; the walker ends it as `_abandoned`.
+-- One row when a step ends. A started step with no result was cut off; the walker ends it as `_abandoned`. A
+-- withdrawn result is replaced by the next version.
 CREATE TABLE step_results (
   id           INTEGER PRIMARY KEY,
-  step_run_id  INTEGER NOT NULL UNIQUE REFERENCES step_runs (id),
+  step_run_id  INTEGER NOT NULL REFERENCES step_runs (id),
   outcome      TEXT    NOT NULL CHECK (length(outcome) <= 60),
   model        TEXT,                    -- the model that actually answered; empty for gate and ask steps
   session_uid  TEXT REFERENCES sessions (session_uid),
   note         TEXT CHECK (note IS NULL OR length(note) <= 200),   -- a gate's one-line summary; empty when phi
+  version      INTEGER NOT NULL DEFAULT 1 CHECK (version >= 1),
   ended_at     TEXT    NOT NULL,
-  recorded_by  TEXT    NOT NULL
+  recorded_by  TEXT    NOT NULL,
+  UNIQUE (step_run_id, version)
 );
 
 -- Files a run produced or saved at closeout (spec, evidence, feedback, deliverable), by path and hash only.
@@ -397,14 +419,16 @@ CREATE TABLE run_files (
 );
 
 -- How a run ended. The score is copied from the end_states header of the graph version the run used, so a later
--- change to a score never rewrites old runs.
+-- change to a score never rewrites old runs. A withdrawn end is replaced by the next version.
 CREATE TABLE run_ends (
   id           INTEGER PRIMARY KEY,
-  run_id       TEXT NOT NULL UNIQUE REFERENCES graph_runs (run_id),
+  run_id       TEXT NOT NULL REFERENCES graph_runs (run_id),
   end_name     TEXT NOT NULL CHECK (length(end_name) <= 120),        -- finished, <step>.<outcome> or exit_refused
   score        TEXT NOT NULL CHECK (score IN ('success', 'neutral', 'needs-josh')),
+  version      INTEGER NOT NULL DEFAULT 1 CHECK (version >= 1),
   ended_at     TEXT NOT NULL,
   recorded_by  TEXT NOT NULL,
+  UNIQUE (run_id, version),
   CHECK (end_name <> 'exit_refused' OR score = 'needs-josh')
 );
 
@@ -430,14 +454,18 @@ CREATE UNIQUE INDEX comment_deliveries_once
 -- ---------------------------------------------------------------------------------------------------------------
 
 -- Every question put to Josh, when it is put. An ask with no decision is still open (a parked run).
+-- category is the asking step, `<graph>/<step>`, followed by `;<name>=<value>` for each detail the step's `split`
+-- names, in the order it names them (JP-106 question 4, option C; graphs/CONVENTION.md, "Steps"). With no split it
+-- equals question_key. Precedent is looked up by category, system and work type together, never wider, and a
+-- trigger below refuses a precedent from another category.
 CREATE TABLE asks (
   id                     INTEGER PRIMARY KEY,
   ask_id                 TEXT    NOT NULL UNIQUE,
   run_id                 TEXT REFERENCES graph_runs (run_id),
   step_run_id            INTEGER REFERENCES step_runs (id),
   session_uid            TEXT REFERENCES sessions (session_uid),
-  category               TEXT    NOT NULL CHECK (length(category) <= 120),
-  question_key           TEXT    NOT NULL CHECK (length(question_key) <= 120),   -- <graph>/<step>, the exact-lookup key
+  category               TEXT    NOT NULL CHECK (length(category) <= 240),
+  question_key           TEXT    NOT NULL CHECK (length(question_key) <= 120),   -- <graph>/<step>, the asking step
   system                 TEXT,
   work_type              TEXT,
   tracker                TEXT CHECK (tracker IS NULL OR tracker IN ('jira', 'linear')),
@@ -459,7 +487,7 @@ CREATE TABLE asks (
 CREATE TABLE decisions (
   id                      INTEGER PRIMARY KEY,
   ask_id                  TEXT REFERENCES asks (ask_id),
-  category                TEXT NOT NULL CHECK (length(category) <= 120),
+  category                TEXT NOT NULL CHECK (length(category) <= 240),
   question_key            TEXT NOT NULL CHECK (length(question_key) <= 120),
   system                  TEXT,
   work_type               TEXT,
@@ -496,7 +524,7 @@ CREATE TABLE decision_events (
 -- promotion drops back one stage on its own. The newest row wins; a category with no row is at stage one.
 CREATE TABLE category_stages (
   id           INTEGER PRIMARY KEY,
-  category     TEXT    NOT NULL CHECK (length(category) <= 120),
+  category     TEXT    NOT NULL CHECK (length(category) <= 240),
   stage        INTEGER NOT NULL CHECK (stage IN (1, 2, 3)),
   set_by       TEXT    NOT NULL CHECK (set_by IN ('josh', 'demotion')),
   reason       TEXT CHECK (reason IS NULL OR length(reason) <= 200),
@@ -504,11 +532,12 @@ CREATE TABLE category_stages (
   recorded_by  TEXT    NOT NULL
 );
 
--- Every precedent lookup, so "lookups that found nothing" can be counted.
+-- Every precedent lookup, so "lookups that found nothing" can be counted. category is the one looked up in.
 CREATE TABLE memory_lookups (
   id                INTEGER PRIMARY KEY,
   run_id            TEXT REFERENCES graph_runs (run_id),
   step_run_id       INTEGER REFERENCES step_runs (id),
+  category          TEXT    NOT NULL CHECK (length(category) <= 240),
   question_key      TEXT    NOT NULL,
   system            TEXT,
   work_type         TEXT,
@@ -534,7 +563,7 @@ CREATE INDEX graph_runs_ticket         ON graph_runs (tracker, ticket_key, start
 CREATE INDEX graph_runs_graph          ON graph_runs (graph_id, graph_version);
 CREATE INDEX step_runs_run             ON step_runs (run_id, step_id);
 CREATE INDEX step_runs_session         ON step_runs (session_uid);
-CREATE INDEX decisions_lookup          ON decisions (question_key, system, work_type, decided_at);
+CREATE INDEX decisions_lookup          ON decisions (category, system, work_type, decided_at);
 CREATE INDEX asks_open                 ON asks (asked_at);
 CREATE INDEX corrections_row           ON corrections (table_name, row_id);
 
@@ -542,22 +571,68 @@ CREATE INDEX corrections_row           ON corrections (table_name, row_id);
 -- Current views: what scripts and queries read
 -- ---------------------------------------------------------------------------------------------------------------
 
+-- The corrections in force: every correction except one that a later correction has withdrawn. A correction that
+-- withdraws a correction is always in force (the triggers below refuse withdrawing it), so one level is exact.
+CREATE VIEW live_corrections AS
+SELECT c.* FROM corrections c
+WHERE NOT EXISTS (SELECT 1 FROM corrections u WHERE u.table_name = 'corrections' AND u.row_id = c.id);
+
+-- Each episode as it stands: its newest version not withdrawn (JP-148, A3).
+CREATE VIEW current_session_episodes AS
+SELECT e.* FROM session_episodes e
+WHERE NOT EXISTS (SELECT 1 FROM live_corrections c WHERE c.table_name = 'session_episodes' AND c.row_id = e.id)
+  AND e.version = (SELECT MAX(e2.version) FROM session_episodes e2
+                     WHERE e2.session_uid = e.session_uid AND e2.episode = e.episode
+                       AND NOT EXISTS (SELECT 1 FROM live_corrections c2 WHERE c2.table_name = 'session_episodes' AND c2.row_id = e2.id));
+
+-- Each episode's summary as it stands.
+CREATE VIEW current_session_summaries AS
+SELECT m.* FROM session_summaries m
+WHERE NOT EXISTS (SELECT 1 FROM live_corrections c WHERE c.table_name = 'session_summaries' AND c.row_id = m.id)
+  AND m.version = (SELECT MAX(m2.version) FROM session_summaries m2
+                     WHERE m2.session_uid = m.session_uid AND m2.episode = m.episode
+                       AND NOT EXISTS (SELECT 1 FROM live_corrections c2 WHERE c2.table_name = 'session_summaries' AND c2.row_id = m2.id));
+
+-- Each episode's debrief as it stands.
+CREATE VIEW current_debriefs AS
+SELECT d.* FROM debriefs d
+WHERE NOT EXISTS (SELECT 1 FROM live_corrections c WHERE c.table_name = 'debriefs' AND c.row_id = d.id)
+  AND d.version = (SELECT MAX(d2.version) FROM debriefs d2
+                     WHERE d2.session_uid = d.session_uid AND d2.episode = d.episode
+                       AND NOT EXISTS (SELECT 1 FROM live_corrections c2 WHERE c2.table_name = 'debriefs' AND c2.row_id = d2.id));
+
+-- Each step's result as it stands.
+CREATE VIEW current_step_results AS
+SELECT r.* FROM step_results r
+WHERE NOT EXISTS (SELECT 1 FROM live_corrections c WHERE c.table_name = 'step_results' AND c.row_id = r.id)
+  AND r.version = (SELECT MAX(r2.version) FROM step_results r2
+                     WHERE r2.step_run_id = r.step_run_id
+                       AND NOT EXISTS (SELECT 1 FROM live_corrections c2 WHERE c2.table_name = 'step_results' AND c2.row_id = r2.id));
+
+-- Each run's end as it stands.
+CREATE VIEW current_run_ends AS
+SELECT x.* FROM run_ends x
+WHERE NOT EXISTS (SELECT 1 FROM live_corrections c WHERE c.table_name = 'run_ends' AND c.row_id = x.id)
+  AND x.version = (SELECT MAX(x2.version) FROM run_ends x2
+                     WHERE x2.run_id = x.run_id
+                       AND NOT EXISTS (SELECT 1 FROM live_corrections c2 WHERE c2.table_name = 'run_ends' AND c2.row_id = x2.id));
+
 -- The home each session has now: its newest home row that has not been retracted.
 CREATE VIEW current_homes AS
 SELECT h.* FROM session_homes h
-WHERE NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'session_homes' AND c.row_id = h.id)
+WHERE NOT EXISTS (SELECT 1 FROM live_corrections c WHERE c.table_name = 'session_homes' AND c.row_id = h.id)
   AND h.id = (SELECT h2.id FROM session_homes h2
               WHERE h2.session_uid = h.session_uid
-                AND NOT EXISTS (SELECT 1 FROM corrections c2 WHERE c2.table_name = 'session_homes' AND c2.row_id = h2.id)
+                AND NOT EXISTS (SELECT 1 FROM live_corrections c2 WHERE c2.table_name = 'session_homes' AND c2.row_id = h2.id)
               ORDER BY h2.derived_at DESC, h2.id DESC LIMIT 1);
 
 -- Cost per session now: the newest batch per session.
 CREATE VIEW current_session_costs AS
 SELECT k.* FROM session_costs k
-WHERE NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'session_costs' AND c.row_id = k.id)
+WHERE NOT EXISTS (SELECT 1 FROM live_corrections c WHERE c.table_name = 'session_costs' AND c.row_id = k.id)
   AND k.computed_at = (SELECT MAX(k2.computed_at) FROM session_costs k2
                        WHERE k2.session_uid = k.session_uid
-                         AND NOT EXISTS (SELECT 1 FROM corrections c2 WHERE c2.table_name = 'session_costs' AND c2.row_id = k2.id));
+                         AND NOT EXISTS (SELECT 1 FROM live_corrections c2 WHERE c2.table_name = 'session_costs' AND c2.row_id = k2.id));
 
 CREATE VIEW session_cost_totals AS
 SELECT session_uid, SUM(cost_usd) AS cost_usd,
@@ -573,10 +648,9 @@ SELECT s.run_id AS run, s.step_id AS step, r.outcome, s.loop_count, COALESCE(r.s
        s.attempt, s.allowed_by_josh, g.graph_id
 FROM step_runs s
 JOIN graph_runs g ON g.run_id = s.run_id
-LEFT JOIN step_results r ON r.step_run_id = s.id
-  AND NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'step_results' AND c.row_id = r.id)
-WHERE NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'step_runs' AND c.row_id = s.id)
-  AND NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'graph_runs' AND c.row_id = g.id);
+LEFT JOIN current_step_results r ON r.step_run_id = s.id
+WHERE NOT EXISTS (SELECT 1 FROM live_corrections c WHERE c.table_name = 'step_runs' AND c.row_id = s.id)
+  AND NOT EXISTS (SELECT 1 FROM live_corrections c WHERE c.table_name = 'graph_runs' AND c.row_id = g.id);
 
 -- Cost per step: the cost of the session that did the step. Gate and ask steps cost nothing.
 CREATE VIEW step_costs AS
@@ -586,24 +660,132 @@ FROM step_ledger l LEFT JOIN session_cost_totals t ON t.session_uid = l.session;
 -- Questions waiting on Josh: asks with no decision yet.
 CREATE VIEW open_asks AS
 SELECT a.* FROM asks a
-WHERE NOT EXISTS (SELECT 1 FROM decisions d WHERE d.ask_id = a.ask_id AND NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'decisions' AND c.row_id = d.id))
-  AND NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'asks' AND c.row_id = a.id);
+WHERE NOT EXISTS (SELECT 1 FROM decisions d WHERE d.ask_id = a.ask_id AND NOT EXISTS (SELECT 1 FROM live_corrections c WHERE c.table_name = 'decisions' AND c.row_id = d.id))
+  AND NOT EXISTS (SELECT 1 FROM live_corrections c WHERE c.table_name = 'asks' AND c.row_id = a.id);
 CREATE VIEW current_decisions AS
 SELECT d.* FROM decisions d
 WHERE NOT EXISTS (SELECT 1 FROM decision_events e WHERE e.decision_id = d.id AND e.kind IN ('overruled', 'superseded')
-                  AND NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'decision_events' AND c.row_id = e.id))
-  AND NOT EXISTS (SELECT 1 FROM decisions n WHERE n.supersedes_decision_id = d.id AND NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'decisions' AND c.row_id = n.id))
-  AND NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'decisions' AND c.row_id = d.id);
+                  AND NOT EXISTS (SELECT 1 FROM live_corrections c WHERE c.table_name = 'decision_events' AND c.row_id = e.id))
+  AND NOT EXISTS (SELECT 1 FROM decisions n WHERE n.supersedes_decision_id = d.id AND NOT EXISTS (SELECT 1 FROM live_corrections c WHERE c.table_name = 'decisions' AND c.row_id = n.id))
+  AND NOT EXISTS (SELECT 1 FROM live_corrections c WHERE c.table_name = 'decisions' AND c.row_id = d.id);
 CREATE VIEW current_category_stages AS
 SELECT s.* FROM category_stages s
-WHERE s.id = (SELECT s2.id FROM category_stages s2 WHERE s2.category = s.category AND NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'category_stages' AND c.row_id = s2.id)
+WHERE s.id = (SELECT s2.id FROM category_stages s2 WHERE s2.category = s.category AND NOT EXISTS (SELECT 1 FROM live_corrections c WHERE c.table_name = 'category_stages' AND c.row_id = s2.id)
               ORDER BY s2.set_at DESC, s2.id DESC LIMIT 1);
 CREATE VIEW kept_branches AS
 SELECT m.git_root, m.branch, m.note, m.marked_at FROM branch_marks m
 WHERE m.mark = 'kept'
   AND m.id = (SELECT m2.id FROM branch_marks m2 WHERE m2.git_root = m.git_root AND m2.branch = m.branch
-              AND NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'branch_marks' AND c.row_id = m2.id)
+              AND NOT EXISTS (SELECT 1 FROM live_corrections c WHERE c.table_name = 'branch_marks' AND c.row_id = m2.id)
               ORDER BY m2.marked_at DESC, m2.id DESC LIMIT 1);
+
+-- ---------------------------------------------------------------------------------------------------------------
+-- Integrity triggers (JP-148)
+-- ---------------------------------------------------------------------------------------------------------------
+
+-- Corrections: a row has at most one correction in force, and a correction that withdraws a correction cannot itself
+-- be withdrawn (so live_corrections needs only one level). Withdrawing again after a withdrawal was undone is a new
+-- correction.
+CREATE TRIGGER corrections_one_in_force BEFORE INSERT ON corrections
+BEGIN
+  SELECT RAISE(ABORT, 'row already withdrawn: a correction for it is in force')
+  WHERE EXISTS (SELECT 1 FROM live_corrections c WHERE c.table_name = NEW.table_name AND c.row_id = NEW.row_id);
+END;
+CREATE TRIGGER corrections_one_level BEFORE INSERT ON corrections WHEN NEW.table_name = 'corrections'
+BEGIN
+  SELECT RAISE(ABORT, 'a correction that withdraws a correction cannot itself be withdrawn')
+  WHERE EXISTS (SELECT 1 FROM corrections t WHERE t.id = NEW.row_id AND t.table_name = 'corrections');
+  SELECT RAISE(ABORT, 'no such correction')
+  WHERE NOT EXISTS (SELECT 1 FROM corrections t WHERE t.id = NEW.row_id);
+END;
+
+-- Versioned tables: version n+1 of a key may be written only once version n is withdrawn (A3).
+CREATE TRIGGER session_episodes_replaces_withdrawn BEFORE INSERT ON session_episodes WHEN NEW.version > 1
+BEGIN
+  SELECT RAISE(ABORT, 'a new version needs the version before it withdrawn: session_episodes')
+  WHERE NOT EXISTS (SELECT 1 FROM session_episodes p JOIN live_corrections c ON c.table_name = 'session_episodes' AND c.row_id = p.id
+                    WHERE p.session_uid = NEW.session_uid AND p.episode = NEW.episode AND p.version = NEW.version - 1);
+END;
+CREATE TRIGGER session_summaries_replaces_withdrawn BEFORE INSERT ON session_summaries WHEN NEW.version > 1
+BEGIN
+  SELECT RAISE(ABORT, 'a new version needs the version before it withdrawn: session_summaries')
+  WHERE NOT EXISTS (SELECT 1 FROM session_summaries p JOIN live_corrections c ON c.table_name = 'session_summaries' AND c.row_id = p.id
+                    WHERE p.session_uid = NEW.session_uid AND p.episode = NEW.episode AND p.version = NEW.version - 1);
+END;
+CREATE TRIGGER debriefs_replaces_withdrawn BEFORE INSERT ON debriefs WHEN NEW.version > 1
+BEGIN
+  SELECT RAISE(ABORT, 'a new version needs the version before it withdrawn: debriefs')
+  WHERE NOT EXISTS (SELECT 1 FROM debriefs p JOIN live_corrections c ON c.table_name = 'debriefs' AND c.row_id = p.id
+                    WHERE p.session_uid = NEW.session_uid AND p.episode = NEW.episode AND p.version = NEW.version - 1);
+END;
+CREATE TRIGGER step_results_replaces_withdrawn BEFORE INSERT ON step_results WHEN NEW.version > 1
+BEGIN
+  SELECT RAISE(ABORT, 'a new version needs the version before it withdrawn: step_results')
+  WHERE NOT EXISTS (SELECT 1 FROM step_results p JOIN live_corrections c ON c.table_name = 'step_results' AND c.row_id = p.id
+                    WHERE p.step_run_id = NEW.step_run_id AND p.version = NEW.version - 1);
+END;
+CREATE TRIGGER run_ends_replaces_withdrawn BEFORE INSERT ON run_ends WHEN NEW.version > 1
+BEGIN
+  SELECT RAISE(ABORT, 'a new version needs the version before it withdrawn: run_ends')
+  WHERE NOT EXISTS (SELECT 1 FROM run_ends p JOIN live_corrections c ON c.table_name = 'run_ends' AND c.row_id = p.id
+                    WHERE p.run_id = NEW.run_id AND p.version = NEW.version - 1);
+END;
+
+-- Rows about an episode name one that exists (any version). A foreign key cannot do this once an episode can have
+-- versions, because SQLite needs the parent key to be unique.
+CREATE TRIGGER session_refs_episode_exists BEFORE INSERT ON session_refs
+BEGIN
+  SELECT RAISE(ABORT, 'no such episode: session_refs')
+  WHERE NOT EXISTS (SELECT 1 FROM session_episodes e WHERE e.session_uid = NEW.session_uid AND e.episode = NEW.episode);
+END;
+CREATE TRIGGER session_homes_episode_exists BEFORE INSERT ON session_homes
+BEGIN
+  SELECT RAISE(ABORT, 'no such episode: session_homes')
+  WHERE NOT EXISTS (SELECT 1 FROM session_episodes e WHERE e.session_uid = NEW.session_uid AND e.episode = NEW.episode);
+END;
+CREATE TRIGGER session_summaries_episode_exists BEFORE INSERT ON session_summaries
+BEGIN
+  SELECT RAISE(ABORT, 'no such episode: session_summaries')
+  WHERE NOT EXISTS (SELECT 1 FROM session_episodes e WHERE e.session_uid = NEW.session_uid AND e.episode = NEW.episode);
+END;
+CREATE TRIGGER session_state_notes_episode_exists BEFORE INSERT ON session_state_notes
+BEGIN
+  SELECT RAISE(ABORT, 'no such episode: session_state_notes')
+  WHERE NOT EXISTS (SELECT 1 FROM session_episodes e WHERE e.session_uid = NEW.session_uid AND e.episode = NEW.episode);
+END;
+CREATE TRIGGER session_facts_episode_exists BEFORE INSERT ON session_facts
+BEGIN
+  SELECT RAISE(ABORT, 'no such episode: session_facts')
+  WHERE NOT EXISTS (SELECT 1 FROM session_episodes e WHERE e.session_uid = NEW.session_uid AND e.episode = NEW.episode);
+END;
+CREATE TRIGGER session_usage_episode_exists BEFORE INSERT ON session_usage
+BEGIN
+  SELECT RAISE(ABORT, 'no such episode: session_usage')
+  WHERE NOT EXISTS (SELECT 1 FROM session_episodes e WHERE e.session_uid = NEW.session_uid AND e.episode = NEW.episode);
+END;
+CREATE TRIGGER debriefs_episode_exists BEFORE INSERT ON debriefs
+BEGIN
+  SELECT RAISE(ABORT, 'no such episode: debriefs')
+  WHERE NOT EXISTS (SELECT 1 FROM session_episodes e WHERE e.session_uid = NEW.session_uid AND e.episode = NEW.episode);
+END;
+
+-- Precedent stays inside its category (JP-106 question 4, option C; A5): a suggestion, an answer from memory and a
+-- recorded lookup may only use a decision of the same category.
+CREATE TRIGGER asks_precedent_same_category BEFORE INSERT ON asks WHEN NEW.precedent_decision_id IS NOT NULL
+BEGIN
+  SELECT RAISE(ABORT, 'precedent from another category: asks')
+  WHERE NOT EXISTS (SELECT 1 FROM decisions d WHERE d.id = NEW.precedent_decision_id AND d.category = NEW.category);
+END;
+CREATE TRIGGER decisions_rests_on_same_category BEFORE INSERT ON decisions WHEN NEW.rests_on_decision_id IS NOT NULL
+BEGIN
+  SELECT RAISE(ABORT, 'precedent from another category: decisions')
+  WHERE NOT EXISTS (SELECT 1 FROM decisions d WHERE d.id = NEW.rests_on_decision_id AND d.category = NEW.category);
+END;
+CREATE TRIGGER memory_lookups_same_category BEFORE INSERT ON memory_lookups WHEN NEW.used_decision_id IS NOT NULL
+BEGIN
+  SELECT RAISE(ABORT, 'precedent from another category: memory_lookups')
+  WHERE NOT EXISTS (SELECT 1 FROM decisions d WHERE d.id = NEW.used_decision_id AND d.category = NEW.category);
+END;
 
 -- ---------------------------------------------------------------------------------------------------------------
 -- The append-only rule: every table refuses UPDATE and DELETE. (`ledger redact` drops and restores the pair for

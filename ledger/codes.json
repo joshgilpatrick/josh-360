@@ -34,7 +34,35 @@
     "manual-repeat": "A manual step was repeated that a script could do",
     "false-done": "Work was reported as done and was not"
   },
+  "started_by_env": {
+    "_about": "Who started a session, worked out by the SessionStart hook from its environment (JP-148, review finding A4). The first rule whose variable is set (and equals the value, where one is given) wins; with none, the session is Josh's. Every value is one the sessions.started_by CHECK allows. The walker's sessions run inside Agent Manager, so the walker comes first; a desk worker is an Agent Manager session too, so the desk comes before agent-manager.",
+    "rules": [
+      {
+        "env": "JOSH360_RUN_ID",
+        "started_by": "walker"
+      },
+      {
+        "env": "ACTION_TRIAGE_TICKET_KEY",
+        "started_by": "daemon"
+      },
+      {
+        "env": "ACTION_TRIAGE_ALLOW_ATLASSIAN_WRITES",
+        "started_by": "daemon"
+      },
+      {
+        "env": "DESK_WORKER",
+        "equals": "1",
+        "started_by": "desk"
+      },
+      {
+        "env": "AGENT_MANAGER_SESSION_ID",
+        "started_by": "agent-manager"
+      }
+    ],
+    "default": "josh"
+  },
   "_added": {
-    "2026-11-16": "every code above (draft, JP-99)"
+    "2026-11-16": "every code above (draft, JP-99)",
+    "2026-11-17": "started_by_env (JP-148)"
   }
 }

@@ -63,7 +63,8 @@ GOTO = {"goto": LEAF, "max_loops": LEAF, "at_limit": LEAF}
 STEP = {
     "id": LEAF, "role": LEAF, "agent": EITHER({"by": LEAF, "map": MAP(LEAF), "default": LEAF}),
     "tier": LEAF, "brief": LEAF, "gate": LEAF, "effects": LEAF,
-    "ask": {"question": LEAF, "choices": LEAF, "approves": LEAF, "approves_on": LEAF, "on_limit_only": LEAF},
+    "ask": {"question": LEAF, "choices": LEAF, "approves": LEAF, "approves_on": LEAF, "on_limit_only": LEAF,
+            "split": LEAF},
     # inputs is a list of names; a mapping is wrong, and every key in it is reported (EITHER of no keys).
     "needs": LEAF, "when": {"step": LEAF, "outcome": LEAF}, "inputs": EITHER({}), "outputs": MAP(OUTPUT),
     "outcomes": LEAF, "on": MAP(EITHER(GOTO)),
@@ -523,6 +524,12 @@ def check_graph_data(data, name: str, parts: Parts) -> list[str]:
             if not _str_list(approves):
                 out.append(f"ask step '{sid}': approves must be a list of step ids")
             out += [f"ask step '{sid}' approves unknown step '{a}'" for a in _names(approves) if a not in steps]
+            if "split" in ask:
+                split = ask["split"]
+                if not _str_list(split) or not split:
+                    out.append(f"ask step '{sid}': split must be a list of names")
+                elif len(set(split)) != len(split):
+                    out.append(f"ask step '{sid}': split names a detail more than once")
             if "on_limit_only" in ask and not isinstance(ask["on_limit_only"], bool):
                 out.append(f"ask step '{sid}': on_limit_only must be true or false")
             if ask.get("on_limit_only") is True and ("needs" in s or "when" in s):
@@ -652,6 +659,14 @@ def check_graph_data(data, name: str, parts: Parts) -> list[str]:
                 if isinstance(steps[a].get("outputs"), dict):
                     available |= set(steps[a]["outputs"])
             out += [f"step '{sid}' reads unknown input '{n}'" for n in s["inputs"] if n not in available]
+        ask = s.get("ask") if kind.get(sid) == "ask" and isinstance(s.get("ask"), dict) else {}
+        if above is not None and _str_list(ask.get("split")):
+            available = set(graph_inputs)
+            for a in above[sid]:
+                if isinstance(steps[a].get("outputs"), dict):
+                    available |= set(steps[a]["outputs"])
+            out += [f"ask step '{sid}' splits on '{n}', which is not a graph input or an output of a step above it"
+                    for n in ask["split"] if n not in available]
         if access.get(sid) == "shared" and above is not None:
             approvers = [a for a in sorted(above[sid]) if kind.get(a) == "ask" and isinstance(steps[a]["ask"], dict)
                          and sid in _names(steps[a]["ask"].get("approves"))]

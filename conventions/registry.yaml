@@ -27,6 +27,12 @@
 #                 Only an epic with an end belongs here; an open-ended catch-all epic does not.
 #   priority      An id from conventions/priorities.yaml. If priorities.yaml maps the system's area to a
 #                 priority, the two must agree.
+#   patient_data  true when work in this system can see patient data (its code, its data or what its sessions
+#                 read), else false. Required. A session homed under a true system, or with no home, keeps none
+#                 of its own words in the ledger: no title, no STATE.md notes, no first line (JP-148, review
+#                 finding A2; docs/design/data-model.md, "Patient data"). When in doubt, true. Seeded true for
+#                 every clinical system and every tool that reads email, meeting notes, transcripts or gateway
+#                 logs; Josh can flip any entry (docs/decisions.md, 17 November 2026).
 #
 # Seeded on 16 November 2026 from labels and epics in Jira and from paths named in Josh's repositories.
 # Folders were not checked on the laptop; JP-105 (the laptop hookup) can confirm them. Josh reviewed the
@@ -65,6 +71,7 @@ systems:
   # Clinical work
   - name: keystone-platform
     description: Keystone (Eventus Connect), the clinical application platform
+    patient_data: true
     repositories: [keystone-platform]
     folders: [~/Development/active/keystone-platform]
     area: Clinical application platform
@@ -75,6 +82,7 @@ systems:
 
   - name: athena-services
     description: Services that integrate applications with Athena
+    patient_data: true
     repositories: [athena-services]
     folders: [~/Development/active/athena_services]
     area: Clinical data migration and integration
@@ -85,6 +93,7 @@ systems:
 
   - name: athena-data-migration
     description: The ChartPath to Athena data migration
+    patient_data: true
     repositories: [athena-data-migration]
     folders: [~/Development/active/josh_projects/athena_data_migration]
     area: Clinical data migration and integration
@@ -95,6 +104,7 @@ systems:
 
   - name: athena_automations
     description: Automations for Athena build and EHR administration
+    patient_data: true
     repositories: [athena_automations]
     # No folder: josh_projects/athena_automations, named in older notes, is not on the laptop (PR #5 audit).
     area: EHR administration
@@ -105,6 +115,7 @@ systems:
 
   - name: equip_services
     description: EQuIP measures, pipeline and payouts
+    patient_data: true
     repositories: [equip_services]
     folders: [~/Development/active/equip_services, ~/Development/active/josh_projects/equip]
     area: Clinical quality programs
@@ -115,6 +126,7 @@ systems:
 
   - name: pims_services
     description: PIMS services
+    patient_data: true
     repositories: [pims_services]
     folders: [~/Development/active/pims_services]
     area: Clinical application platform
@@ -125,6 +137,7 @@ systems:
 
   - name: ai_scribing_services
     description: AI scribing services
+    patient_data: true
     repositories: [ai_scribing_services]
     folders: [~/Development/active/ai_scribing_services, ~/Development/active/josh_projects/ai_scribing]
     area: Clinical application platform
@@ -135,6 +148,7 @@ systems:
 
   - name: charta_services
     description: Charta services
+    patient_data: true
     repositories: [charta_services]
     area: Clinical application platform
     tracker: jira
@@ -145,6 +159,7 @@ systems:
 
   - name: survey-services
     description: Survey services
+    patient_data: true
     repositories: [survey-services]
     area: Clinical application platform
     tracker: jira
@@ -155,6 +170,7 @@ systems:
 
   - name: training-services
     description: Training services
+    patient_data: true
     repositories: [training-services]
     area: Clinical application platform
     tracker: jira
@@ -165,6 +181,7 @@ systems:
 
   - name: fx-app-apps-services
     description: Azure Functions app for the clinical applications
+    patient_data: true
     repositories: [fx-app-apps-services]
     folders: [~/Development/active/fx-app-apps-services]
     area: Clinical application platform
@@ -176,6 +193,7 @@ systems:
 
   - name: fx-app-zus-services
     description: Zus enrollment and data exchange
+    patient_data: true
     repositories: [fx-app-zus-services]
     folders: [~/Development/active/zus_services]
     area: Clinical data migration and integration
@@ -187,6 +205,7 @@ systems:
 
   - name: synapse-pipelines
     description: Azure Synapse pipelines
+    patient_data: true
     repositories: [synapse-pipelines]
     folders: [~/Development/active/synapse_pipelines]
     area: Data platform operations
@@ -198,6 +217,7 @@ systems:
   # DevEx: Josh's own developer experience. Tickets live in JP.
   - name: josh-360
     description: Josh 360, the home for Josh's agent workflow
+    patient_data: false
     repositories: [josh-360]
     folders: [~/Development/active/josh_360]
     area: Automation and AI enablement
@@ -208,6 +228,7 @@ systems:
 
   - name: josh-projects
     description: Josh's working repository, including agent_tools (Jira, Outlook and other command-line tools)
+    patient_data: true
     repositories: [josh-projects]
     folders: [~/Development/active/josh_projects]
     area: Automation and AI enablement
@@ -218,6 +239,7 @@ systems:
 
   - name: action-triage
     description: The action-triage desktop app, its orchestrator daemon and the Email Research Desk
+    patient_data: true
     repositories: [action-triage]
     folders: [~/Development/active/josh_projects/action-triage, ~/Development/active/action-triage]
     area: Automation and AI enablement
@@ -228,6 +250,7 @@ systems:
 
   - name: claude-360
     description: Session Atlas, the local index of every Claude Code session
+    patient_data: true
     repositories: [claude-360]
     folders: [~/Development/active/claude-360]
     area: Automation and AI enablement
@@ -238,6 +261,7 @@ systems:
 
   - name: claude-harness
     description: Josh's ~/.claude folder (global rules, skills, agents, hooks)
+    patient_data: false
     repositories: [claude-harness]
     folders: [~/.claude]
     area: Automation and AI enablement
@@ -248,6 +272,7 @@ systems:
 
   - name: macbook-automations
     description: The login job and the background jobs it starts on the work laptop
+    patient_data: true
     repositories: [macbook-automations]
     folders: [~/Development/active/josh_projects/macbook_automations]
     area: Automation and AI enablement
@@ -258,6 +283,7 @@ systems:
 
   - name: agent-services
     description: Josh's agent services (meeting notes, agent tools)
+    patient_data: true
     repositories: [agent-services]
     folders: [~/Development/active/agent_services]
     area: Automation and AI enablement
@@ -268,6 +294,7 @@ systems:
 
   - name: fx-app-josh-services
     description: Azure Functions app for Josh's own services, such as email intake
+    patient_data: true
     repositories: [fx-app-josh-services]
     folders: [~/Development/active/fx-app-josh-services]
     area: Automation and AI enablement
@@ -278,6 +305,7 @@ systems:
 
   - name: bifrost-migration
     description: The Bifrost model gateway that agent sessions run through
+    patient_data: true
     repositories: [bifrost-migration]
     folders: [~/Development/active/bifrost-migration]
     area: Automation and AI enablement
@@ -288,6 +316,7 @@ systems:
 
   - name: obsidian-wiki
     description: The Obsidian wiki that session transcripts are staged into
+    patient_data: true
     folders: [~/Development/active/obsidian-wiki]
     area: Automation and AI enablement
     tracker: jira
@@ -298,6 +327,7 @@ systems:
   # Personal work: Linear (team GIL) under the using-linear convention, designed further in phase 3.
   - name: family_os
     description: Family Hub, the household app
+    patient_data: false
     repositories: [family_os]
     tracker: linear
     linear_team: GIL
