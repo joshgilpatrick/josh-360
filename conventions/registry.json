@@ -1,0 +1,378 @@
+{
+  "areas": {
+    "Analytics applications": "Analytics",
+    "Automation and AI enablement": "Clinical Informatics",
+    "Clinical application platform": "Clinical Informatics",
+    "Clinical data migration and integration": "Clinical Informatics",
+    "Clinical quality programs": "Clinical Informatics",
+    "Compliance and risk": "Security and IT Ops",
+    "Data access governance": "Data Engineering",
+    "Data platform operations": "Data Engineering",
+    "EHR administration": "Clinical Informatics",
+    "Identity and access": "Security and IT Ops",
+    "Reporting and BI delivery": "Analytics",
+    "Security operations and data protection": "Security and IT Ops",
+    "Source data integration and modeling": "Data Engineering"
+  },
+  "fallback": {
+    "jira_space": "JP",
+    "priority": "unassigned"
+  },
+  "spaces": {
+    "AD": "Apps Development. Software work for the clinical team.",
+    "CI": "Clinical Informatics. Operational and clinical work, such as EHR administration and the Athena build.",
+    "JP": "Josh Projects. Josh's own intake and every DevEx ticket. Work that becomes team work moves to CI or AD.",
+    "TECH": "Technology Projects. Department initiatives only; a ticket never lives here."
+  },
+  "systems": [
+    {
+      "area": "Clinical application platform",
+      "default_epic": null,
+      "description": "Keystone (Eventus Connect), the clinical application platform",
+      "folders": [
+        "~/Development/active/keystone-platform"
+      ],
+      "jira_space": "AD",
+      "name": "keystone-platform",
+      "priority": "clinician-tech-stack-ux",
+      "repositories": [
+        "keystone-platform"
+      ],
+      "tracker": "jira"
+    },
+    {
+      "area": "Clinical data migration and integration",
+      "default_epic": null,
+      "description": "Services that integrate applications with Athena",
+      "folders": [
+        "~/Development/active/athena_services"
+      ],
+      "jira_space": "AD",
+      "name": "athena-services",
+      "priority": "athena",
+      "repositories": [
+        "athena-services"
+      ],
+      "tracker": "jira"
+    },
+    {
+      "area": "Clinical data migration and integration",
+      "default_epic": null,
+      "description": "The ChartPath to Athena data migration",
+      "folders": [
+        "~/Development/active/josh_projects/athena_data_migration"
+      ],
+      "jira_space": "AD",
+      "name": "athena-data-migration",
+      "priority": "athena",
+      "repositories": [
+        "athena-data-migration"
+      ],
+      "tracker": "jira"
+    },
+    {
+      "area": "EHR administration",
+      "default_epic": null,
+      "description": "Automations for Athena build and EHR administration",
+      "jira_space": "CI",
+      "name": "athena_automations",
+      "priority": "athena",
+      "repositories": [
+        "athena_automations"
+      ],
+      "tracker": "jira"
+    },
+    {
+      "area": "Clinical quality programs",
+      "default_epic": null,
+      "description": "EQuIP measures, pipeline and payouts",
+      "folders": [
+        "~/Development/active/equip_services",
+        "~/Development/active/josh_projects/equip"
+      ],
+      "jira_space": "AD",
+      "name": "equip_services",
+      "priority": "equip",
+      "repositories": [
+        "equip_services"
+      ],
+      "tracker": "jira"
+    },
+    {
+      "area": "Clinical application platform",
+      "default_epic": null,
+      "description": "PIMS services",
+      "folders": [
+        "~/Development/active/pims_services"
+      ],
+      "jira_space": "AD",
+      "name": "pims_services",
+      "priority": "pims",
+      "repositories": [
+        "pims_services"
+      ],
+      "tracker": "jira"
+    },
+    {
+      "area": "Clinical application platform",
+      "default_epic": null,
+      "description": "AI scribing services",
+      "folders": [
+        "~/Development/active/ai_scribing_services",
+        "~/Development/active/josh_projects/ai_scribing"
+      ],
+      "jira_space": "AD",
+      "name": "ai_scribing_services",
+      "priority": "ai-scribing-utilization",
+      "repositories": [
+        "ai_scribing_services"
+      ],
+      "tracker": "jira"
+    },
+    {
+      "area": "Clinical application platform",
+      "default_epic": null,
+      "description": "Charta services",
+      "jira_space": "AD",
+      "name": "charta_services",
+      "notes": "Charta is part of EQuIP (Josh, JP-106).",
+      "priority": "equip",
+      "repositories": [
+        "charta_services"
+      ],
+      "tracker": "jira"
+    },
+    {
+      "area": "Clinical application platform",
+      "default_epic": null,
+      "description": "Survey services",
+      "jira_space": "AD",
+      "name": "survey-services",
+      "notes": "Unassigned on purpose (Josh, JP-106).",
+      "priority": "unassigned",
+      "repositories": [
+        "survey-services"
+      ],
+      "tracker": "jira"
+    },
+    {
+      "area": "Clinical application platform",
+      "default_epic": null,
+      "description": "Training services",
+      "jira_space": "AD",
+      "name": "training-services",
+      "notes": "Unassigned on purpose (Josh, JP-106).",
+      "priority": "unassigned",
+      "repositories": [
+        "training-services"
+      ],
+      "tracker": "jira"
+    },
+    {
+      "area": "Clinical application platform",
+      "default_epic": null,
+      "description": "Azure Functions app for the clinical applications",
+      "folders": [
+        "~/Development/active/fx-app-apps-services"
+      ],
+      "jira_space": "AD",
+      "name": "fx-app-apps-services",
+      "notes": "Josh, JP-106.",
+      "priority": "internal-systems-applications",
+      "repositories": [
+        "fx-app-apps-services"
+      ],
+      "tracker": "jira"
+    },
+    {
+      "area": "Clinical data migration and integration",
+      "default_epic": null,
+      "description": "Zus enrollment and data exchange",
+      "folders": [
+        "~/Development/active/zus_services"
+      ],
+      "jira_space": "AD",
+      "name": "fx-app-zus-services",
+      "notes": "Josh, JP-106.",
+      "priority": "internal-systems-applications",
+      "repositories": [
+        "fx-app-zus-services"
+      ],
+      "tracker": "jira"
+    },
+    {
+      "area": "Data platform operations",
+      "default_epic": null,
+      "description": "Azure Synapse pipelines",
+      "folders": [
+        "~/Development/active/synapse_pipelines"
+      ],
+      "jira_space": "AD",
+      "name": "synapse-pipelines",
+      "priority": "unassigned",
+      "repositories": [
+        "synapse-pipelines"
+      ],
+      "tracker": "jira"
+    },
+    {
+      "area": "Automation and AI enablement",
+      "default_epic": "JP-94",
+      "description": "Josh 360, the home for Josh's agent workflow",
+      "folders": [
+        "~/Development/active/josh_360"
+      ],
+      "jira_space": "JP",
+      "name": "josh-360",
+      "priority": "devex",
+      "repositories": [
+        "josh-360"
+      ],
+      "tracker": "jira"
+    },
+    {
+      "area": "Automation and AI enablement",
+      "default_epic": null,
+      "description": "Josh's working repository, including agent_tools (Jira, Outlook and other command-line tools)",
+      "folders": [
+        "~/Development/active/josh_projects"
+      ],
+      "jira_space": "JP",
+      "name": "josh-projects",
+      "priority": "devex",
+      "repositories": [
+        "josh-projects"
+      ],
+      "tracker": "jira"
+    },
+    {
+      "area": "Automation and AI enablement",
+      "default_epic": null,
+      "description": "The action-triage desktop app, its orchestrator daemon and the Email Research Desk",
+      "folders": [
+        "~/Development/active/josh_projects/action-triage",
+        "~/Development/active/action-triage"
+      ],
+      "jira_space": "JP",
+      "name": "action-triage",
+      "priority": "devex",
+      "repositories": [
+        "action-triage"
+      ],
+      "tracker": "jira"
+    },
+    {
+      "area": "Automation and AI enablement",
+      "default_epic": null,
+      "description": "Session Atlas, the local index of every Claude Code session",
+      "folders": [
+        "~/Development/active/claude-360"
+      ],
+      "jira_space": "JP",
+      "name": "claude-360",
+      "priority": "devex",
+      "repositories": [
+        "claude-360"
+      ],
+      "tracker": "jira"
+    },
+    {
+      "area": "Automation and AI enablement",
+      "default_epic": null,
+      "description": "Josh's ~/.claude folder (global rules, skills, agents, hooks)",
+      "folders": [
+        "~/.claude"
+      ],
+      "jira_space": "JP",
+      "name": "claude-harness",
+      "priority": "devex",
+      "repositories": [
+        "claude-harness"
+      ],
+      "tracker": "jira"
+    },
+    {
+      "area": "Automation and AI enablement",
+      "default_epic": null,
+      "description": "The login job and the background jobs it starts on the work laptop",
+      "folders": [
+        "~/Development/active/josh_projects/macbook_automations"
+      ],
+      "jira_space": "JP",
+      "name": "macbook-automations",
+      "priority": "devex",
+      "repositories": [
+        "macbook-automations"
+      ],
+      "tracker": "jira"
+    },
+    {
+      "area": "Automation and AI enablement",
+      "default_epic": null,
+      "description": "Josh's agent services (meeting notes, agent tools)",
+      "folders": [
+        "~/Development/active/agent_services"
+      ],
+      "jira_space": "JP",
+      "name": "agent-services",
+      "priority": "devex",
+      "repositories": [
+        "agent-services"
+      ],
+      "tracker": "jira"
+    },
+    {
+      "area": "Automation and AI enablement",
+      "default_epic": null,
+      "description": "Azure Functions app for Josh's own services, such as email intake",
+      "folders": [
+        "~/Development/active/fx-app-josh-services"
+      ],
+      "jira_space": "JP",
+      "name": "fx-app-josh-services",
+      "priority": "devex",
+      "repositories": [
+        "fx-app-josh-services"
+      ],
+      "tracker": "jira"
+    },
+    {
+      "area": "Automation and AI enablement",
+      "default_epic": null,
+      "description": "The Bifrost model gateway that agent sessions run through",
+      "folders": [
+        "~/Development/active/bifrost-migration"
+      ],
+      "jira_space": "JP",
+      "name": "bifrost-migration",
+      "priority": "devex",
+      "repositories": [
+        "bifrost-migration"
+      ],
+      "tracker": "jira"
+    },
+    {
+      "area": "Automation and AI enablement",
+      "default_epic": null,
+      "description": "The Obsidian wiki that session transcripts are staged into",
+      "folders": [
+        "~/Development/active/obsidian-wiki"
+      ],
+      "jira_space": "JP",
+      "name": "obsidian-wiki",
+      "priority": "devex",
+      "tracker": "jira"
+    },
+    {
+      "description": "Family Hub, the household app",
+      "linear_team": "GIL",
+      "name": "family_os",
+      "priority": "unassigned",
+      "repositories": [
+        "family_os"
+      ],
+      "tracker": "linear"
+    }
+  ],
+  "version": 1
+}
