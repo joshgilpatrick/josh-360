@@ -396,12 +396,13 @@ Rules for `link`:
    - a `jira` or `acli` command with any of the words `create`, `edit`, `update`, `transition`, `comment`, `assign`, `delete`, `link`, `move`, `archive`, `attach`: deny, `only gate scripts write to Jira`;
    - `security` followed by `find-`, `dump-` or `export`: deny, `a step session does not read the keychain`;
    - it names a secret path (below): deny, `a step session does not read secrets`;
-   - it names a protected path (below) together with a redirect (`>`, `>>`), `tee`, or one of `rm`, `mv`, `cp`, `ln`, `touch`, `mkdir`, `chmod`, `truncate`, `dd`, `install`, `sed -i`, `python`, `python3`, `node`, `perl`, `ruby`: deny, `a step session does not change the runner, the ledger or another run`.
+   - it names a protected path (below) together with a writing redirect, a file word (`tee`, `rm`, `mv`, `cp`, `ln`, `touch`, `mkdir`, `chmod`, `truncate`, `dd`, `install`, `sed -i`) or an interpreter (`python`, `python3`, `node`, `perl`, `ruby`): deny, `a step session does not change the runner, the ledger or another run`.
 9. `Read`, `Grep` or `Glob` on a secret path: deny, as above.
 10. `Write`, `Edit` or `NotebookEdit` on a protected path: deny, as above.
-11. The entry's `access` is `read`: `Write`, `Edit` and `NotebookEdit` outside `work_dir` are denied; `Bash` with `git` followed by `commit`, `push`, `add`, `merge`, `rebase`, `reset`, `stash`, `tag`, `cherry-pick`, `revert`, `apply` or `am` is denied; `Bash` with a redirect or one of rule 8's write words is denied unless the command names `work_dir` or `result_file`. Message: `this step only reads: write nothing but your result and files in the work folder`.
+11. The entry's `access` is `read`: `Write`, `Edit` and `NotebookEdit` outside `work_dir` are denied; `Bash` with `git` followed by `commit`, `push`, `add`, `merge`, `rebase`, `reset`, `stash`, `tag`, `cherry-pick`, `revert`, `apply` or `am` is denied; `Bash` with a writing redirect or one of rule 8's file words is denied unless the command names `work_dir` or `result_file`. An interpreter alone is not a write here: a read step runs tests and scripts (`python3 -m unittest`, `python3 scripts/check.py`). Message: `this step only reads: write nothing but your result and files in the work folder`.
 12. Otherwise allow: `(0, "", "")`.
 
+- **A writing redirect** is `>` or `>>` to a file. `2>&1`, `>&2`, `1>&2` and any redirect to `/dev/null` are taken out of the command text before rules 8 and 11 look for one, so `git diff 2>&1` and `ls 2>/dev/null` are reads.
 - **Secret paths:** a file whose name is `.env` or starts with `.env.`; a name holding `credentials`; `~/.aws/`, `~/.config/gh/hosts.yml`, `~/.netrc`, `~/Library/Keychains/`.
 - **Protected paths** (`<home>` is `JOSH360_HOME`): `<home>/repo/`, `<home>/state/`, `~/.claude/settings.json`, `~/.claude/settings.local.json`, every folder under the runs folder except this run's, and this run's folder except `work/`, `prompts/` and the result file. A path is compared after `~` is expanded and symlinks are resolved, in both spellings.
 - **A session with no entry** returns `(0, "", "")` before anything else is read: one `os.path.exists`.
@@ -413,8 +414,8 @@ Rules for `link`:
   - `test_ask_user_question_is_denied`; `test_jira_write_tool_is_denied_and_a_read_is_allowed` (`mcp__Atlassian_MCP__editJiraIssue` 2, `mcp__Atlassian_MCP__getJiraIssue` 0); `test_github_write_tool_is_denied_and_a_read_is_allowed`.
   - `test_gh_reads_pass_and_writes_do_not`: `gh pr view 5` and `gh api repos/o/r/pulls` are 0; `gh pr create`, `gh pr merge 5`, `gh api -X POST repos/o/r/issues` and `gh api repos/o/r/labels -f name=x` are 2.
   - `test_secrets_and_the_keychain_are_denied`: `Read` of `/x/.env`, `Bash` `cat ~/.aws/credentials`, and `Bash` `security find-generic-password -s jira-claude-api-key -w` are 2; `Read` of `/x/environment.md` is 0.
-  - `test_the_rails_and_other_runs_are_protected`: `Edit` of `<home>/repo/hooks/PreToolUse/20-graph-step-guard`, `Write` into another run's `work/`, and `Bash` `echo x > <home>/state/ledger.db` are 2; `Write` into this run's `work/notes.md` is 0.
-  - `test_read_step_writes_only_its_result_and_work_folder`: with `access` `read`, `Edit` of a worktree file, `Bash` `git commit -m x` and `Bash` `echo x > /tmp/y` are 2; `Write` to `work_dir/findings.md`, `Bash` `git diff main` and `Bash` `echo x > <work_dir>/y` are 0.
+  - `test_the_rails_and_other_runs_are_protected`: `Edit` of `<home>/repo/hooks/PreToolUse/20-graph-step-guard`, `Write` into another run's `work/`, `Bash` `echo x > <home>/state/ledger.db` and `Bash` `python3 <home>/repo/graphs/tools/walker.py abandon --run r-1` are 2; `Write` into this run's `work/notes.md` and `Bash` `cat <home>/repo/graphs/roles/builder/instructions.md 2>/dev/null` are 0.
+  - `test_read_step_writes_only_its_result_and_work_folder`: with `access` `read`, `Edit` of a worktree file, `Bash` `git commit -m x` and `Bash` `echo x > /tmp/y` are 2; `Bash` `cp a.txt b.txt` and `Bash` `python3 x.py > out.txt` are 2; `Write` to `work_dir/findings.md`, `Bash` `git diff main`, `git diff main 2>&1`, `ls missing 2>/dev/null`, `python3 -m unittest tests.test_x`, `python3 scripts/check.py --fast` and `echo x > <work_dir>/y` are 0.
   - `test_josh_step_may_commit_and_push`: `Bash` `git commit -m x` and `git push` are 0.
   - `test_turn_cap_denies_everything_but_the_result`: with `turn_cap` 3, the fourth call (`Read`) is 2 with `turn cap reached`, and a `Write` to the result file after it is 0.
   - `test_time_cap_denies_everything_but_the_result`: three hours after the link, `Read` is 2 with `time cap reached` and the result `Write` is 0.
@@ -466,12 +467,13 @@ Rules for `stop`, for a session with an entry:
 - Test: `tests/test_runner_advance.py`
 
 **Interfaces:**
-- Consumes: `walk.call`, `sessionfile`, `locks.held`, `ledgerview.open_runs`, `paths`, `hooklib.marker`, `hooklib.entry`, `ledger.comments.take_run`, the binding (`start`, `state`, `close`, `SpawnRefused`), `notify.note_once` (Task 11; until it exists, a stub that returns False).
+- Consumes: `walk.call`, `sessionfile`, `locks.held`, `ledgerview.open_runs`, `paths`, `hooklib.marker`, `hooklib.entry`, `ledger.comments.take_run`, the binding (`start`, `state`, `close`, `SpawnRefused`), `notify.note_once` and `notify.forget_stops` (Task 11; until they exist, stubs that do nothing).
 - Produces: `advance.load_binding(runner: str)` (imports `graphs/bindings/<runner>/binding.py` by path; `ValueError` when there is none); `advance.advance(run_id: str, now=time.time, root: Optional[Path] = None) -> dict`, which returns `{"run": run_id, "state": <one word>}`, the word being one of `locked`, `spawned`, `working`, `limit`, `off`, `no-rails`, `spawn-failed`, `parked`, `waiting`, `stopped`, `done`.
 - Produces, in `runner_helpers.py`: `self.session_ends(run, step, outcome, outputs=None, attempt=1)`, which writes the result file and sets the fake session's status to `idle`; `self.advance(run) -> str`.
 
 The loop, under `locks.held(<run folder>/advance.lock)` (`Held` returns `locked`). It runs until an answer needs nothing more now, for at most `advance_limit_seconds`:
 
+0. Before the first call: when `run.json` has no `stopped`, drop every `stopped:*` entry from `<run folder>/runner.json`'s `noted` list (`notify.forget_stops(run_id)`). `walker retry` and `allow` clear `run.json`'s `stopped`, so a run that stops again after one of them is a new stop and is notified again, at the same step or another.
 1. `a = walk.call("next", "--run", run_id)`.
 2. `parked` and `waiting`: return that word.
 3. `stopped`: `notify.note_once(run_id, "stopped:" + a["step"])`, one line in `runner.log` with the run, the step and the walker's reason, return `stopped`. `done`: `note_once(run_id, "done")`, return `done`.
@@ -483,7 +485,7 @@ The loop, under `locks.held(<run folder>/advance.lock)` (`Held` returns `locked`
      1. The result file exists. If it does not parse as JSON and is younger than `result_settle_seconds`, return `working`. Else `walk.call("record", "--run", run_id, "--step", step, "--result-file", path, "--model", handle model, "--tool", "claude-code")`, plus `--session <link's session_id>` when there is a link. On success write state `recorded` and `ended_at`; if `archive_finished_sessions`, set `closed = binding.close(handle)`; go to 1. On `WalkerRefused`: abandon, `bad-result`.
      2. No link file and `now - started_at >= link_timeout_seconds`: abandon, `never-started`.
      3. `now - started_at >= time_cap_seconds + time_cap_grace_seconds`: abandon, `time-cap`.
-     4. `s = binding.state(handle)`. `gone`: abandon, `session-gone`. `unknown`: return `working`. `working`: clear `resting_since`, return `working`. `resting`: set `resting_since = now` when it is null; the clock is the entry's `nudged_at` when set, else `resting_since`; if `now - clock >= rest_timeout_seconds`, abandon, `rested-without-result`; else return `working`.
+     4. `s = binding.state(handle)`. `gone`: abandon, `session-gone`. `unknown`: return `working`. `working`: clear `resting_since`, return `working`. `resting`: set `resting_since = now` when it is null; the clock is the later of `resting_since` and the entry's `nudged_at` (a nudge given long before the session came to rest must not use up the wait); if `now - clock >= rest_timeout_seconds`, abandon, `rested-without-result`; else return `working`.
    - **`recorded` or `abandoned`** for the attempt the walker still has open cannot happen; log it and return `working` without changing anything.
 5. **Abandon** is: `walk.call("abandon", "--run", run_id)`; write state `abandoned`, `reason`, `ended_at`; one line in `runner.log`; never `close` (an abandoned session stays visible); go to 1. The walker then starts the step again as another attempt or stops the run, by its own rules.
 6. **When the runner is off**, the loop still records a finished session (4, started, 1) and then returns `off` instead of going to 1, so no gate runs and no step starts.
@@ -497,8 +499,10 @@ The loop, under `locks.held(<run folder>/advance.lock)` (`Held` returns `locked`
   - `test_restart_does_not_start_a_second_session` (scenario "A run survives a restart"): a new process calling `advance` for a run whose session is `working` logs no spawn and returns `working`.
   - `test_crash_after_spawn_is_adopted_through_the_link`: a session file left at `spawning` plus a link file becomes `started` and no spawn is logged.
   - `test_crash_before_spawn_is_abandoned_after_the_link_timeout`: a file left at `spawning` with no link returns `working` at 9 minutes and is `abandoned` with `never-started` at 10; the walker then shows `design` at attempt 2 and one new spawn.
-  - `test_rested_without_a_result_is_abandoned` (scenario "A step that never ends is bounded"): the fake's status `idle`, a `nudged_at` in the entry, eleven minutes later: `abandoned`, `rested-without-result`; the fake's row is not archived.
+  - `test_rested_without_a_result_is_abandoned` (scenario "A step that never ends is bounded"): the fake's status `idle` and a `nudged_at` of a moment ago: `working` on the first pass, and on a pass ten minutes later `abandoned`, `rested-without-result`; the fake's row is not archived.
   - `test_resting_with_no_nudge_uses_first_seen_resting`: `idle` with `nudged_at` null is `working` on the first pass and abandoned on a pass ten minutes later.
+  - `test_an_old_nudge_does_not_use_up_the_rest_wait`: with `nudged_at` two hours back and the session `working` since, the first pass that sees `idle` returns `working`; a pass nine minutes later returns `working`; a pass ten minutes after the first abandons.
+  - `test_working_again_restarts_the_rest_wait`: `idle` on one pass, `working` on the next (which clears `resting_since`), `idle` again: the wait is counted from that last pass.
   - `test_gone_session_is_abandoned`; `test_unknown_state_changes_nothing` (the fake database removed: `working`, the session file unchanged apart from nothing).
   - `test_time_cap_abandons_after_the_grace`: `working` at 3 hours 14 minutes, `abandoned` with `time-cap` at 3 hours 15.
   - `test_result_with_an_undeclared_outcome_abandons_the_attempt`: reason `bad-result`, and the run is at attempt 2.
@@ -551,6 +555,7 @@ Rules:
   - `test_failed_search_leaves_open_runs_alone` (scenario "A failed Jira read starts and ends nothing"): `watch.development.jira == "unknown"`, the ledger's step rows are unchanged, and the open run is still launched.
   - `test_parked_run_is_not_launched_until_it_is_answered`: a run parked at `approve_spec` is not launched; after `answer_in_app` it is.
   - `test_stopped_run_is_launched_once`: a stopped run is launched on the first tick and, once its stop is noted, not on the second; after `walker retry` it is launched again.
+  - `test_a_second_stop_at_the_same_step_is_notified_again`: a run stops at a gate (one note), `walker retry`, the gate fails again: after the next tick's advance the notes hold two `stopped` events for that step in all (the helper counts calls to `notify.notify`), and a third tick with no retry adds none.
   - `test_locked_run_is_not_launched`; `test_off_switch_skips_the_watch` (the report has no `watch` results and the fake Jira's call log is empty).
   - `test_two_ticks_at_once`: with the tick lock held, the result is `{"status": "busy"}`.
   - `test_report_does_not_change_between_idle_passes`: two ticks with nothing happening give equal reports.
@@ -572,7 +577,7 @@ Rules:
 
 **Interfaces:**
 - Consumes: `ledgerview`, `sessionfile`, `paths`, `runfolder`, `walker_lib.graphfile.load` (for a step's Jira status only).
-- Produces: `status.snapshot(conn, now: float, root=None) -> dict`; `status.text(snapshot: dict) -> str`; `status.run_report(conn, run_id: str, root=None) -> dict`; `status.render(report: dict) -> str` (Markdown); `notify.notify(title: str, text: str) -> bool`; `notify.note_once(run_id: str, what: str) -> bool` (True the first time `what` is noted for the run).
+- Produces: `status.snapshot(conn, now: float, root=None) -> dict`; `status.text(snapshot: dict) -> str`; `status.run_report(conn, run_id: str, root=None) -> dict`; `status.render(report: dict) -> str` (Markdown); `notify.notify(title: str, text: str) -> bool`; `notify.note_once(run_id: str, what: str) -> bool` (True the first time `what` is noted for the run); `notify.forget_stops(run_id: str) -> None`.
 
 The snapshot:
 
@@ -594,7 +599,7 @@ Rules:
 - **`run_report`** is `{"run", "graph", "ticket", "runner", "started_at", "end", "score", "steps": [{"step", "kind", "attempt", "loop_count", "tier", "model", "session", "outcome", "jira_status", "started_at", "ended_at"}]}`, the steps from `ledgerview.run_rows`. `jira_status` is the status of the step's stretch in the graph file, and null for `_entry`, `_exit` or a step the graph no longer has. No note, question or answer text.
 - **`render`** prints a heading (`<ticket> · <graph> · <run>`), one line with the end and score, and a table with the columns Step, Kind, Attempt, Loops, Tier, Model, Session, Outcome, Jira status, Started, Ended.
 - **`text`** prints one line per open run (`<ticket> <graph> <step> <state> since <time>`), then the stopped runs, then the long waits under the heading `Waiting more than 7 days`.
-- **`notify`** runs `/usr/bin/osascript -e 'display notification "<text>" with title "<title>"'` with quotes and backslashes escaped, only on macOS and when `JOSH360_NO_NOTIFY` is not set; any failure is False. `note_once` keeps the `noted` list in `<run folder>/runner.json`; the first time, it sends `Josh 360 runner` with `<ticket or run id>: the <graph> run stopped at <step>.` or `<ticket or run id>: the <graph> run ended.`
+- **`notify`** runs `/usr/bin/osascript -e 'display notification "<text>" with title "<title>"'` with quotes and backslashes escaped, only on macOS and when `JOSH360_NO_NOTIFY` is not set; any failure is False. `note_once` keeps the `noted` list in `<run folder>/runner.json`; `forget_stops(run_id)` removes its `stopped:*` entries; the first time, `note_once` sends `Josh 360 runner` with `<ticket or run id>: the <graph> run stopped at <step>.` or `<ticket or run id>: the <graph> run ended.`
 
 - [ ] **Step 1: Write the failing tests** in `tests/test_runner_report.py`:
   - `test_snapshot_states`: four runs (a working session; parked at an ask; a wait that answered `pending`; stopped by a failed gate) give `runs == {"open": 4, "working": 1, "queued": 0, "parked": 1, "waiting": 1, "stopped": 1, "between": 0}`, and each `open_runs` row has the right `step` and `state`.
@@ -603,7 +608,7 @@ Rules:
   - `test_report_holds_no_text_from_the_run`: with a gate summary, a question and an answer that all contain the word `ZEBRA`, `json.dumps(snapshot)` and `json.dumps(run_report)` do not contain it.
   - `test_render_is_a_table`: the Markdown has the eleven column names and one row per step.
   - `test_report_from_the_published_json`: `runner.py report --run <id> --from-json <a snapshot file>` prints the same Markdown as `--run <id>` on the laptop.
-  - `test_note_once`: the first `note_once(run, "stopped:build")` is True, the second False, and `note_once(run, "done")` is True.
+  - `test_note_once`: the first `note_once(run, "stopped:build")` is True, the second False, and `note_once(run, "done")` is True; after `forget_stops(run)`, `note_once(run, "stopped:build")` is True again and `note_once(run, "done")` is still False.
   - `test_notify_is_off_in_tests`: `notify("a", "b")` is False with `JOSH360_NO_NOTIFY=1` and runs no process.
 - [ ] **Step 2: Run.** Expected: FAIL.
 - [ ] **Step 3: Implement.**
