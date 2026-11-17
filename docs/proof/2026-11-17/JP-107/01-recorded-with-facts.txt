@@ -1,0 +1,5 @@
+test_quiet_session_is_recorded_with_its_facts (test_ledger_record.Recorder.test_quiet_session_is_recorded_with_its_facts)
+JP-107 scenario 1, end to end. ... ok
+----------------------------------------------------------------------
+Ran 1 test in 0.091s
+OK
