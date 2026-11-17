@@ -29,6 +29,9 @@ Checks:
  12. JP-143: the feature tree (docs/design/feature-tree/tree.yaml) passes scripts/feature_tree.py check: every
      feature has a stable id, a keep or drop call, a rationale, every JP-97 row (A1-A35, S1-S16) is in it,
      and the built review page is up to date. Needs PyYAML.
+ 13. JP-144: the architecture page (docs/design/architecture/) passes scripts/architecture_page.py check: its
+     extra laptop rows each have one known verdict and a reason, and the built page is up to date with the
+     feature tree and those rows. Needs PyYAML.
 
 Tickets that add code add their own checks here or beside it. Exit 0 when everything passes, 1 otherwise.
 """
@@ -366,6 +369,9 @@ def main() -> int:
     code, output = run_quietly(["scripts/feature_tree.py", "check"])
     if code != 0:
         problems.append(f"feature tree check failed:\n{output}")
+    code, output = run_quietly(["scripts/architecture_page.py", "check"])
+    if code != 0:
+        problems.append(f"architecture page check failed:\n{output}")
     if "--fast" not in sys.argv[1:]:
         code, output = run_quietly(["-m", "unittest", "discover", "-s", "graphs/tests"])
         if code != 0:
