@@ -32,6 +32,8 @@ Checks:
  13. JP-144: the architecture page (docs/design/architecture/) passes scripts/architecture_page.py check: its
      extra laptop rows each have one known verdict and a reason, and the built page is up to date with the
      feature tree and those rows. Needs PyYAML.
+ 14. JP-114: every graph has an up-to-date JSON copy in graphs/compiled/ (graphs/tools/compile_graphs.py --check),
+     which the walker reads on the laptop; the walker's files parse as Python 3.9.
 
 Tickets that add code add their own checks here or beside it. Exit 0 when everything passes, 1 otherwise.
 """
@@ -115,7 +117,11 @@ def laptop_problems() -> list[str]:
     # JP-107: the ledger and its hooks (some hook files have no .py suffix) run on the laptop too.
     ledger_hooks = [p for p in sorted((ROOT / "hooks").glob("*/*")) if p.is_file() and p.name != "README.md"
                     and p.read_text(encoding="utf-8", errors="replace").startswith("#!/usr/bin/env python")]
-    ledger_files = sorted((ROOT / "ledger").glob("*.py")) + [ROOT / "scripts/conventions.py"] + ledger_hooks
+    # JP-114: the walker reads a JSON copy of each graph so that it runs here too (graphs/tools/walker*).
+    walker_files = sorted((ROOT / "graphs/tools/walker_lib").glob("*.py")) + [ROOT / "graphs/tools/walker.py"] + sorted(
+        (ROOT / "graphs/gates/lib").glob("*.py"))
+    ledger_files = (sorted((ROOT / "ledger").glob("*.py")) + [ROOT / "scripts/conventions.py"] + ledger_hooks
+                    + walker_files)
     for py in (sorted((ROOT / "laptop").glob("*.py")) + sorted((ROOT / "hooks").rglob("*.py")) + jp96
                + ledger_files):
         try:
@@ -395,6 +401,9 @@ def main() -> int:
     code, output = run_quietly(["graphs/tools/check_graph.py"])
     if code != 0:
         problems.append(f"graph checker failed:\n{output}")
+    code, output = run_quietly(["graphs/tools/compile_graphs.py", "--check"])
+    if code != 0:
+        problems.append(f"graph JSON copies are stale or missing (JP-114):\n{output}")
     code, output = run_quietly(["scripts/feature_tree.py", "check"])
     if code != 0:
         problems.append(f"feature tree check failed:\n{output}")
