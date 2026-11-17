@@ -1,5 +1,5 @@
-# Draft graph from the ticket creation design (JP-102, docs/design/ticket-creation-graph.md).
-# JP-121 builds it. Its gate scripts are stubs that refuse to run until then.
+# The ticket creation graph from the approved design (JP-102, docs/design/ticket-creation-graph.md), built in JP-121.
+# Its gates are real scripts in graphs/gates/ and its Jira writes go through graphs/gates/lib/jira.py.
 convention: 1
 graph: ticket-creation
 title: Ticket creation
@@ -86,7 +86,8 @@ steps:
     needs: [find_duplicates]
     inputs: [candidates, intake_record]
     outputs:
-      match_key: { type: string, description: "The open match, or the Done or Cancelled one to link" }
+      match_key: { type: string, description: "The open match, or the Done or Cancelled one to link; none when there is no match" }
+      match_status: { type: string, description: "The match's status, or none" }
     outcomes: [open_match, new_light, new_full]
 
   - id: decompose
@@ -109,7 +110,10 @@ steps:
   - id: check_draft
     gate: ticket-complete
     needs: [draft]
-    inputs: [proposal, source, source_ref]   # the patient-data scan compares against the source
+    inputs: [proposal, source, source_ref, intake_record, route, candidates]   # the scan compares against the source
+    outputs:
+      problems: { type: list, description: "What is missing or wrong, by ticket and section; never quotes the source" }
+      card: { type: string, description: "The approval card's text, or the gap question for Josh" }
     outcomes: [pass, fixable, needs_josh]
     on:
       fixable: { goto: draft, max_loops: 2, at_limit: stuck }
@@ -149,9 +153,10 @@ steps:
     effects: [set_label]
     needs: [approve]
     when: { step: approve, outcome: approve }
-    inputs: [proposal, match_key]
+    inputs: [proposal, match_key, source, source_ref]
     outputs:
       ticket_keys: { type: list, description: "Created keys, parent first" }
+      missing: { type: list, description: "Tickets or links not yet confirmed, by proposal reference" }
     outcomes: [created, commented, partial]
     on:
       partial: { goto: write, max_loops: 1, at_limit: write_failed }
@@ -165,5 +170,5 @@ steps:
   - id: link_source
     gate: link-source
     needs: [write]
-    inputs: [source, source_ref, ticket_keys]
+    inputs: [source, source_ref, ticket_keys, match_key]
     outcomes: [linked]

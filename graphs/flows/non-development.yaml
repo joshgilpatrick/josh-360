@@ -1,5 +1,5 @@
-# DRAFT (JP-104). The non-development graph as designed in docs/design/non-development-graph.md.
-# JP-123 turns it into the real graph: its gate scripts are refusing stubs until then. Convention: graphs/CONVENTION.md.
+# The non-development graph (designed in JP-104, built in JP-123): docs/design/non-development-graph.md.
+# Its gate scripts are in graphs/gates/ and its parts in roles/, agents/ and contracts/. Convention: graphs/CONVENTION.md.
 convention: 1
 graph: non-development
 title: Non-development pipeline
@@ -78,6 +78,7 @@ steps:
     outputs:
       search_terms: { type: list, description: "Words and synonyms for the lookup, from the ticket" }
       deliverable_given: { type: boolean, description: "True when the Deliverable format came from Josh, not inferred" }
+      reason: { type: string, description: "Why the ticket cannot be worked here, in a fixed sentence, when the outcome is not_here" }
     outcomes: [workable, not_here]
 
   - id: return_early
@@ -85,7 +86,7 @@ steps:
     effects: [move_ticket]
     needs: [read_ticket]
     when: { step: read_ticket, outcome: not_here }
-    inputs: [ticket_key]
+    inputs: [ticket_key, reason]
     outcomes: [returned]
     on:
       returned: end
@@ -123,6 +124,7 @@ steps:
     inputs: [ticket_key, kind, deliverable_given, precedent]
     outputs:
       gap: { type: string, description: "The one thing to ask, in one sentence, when the outcome is gap" }
+      card: { type: string, description: "The same sentence, shown to Josh on the ask below" }
     outcomes: [clear, gap]
 
   - id: ping_before
@@ -193,7 +195,7 @@ steps:
     gate: check-review
     needs: [review_work]
     when: { step: pick_path, outcome: full }
-    inputs: [ticket_key, findings]
+    inputs: [ticket_key, findings, evidence_path]
     outcomes: [clean, rework]
     on:
       rework: { goto: do_work, max_loops: 2, at_limit: decide_stuck }
@@ -219,6 +221,8 @@ steps:
     gate: deliver
     needs: [to_validation]
     inputs: [ticket_key, origin, desk_row, phi, deliverable_path, evidence_path]
+    outputs:
+      card: { type: string, description: "The ticket comment, shown to Josh on his sign-off ask" }
     outcomes: [delivered]
 
   - id: pick_sign_off
@@ -233,7 +237,7 @@ steps:
     effects: [move_ticket]
     needs: [pick_sign_off]
     when: { step: pick_sign_off, outcome: emailed }
-    inputs: [ticket_key, phi, evidence_path]
+    inputs: [ticket_key, phi, deliverable_path, evidence_path]
     outcomes: [closed]
     on:
       closed: end
@@ -260,5 +264,5 @@ steps:
     gate: close-ticket
     effects: [move_ticket]
     needs: [share_out]
-    inputs: [ticket_key, phi, evidence_path]
+    inputs: [ticket_key, phi, deliverable_path, evidence_path]
     outcomes: [closed]

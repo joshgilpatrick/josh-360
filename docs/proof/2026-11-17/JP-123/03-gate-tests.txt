@@ -1,0 +1,9 @@
+$ python3 -m unittest discover -s graphs/tests -p "test_nondev_*.py" -v
+test_failed_move_stops_before_the_comment (test_nondev_ticket_gates.ReturnToTriage.test_failed_move_stops_before_the_comment) ... ok
+test_return_comments_moves_and_flags (test_nondev_ticket_gates.ReturnToTriage.test_return_comments_moves_and_flags) ... ok
+test_run_again_does_not_repeat_the_comment (test_nondev_ticket_gates.ReturnToTriage.test_run_again_does_not_repeat_the_comment) ... ok
+
+----------------------------------------------------------------------
+Ran 98 tests in 0.154s
+
+OK

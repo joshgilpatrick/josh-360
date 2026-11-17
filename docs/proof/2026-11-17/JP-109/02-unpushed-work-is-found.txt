@@ -1,0 +1,6 @@
+test_unpushed_work_is_found (tests.test_loose_ends.Scenarios.test_unpushed_work_is_found) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.272s
+
+OK

@@ -5,4 +5,4 @@ One graph file per graph, `<graph>.yaml`, following `graphs/CONVENTION.md`. The 
 | File | Graph | State |
 | --- | --- | --- |
 | `triage.yaml` | Ticket triage and sign-off | Draft from JP-103; its gate scripts are stubs until JP-122 builds them |
-| `non-development.yaml` | Non-development pipeline | Draft from JP-104 (`docs/design/non-development-graph.md`); its gate scripts are stubs until JP-123 builds them |
+| `non-development.yaml` | Non-development pipeline | Built (JP-123), from `docs/design/non-development-graph.md`; every gate it owns is a real script, and `ready` and `no-loose-ends` wait for JP-122 and JP-109 |

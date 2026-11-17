@@ -1,0 +1,7 @@
+test_a_closed_terminal_still_gets_its_summary (test_ledger_summary.Summaries.test_a_closed_terminal_still_gets_its_summary)
+JP-108 scenario 4: no SessionEnd, no closeout step; only the quiet period passes. ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.088s
+
+OK

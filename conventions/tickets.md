@@ -142,8 +142,8 @@ Status moves happen at fixed events, by a script or an automation, never by an a
 | --- | --- |
 | Ticket written | Not Started |
 | A separate agent signs it off | Ready |
-| Work starts on a Research ticket | Design/Planning |
-| Work starts on any other ticket | In Progress |
+| Work starts on a ticket whose deliverable is a spec, a design or a plan | Design/Planning |
+| Work starts on any other ticket, an answer or other non-development deliverable included | In Progress |
 | Pull request out of draft and labelled `review:needs-agent-audit` | Code Review |
 | Pull request labelled `review:ready-for-human` | Validation |
 | Merged, and every scenario mapped to its proof | Done |

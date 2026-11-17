@@ -9,7 +9,9 @@
 
 Six fixed queries and no SQL, no file path. Each answer is at most 20 rows and 4 KB of JSON (rows are cut, never
 strings). None returns friction facts, usage, debriefs, cost, priority or any measure. The ledger is opened read-only;
-the one write is the `memory_lookups` row that `precedent` adds, made through a second connection.
+the one write is the `memory_lookups` row that `precedent` adds, made through a second connection. `changes --live`
+is the one flag that reads the network: it adds each row's ticket status (Jira) and pull request state (GitHub), or
+"unknown" when it could not read them.
 Exit 0 with the answer, 2 for bad input or a missing ledger.
 """
 from __future__ import annotations
@@ -26,11 +28,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from ledger import _repo  # noqa: E402,F401
 from laptop import common  # noqa: E402
 from ledger import db  # noqa: E402
+from ledger.live import Live  # noqa: E402
 
 MAX_ROWS = 20
 MAX_BYTES = 4096
 BY = "ledger/ask.py"
-LIVE_NOTE = "not built yet (JP-109)"
 
 _SUMMARY_LINE = """(SELECT substr(m.lines, 1, instr(m.lines || char(10), char(10)) - 1) FROM current_session_summaries m
                     WHERE m.session_uid = {uid} ORDER BY m.episode DESC LIMIT 1)"""
@@ -147,6 +149,17 @@ def query(conn: sqlite3.Connection, name: str, args: dict) -> List[Dict[str, obj
     raise ValueError("unknown query: {}".format(name))
 
 
+def add_live(rows: List[Dict[str, object]], live) -> None:
+    """`changes --live`: what Jira and GitHub say now about each row's ticket and pull request. A read that fails says
+    "unknown" (never Done, never merged); an agent's own claim of being done is not the answer."""
+    for row in rows:
+        key, url = row.get("ticket_key"), row.get("pull_request")
+        status = live.ticket(str(key)) if key else None
+        state = live.pr(str(url)) if url else None
+        row["ticket_status"] = status["status"] if status else ("unknown" if key else None)
+        row["pull_request_state"] = state or ("unknown" if url else None)
+
+
 def render(name: str, rows: List[Dict[str, object]], extra: Optional[dict] = None) -> str:
     """The JSON the command prints: at most MAX_ROWS rows and MAX_BYTES bytes. Whole rows are dropped, never cut."""
     kept = rows[:MAX_ROWS]
@@ -194,11 +207,12 @@ def open_read_only(path: Path) -> sqlite3.Connection:
     return conn
 
 
-def main(argv: Optional[List[str]] = None, out: Optional[TextIO] = None, path: Optional[Path] = None) -> int:
+def main(argv: Optional[List[str]] = None, out: Optional[TextIO] = None, path: Optional[Path] = None,
+         live=None) -> int:
     out = out or sys.stdout
     args = vars(_parser().parse_args(argv))  # argparse exits 2 on bad input
     name = args.pop("name")
-    live = args.pop("live", False)
+    use_live = args.pop("live", False)
     try:
         conn = open_read_only(path or db.ledger_path())
     except (FileNotFoundError, sqlite3.Error) as e:
@@ -211,7 +225,9 @@ def main(argv: Optional[List[str]] = None, out: Optional[TextIO] = None, path: O
         return 2
     finally:
         conn.close()
-    out.write(render(name, rows, {"live": LIVE_NOTE} if live else None) + "\n")
+    if use_live:
+        add_live(rows[:MAX_ROWS], live or Live())
+    out.write(render(name, rows) + "\n")
     return 0
 
 

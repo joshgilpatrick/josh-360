@@ -268,6 +268,9 @@ def conclude(run: Run) -> Dict[str, object]:
                                       item["path"], item["sha256"], ledgerio.now())
             ledgerio.end_run(run.conn, run.run_id, ended, g.end_score(ended), ledgerio.now())
     set_flag(run, False)
+    if run.doc.get("ended") != ended:
+        run.doc["ended"] = ended  # an entry gate (ticket-creation's intake-admitted) tells open runs from ended ones
+        run.save()
     return {"action": "done", "run": run.run_id, "end": ended, "score": g.end_score(ended)}
 
 
@@ -289,6 +292,10 @@ def run_action(run: Run, act: engine.Action, attempt: int) -> Dict[str, object]:
     }
     if out["agent"]:
         out["agent_folder"] = str(g.root / "agents" / out["agent"])
+    if attempt > 1:
+        # A step that loops back (a draft after a failed check) needs what the steps after it found. The checker keeps
+        # a step's declared inputs to its ancestors' outputs, so the rest comes here, named, and only on a re-run.
+        out["so_far"] = {n: v for n, v in values.items() if n not in names}
     return out
 
 
