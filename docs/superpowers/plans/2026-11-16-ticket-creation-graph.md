@@ -57,10 +57,10 @@ Each line's test is in the task that owns the code (Tasks 6, 6, 4, 2, 4).
 
 | File | Responsibility |
 | --- | --- |
-| `graphs/gates/lib/__init__.py` | Empty; makes `lib` importable from a gate. |
+| `graphs/gates/lib/__init__.py` | Empty; makes `lib` importable from a gate. Already on `main` (JP-149). |
 | `graphs/gates/lib/gate_io.py` | Read inputs, print the outcome line, fail without an outcome. |
 | `graphs/gates/lib/contracts.py` | Load and validate an intake record and a ticket proposal. |
-| `graphs/gates/lib/patient_data.py` | The patient-data scan (shared with JP-103's `ready-check`). |
+| `graphs/gates/lib/patient_data.py` | The patient-data scan (shared with JP-103's `ready-check` and the ledger). Already on `main` (JP-149): consume it, do not recreate it. |
 | `graphs/gates/lib/jira.py` | Jira REST client: search, get, create, comment, link, properties. |
 | `graphs/gates/lib/adf.py` | Josh's ticket sections as Atlassian Document Format. |
 | `graphs/gates/lib/card.py` | The approval card text. |
@@ -77,7 +77,7 @@ Each gate script inserts `Path(__file__).resolve().parent` on `sys.path` and imp
 ### Task 1: Gate plumbing, JSON contracts and a registry the laptop can read
 
 **Files:**
-- Create: `graphs/gates/lib/__init__.py`, `graphs/gates/lib/gate_io.py`, `graphs/gates/lib/contracts.py`, `conventions/registry.json`
+- Create: `graphs/gates/lib/gate_io.py` (`graphs/gates/lib/__init__.py` exists, JP-149), `graphs/gates/lib/contracts.py`, `conventions/registry.json`
 - Modify: `scripts/conventions.py` (move `import yaml` into `load`; add `export-json`), `scripts/check.py` (fail when `registry.json` is stale), `graphs/contracts/intake-record.md`, `graphs/contracts/ticket-proposal.md` (YAML to JSON), `docs/decisions.md`
 - Test: `graphs/tests/test_gate_lib.py`, `tests/test_conventions.py`
 
@@ -126,13 +126,13 @@ Each gate script inserts `Path(__file__).resolve().parent` on `sys.path` and imp
 ### Task 4: Patient-data helper and completeness gate
 
 **Files:**
-- Create: `graphs/gates/lib/patient_data.py`
+- Use: `graphs/gates/lib/patient_data.py` (on `main` since JP-149, with its tests in `graphs/tests/test_patient_data.py`)
 - Modify: `graphs/gates/ticket-complete.py`
 - Test: `graphs/tests/test_gate_ticket_complete.py`
 
 **Interfaces:**
 - Consumes: `contracts.load_proposal`, `contracts.proposal_problems`; JP-103's checklist as data from `graphs/gates/lib/ready_checklist.py` (`CHECKLIST: dict[str, list[dict]]`, owned by JP-122). If JP-122 has not landed, this task adds that module with the sections from `conventions/tickets.md`, "Required sections", and JP-122 extends it.
-- Produces: `patient_data.scan(text: str, source_text: str | None, flagged: bool) -> list[str]` (problems; empty means clean); `ticket-complete` outcomes `pass | fixable | needs_josh` with output `problems` (list of strings).
+- Consumes: `patient_data.scan(text, source_text, flagged, external=False) -> list[str]` (problems; empty means clean). Ticket text is written to Jira, so `ticket-complete` calls it with `external=True`. Produces: `ticket-complete` outcomes `pass | fixable | needs_josh` with output `problems` (list of strings).
 
 - [ ] **Step 1: Write the failing tests.** `test_complete_single_passes`; `test_missing_section_is_fixable`; `test_gap_is_needs_josh`; `test_unclear_type_is_needs_josh`; `test_unclear_work_kind_is_needs_josh`; `test_no_parent_no_area_is_needs_josh`; `test_label_with_area_counts_as_home` (parent `null`, label `pims-services` → `pass`); `test_verbatim_source_chunk_blocked` (Review Focus 3: a 40-character run copied from the made-up source text → `fixable`, problem names the ticket ref, never the text); `test_flagged_source_never_quoted`; `test_long_summary_is_fixable` (Review Focus 5: 256 characters → `fixable`); `test_summary_with_newline_is_fixable`; `test_gherkin_block_required`; `test_comment_proposal_passes_without_tickets` (`action: comment_on_match`).
 - [ ] **Step 2: Run** `python3 -m unittest discover -s graphs/tests -p 'test_gate_ticket_complete.py'`. Expected: FAIL.
@@ -147,7 +147,7 @@ Each gate script inserts `Path(__file__).resolve().parent` on `sys.path` and imp
 - Test: `graphs/tests/test_gate_jira.py`
 
 **Interfaces:**
-- Produces: `class Jira(site: str, email: str, token: str, transport=None)`, where `transport(method, url, headers, body) -> (status: int, body: bytes)` is injectable for tests; methods `search(jql: str, fields: list[str]) -> list[dict]`, `get(key: str) -> dict`, `create(fields: dict, properties: dict) -> str | None` (key, or `None` when Jira did not confirm), `comment(key: str, adf: dict) -> bool`, `link(kind: str, inward: str, outward: str) -> bool`, `set_property(key: str, name: str, value) -> bool`. `Jira.from_env()` reads `JOSH360_JIRA_SITE` (default the site above), `JOSH360_JIRA_EMAIL`, `JOSH360_JIRA_TOKEN`; it fails through `gate_io.fail` when a value is missing. `adf.ticket_description(sections: dict, ticket_type: str) -> dict` and `adf.paragraphs(text: str) -> dict`.
+- Produces: `class Jira(site: str, email: str, token: str, transport=None)`, where `transport(method, url, headers, body) -> (status: int, body: bytes)` is injectable for tests; methods `search(jql: str, fields: list[str]) -> list[dict]`, `get(key: str) -> dict`, `create(fields: dict, properties: dict) -> str | None` (key, or `None` when Jira did not confirm), `comment(key: str, adf: dict) -> bool`, `link(kind: str, inward: str, outward: str) -> bool`, `set_property(key: str, name: str, value) -> bool`. `Jira.from_env()` reads `JOSH360_JIRA_SITE` (default the site above), `JOSH360_JIRA_EMAIL`, `JOSH360_JIRA_TOKEN`; it fails through `gate_io.fail` when a value is missing. `adf.ticket_description(sections: dict, ticket_type: str) -> dict` and `adf.paragraphs(text: str) -> dict`. **GitHub and Jira are the firm guard (JP-149):** every method that writes text to Jira runs `patient_data.scan(text, None, False, external=True)` (`graphs/gates/lib/patient_data.py`, on `main`) on that text first and refuses the write on any problem, naming the kind, never the text; a test writes made-up `MRN 1234` and expects the refusal with no request sent.
 
 - [ ] **Step 1: Write the failing tests.** `test_create_returns_key_on_201`; `test_create_returns_none_on_timeout` (the transport raises `TimeoutError`); `test_429_retries_with_retry_after` (at most 3 tries, `Retry-After` clamped to 1 to 30 s; a fake sleep is injected); `test_token_never_in_error_text`; `test_missing_env_fails`; `test_description_sections_in_order` (labels bold, in the `conventions/tickets.md` order, with the type's extra sections at the right place: Bug's **Current behaviour** after **Why**); `test_gherkin_is_code_block_with_language`; `test_scope_lists_are_bullets`.
 - [ ] **Step 2: Run** `python3 -m unittest discover -s graphs/tests -p 'test_gate_jira.py'`. Expected: FAIL.
