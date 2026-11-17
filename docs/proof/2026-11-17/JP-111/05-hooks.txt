@@ -1,0 +1,8 @@
+test_the_guard_blocks_a_forced_worktree_removal (test_atlas_hooks.AtlasHooks.test_the_guard_blocks_a_forced_worktree_removal) ... ok
+test_the_guard_ignores_other_tools (test_atlas_hooks.AtlasHooks.test_the_guard_ignores_other_tools) ... ok
+test_the_guard_lets_an_ordinary_command_through (test_atlas_hooks.AtlasHooks.test_the_guard_lets_an_ordinary_command_through) ... ok
+test_the_jira_hook_is_quiet_and_ignores_other_commands (test_atlas_hooks.AtlasHooks.test_the_jira_hook_is_quiet_and_ignores_other_commands) ... ok
+test_the_jira_hook_writes_to_cache_db_and_never_fails (test_atlas_hooks.AtlasHooks.test_the_jira_hook_writes_to_cache_db_and_never_fails) ... ok
+----------------------------------------------------------------------
+Ran 5 tests in 0.300s
+OK

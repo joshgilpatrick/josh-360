@@ -1,0 +1,23 @@
+{
+  "actions": [
+    "not loaded; nothing to bootout",
+    "would move the plist to the archive",
+    "would remove 1 old hook entries from settings.json",
+    "cache.db: would-seed",
+    "would move atlas.db to the archive",
+    "would move ledger.db to the archive"
+  ],
+  "archived": {
+    "atlas.db": true,
+    "cost-ledger": true
+  },
+  "cache_db": "would-seed",
+  "dry_run": true,
+  "hooks_removed": {
+    "atlas-removal-guard.js": 1
+  },
+  "job": "retire-session-atlas",
+  "label": "com.eventus.claude-atlas",
+  "result": "ok",
+  "was_loaded": false
+}

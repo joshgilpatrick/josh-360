@@ -1,0 +1,16 @@
+test_a_cost_ledger_file_opens_read_only (test_ledger_costs.Costs.test_a_cost_ledger_file_opens_read_only) ... ok
+test_a_subagents_cost_is_its_own_and_not_the_parents (test_ledger_costs.Costs.test_a_subagents_cost_is_its_own_and_not_the_parents) ... ok
+test_cost_per_model_is_copied_with_its_pricing_run (test_ledger_costs.Costs.test_cost_per_model_is_copied_with_its_pricing_run) ... ok
+test_jira_links_are_copied_as_touched (test_ledger_costs.Costs.test_jira_links_are_copied_as_touched) ... ok
+test_labels_come_best_first (test_ledger_costs.Costs.test_labels_come_best_first) ... ok
+test_missing_cost_ledger_records_the_session_anyway (test_ledger_costs.Costs.test_missing_cost_ledger_records_the_session_anyway) ... ok
+test_more_usage_adds_a_new_batch (test_ledger_costs.Costs.test_more_usage_adds_a_new_batch) ... ok
+test_partly_priced_session_says_so (test_ledger_costs.Costs.test_partly_priced_session_says_so) ... ok
+test_repriced_session_adds_a_new_batch_and_current_view_shows_it (test_ledger_costs.Costs.test_repriced_session_adds_a_new_batch_and_current_view_shows_it) ... ok
+test_unchanged_cost_is_not_copied_again (test_ledger_costs.Costs.test_unchanged_cost_is_not_copied_again) ... ok
+test_a_cache_db_without_cost_tables_is_not_used (test_ledger_costs.DefaultPath.test_a_cache_db_without_cost_tables_is_not_used) ... ok
+test_falls_back_to_the_old_cost_ledger_before_cutover (test_ledger_costs.DefaultPath.test_falls_back_to_the_old_cost_ledger_before_cutover) ... ok
+test_uses_cache_db_once_it_holds_the_cost_tables (test_ledger_costs.DefaultPath.test_uses_cache_db_once_it_holds_the_cost_tables) ... ok
+----------------------------------------------------------------------
+Ran 13 tests in 0.540s
+OK

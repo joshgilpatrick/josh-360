@@ -60,7 +60,7 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 ## Layout
 
 - `README.md`: what the repository is and where things live.
-- `apps/`: runnable parts (moved in from Session Atlas and action-triage later).
+- `apps/`: runnable parts: `apps/session-atlas` (JP-111, headless: artifact catalog, removal guard, cost import; rules in its `AGENTS.md`); action-triage moves in later.
 - `ledger/`: the ledger, the local record of every agent session.
 - `graphs/`: the agent graphs and the walker (`graphs/tools/walker.py`). How a graph is stored, the checker's rules and how a graph runs: `graphs/CONVENTION.md`.
 - `conventions/`: ticket conventions (`tickets.md`), the system registry (`registry.yaml`) and the standing priorities (`priorities.yaml`). Ticket rules for all of Josh's work start here.

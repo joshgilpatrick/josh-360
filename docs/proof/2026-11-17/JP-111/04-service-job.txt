@@ -1,0 +1,13 @@
+test_a_failed_load_is_a_failure_to_retry (test_atlas_service.AtlasServiceTest.test_a_failed_load_is_a_failure_to_retry) ... ok
+test_a_second_run_changes_nothing (test_atlas_service.AtlasServiceTest.test_a_second_run_changes_nothing) ... ok
+test_a_service_that_was_stopped_is_loaded_again (test_atlas_service.AtlasServiceTest.test_a_service_that_was_stopped_is_loaded_again) ... ok
+test_dry_run_changes_nothing (test_atlas_service.AtlasServiceTest.test_dry_run_changes_nothing) ... ok
+test_installs_and_loads_it (test_atlas_service.AtlasServiceTest.test_installs_and_loads_it) ... ok
+test_new_code_restarts_it (test_atlas_service.AtlasServiceTest.test_new_code_restarts_it) ... ok
+test_not_a_mac_touches_nothing (test_atlas_service.AtlasServiceTest.test_not_a_mac_touches_nothing) ... ok
+test_old_node_is_refused (test_atlas_service.AtlasServiceTest.test_old_node_is_refused) ... ok
+test_only_that_one_label_is_ever_named (test_atlas_service.AtlasServiceTest.test_only_that_one_label_is_ever_named) ... ok
+test_waits_until_the_old_atlas_is_retired (test_atlas_service.AtlasServiceTest.test_waits_until_the_old_atlas_is_retired) ... ok
+----------------------------------------------------------------------
+Ran 10 tests in 0.553s
+OK

@@ -1,0 +1,14 @@
+✔ Atlas migrations run on a cost-ledger file and keep its rows; the cost import reopens it (72.479828ms)
+✔ a session the ledger ended is confirmed closed; one it only saw go quiet is not (181.334339ms)
+✔ activity after the ledger recorded an end withdraws the confirmation (0.194592ms)
+✔ the mirror only adds and updates: a cache.db session the ledger does not hold stays (177.799942ms)
+✔ lineage comes across, and a subagent is marked as one (170.722863ms)
+✔ the mirror never writes ledger.db, and a missing ledger is skipped, not treated as empty (154.408246ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 806.168751
