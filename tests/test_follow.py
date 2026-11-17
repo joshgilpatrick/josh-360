@@ -38,11 +38,11 @@ class FollowTest(LaptopCase):
         # focus dashboard retirement, which reports "not loaded" here because launchctl is a stub; JP-111's old Atlas
         # retirement and its launchd service job, which only ever talk to that stub; JP-107's one-time ledger backfill
         # and JP-112's one-time friction catch-up, whose reports are counts only, and which find nothing in the
-        # made-up home).
+        # made-up home; JP-152's daily doctor, whose report is check results with names, counts and paths only).
         tree = self.status_tree()
         self.assertEqual([p for p in tree if not p.startswith("reports/")], ["status.json"])
         self.assertEqual([p for p in tree if p.startswith("reports/")],
-                         ["reports/inventory.json", "reports/ledger-backfill.json",
+                         ["reports/doctor.json", "reports/inventory.json", "reports/ledger-backfill.json",
                           "reports/ledger-friction-catchup.json", "reports/ledger-upload.json",
                           "reports/retire-focus-dashboard.json", "reports/retire-session-atlas.json",
                           "reports/session-atlas-service.json", "reports/ticket-comments.json"])
