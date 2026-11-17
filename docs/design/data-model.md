@@ -514,7 +514,7 @@ Feature: Ledger design carries the JP-146 review fixes
   Scenario: The patient-data rule is stated plainly
     Given the amended data model
     When Josh reads the patient-data section
-    Then it says what the check catches, what it does not, and what is never stored for a flagged system
+    Then it says what the check catches, what it does not, and what is never stored for a session in a `.phi` folder
 
   @auto
   Scenario: The suite stays green
