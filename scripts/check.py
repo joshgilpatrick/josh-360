@@ -12,7 +12,8 @@ Checks:
   5. The repository layout from JP-95: the starting folders each have a README, README.md and the docs it
      names exist, nothing in the vision is still marked Proposed, and git ignores a file inside a .phi folder.
   6. The feature list from JP-97 (docs/inventory/features.md): every row has one verdict, a reason and a carrier
-     ticket, every retired row says what replaces it, and the Session Atlas focus summaries are retired.
+     ticket, every retired row says what replaces it, and the Session Atlas focus summaries are retired. "Later"
+     (JP-145) is a verdict too: not built now, back once the ledger is hardened.
   7. The conventions files from JP-98 exist and pass scripts/conventions.py (needs PyYAML, requirements.txt).
   8. The laptop side from JP-105: its files exist, hooks/dispatch is executable and parses as bash, and every
      Python file that runs on the laptop (including JP-96's three laptop scripts) parses as Python 3.9 (the
@@ -185,7 +186,7 @@ def anchors_in(text: str) -> set[str]:
 
 
 FEATURES = "docs/inventory/features.md"
-VERDICTS = ("Keep as is", "Keep, move onto the ledger", "Merge with ", "Retire")
+VERDICTS = ("Keep as is", "Keep, move onto the ledger", "Merge with ", "Retire", "Later")
 CARRIER = re.compile(r"\bJP-\d+\b|None needed")
 FEATURE_ROW = re.compile(r"^\|\s*([AS]\d+)\s*\|")
 

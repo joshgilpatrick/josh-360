@@ -34,3 +34,5 @@ The published page is https://claude.ai/artifact/PSsUz1u6kD6zZLaymNfxH3.
 ## Reading Josh's answers
 
 The page saves to its own store, document `reviews/featureTree`: `{nodes: {<id>: {keep?: bool, comment?: string}}, submittedAt}`. `keep` is stored only where Josh changed the call. A thread reads it with the ArtifactData tool (`get`, collection `reviews`, doc id `featureTree`) on the artifact above, then writes the calls into `docs/inventory/features.md`, `docs/decisions.md`, JP-111 and JP-124.
+
+Josh's first review (17 November 2026, document version 122) was written in by JP-145: his calls are now the tree's calls, and each comment has a `reply` field shown under it on the page. `later` marks a feature that waits until the ledger is hardened, and `new` marks one built new in josh-360 (N ids).
