@@ -70,7 +70,7 @@ Josh answered the fourteen phase 1 design questions on 16 November 2026 (JP-106,
 | 2026-11-16 | JP-106 | Does Josh still use OpenCode? (Josh's answer, Q11) | Yes. The agent sync stays, moves to Bifrost model names, and runs when `~/.claude/agents` changes instead of hourly. | Go back to the hourly schedule. |
 | 2026-11-16 | JP-106 | Retire the leftover tools? (Josh's answer, Q12) | Omnara disconnected; Tactic Remote hooks and the task-manager queue retire; QuickTasks is already gone ("quick tickets" noted as an idea); agent-deck decided in the feature-tree review. | Switch any of them back on before the phase-close deletion list. |
 | 2026-11-16 | JP-106 | Bring back the rclone backup? (Josh's answer, Q13) | No. | Reinstall its job. |
-| 2026-11-16 | JP-106 | Archive the 131 unused skills? (Josh's answer, Q14) | Josh picks the keepers on a picker page; the rest are archived at the phase close. | Restore from the archive. |
+| 2026-11-16 | JP-106 | Archive the 131 unused skills? (Josh's answer, Q14) | Josh picked the keepers on a picker page: 67 kept (his 64, plus `control-cli`, `deslop` and `grill-with-docs`, which kept skills name), 64 archived at the phase close. The lists are in `docs/inventory/laptop.md`, appendix. | Restore from the archive. |
 | 2026-11-16 | JP-106 | How do action-triage, claude-360 and the MacBook automations relate to josh-360? (Josh, Q12 note) | They are melded into one application: kept features are extracted and rebuilt in josh-360 with one consistent look and codebase, not linked or nested. | Not expected to change. |
 
 ## The nine items once marked Proposed
