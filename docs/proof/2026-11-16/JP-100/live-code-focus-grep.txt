@@ -1,0 +1,7 @@
+# grep for any live code that names the focus store or focus hooks (archive/, tests and history docs excluded)
+$ grep -rIn "session-focus\|focus_parse\|focus-session\|focus-completion\|focus-history\|session-dashboard" . --exclude-dir=.git --exclude-dir=archive --exclude-dir=docs --exclude-dir=archify --exclude-dir=schema-diagram-workspace --exclude-dir=summary-workspace
+./hooks/tests/test_compaction_meter.py:79:    focus = tmp_path / ".claude" / "session-focus" / f"{SID}.md"
+./hooks/tests/test_post_compact_load.py:40:    p = Path.home() / ".claude" / "session-focus" / f"{SID}.md"
+./tools/tests/test_promote_claude_skills.py:36:# like tools/test_focus_files.py loads session-dashboard-server.py.
+./tools/index.md:7:- The focus dashboard (`session-dashboard-server.py`, `focus_parse.py`, `test_focus_files.py`) was retired in JP-100 and archived in `archive/focus/`. STATE.md is the one per-session record.
+(the only hits are the two tests that prove a leftover focus file is ignored, a comment in another test, and the tools index note saying the dashboard is retired)

@@ -27,3 +27,10 @@ jobs:
     timeout: 30m
     report: true
     description: JP-96's read-only laptop inventory, once. Names, paths, sizes and counts only.
+
+  - id: retire-focus-dashboard
+    run: scripts/retire_focus_dashboard.py
+    every: once
+    timeout: 5m
+    report: true
+    description: JP-100, once. Boots out the focus dashboard's launchd job and archives its plist under ~/Archive/josh-360-retired/. Reversible; deletes nothing.

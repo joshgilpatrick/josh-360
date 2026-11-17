@@ -1,0 +1,13 @@
+# Harness test suite, before and after (python3 -m pytest -q hooks tools)
+
+## before (origin/main 4ed7880)
+=========================== short test summary info ============================
+FAILED tools/instruction-consolidation/test_context_probe.py::ContextProbeTests::test_each_cli_includes_global_context_marker
+1 failed, 220 passed, 1 warning, 9 subtests passed in 10.53s
+
+## after (this branch)
+=========================== short test summary info ============================
+FAILED tools/instruction-consolidation/test_context_probe.py::ContextProbeTests::test_each_cli_includes_global_context_marker
+1 failed, 171 passed, 9 subtests passed in 9.82s
+
+The one failure is the same before and after: test_context_probe needs /Users/jgilpatrick/.local/bin/claude, which exists only on the laptop. 49 fewer tests: the 49 in test_focus_files.py moved to archive/focus/tools/ (it still passes there: see restore-proof.txt).

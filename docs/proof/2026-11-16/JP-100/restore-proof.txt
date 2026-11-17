@@ -1,0 +1,21 @@
+# Scenario 2: restore from the archive folder, in a throwaway copy of this branch
+$ sh archive/focus/restore.sh
+restored. Re-add the three hook entries from archive/focus/README.md to settings.json to turn the loop back on.
+
+$ python3 -m pytest -q hooks tools skills/focus
+=========================== short test summary info ============================
+FAILED tools/instruction-consolidation/test_context_probe.py::ContextProbeTests::test_each_cli_includes_global_context_marker
+1 failed, 220 passed, 1 warning, 9 subtests passed in 10.04s
+
+$ diff -rq <origin/main>/{hooks,tools,skills/focus} <restored>/{hooks,tools,skills/focus}
+(no output above this line = every restored path is byte-identical to origin/main, so /focus works as before)
+
+$ restore.sh a second time (refuses, deletes nothing)
+refusing: hooks/focus-session-start.py already exists
+exit 3
+
+# Nothing permanently deleted: every archived file is a git rename or a copy
+$ git diff -M --summary origin/main HEAD -- hooks tools skills | grep -c "rename"
+11
+$ git diff --diff-filter=D --name-only origin/main HEAD (files that no longer exist anywhere)
+(none)
