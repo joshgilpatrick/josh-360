@@ -90,7 +90,7 @@ def post_answer(run: Run, step: str, text: str) -> None:
     if not run.ticket:
         return
     body = "Josh's answer: " + text
-    problems = patient_data.scan(body, None, False, external=True)
+    problems = patient_data.scan(body, None, run.phi, external=True)
     if problems:
         _warn(run, "the answer was not posted on the ticket", "the patient-data screen found " + ", ".join(problems))
         return
