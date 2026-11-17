@@ -97,6 +97,10 @@ class FakeJira:
         if method == "POST" and parts[-1] == "transitions":
             self.issues[parts[4]]["fields"]["status"] = {"name": "In Progress"}
             return 204, b"", {}
+        if method == "GET" and bare == "/rest/api/3/issueLinkType":
+            return 200, json.dumps({"issueLinkTypes": [
+                {"name": "Blocks", "inward": "is blocked by", "outward": "blocks"},
+                {"name": "Relates", "inward": "relates to", "outward": "relates to"}]}).encode(), {}
         if method == "POST" and bare == "/rest/api/3/issueLink":
             link = {"type": {"name": data["type"]["name"]}, "outwardIssue": data["inwardIssue"]}
             self.issues[data["outwardIssue"]["key"]]["fields"]["issuelinks"].append(link)
@@ -245,6 +249,37 @@ class Writing(unittest.TestCase):
         posts = len([c for c in fake.calls if c[0] == "POST" and c[1].endswith("issueLink")])
         self.assertTrue(jira_client.link("Blocks", "JP-1", "JP-2"))
         self.assertEqual(posts, len([c for c in fake.calls if c[0] == "POST" and c[1].endswith("issueLink")]))
+
+    def link_posts(self, fake):
+        return [c for c in fake.calls if c[0] == "POST" and c[1].endswith("issueLink")]
+
+    def test_a_link_the_other_way_round_is_not_taken_for_this_one(self):
+        fake = FakeJira()
+        # JP-2 already blocks JP-1: JP-1's own list shows JP-2 on the inward side.
+        fake.issues["JP-1"] = {"key": "JP-1", "fields": {"issuelinks": [
+            {"type": {"name": "Blocks"}, "inwardIssue": {"key": "JP-2"}}]}}
+        fake.issues["JP-2"] = {"key": "JP-2", "fields": {"issuelinks": []}}
+        self.assertTrue(client(fake).link("Blocks", "JP-1", "JP-2"))      # JP-1 blocks JP-2 is a different link
+        self.assertEqual(len(self.link_posts(fake)), 1)
+        outward = [x for x in fake.issues["JP-1"]["fields"]["issuelinks"] if "outwardIssue" in x]
+        self.assertEqual([x["outwardIssue"]["key"] for x in outward], ["JP-2"])
+
+    def test_a_relates_link_counts_from_either_end(self):
+        fake = FakeJira()
+        fake.issues["JP-1"] = {"key": "JP-1", "fields": {"issuelinks": [
+            {"type": {"name": "Relates"}, "inwardIssue": {"key": "JP-2"}}]}}
+        fake.issues["JP-2"] = {"key": "JP-2", "fields": {"issuelinks": []}}
+        self.assertTrue(client(fake).link("Relates", "JP-1", "JP-2"))
+        self.assertEqual(self.link_posts(fake), [])                        # it is already there
+
+    def test_when_the_link_types_cannot_be_read_a_reverse_link_is_not_accepted(self):
+        fake = FakeJira()
+        fake.issues["JP-1"] = {"key": "JP-1", "fields": {"issuelinks": [
+            {"type": {"name": "Relates"}, "inwardIssue": {"key": "JP-2"}}]}}
+        fake.issues["JP-2"] = {"key": "JP-2", "fields": {"issuelinks": []}}
+        fake.queue("GET", "/rest/api/3/issueLinkType", (500, b"{}", {}))
+        self.assertTrue(client(fake).link("Relates", "JP-1", "JP-2"))
+        self.assertEqual(len(self.link_posts(fake)), 1)                    # unknown is not symmetric: it posts
 
     def test_missing_credentials_fail_without_naming_a_value(self):
         err = io.StringIO()
