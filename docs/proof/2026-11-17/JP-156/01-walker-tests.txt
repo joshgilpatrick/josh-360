@@ -1,0 +1,14 @@
+test_a_parked_run_leaves_a_question_in_needs_you_and_a_flag_and_no_session (test_walker.Asking.test_a_parked_run_leaves_a_question_in_needs_you_and_a_flag_and_no_session) ... ok
+test_a_phi_run_stores_no_question_text (test_walker.Asking.test_a_phi_run_stores_no_question_text) ... ok
+test_a_precedent_at_stage_two_is_offered_and_confirming_it_says_so (test_walker.Asking.test_a_precedent_at_stage_two_is_offered_and_confirming_it_says_so) ... ok
+test_a_value_that_is_not_a_short_code_gets_no_precedent (test_walker.Asking.test_a_value_that_is_not_a_short_code_gets_no_precedent) ... ok
+test_parking_the_same_step_again_keeps_an_answer_josh_already_gave (test_walker.Asking.test_parking_the_same_step_again_keeps_an_answer_josh_already_gave) ... ok
+test_the_answer_is_saved_as_a_decision_in_its_category (test_walker.Asking.test_the_answer_is_saved_as_a_decision_in_its_category) ... ok
+test_the_cli_answer_command_writes_the_same_file_the_app_does (test_walker.Asking.test_the_cli_answer_command_writes_the_same_file_the_app_does) ... ok
+test_the_needs_you_tab_would_accept_an_answer_to_a_parked_question (test_walker.Asking.test_the_needs_you_tab_would_accept_an_answer_to_a_parked_question) ... ok
+test_typed_text_that_matches_no_choice_is_refused_and_the_question_reopened (test_walker.Asking.test_typed_text_that_matches_no_choice_is_refused_and_the_question_reopened) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 2.606s
+
+OK

@@ -13,6 +13,10 @@ import os
 from pathlib import Path
 from typing import Dict, List, Optional
 
+# A headless question has no deadline: the turn is paused, not polling. action-triage writes this value for it
+# (src/core/askHookDecision.ts, HEADLESS_WAIT_UNTIL), and its answerFromUi refuses an answer once now >= waitUntil.
+HEADLESS_WAIT_UNTIL = "9999-12-31T23:59:59.000Z"
+
 ID_RE = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
 
 
@@ -56,7 +60,7 @@ def create(qid: str, run_id: str, ticket_key: Optional[str], cwd: str, header: s
         "agentManagerSessionId": None, "ticketKey": ticket_key,
         "questions": [{"question": text, "header": header[:12], "multiSelect": False,
                        "options": [{"label": c} for c in choices]}],
-        "askedAt": asked, "waitUntil": asked, "state": "open"})
+        "askedAt": asked, "waitUntil": HEADLESS_WAIT_UNTIL, "state": "open"})
 
 
 def read(qid: str) -> Optional[dict]:

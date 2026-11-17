@@ -260,6 +260,33 @@ class Asking(WalkerCase):
         self.assertEqual(json.loads((self.tmp / "questions" / (parked["question_id"] + ".json")).read_text())["state"],
                          "delivered")
 
+    def test_the_needs_you_tab_would_accept_an_answer_to_a_parked_question(self):
+        # action-triage's answerFromUi refuses an answer once now >= waitUntil ("no longer waiting"), and a headless
+        # record is meant to have no deadline: the real ask hook writes 9999-12-31T23:59:59.000Z. JP-156.
+        run = self.start()
+        self.do_role(run, "design", "ready", {"spec_path": "spec-1"})
+        parked = self.walker("next", "--run", run)
+        record = json.loads((self.tmp / "questions" / (parked["question_id"] + ".json")).read_text())
+        self.assertEqual(record["runner"], "headless")
+        self.assertEqual(record["waitUntil"], "9999-12-31T23:59:59.000Z")
+        self.assertGreater(record["waitUntil"], record["askedAt"])
+        self.assertEqual(self.walker("next", "--run", run)["action"], "parked")      # parking again keeps the record
+        again = json.loads((self.tmp / "questions" / (parked["question_id"] + ".json")).read_text())
+        self.assertEqual(again, record)
+
+    def test_parking_the_same_step_again_keeps_an_answer_josh_already_gave(self):
+        run = self.start()
+        self.do_role(run, "design", "ready", {"spec_path": "spec-1"})
+        parked = self.walker("next", "--run", run)
+        qid = parked["question_id"]
+        self.assertTrue(questions.answer(qid, "build", "2026-11-17T22:00:00Z"))
+        before = json.loads((self.tmp / "questions" / (qid + ".json")).read_text())
+        questions.create(qid, run, "JP-901", str(self.tmp), "approve_spec", "again", ["build", "drop"],
+                         "2026-11-17T22:05:00Z")                            # the walker parks the same step again
+        after = json.loads((self.tmp / "questions" / (qid + ".json")).read_text())
+        self.assertEqual(after, before)
+        self.assertEqual((after["state"], after["answers"][after["questions"][0]["question"]]), ("answered", "build"))
+
     def test_the_answer_is_saved_as_a_decision_in_its_category(self):
         run = self.start()
         self.do_role(run, "design", "ready", {"spec_path": "spec-1"})
