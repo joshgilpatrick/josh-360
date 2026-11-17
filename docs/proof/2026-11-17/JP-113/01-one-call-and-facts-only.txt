@@ -1,0 +1,17 @@
+test_a_debrief_written_after_finalising_carries_the_final_version ... ok
+test_a_failed_call_is_retried_and_the_summary_is_not_held_back ... ok
+test_a_failed_combined_call_leaves_the_summary_pending_as_before ... ok
+test_a_phi_folder_is_never_sent_to_a_model ... ok
+test_a_session_whose_facts_show_friction_earns_one ... ok
+test_a_session_with_a_copyable_summary_that_earns_gets_a_debrief_only_call ... ok
+test_a_short_clean_session_gets_facts_only (tests.test_ledger_debrief.TheCall.test_a_short_clean_session_gets_facts_only)
+test_a_subagent_is_not_debriefed ... ok
+test_a_summary_that_was_already_written_still_gets_its_debrief ... ok
+test_a_thin_session_that_earns_gets_exactly_one_call_for_both (tests.test_ledger_debrief.TheCall.test_a_thin_session_that_earns_gets_exactly_one_call_for_both)
+test_a_thin_session_without_friction_keeps_the_summary_only_call ... ok
+test_an_episode_with_a_call_since_it_went_quiet_is_never_called_again ... ok
+test_an_old_episode_never_earns_a_call ... ok
+test_at_most_three_calls_in_one_run_and_the_summary_is_copied_while_a_debrief_waits ... ok
+test_with_no_model_nothing_is_stored_and_the_summary_still_is ... ok
+Ran 15 tests in 0.869s
+OK

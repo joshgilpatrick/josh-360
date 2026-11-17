@@ -1,0 +1,12 @@
+test_a_rejected_answer_stores_no_debrief_keeps_the_cost_and_is_not_retried ... ok
+test_a_single_fence_around_the_object_is_accepted_and_a_summary_is_screened ... ok
+test_a_target_must_be_a_plain_identifier ... ok
+test_more_than_five_moments_are_rejected ... ok
+test_text_in_the_transcript_cannot_steer_the_answer ... ok
+test_text_outside_the_form_is_rejected (tests.test_ledger_debrief.OnlyTheForm.test_text_outside_the_form_is_rejected)
+test_values_outside_the_lists_are_rejected ... ok
+test_a_stored_debrief_holds_kinds_targets_and_line_ids_only (tests.test_ledger_debrief.PointersNotQuotes.test_a_stored_debrief_holds_kinds_targets_and_line_ids_only)
+test_a_withdrawn_debrief_is_not_written_again ... ok
+test_the_schema_holds_no_free_text_column_for_a_debrief ... ok
+Ran 10 tests in 0.593s
+OK

@@ -45,7 +45,7 @@ jobs:
     run: ledger/summary.py
     every: 5m
     timeout: 15m
-    description: JP-108. Writes about five summary lines for each episode that has gone quiet. Copies from the title, the first line of the first message and STATE.md; one small cheap-tier call only when those are too thin; none for a .phi folder.
+    description: JP-108. Writes about five summary lines for each episode that has gone quiet. Copies from the title, the first line of the first message and STATE.md; one small cheap-tier call only when those are too thin. JP-113: the same call also fills in the debrief form for an episode that earns one (a graph run, or friction facts at a threshold), and an episode that earns a debrief but can be copied gets a debrief-only call. At most one model call per episode; none for a .phi folder.
 
   - id: ledger-backup
     run: ledger/backup.py
