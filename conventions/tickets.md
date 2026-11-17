@@ -128,11 +128,13 @@ A Ready ticket has no open questions for Josh. The one exception is a ticket who
 
 ## Branches
 
-- One branch per ticket, named after its key: the key first, then `/` or `-` and a short slug, for example `JP-98/conventions`. `/` is the form for a branch made by hand (Josh's global rules and `using-jira`); `-` is what action-triage's daemon makes. A script reading a branch accepts both.
+- One branch per ticket, named after its key: the key first, then `-` and a short slug in lower-case words joined by hyphens, for example `JP-98-conventions`. Agents and scripts make this form (it is what action-triage's daemon and the graphs' `prepare-worktree` make). `/` after the key (`JP-98/conventions`) is the form Josh's global rules use for a branch made by hand; every script that reads a branch accepts both (`ledger/homes.py`, `ledger/offer.py`).
+- **Cloud sessions create the branch themselves.** A cloud session starts on a platform branch (`claude/...`). Once the ticket is known, it cuts a branch named after the ticket from the latest `main` (`git checkout -b JP-98-conventions origin/main`), pushes that one (`git push -u origin JP-98-conventions`) and opens the pull request from it. A key-named branch pushes from a cloud session on josh-360 (tested on 17 November 2026, JP-151). Only when the push is refused does the session keep its `claude/...` branch, and then the key goes first in the pull request title and in every commit message.
+- The ticket's start comment names the branch (`Branch: <branch> @ <sha>`), whichever form it has.
 - A subtask commits to its parent's branch.
 - Sibling tickets share one branch only when their epic's **Branch strategy** says so.
-- When the platform fixes the branch name (a cloud session's `claude/...` branch), the key goes first in the pull request title and in every commit message, and the ticket's start comment names the branch.
 - Never two tickets on one branch otherwise.
+- Branches that belong to no ticket keep their fixed names: `main`, `laptop-status`, `laptop-pause`.
 
 ## Statuses and who moves them
 

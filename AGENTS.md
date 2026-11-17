@@ -13,7 +13,7 @@
 
 ## Workflow
 
-This repo follows `docs/WORKFLOW.md` (tickets, design gate, proof, review ceremony, merge). Values: `.claude/workflow.config.md`. Skills in `.claude/skills/`: `ticket-lifecycle`, `design-handoff`, `pr-proof`, `review-ceremony`, `workflow-roles`. Commands: `/design`, `/build`, `/fix`, `/review-pr`, `/ship`, `/session-end`, `/closeout`.
+This repo follows `docs/WORKFLOW.md` (tickets, design gate, proof, review ceremony, merge). Values: `.claude/workflow.config.md`. Skills in `.claude/skills/`: `ticket-lifecycle`, `design-handoff`, `pr-proof`, `review-ceremony`, `workflow-roles`, `platform-doctor`. Commands: `/design`, `/build`, `/fix`, `/review-pr`, `/ship`, `/session-end`, `/closeout`, `/doctor`.
 
 Status and history live in Jira (project `JP`, epic JP-94, label `josh-360`). There is no status file in the repo.
 
@@ -28,6 +28,7 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - A ticket is Ready before work starts: a separate agent signs it off, with no open questions.
 - Work in the cloud first, on made-up sample data, never real transcripts.
 - A step that must run on Josh's laptop is named in the ticket in advance.
+- Branches, session and thread titles, and PR titles start with the ticket key: branch `JP-<n>-<slug>`, title `JP-<n> <name>`. A cloud session cuts and pushes the key-named branch from `main` instead of keeping its `claude/...` branch (`docs/WORKFLOW.md` §1.6 and §3.8).
 - A separate agent reviews each pull request before it merges.
 - Each part of phase 1 ends with a short proof page Josh can read in minutes.
 - Permanent deletions wait in one list per phase, which Josh approves in one sitting. Retiring something means switching it off and archiving it, which needs nobody.
@@ -35,7 +36,7 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 **Questions.**
 
 - Design questions are collected, each with a recommendation, and put to Josh in one sitting per phase (JP-106 for phase 1). Builds that do not wait on an answer carry on.
-- When a question comes up during building and the choice can be undone, take the recommended option, record it in `docs/decisions.md`, and carry on.
+- When a question comes up during building and the choice can be undone, take the recommended option, record it as a row in `docs/decisions/JP-<n>.md` (your ticket's own file; `docs/decisions/README.md`), and carry on.
 - Only a permanent deletion or a write to something shared stops the work to ask Josh.
 
 **Data rule.** Reading any data Josh can access is allowed. A write to anything shared (a shared database, or an app other people use) needs Josh's confirmation in the thread, and a write that affects other users goes through the SQL write safety ceremony.
@@ -46,11 +47,14 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 
 - Install once: `pip install -r requirements.txt` (PyYAML).
 - Checks and tests: `python3 scripts/check.py` (add `--fast` to skip `tests/`).
+- Decisions (JP-153): `python3 scripts/decisions.py list [--ticket JP-n]` prints the build-time choices; `check` validates the files (part of `scripts/check.py`).
 - Conventions: `python3 scripts/conventions.py check`, and `python3 scripts/conventions.py lookup --folder <path>` or `--repo <name>` to find where work belongs.
 - Laptop inventory (JP-96, run on the laptop only, read-only, standard library only): `python3 scripts/laptop_inventory.py --out ~/josh-360-inventory.json`
 - What the laptop has installed: `python3 laptop/status.py show` (reads the `laptop-status` branch).
-- Install: merging to `main` installs on the laptop on its own (JP-105). Code that runs on the laptop uses Python 3.9 and the standard library only. A new background job is an entry in `jobs.yaml`; a new Claude Code hook is an executable file in `hooks/<Event>/`; a new install step goes in `STEPS` in `laptop/install.py`.
+- Install: merging to `main` installs on the laptop on its own (JP-105). Code that runs on the laptop uses Python 3.9 and the standard library only. A new background job is an entry in `jobs.yaml`, and Josh 360 ships no launchd plist or installer of its own: its jobs start only through the macbook-automations startup list, which starts the job runner (the one tracked exception is the Session Atlas service installer, `scripts/atlas_service.py`, until the phase 1 close: `docs/phase-1-close-checklist.md`); a new Claude Code hook is an executable file in `hooks/<Event>/`; a new install step goes in `STEPS` in `laptop/install.py`.
 - Loose ends (JP-109, laptop only; read-only apart from `keep`): `python3 ledger/loose_ends.py` (add `--session <id>`, `--json`, `--fetch`); mark a branch kept on purpose with `python3 ledger/loose_ends.py keep --folder <path> --branch <name>`; `python3 ledger/closeout.py` proposes, `--apply` does the reversible ones; `/closeout` calls the closeout agent.
+- Platform health check (JP-152, laptop; read-only unless `--fix`): `python3 ~/.josh-360/repo/scripts/doctor.py` (add `--json` for an agent, `--online`, `--fix`, `--only <group>`); `/doctor` calls it. It also runs daily as the `doctor` job: read it from the cloud with `python3 laptop/status.py show doctor`. Reference: `docs/platform-doctor.md`.
+- Startup list check (JP-119, laptop): `python3 laptop/check_jobs.py` compares what is loaded and installed in launchd with the macbook-automations startup list and `laptop/launchd-register.json`, and prints each difference (`--json` for the report; the daily job `launchd-check` puts it on `laptop-status` as `reports/launchd-check.json`). A job switched off by `retire-leftover-jobs` comes back with `python3 scripts/restore_retired_job.py <archive folder>`.
 - Pause the laptop from the cloud: push a branch named `laptop-pause`; delete it to resume.
 - Feature tree (JP-143): `python3 scripts/feature_tree.py check`, and `build` after editing `docs/design/feature-tree/tree.yaml`.
 - Architecture page (JP-144): `python3 scripts/architecture_page.py check`, and `build` after editing the feature tree or anything in `docs/design/architecture/`.
@@ -66,7 +70,7 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - `conventions/`: ticket conventions (`tickets.md`), the system registry (`registry.yaml`) and the standing priorities (`priorities.yaml`). Ticket rules for all of Josh's work start here.
 - `docs/surface-map.md`: every surface Josh works through, and where its configuration lives.
 - `docs/vision-and-roadmap.md`: the approved vision and roadmap (the requirements source).
-- `docs/decisions.md`: decisions from the question round, and default choices made while building.
+- `docs/decisions.md`: Josh's decisions from the question rounds. `docs/decisions/`: default choices made while building, one file per ticket.
 - `docs/source-notes/`: Josh's notes for the four graphs and the brainstorm, unchanged.
 - `docs/WORKFLOW.md`: how work is done here.
 - `docs/superpowers/specs/`, `docs/superpowers/plans/`: design specs and implementation plans.
@@ -74,11 +78,13 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - `docs/inventory/`: the inventory of the work laptop, with a verdict per item.
 - `docs/proof/`: proof for each ticket, by date and key.
 - `docs/phase-1-deletion-list.md`: what is archived and waits for Josh's one-sitting approval to be deleted for good.
+- `docs/phase-1-close-checklist.md`: the changes to Josh's other repositories that wait for the phase 1 close, with their steps in order.
 - `.claude/`: workflow values, skills, commands and subagents.
 - `scripts/check.py`: the repo's checks, run by CI as the `suite` job.
 - `scripts/conventions.py`: checks and reads the registry and the priorities file.
 - `scripts/laptop_inventory.py`, `scripts/laptop_figures.py`: the read-only laptop inventory and starting figures (JP-96); `scripts/laptop_inventory_job.py` runs it once as the `inventory` job and its report lands on `laptop-status` as `reports/inventory.json`.
 - `tests/`: the tests (stdlib unittest), run by `scripts/check.py`.
+- `scripts/doctor.py`, `scripts/doctor_lib/`, `scripts/doctor_job.py`: the platform doctor (JP-152); `docs/platform-doctor.md` lists every check.
 - `jobs.yaml`: Josh 360's background jobs on the laptop.
 - `laptop/`: how the laptop follows `main`: the install script, the job runner, the `follow` job, the status branch and the pause switch.
 - `hooks/`: Claude Code hooks, loaded on the laptop through `hooks/dispatch`.

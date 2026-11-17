@@ -14,3 +14,16 @@ Each is a `run(inputs, deps)` function and a four-line `__main__` that calls `li
 | `evidence.py` | the evidence file's front block, with the standard library only |
 | `artifacts.py` | where a deliverable may live |
 | `nondev_copy.py` | the graph's exact comment and email copy |
+
+## The triage gates (JP-122)
+
+`triageable` (entry), `ticket-facts`, `ready-check`, `route`, `check-sign-off`, `triage-verdict`, `apply-revision`, `post-question`, `send-back` and `mark-ready` run the triage graph; `ready` is the entry gate of the development and non-development graphs. They are written like the non-development gates (`run(inputs, deps)` and `execute`). The read gates never write; only `apply-revision`, `post-question`, `send-back` and `mark-ready` write to a ticket, `send-back` and `post-question` only comment, and `mark-ready` is the only status move. Their parts live in `lib/triage/`:
+
+| File in `lib/triage/` | What it holds |
+| --- | --- |
+| `ticket.py` | a ticket as the checklist reads it: strict bold-label sections and the version hash |
+| `checklist.py`, `gherkin.py` | the Ready checklist, one function per item |
+| `route.py`, `registry.py` | the routing table and the repository registry lookup |
+| `signoff.py`, `verdict.py` | the sign-off defect filter, the verdict and the return count |
+| `copy.py` | every comment, word for word from the spec |
+| `port.py`, `runs.py`, `times.py` | reading a ticket and its history; the run folder and the ledger; comparing times |

@@ -91,6 +91,24 @@ class Deps:
         self.outbox_dir = Path("~/Library/Application Support/agent-services-desk/outbox").expanduser()
 
     @property
+    def jira(self):
+        """The shared Jira client (lib/jira.py), built on first use so a gate that needs no Jira needs no credentials."""
+        if getattr(self, "_jira", None) is None:
+            from lib.jira import Jira   # imported late, like `ticket`
+            self._jira = Jira.from_env(self.environ)
+        return self._jira
+
+    @property
+    def registry(self):
+        from lib.triage.registry import Registry
+        return Registry.load(self.registry_path)
+
+    def signing_session(self, run_id):
+        """The session that did the run's sign-off step, from the ledger (None when it was not recorded)."""
+        from lib.triage import runs
+        return runs.signing_session(run_id)
+
+    @property
     def ticket(self):
         if self._ticket is None:
             from lib.ticket_port import real_port   # imported late: a gate that needs no Jira never loads it

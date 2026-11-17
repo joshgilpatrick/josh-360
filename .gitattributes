@@ -1,0 +1,8 @@
+# JP-153: files that several pull requests append to. `merge=union` keeps both sides' added lines when
+# `git merge` combines them, so appending a job or a row never conflicts. It works only where git merges
+# locally (an agent merging main into its branch), not in GitHub's own merge button, which is why a thread
+# merges main in before it merges. If two PRs change the same existing line, both versions stay and the
+# suite flags the duplicate: jobs.yaml's reader refuses a repeated key or id.
+# Decisions are not here: they go in one file per ticket (docs/decisions/JP-<n>.md).
+jobs.yaml merge=union
+docs/phase-1-deletion-list.md merge=union

@@ -38,14 +38,18 @@ class FollowTest(LaptopCase):
         # focus dashboard retirement, which reports "not loaded" here because launchctl is a stub; JP-111's old Atlas
         # retirement and its launchd service job, which only ever talk to that stub; JP-107's one-time ledger backfill
         # and JP-112's one-time friction catch-up, whose reports are counts only, and which find nothing in the
-        # made-up home).
+        # made-up home; JP-119's one-time retirement of three leftover jobs, which talks only to the stub, and its
+        # daily startup-list check, whose report is job labels and counts; JP-152's daily doctor, whose report is
+        # check results with names, counts and paths only).
         tree = self.status_tree()
         self.assertEqual([p for p in tree if not p.startswith("reports/")], ["status.json"])
         self.assertEqual([p for p in tree if p.startswith("reports/")],
-                         ["reports/inventory.json", "reports/ledger-backfill.json",
+                         ["reports/doctor.json", "reports/inventory.json", "reports/launchd-check.json",
+                          "reports/ledger-backfill.json",
                           "reports/ledger-friction-catchup.json", "reports/ledger-upload.json",
-                          "reports/retire-focus-dashboard.json", "reports/retire-session-atlas.json",
-                          "reports/session-atlas-service.json", "reports/ticket-comments.json"])
+                          "reports/retire-focus-dashboard.json", "reports/retire-leftover-jobs.json",
+                          "reports/retire-session-atlas.json", "reports/session-atlas-service.json",
+                          "reports/ticket-comments.json"])
         # And the reader a cloud session uses prints it.
         shown = self.laptop("status.py", "show", check=True)
         self.assertIn(merged, shown.stdout)
@@ -55,7 +59,7 @@ class FollowTest(LaptopCase):
         self.laptop("run_jobs.py", check=True)
         calls = self.launchctl_log.read_text().splitlines() if self.launchctl_log.exists() else []
         self.assertTrue(calls, "the retire job should have asked the stub launchctl whether the job is loaded")
-        self.assertTrue(all(c.startswith(("print ", "bootstrap ", "kickstart ")) for c in calls), calls)
+        self.assertTrue(all(c.startswith(("list", "print ", "bootstrap ", "kickstart ")) for c in calls), calls)
         # Only the new Atlas service is ever loaded, and only into the made-up home.
         self.assertEqual([c for c in calls if c.startswith("bootstrap ")],
                          ["bootstrap gui/{} {}".format(os.getuid(), self.home / "Library" / "LaunchAgents"

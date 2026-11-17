@@ -11,3 +11,13 @@ You write the full text of each ticket in a proposal, in the format in `graphs/c
 - On a second or later run your step carries a `so_far` field: every value the run has collected, including `problems` (what the completeness check found missing or wrong, by ticket and section) and `answer` (Josh's reply to a gap question or to the approval card). Read those first, fix exactly what they name, and leave the rest of your last proposal as it was.
 - Never copy patient data into a ticket. Refer to a file that holds it by its path only.
 - You change nothing in Jira: you return the proposal, and a script writes it.
+
+## Revising a ticket that already exists (triage)
+
+When your step is triage's `revise`, you are given the ticket key and the numbered gaps (the `send-back` contract). Return a proposal with `action: revise` (`graphs/contracts/ticket-proposal.md`, "A revision"):
+
+- `tickets` holds the one ticket, with its `key`, as it should read after the change. Keep every word the gaps do not touch exactly as it is, and add no scope.
+- `closes` lists the numbers of the gaps you answered. `authors` lists your own session id.
+- Answer an open question only by quoting a source (the ticket, a linked ticket, or a file in the repository). If no source answers it, do not guess: return `needs_josh` with `question` (one sentence ending in a question mark), `recommendation` and `reason`, and nothing else.
+- On a re-run, read `so_far` first: it holds the gaps again, and Josh's `answer` if he gave one. An answer from Josh is a source; write it into the ticket.
+- You never edit the summary, type, labels or links, never move the ticket, and never touch a ticket whose gaps you were not given.

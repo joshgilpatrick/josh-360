@@ -94,3 +94,24 @@ jobs:
     timeout: 5m
     report: true
     description: JP-111. Keeps the headless Session Atlas (apps/session-atlas) loaded in launchd on the latest code. It waits until retire-session-atlas has succeeded. No model call.
+
+  - id: doctor
+    run: scripts/doctor_job.py
+    every: 1d
+    timeout: 5m
+    report: true
+    description: JP-152. Runs the platform doctor (scripts/doctor.py, read-only) and publishes its JSON, so the cloud can see which parts of Josh 360 are live and configured on the laptop. A failing check shows in the report, never in this job's exit code. No model call.
+
+  - id: retire-leftover-jobs
+    run: scripts/retire_leftover_jobs.py
+    every: once
+    timeout: 5m
+    report: true
+    description: JP-119, once. Boots out the QA waker watchdog, the ClickUp to Notion sync and Omnara, moves their plists (and Omnara's folder) into ~/Archive/josh-360-retired/, and writes a retired.json that scripts/restore_retired_job.py reads to put each one back. Reversible; deletes nothing.
+
+  - id: launchd-check
+    run: scripts/launchd_check_job.py
+    every: 1d
+    timeout: 5m
+    report: true
+    description: JP-119. Compares what runs on the laptop with the macbook-automations startup list and laptop/launchd-register.json, and reports any difference. Job labels and counts only; changes nothing.

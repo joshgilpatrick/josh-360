@@ -35,6 +35,9 @@ Checks:
  14. JP-114: every graph has an up-to-date JSON copy in graphs/compiled/ (graphs/tools/compile_graphs.py --check),
      which the walker reads on the laptop; the walker's files parse as Python 3.9.
 
+ 15. JP-153: the per-ticket decision files in docs/decisions/ pass scripts/decisions.py check, and no default-choice
+     row is left in the old shared table in docs/decisions.md.
+
 Tickets that add code add their own checks here or beside it. Exit 0 when everything passes, 1 otherwise.
 """
 from __future__ import annotations
@@ -59,15 +62,18 @@ REQUIRED = [
     ".claude/agents/ceremony-reviewer.md",
     ".claude/agents/implementer.md",
 ] + [f".claude/skills/{s}/SKILL.md" for s in (
-    "ticket-lifecycle", "design-handoff", "pr-proof", "review-ceremony", "workflow-roles",
+    "ticket-lifecycle", "design-handoff", "pr-proof", "review-ceremony", "workflow-roles", "platform-doctor",
 )] + [f".claude/commands/{c}.md" for c in (
-    "design", "build", "fix", "review-pr", "ship", "session-end",
+    "design", "build", "fix", "review-pr", "ship", "session-end", "doctor",
 )]
 
 # JP-95: the home layout every later ticket builds into.
 LAYOUT = [
     "README.md",
     "docs/decisions.md",
+    "docs/decisions/README.md",
+    "scripts/decisions.py",
+    ".gitattributes",
     "docs/vision-and-roadmap.md",
     "docs/source-notes/README.md",
     ".gitignore",
@@ -98,7 +104,9 @@ CONVENTIONS = [
 LAPTOP = [
     "jobs.yaml", "hooks/dispatch", "hooks/README.md", "laptop/README.md",
     "docs/superpowers/specs/2026-11-16-laptop-follows-josh-360-design.md",
-] + [f"laptop/{m}.py" for m in ("common", "install", "run_jobs", "follow", "status", "pause")]
+    "laptop/launchd-register.json", "docs/phase-1-close-checklist.md",
+] + [f"laptop/{m}.py" for m in ("common", "install", "run_jobs", "follow", "status", "pause", "check_jobs")] + [
+    "scripts/doctor.py", "scripts/doctor_job.py", "docs/platform-doctor.md"]
 
 
 def laptop_problems() -> list[str]:
@@ -113,13 +121,16 @@ def laptop_problems() -> list[str]:
         if subprocess.run(["bash", "-n", str(dispatch)]).returncode != 0:
             problems.append("does not parse as bash: hooks/dispatch")
     jp96 = [ROOT / "scripts" / n for n in ("laptop_inventory.py", "laptop_figures.py", "laptop_inventory_job.py",
-                                           "retire_focus_dashboard.py")]
+                                           "retire_focus_dashboard.py", "retire_leftover_jobs.py",
+                                           "restore_retired_job.py", "launchd_check_job.py",
+                                           "doctor.py", "doctor_job.py")]
+    jp96 += sorted((ROOT / "scripts/doctor_lib").glob("*.py"))  # JP-152: the doctor runs on the laptop too
     # JP-107: the ledger and its hooks (some hook files have no .py suffix) run on the laptop too.
     ledger_hooks = [p for p in sorted((ROOT / "hooks").glob("*/*")) if p.is_file() and p.name != "README.md"
                     and p.read_text(encoding="utf-8", errors="replace").startswith("#!/usr/bin/env python")]
     # JP-114: the walker reads a JSON copy of each graph so that it runs here too (graphs/tools/walker*).
     walker_files = sorted((ROOT / "graphs/tools/walker_lib").glob("*.py")) + [ROOT / "graphs/tools/walker.py"] + sorted(
-        (ROOT / "graphs/gates/lib").glob("*.py"))
+        (ROOT / "graphs/gates/lib").rglob("*.py")) + sorted((ROOT / "graphs/gates").glob("*.py"))
     ledger_files = (sorted((ROOT / "ledger").glob("*.py")) + [ROOT / "scripts/conventions.py"] + ledger_hooks
                     + walker_files)
     for py in (sorted((ROOT / "laptop").glob("*.py")) + sorted((ROOT / "hooks").rglob("*.py")) + jp96
@@ -410,6 +421,9 @@ def main() -> int:
     code, output = run_quietly(["scripts/architecture_page.py", "check"])
     if code != 0:
         problems.append(f"architecture page check failed:\n{output}")
+    code, output = run_quietly(["scripts/decisions.py", "check"])
+    if code != 0:
+        problems.append(f"decision files check failed (JP-153):\n{output}")
     if "--fast" not in sys.argv[1:]:
         code, output = run_quietly(["-m", "unittest", "discover", "-s", "graphs/tests"])
         if code != 0:

@@ -482,7 +482,7 @@ Josh is needed only when something permanently destructive is about to happen. I
 
 - The laptop is connected to josh-360 once, at the start. After that, an install reaches the laptop by merging to josh-360.
 - Design questions are collected, each with a recommendation, and put to Josh in one sitting per phase. Builds that do not wait on an answer carry on.
-- When a build-time choice can be undone, the agent takes its recommended option, records it in `docs/decisions.md` and carries on. Only a permanent deletion or a write to something shared stops the work.
+- When a build-time choice can be undone, the agent takes its recommended option, records it in its ticket's file under `docs/decisions/` and carries on. Only a permanent deletion or a write to something shared stops the work.
 - Merges to Josh's other repositories, deletion lists and proof pages wait for the close of each phase.
 
 That leaves five sittings for Josh: the laptop hookup, the phase 1 design questions, and the close of each of the three phases.

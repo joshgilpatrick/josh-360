@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "about": "JP-119. What laptop/check_jobs.py knows beyond the macbook-automations startup list (launchd/startup-manifest.txt). A job that is loaded or installed on the laptop must be on that list, or named here with a reason; anything else is reported as a stray. Josh 360's own jobs are not here: they are the entries in jobs.yaml, started by the one startup-list entry com.jgilpatrick.josh-360-jobs.",
+  "entry_point": "com.jgilpatrick.startup",
+  "own_prefixes": ["com.eventus.", "com.jgilpatrick.", "com.josh.", "com.josh360.", "com.omnara.", "homebrew.mxcl."],
+  "elsewhere": [
+    {"label": "com.eventus.action-agent", "owner": "action-triage", "decision": "left", "reason": "action-triage's orchestrator; its jobs move into Josh 360 in phase 2 (JP-124), which is out of scope for JP-119."},
+    {"label": "com.eventus.action-triage", "owner": "action-triage", "decision": "left", "reason": "action-triage's desktop app; moves with action-triage (JP-124)."},
+    {"label": "com.eventus.desk-watcher", "owner": "action-triage", "decision": "left", "reason": "The Email Research Desk's per-minute watcher; moves with action-triage (JP-124)."},
+    {"label": "com.eventus.meetings-sync", "owner": "action-triage", "decision": "left", "reason": "Runs Agent Command Center's copy of the Notion sync until action-triage's copy takes over (JP-124)."},
+    {"label": "com.eventus.athena-pipeline", "owner": "Athena work", "decision": "left", "reason": "A work pipeline for Josh's Athena accountability, not agent plumbing (JP-96 verdict: keep)."},
+    {"label": "com.eventus.athena-test-suite-sync", "owner": "Athena work", "decision": "left", "reason": "A work job for the Athena accountability (JP-96 verdict: keep)."},
+    {"label": "com.eventus.azure-batch-spend-alert", "owner": "Azure work", "decision": "left", "reason": "A daily Azure spend alert for work; its script is not in a repository Josh 360 owns (JP-96 verdict: keep)."},
+    {"label": "com.josh.outlook-watchdog", "owner": "josh_toolbox", "decision": "left", "reason": "Keeps Outlook running for the desk mailer and the receipt fetcher (JP-96 verdict: keep)."},
+    {"label": "com.jgilpatrick.sync-client-skills", "owner": "claude-harness", "decision": "bring-in-at-close", "reason": "Runs when ~/.claude/skills changes, which needs a WatchPaths entry the job runner does not offer. It belongs to claude-harness, whose changes wait for the phase 1 close; add its plist to the startup list there (docs/phase-1-close-checklist.md)."},
+    {"label": "com.jgilpatrick.sprint-waker-*", "owner": "sprint skill", "decision": "left", "reason": "The sprint skill's watchdog, one per sprint. The development graph and the walker replace the sprint skill (JP-115, JP-128); until then it stays."},
+    {"label": "com.atlassian.twg.upkeep", "owner": "twg", "decision": "left", "reason": "Owned by Atlassian's twg tool, like the twg skill links (JP-96 verdict: keep)."},
+    {"label": "homebrew.mxcl.postgresql@14", "owner": "Homebrew", "decision": "left", "reason": "A local development database managed by Homebrew services, not part of the agent workflow (JP-96 verdict: keep)."}
+  ],
+  "transitional": [
+    {"label": "com.josh360.session-atlas", "installed_by": "scripts/atlas_service.py (job session-atlas-service)", "ends_with": "phase 1 close (JP-120)", "reason": "Session Atlas is a long-running service that has to stay up, because the worktree removal guard fails closed when it cannot reach it. Until its definition is on the macbook-automations startup list, the job session-atlas-service installs it. That change to macbook-automations waits for the phase 1 close; docs/phase-1-close-checklist.md lists the two steps that move it and remove the installer."}
+  ],
+  "retired": [
+    {"label": "com.eventus.focus-dashboard", "retired_by": "JP-100, job retire-focus-dashboard"},
+    {"label": "com.eventus.claude-atlas", "retired_by": "JP-111, job retire-session-atlas"},
+    {"label": "com.eventus.qa-waker-watchdog", "retired_by": "JP-119, job retire-leftover-jobs"},
+    {"label": "com.eventus.clickup-notion-sync", "retired_by": "JP-119, job retire-leftover-jobs"},
+    {"label": "com.omnara.daemon", "retired_by": "JP-119, job retire-leftover-jobs (Josh's answer to question 4, 16 November)"},
+    {"label": "com.eventus.meeting-watcher", "retired_by": "already gone on 16 November (JP-96)"},
+    {"label": "com.eventus.acc-launch-spawner", "retired_by": "already gone on 16 November (JP-96)"},
+    {"label": "com.eventus.fcc-server", "retired_by": "already gone on 16 November (JP-96)"},
+    {"label": "com.jgilpatrick.claude-mem-worker", "retired_by": "already gone on 16 November (JP-96)"},
+    {"label": "com.jgilpatrick.rclone-sync", "retired_by": "Josh does not want it back (JP-106, question 7)"},
+    {"label": "com.josh.quicktasks", "retired_by": "already gone on 16 November (JP-96)"}
+  ],
+  "ignore": [
+    {"match": "us.zoom.*", "reason": "Zoom's own updater."},
+    {"match": "com.microsoft.*", "reason": "Microsoft's own agents and updaters."},
+    {"match": "com.google.*", "reason": "Google's own updaters."},
+    {"match": "com.docker.*", "reason": "Docker's own helpers."}
+  ]
+}
