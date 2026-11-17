@@ -1,0 +1,16 @@
+$ python3 -m unittest discover -s tests -t tests -p "test_nondev_graph_run.py" -v
+test_accept_alone_shares_nothing (test_nondev_graph_run.NonDevelopmentRun.test_accept_alone_shares_nothing) ... ok
+test_an_unworkable_ticket_goes_back_to_triage (test_nondev_graph_run.NonDevelopmentRun.test_an_unworkable_ticket_goes_back_to_triage) ... ok
+test_deliverable_outlives_temp_workdir (test_nondev_graph_run.NonDevelopmentRun.test_deliverable_outlives_temp_workdir) ... ok
+test_do_work_runs_at_most_three_times_before_decide_stuck (test_nondev_graph_run.NonDevelopmentRun.test_do_work_runs_at_most_three_times_before_decide_stuck) ... ok
+test_email_origin_closes_without_sign_off (test_nondev_graph_run.NonDevelopmentRun.test_email_origin_closes_without_sign_off) ... ok
+test_inferred_format_with_no_precedent_asks_before_any_work (test_nondev_graph_run.NonDevelopmentRun.test_inferred_format_with_no_precedent_asks_before_any_work) ... ok
+test_phi_ticket_comments_hold_paths_only (test_nondev_graph_run.NonDevelopmentRun.test_phi_ticket_comments_hold_paths_only) ... ok
+test_shared_write_waits_for_accept_and_share (test_nondev_graph_run.NonDevelopmentRun.test_shared_write_waits_for_accept_and_share) ... ok
+test_ticket_ends_in_deliverable_with_sources (test_nondev_graph_run.NonDevelopmentRun.test_ticket_ends_in_deliverable_with_sources) ... ok
+test_work_that_needs_code_goes_back_to_triage (test_nondev_graph_run.NonDevelopmentRun.test_work_that_needs_code_goes_back_to_triage) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 4.987s
+
+OK

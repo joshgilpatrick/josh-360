@@ -23,6 +23,7 @@
 - [Choices made](#choices-made)
 - [Questions for Josh](#questions-for-josh)
 - [Josh's open questions, answered](#joshs-open-questions-answered)
+- [As built (JP-123)](#as-built-jp-123)
 
 Ticket JP-104. Status: approved by Josh on 16 November 2026. He answered both questions the same day (see [Questions for Josh](#questions-for-josh)). This file is the spec for the non-development graph. The build ticket JP-123 reads it, with its plan `docs/superpowers/plans/2026-11-16-non-development-graph.md`. There are no boards, because the graph has no screen. The draft graph file is `graphs/flows/non-development.yaml`, and it passes the checker (`python3 graphs/tools/check_graph.py`).
 
@@ -396,3 +397,32 @@ From section 7 of `docs/source-notes/research-action-item-pipeline.md`:
 | "Find a file on my computer" | Runs on the laptop. The `finder` agent returns the path, and copies the file only when asked. |
 | The line between light and heavy | `pick-path`: short for a precedent or a `misc` ask; full otherwise. Work that needs code goes back to triage for the development graph. |
 | How state passes between steps | Step outputs in the graph file, the evidence file, and ticket comments. Josh's answers are comments too. |
+
+## As built (JP-123)
+
+Built on 17 November 2026 under Josh's ruling that any unblocked JP-94 ticket may be built without waiting for Ready. The gates, their tests and a run of the whole graph through the real walker are in the repository; the design above did not change, except as listed.
+
+**Parts.** The eleven gates this graph owns are real scripts: `read-ticket`, `gap-check`, `check-deliverable`, `pick-path`, `check-review`, `close-ticket`, `deliver`, `sign-off-rule`, `share`, and the two shared ones, `move-ticket` and `return-to-triage`. `ready` (JP-122) and `no-loose-ends` (JP-109) are still stubs. How a gate is written, and the shared files in `graphs/gates/lib/`, are in `graphs/gates/README.md`. The shared Jira client is JP-121's `lib/jira.py`.
+
+**Changes to the graph file.** Each carries a value a gate needed and the draft did not pass it.
+
+| Step | Change | Why |
+| --- | --- | --- |
+| `read_ticket` | New output `reason` | `return_early` writes the reason on the ticket |
+| `return_early` | New input `reason` | The same |
+| `check_gaps` | New output `card` | The walker shows it to Josh on `ping_before`, so the exact copy reaches him |
+| `check_review` | New input `evidence_path` | The feedback file is saved beside the evidence file |
+| `deliver` | New output `card` | The walker shows the delivery comment on `sign_off` |
+| `close_emailed`, `close` | New input `deliverable_path` | The resolution names the deliverable |
+
+The researcher's instructions now say to read `<KEY>-feedback.md` when it lists defects, so a rework run knows what to fix.
+
+**How the gates read the rules.**
+
+- The inferred marker is `(inferred)` in the ticket's Deliverable format. JP-102's contract names no marker for the written ticket.
+- `close-ticket` takes the question from the part of the evidence file's `resolution` before a ` | `, else from the ticket's own Question, and the answer from the rest.
+- `return-to-triage` moves the ticket to Not Started, sets the flag and comments `Returned to triage | <reason> | next gate: triage`. It does not edit the description's Open questions section, which JP-103's design also names. A ticket outside JP is left untouched, because this graph never writes to a colleagues' ticket.
+- Patient data: a run is `phi` when its input says so or the evidence file's `phi` is true. Either one makes every comment and the email name paths only, and makes `share` refuse.
+
+**What still waits.** Task 7 of the plan, pointing the Email Research Desk at the graph (two skills in claude-harness and the desk README in action-triage), waits for the phase 1 close, JP-120. Three checks need Josh's laptop: the real desk mailer on an emailed ask, `outlook_tool.py draft` for `share`, and one run against real Jira.
+
