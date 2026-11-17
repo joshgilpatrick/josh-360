@@ -29,7 +29,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from ledger import _repo  # noqa: E402,F401
 from laptop import common  # noqa: E402
-from ledger import db, homes, sessions, spool, transcript  # noqa: E402
+from ledger import costs, db, homes, sessions, spool, state_notes, transcript  # noqa: E402
 from ledger.text import short_text  # noqa: E402
 
 BY = "ledger/record.py"
@@ -161,7 +161,8 @@ def _lineage_root(conn, parent_uid: str) -> str:
     return row[0] if row else parent_uid
 
 
-def _record_session(conn, state, sid, path: Path, now: str, now_epoch: int, git: GitRun, jira, conv, counts) -> None:
+def _record_session(conn, state, sid, path: Path, now: str, now_epoch: int, git: GitRun, jira, conv, counts,
+                    cost_db=None, claude_home: Optional[Path] = None) -> None:
     info = _info(state, sid)
     size = path.stat().st_size
     uid_known = conn.execute("SELECT session_uid FROM sessions WHERE tool_session_id = ?", (sid,)).fetchone()
@@ -199,6 +200,12 @@ def _record_session(conn, state, sid, path: Path, now: str, now_epoch: int, git:
             title, title_source = None, "withheld"
     elif phi:
         title_source = "withheld"
+    if title is None and title_source is None and cost_db is not None:  # the cost ledger may know a title
+        found, found_source = costs.session_title(cost_db, sid)
+        if found is not None:
+            title, withheld = short_text(found, 120, phi=phi)
+            title_source = "withheld" if withheld or title is None else found_source
+            title = None if title_source == "withheld" else title
     facts = _git_facts(git, folder, meta.branch, began, quiet)
     started_by = "unknown"
     row = conn.execute("SELECT session_uid, started_by FROM sessions WHERE tool_session_id = ?", (sid,)).fetchone()
@@ -231,6 +238,17 @@ def _record_session(conn, state, sid, path: Path, now: str, now_epoch: int, git:
         counts["refs"] += _write_refs(conn, uid, episode, meta, folder, facts, began, now)
         if meta.branch and homes.TICKET_BRANCH.match(meta.branch):
             _link_ticket(conn, uid, meta.branch, conv, now)
+        counts["costs"] += costs.copy_costs(conn, cost_db, uid, sid, now)
+        counts["refs"] += costs.copy_links(conn, cost_db, uid, sid, episode, now)
+        if not sub:  # STATE.md belongs to a main session
+            wrote = state_notes.copy_notes(conn, state_notes.state_file(sid, claude_home), uid, episode,
+                                           not phi, now)
+            counts["notes"] += wrote
+            for kind, fact in (("u-turn", "u_turns"), ("dead-end", "dead_ends")):
+                _fact(conn, uid, episode, fact, conn.execute(
+                    "SELECT COUNT(*) FROM session_state_notes WHERE session_uid = ? AND episode = ? AND kind = ?",
+                    (uid, episode, kind)).fetchone()[0], now)
+        _fact(conn, uid, episode, "compactions", meta.compactions, now)
         ep = {"episode": episode, "folder": folder, "repo": facts["repo"], "branch": meta.branch}
         if homes.write_home_if_changed(conn, homes.find_home(uid, ep, conn, conv, jira), now):
             counts["homes"] += 1
@@ -262,6 +280,14 @@ def _write_refs(conn, uid, episode, meta, folder, facts, observed, now) -> int:
     return added
 
 
+def _fact(conn, uid: str, episode: int, fact: str, value: int, now: str) -> None:
+    """A friction fact for the episode, when it is above zero and not already written."""
+    if value > 0 and not conn.execute("SELECT 1 FROM session_facts WHERE session_uid = ? AND episode = ? AND fact = ?",
+                                      (uid, episode, fact)).fetchone():
+        conn.execute("INSERT INTO session_facts (session_uid, episode, fact, value, recorded_at, recorded_by) "
+                     "VALUES (?, ?, ?, ?, ?, ?)", (uid, episode, fact, value, now, BY))
+
+
 def _link_ticket(conn, uid: str, branch: str, conv: dict, now: str) -> None:
     key = homes.TICKET_BRANCH.match(branch).group(1)
     tracker = homes._tracker_for(key, conv["registry"])
@@ -275,10 +301,13 @@ def _link_ticket(conn, uid: str, branch: str, conv: dict, now: str) -> None:
 
 
 def record_pass(conn, *, now: str, spool: Path, projects: Path, git: GitRun, jira: Callable, conventions: dict,
-                state: Optional[Dict[str, object]] = None) -> Dict[str, int]:
-    """One pass. `state` holds the spool mark and each transcript's offset; pass the same dict to the next pass."""
+                state: Optional[Dict[str, object]] = None, cost_db=None,
+                claude_home: Optional[Path] = None) -> Dict[str, int]:
+    """One pass. `state` holds the spool mark and each transcript's offset; pass the same dict to the next pass.
+    `cost_db` is the cost ledger opened read-only (None when it is missing); `claude_home` is where STATE.md files
+    are read from (default ~/.claude)."""
     state = state if state is not None else _new_state()
-    counts = {"sessions": 0, "episodes": 0, "refs": 0, "homes": 0, "skipped": 0}
+    counts = {"sessions": 0, "episodes": 0, "refs": 0, "homes": 0, "skipped": 0, "costs": 0, "notes": 0}
     now_epoch = _epoch(now)
     _read_spool(conn, state, spool, now, counts)
     paths = _find_transcripts(projects, now_epoch)
@@ -289,11 +318,54 @@ def record_pass(conn, *, now: str, spool: Path, projects: Path, git: GitRun, jir
     # main sessions first, so a subagent's parent exists with its own starter before the child is written
     for sid in sorted(paths, key=lambda s: ("+" in s, s)):
         try:
-            _record_session(conn, state, sid, paths[sid], now, now_epoch, git, jira, conventions, counts)
+            _record_session(conn, state, sid, paths[sid], now, now_epoch, git, jira, conventions, counts, cost_db,
+                            claude_home)
         except Exception as e:  # noqa: BLE001  (one bad session never stops the others)
             _log("could not record {}: {}: {}".format(sid, type(e).__name__, e))
             counts["skipped"] += 1
     return counts
+
+
+def rehome_recent(conn, now: str, jira: Callable, conventions: dict, days: int = 30,
+                  only_failed: bool = False) -> Dict[str, int]:
+    """Work out the home again for each session with an episode in the last `days` days; a row is written only when
+    the answer changed (a ticket moved epic, the registry changed), or when a failed Jira read can now be repeated.
+    only_failed limits it to homes written while Jira was down, which the job retries on every pass."""
+    since = _stamp(_epoch(now) - days * 86400)
+    rows = conn.execute(
+        """SELECT e.session_uid, e.episode, e.folder, e.repo, e.branch FROM current_session_episodes e
+           WHERE e.episode = (SELECT MAX(e2.episode) FROM current_session_episodes e2 WHERE e2.session_uid = e.session_uid)
+             AND e.quiet_at >= ?""", (since,)).fetchall()
+    written = 0
+    for uid, number, folder, repo, branch in rows:
+        try:
+            if only_failed:
+                current = conn.execute("SELECT jira_read FROM current_homes WHERE session_uid = ?", (uid,)).fetchone()
+                if not current or current[0] != "failed":
+                    continue
+            ep = {"episode": number, "folder": folder, "repo": repo, "branch": branch}
+            with db.transaction(conn):
+                if homes.write_home_if_changed(conn, homes.find_home(uid, ep, conn, conventions, jira), now):
+                    written += 1
+        except Exception as e:  # noqa: BLE001
+            _log("could not re-home {}: {}: {}".format(uid, type(e).__name__, e))
+    return {"homes": written}
+
+
+def recopy_costs_recent(conn, cost_db, now: str, days: int = 30) -> Dict[str, int]:
+    """Copy cost again for recent sessions, so a re-pricing or later usage adds a new batch."""
+    since = _stamp(_epoch(now) - days * 86400)
+    written = 0
+    for uid, sid in conn.execute(
+            """SELECT DISTINCT s.session_uid, s.tool_session_id FROM sessions s
+               JOIN current_session_episodes e ON e.session_uid = s.session_uid WHERE e.quiet_at >= ?""",
+            (since,)).fetchall():
+        try:
+            with db.transaction(conn):
+                written += costs.copy_costs(conn, cost_db, uid, sid, now)
+        except Exception as e:  # noqa: BLE001
+            _log("could not re-copy cost for {}: {}: {}".format(uid, type(e).__name__, e))
+    return {"costs": written}
 
 
 def _conventions_version() -> str:
@@ -312,13 +384,23 @@ def main() -> int:
     names = [s["name"] for s in conv["registry"].get("systems") or []]
     fetch = jira_read.make_fetch(os.environ)
     conn = db.connect_existing(db.ledger_path())
+    cost_db = costs.open_cost_ledger(Path.home() / ".claude" / "cost-ledger" / "ledger.db")
+    now = common.now_utc()
+    jira = lambda key: jira_read.ticket_context(key, fetch, names)  # noqa: E731
     try:
-        counts = record_pass(
-            conn, now=common.now_utc(), spool=spool.spool_dir(), projects=Path.home() / ".claude" / "projects",
-            git=real_git, jira=lambda key: jira_read.ticket_context(key, fetch, names), conventions=conv,
-            state=state)
+        counts = record_pass(conn, now=now, spool=spool.spool_dir(), projects=Path.home() / ".claude" / "projects",
+                             git=real_git, jira=jira, conventions=conv, state=state, cost_db=cost_db)
+        daily = state.get("rehomed") != now[:10]
+        if daily:  # once a day: the registry or a ticket's epic may have changed, and costs may have been re-priced
+            counts["homes"] += rehome_recent(conn, now, jira, conv)["homes"]
+            counts["costs"] += recopy_costs_recent(conn, cost_db, now)["costs"]
+            state["rehomed"] = now[:10]
+        else:  # every pass: homes written while Jira was down are repeated
+            counts["homes"] += rehome_recent(conn, now, jira, conv, only_failed=True)["homes"]
     finally:
         conn.close()
+        if cost_db is not None:
+            cost_db.close()
     common.Lane().write_text(mark_file, common.dump_json(state))
     print(json.dumps(counts, sort_keys=True))
     return 0
