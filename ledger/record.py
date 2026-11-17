@@ -431,7 +431,7 @@ def main() -> int:
     names = [s["name"] for s in conv["registry"].get("systems") or []]
     fetch = jira_read.make_fetch(os.environ)
     conn = db.connect_existing(db.ledger_path())
-    cost_db = costs.open_cost_ledger(Path.home() / ".claude" / "cost-ledger" / "ledger.db")
+    cost_db = costs.open_cost_ledger(costs.default_path(Path.home() / ".claude"))
     now = common.now_utc()
     jira = lambda key: jira_read.ticket_context(key, fetch, names)  # noqa: E731
     try:

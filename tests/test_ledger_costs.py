@@ -153,5 +153,47 @@ class Costs(LedgerCase):
         self.assertEqual(costs.session_title(self.cdb, "sess-0001"), ("c", "custom"))
 
 
+class DefaultPath(unittest.TestCase):
+    """JP-111: the cost tables moved into cache.db; the old cost ledger is the fallback until the cutover has run."""
+
+    def setUp(self):
+        import os
+        import tempfile
+        self.tmp = Path(tempfile.mkdtemp(prefix="josh360-costpath-"))
+        self.old_env = os.environ.get("JOSH360_HOME")
+        os.environ["JOSH360_HOME"] = str(self.tmp / "j360")
+        self.claude = self.tmp / ".claude"
+
+    def tearDown(self):
+        import os
+        import shutil
+        if self.old_env is None:
+            os.environ.pop("JOSH360_HOME", None)
+        else:
+            os.environ["JOSH360_HOME"] = self.old_env
+        shutil.rmtree(str(self.tmp), ignore_errors=True)
+
+    def make(self, path):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        db = sqlite3.connect(str(path))
+        db.executescript(COST_DDL)
+        db.commit()
+        db.close()
+
+    def test_falls_back_to_the_old_cost_ledger_before_cutover(self):
+        self.assertEqual(costs.default_path(self.claude), self.claude / "cost-ledger" / "ledger.db")
+
+    def test_uses_cache_db_once_it_holds_the_cost_tables(self):
+        new = self.tmp / "j360" / "state" / "cache.db"
+        self.make(new)
+        self.assertEqual(costs.default_path(self.claude), new)
+
+    def test_a_cache_db_without_cost_tables_is_not_used(self):
+        new = self.tmp / "j360" / "state" / "cache.db"
+        new.parent.mkdir(parents=True)
+        sqlite3.connect(str(new)).close()
+        self.assertEqual(costs.default_path(self.claude), self.claude / "cost-ledger" / "ledger.db")
+
+
 if __name__ == "__main__":
     unittest.main()

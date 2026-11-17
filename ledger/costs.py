@@ -1,7 +1,8 @@
 """Copy cost, ticket links and titles from the cost ledger into the ledger (JP-107, Task 6). Python 3.9, stdlib only.
 
-The cost ledger is `~/.claude/cost-ledger/ledger.db`, written by the cost import in claude-360. It is opened
-read-only and never changed. Nothing here prices a message: the newest `pricing_runs` row already did.
+The cost tables live in `~/.josh-360/state/cache.db`, written by the cost import in apps/session-atlas (JP-111; before
+that they were `~/.claude/cost-ledger/ledger.db`, which `default_path` still falls back to until the cutover has run).
+They are opened read-only and never changed. Nothing here prices a message: the newest `pricing_runs` row already did.
 
   - copy_costs   one `session_costs` row per model, as a batch stamped `now`. A session whose figures are unchanged
                  since its last batch gets no new batch; a re-pricing or more usage gets a new one, and the
@@ -19,6 +20,13 @@ from typing import Dict, List, Optional, Tuple
 BY = "ledger/costs.py"
 LABEL_ORDER = (("custom_title", "custom"), ("ai_title", "ai"), ("agent_name", "agent-name"), ("tool_title", "tool"))
 NOT_PRICED_AND_NOT_EMPTY = ("missing_price", "missing_alias", "suspect")
+
+
+def default_path(claude_home: Path) -> Path:
+    """Where the cost tables are now: cache.db under JOSH360_HOME (default ~/.josh-360), else the old cost ledger."""
+    from laptop import common
+    new = common.state_dir() / "cache.db"
+    return new if open_cost_ledger(new) is not None else claude_home / "cost-ledger" / "ledger.db"
 
 
 def open_cost_ledger(path: Path) -> Optional[sqlite3.Connection]:
