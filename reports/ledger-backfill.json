@@ -1,0 +1,17 @@
+{
+  "costs": 2644,
+  "episodes": 2496,
+  "homes": 2496,
+  "lineage": 31503,
+  "notes": 137,
+  "refs": 69223,
+  "sessions": 34320,
+  "skipped": {
+    "already-recorded": 753,
+    "empty": 0,
+    "error": 0,
+    "lineage-already-there": 0,
+    "lineage-session-unknown": 0,
+    "recent": 13
+  }
+}
