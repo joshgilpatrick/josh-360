@@ -27,7 +27,8 @@ case "$*" in
   --version) echo "agent-manager 0.50.0"; exit 0 ;;
   "sessions --json") echo "agent-manager: not inside an Agent Manager session" >&2; exit 1 ;;
   "terminal list --json") echo '[]'; exit 0 ;;
-  spawn*) [ -n "$FAKE_SPAWN_FAILS" ] && { echo "spawn refused" >&2; exit 1; }
+  spawn*) [ -n "$FAKE_SPAWN_KILLS_CALLER" ] && kill -9 "$PPID"
+          [ -n "$FAKE_SPAWN_FAILS" ] && { echo "spawn refused" >&2; exit 1; }
           echo '{"id": "s-123", "name": "x"}'; exit 0 ;;
   *) echo "unexpected: $*" >&2; exit 64 ;;
 esac
@@ -86,6 +87,18 @@ class AgentManagerProbeTest(unittest.TestCase):
             report = self.run_probe(FAKE_SPAWN_FAILS="1")
         self.assertEqual(len(self.calls("spawn --name")), 3)
         self.assertEqual(report["spawn"]["error"], "spawn refused")
+
+    def test_a_pass_killed_during_the_spawn_never_spawns_again(self):
+        env = dict(os.environ, JOSH360_HOME=str(self.tmp / "home"), JOSH360_AM_BIN=str(self.fake),
+                   JOSH360_CLAUDE_BIN="/bin/echo", JOSH360_AM_DB=str(self.db), FAKE_LOG=str(self.log),
+                   FAKE_SPAWN_KILLS_CALLER="1")
+        killed = subprocess.run([sys.executable, str(PROBE)], env=env, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, universal_newlines=True, timeout=60)
+        self.assertNotEqual(killed.returncode, 0)  # the pass died mid-spawn, before printing anything
+        report = self.run_probe()
+        self.assertTrue(report["spawn"]["pending"])
+        self.run_probe()
+        self.assertEqual(len(self.calls("spawn --name")), 1)
 
     def test_detached_child_is_started_once(self):
         first = self.run_probe()
