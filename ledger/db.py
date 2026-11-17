@@ -48,6 +48,13 @@ def connect(path: Path) -> sqlite3.Connection:
     return conn
 
 
+def connect_existing(path: Path) -> sqlite3.Connection:
+    """connect() for a command: a ledger that is not there is an error, never an empty file created by accident."""
+    if not path.is_file():
+        raise FileNotFoundError("there is no ledger at {} (the install step creates it)".format(path))
+    return connect(path)
+
+
 @contextmanager
 def transaction(conn: sqlite3.Connection) -> Iterator[sqlite3.Connection]:
     """One unit of work: everything inside commits together or not at all."""
