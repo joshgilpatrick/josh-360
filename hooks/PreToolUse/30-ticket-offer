@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+# JP-110: offer a ticket, in one line, at a session's first commit or first branch when no ticket is linked.
+# Never blocks: always exits 0. Decides with cheap local facts and never calls a model. See ledger/offer.py.
+import sys
+sys.dont_write_bytecode = True
+from pathlib import Path
+
+try:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from ledger import offer
+    code = offer.hook_main(sys.stdin, sys.stdout)
+except Exception:
+    code = 0
+sys.exit(0 if code is None else code)

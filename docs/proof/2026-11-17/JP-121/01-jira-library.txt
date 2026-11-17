@@ -1,0 +1,32 @@
+test_a_429_retries_with_retry_after_clamped_and_at_most_three_tries (graphs.tests.test_gate_jira.Creating.test_a_429_retries_with_retry_after_clamped_and_at_most_three_tries) ... ok
+test_a_429_then_success (graphs.tests.test_gate_jira.Creating.test_a_429_then_success) ... ok
+test_create_returns_none_on_a_server_error_and_raises_on_a_refusal (graphs.tests.test_gate_jira.Creating.test_create_returns_none_on_a_server_error_and_raises_on_a_refusal) ... ok
+test_create_returns_none_when_jira_does_not_answer (graphs.tests.test_gate_jira.Creating.test_create_returns_none_when_jira_does_not_answer) ... ok
+test_create_returns_the_key_on_201 (graphs.tests.test_gate_jira.Creating.test_create_returns_the_key_on_201) ... ok
+test_patient_data_in_a_summary_is_refused_before_any_request (graphs.tests.test_gate_jira.Creating.test_patient_data_in_a_summary_is_refused_before_any_request) ... ok
+test_the_token_is_never_in_an_error (graphs.tests.test_gate_jira.Creating.test_the_token_is_never_in_an_error) ... ok
+test_comments_come_back_as_plain_text_with_author_and_date (graphs.tests.test_gate_jira.Reading.test_comments_come_back_as_plain_text_with_author_and_date) ... ok
+test_create_meta_maps_type_names_to_ids (graphs.tests.test_gate_jira.Reading.test_create_meta_maps_type_names_to_ids) ... ok
+test_get_gives_status_and_description_as_plain_text (graphs.tests.test_gate_jira.Reading.test_get_gives_status_and_description_as_plain_text) ... ok
+test_get_of_a_missing_ticket_is_none (graphs.tests.test_gate_jira.Reading.test_get_of_a_missing_ticket_is_none) ... ok
+test_get_property_is_none_when_unset (graphs.tests.test_gate_jira.Reading.test_get_property_is_none_when_unset) ... ok
+test_none_is_empty_text (graphs.tests.test_gate_jira.TheDocumentFormat.test_none_is_empty_text) ... ok
+test_round_trip_plain_text (graphs.tests.test_gate_jira.TheDocumentFormat.test_round_trip_plain_text) ... ok
+test_to_text_handles_lists_and_code (graphs.tests.test_gate_jira.TheDocumentFormat.test_to_text_handles_lists_and_code) ... ok
+test_post_comment_posts_the_file (graphs.tests.test_gate_jira.TheTwoEffectScripts.test_post_comment_posts_the_file) ... ok
+test_post_comment_stops_at_a_patient_identifier (graphs.tests.test_gate_jira.TheTwoEffectScripts.test_post_comment_stops_at_a_patient_identifier) ... ok
+test_set_flag_exits_1_when_jira_does_not_confirm (graphs.tests.test_gate_jira.TheTwoEffectScripts.test_set_flag_exits_1_when_jira_does_not_confirm) ... ok
+test_set_flag_on_exits_0_when_confirmed (graphs.tests.test_gate_jira.TheTwoEffectScripts.test_set_flag_on_exits_0_when_confirmed) ... ok
+test_comment_is_false_when_the_read_back_fails (graphs.tests.test_gate_jira.Writing.test_comment_is_false_when_the_read_back_fails) ... ok
+test_comment_reads_back (graphs.tests.test_gate_jira.Writing.test_comment_reads_back) ... ok
+test_comment_with_a_patient_identifier_is_refused_and_not_sent (graphs.tests.test_gate_jira.Writing.test_comment_with_a_patient_identifier_is_refused_and_not_sent) ... ok
+test_link_confirms_and_is_idempotent (graphs.tests.test_gate_jira.Writing.test_link_confirms_and_is_idempotent) ... ok
+test_missing_credentials_fail_without_naming_a_value (graphs.tests.test_gate_jira.Writing.test_missing_credentials_fail_without_naming_a_value) ... ok
+test_set_flag_confirms_on_and_off (graphs.tests.test_gate_jira.Writing.test_set_flag_confirms_on_and_off) ... ok
+test_transition_is_false_when_no_transition_leads_there (graphs.tests.test_gate_jira.Writing.test_transition_is_false_when_no_transition_leads_there) ... ok
+test_transition_moves_and_confirms (graphs.tests.test_gate_jira.Writing.test_transition_moves_and_confirms) ... ok
+
+----------------------------------------------------------------------
+Ran 27 tests in 0.006s
+
+OK

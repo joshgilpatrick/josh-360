@@ -1,12 +1,57 @@
 #!/usr/bin/env python3
-"""DRAFT gate: check-deliverable. Designed in docs/design/non-development-graph.md (JP-104); built in JP-123.
+"""Gate check-deliverable (JP-104 design, built in JP-123): is there a saved deliverable with a source behind it?
 
-Checks the deliverable and the evidence file exist under Josh's artifacts folder (not inside any repository or worktree), the evidence names at least one source, every saved query file it lists exists, and the file names start with the ticket key.
+Complete only when the deliverable and the evidence file both exist directly inside a folder of Josh's artifacts folder
+(symlinks followed, no `..`, not in a repository or a worktree), both names start with the ticket key, the evidence
+names this ticket and at least one source, and every saved query it lists exists beside it. The summary says which
+check failed, never what a file holds.
 
-Outcomes: complete, incomplete.
-Inputs arrive as GRAPH_INPUT_<NAME>; prints one JSON line (graphs/CONVENTION.md, "Gate scripts").
-Until it is built it refuses, so no run can pass through it by accident.
+Outcomes: complete, incomplete. Inputs: ticket_key, phi, deliverable_path, evidence_path.
 """
-import sys
+from pathlib import Path
 
-sys.exit("check-deliverable: not built yet (JP-123)")
+from lib import artifacts, evidence
+from lib.gate_run import execute, need
+
+
+def problems(inputs, deps):
+    key = need(inputs, "ticket_key")
+    root = deps.artifacts_root
+    found = []
+    for label in ("deliverable_path", "evidence_path"):
+        why = artifacts.problem_with(inputs.get(label), root, key)
+        if why:
+            found.append("{}: {}".format(label, why))
+    if found:
+        return found
+    deliverable = Path(inputs["deliverable_path"].strip()).expanduser().resolve()
+    evidence_file = Path(inputs["evidence_path"].strip()).expanduser().resolve()
+    if deliverable.parent != evidence_file.parent:
+        return ["the deliverable and the evidence file are not in the same folder"]
+    try:
+        doc = evidence.load(evidence_file)
+    except evidence.EvidenceError as exc:
+        return [str(exc)]
+    named = evidence.text_of(doc, "ticket")
+    if named and named != key:
+        found.append("the evidence file names a different ticket")
+    rows = evidence.sources(doc)
+    if not rows:
+        found.append("the evidence file names no source")
+    for row in rows:
+        if row["type"] == "query":
+            why = artifacts.query_file_problem(row["ref"], evidence_file.parent, key)
+            if why:
+                found.append(why)
+    return found
+
+
+def run(inputs, deps):
+    found = problems(inputs, deps)
+    if found:
+        return "incomplete", None, "; ".join(found)[:300]
+    return "complete", None, "deliverable and evidence are in place"
+
+
+if __name__ == "__main__":
+    execute(run, ["ticket_key", "phi", "deliverable_path", "evidence_path"])

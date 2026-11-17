@@ -14,7 +14,7 @@ No patient data. The raw input stays where it came from, named by `source_ref`.
 
 ## Fields
 
-YAML. `basis` says where a value came from: `stated` (the input says it), `inferred` (the reader worked it out), or `unresolved`.
+JSON, one object in a file (the gates run on the laptop's Python, which has no YAML reader). `basis` says where a value came from: `stated` (the input says it), `inferred` (the reader worked it out), or `unresolved`. A field marked with `basis` may be written as text or as `{"value": ..., "basis": ...}`.
 
 | Field | Type | Required | What it holds |
 | --- | --- | --- | --- |
@@ -39,17 +39,30 @@ YAML. `basis` says where a value came from: `stated` (the input says it), `infer
 
 Made-up data.
 
-```yaml
-source: todo
-source_ref: todo/2026-11-16/0007
-requester: Josh
-request: Add a dry-run flag to the laptop install script so a change can be previewed.
-deliverable: { value: a merged pull request in josh-360, basis: inferred }
-ticket_type: Story
-work_kind: code
-weight: light
-repository: { value: josh-360, basis: stated }
-search_terms: [dry run, install preview, laptop install, install.py flag]
-unresolved: []
-contains_patient_data: false
+```json
+{
+  "source": "todo",
+  "source_ref": "todo/2026-11-16/0007",
+  "requester": "Josh",
+  "request": "Add a dry-run flag to the laptop install script so a change can be previewed.",
+  "deliverable": {
+    "value": "a merged pull request in josh-360",
+    "basis": "inferred"
+  },
+  "ticket_type": "Story",
+  "work_kind": "code",
+  "weight": "light",
+  "repository": {
+    "value": "josh-360",
+    "basis": "stated"
+  },
+  "search_terms": [
+    "dry run",
+    "install preview",
+    "laptop install",
+    "install.py flag"
+  ],
+  "unresolved": [],
+  "contains_patient_data": false
+}
 ```

@@ -1,0 +1,414 @@
+# DRAFT (JP-115). The development graph as designed in docs/superpowers/specs/2026-11-17-development-graph-design.md.
+# It uses the `wait` step kind that spec proposes (two steps), so it lives here, not in graphs/flows/, until the JP-115 build adds
+# `wait` to the convention, the checker and the walker and moves this file to graphs/flows/development.yaml.
+# Until then check_draft.py checks it with its wait steps read as gate steps: docs/proof/2026-11-17/JP-115/.
+convention: 1
+graph: development
+title: Development pipeline
+description: >
+  Takes a Ready development ticket (a Story, Bug or Task with a repository) and ends with its pull request
+  merged and the ticket Done: a spec hardened by the gate tier, a build checked by scripts, a review that may
+  only cite the spec, the laptop's PR audit, and the working files saved with the run. A Research ticket with a
+  repository runs the design stretch only: its design and plan, approved by Josh, go through the same pull
+  request stretch. Designer questions on a build ticket go back to triage; Josh is asked only for builder and
+  fixer questions no script or spec answers, a blocked audit, a loop limit, and his own merges outside josh-360.
+
+header:
+  jira:
+    - { status: Ready, steps: [read_ticket] }
+    - { status: Not Started, steps: [return_early, return_question] }
+    - status: Design/Planning
+      steps: [prepare, design, route_question, ask_design, lint, harden, check_harden, approve_design, design_stuck]
+    - status: In Progress
+      steps: [build, triage_question, ask_builder, verify, review_plan, cite_check, build_stuck, write_pr, open_pr]
+    - status: Code Review
+      steps: [queue_audit, await_review, audit_stuck, fix_review, ask_fixer, after_fix, review_stuck]
+    - { status: Validation, steps: [merge_rule, merge, await_merge] }
+    - { status: Cancelled, steps: [close_unmerged] }
+    - { status: Done, steps: [clean_up, close] }
+  entry_gate: ready
+  exit_gate: no-loose-ends
+  asks_josh: [ask_design, approve_design, design_stuck, ask_builder, build_stuck, audit_stuck, ask_fixer, review_stuck]
+  ledger: [run, step, outcome, loop_count, session, tier, ticket, started_at, ended_at, graph_version, model]
+  end_states:
+    finished: success
+    return_early.returned: neutral
+    return_question.returned: neutral
+    close_unmerged.cancelled: neutral
+    design_stuck.stop: needs-josh
+    build_stuck.stop: needs-josh
+    audit_stuck.stop: needs-josh
+    ask_fixer.stop: needs-josh
+    review_stuck.stop: needs-josh
+  access:
+    read_ticket: read
+    return_early: josh
+    prepare: josh
+    design: josh
+    route_question: read
+    return_question: josh
+    ask_design: read
+    lint: read
+    harden: read
+    check_harden: josh
+    approve_design: read
+    design_stuck: read
+    build: josh
+    triage_question: read
+    ask_builder: read
+    verify: josh
+    review_plan: read
+    cite_check: josh
+    build_stuck: read
+    write_pr: read
+    open_pr: josh
+    queue_audit: josh
+    await_review: read
+    audit_stuck: read
+    fix_review: josh
+    ask_fixer: read
+    after_fix: josh
+    review_stuck: read
+    merge_rule: read
+    merge: josh
+    await_merge: read
+    close_unmerged: josh
+    clean_up: josh
+    close: josh
+
+inputs:
+  ticket_key: { type: string, required: true, description: "The ticket, for example JP-140 or AD-301" }
+  ticket_type: { type: string, required: true, description: "Story, Bug, Task or Research, from the ticket. Research runs the design stretch only." }
+  system: { type: string, required: true, description: "The registry system triage recorded on the route record; it names the repository" }
+  base_branch: { type: string, default: main, description: "The branch the work starts from and the pull request targets" }
+  resume_from: { type: string, default: none, description: "The run that returned this ticket to triage (the route record's returned_from), or none" }
+  phi: { type: boolean, default: true, description: "The ticket's phi_risk; true when the ticket does not say" }
+
+outputs:
+  pr_url: { type: string, description: "The merged (or, outside josh-360, Josh-merged) pull request" }
+  spec_path: { type: string, description: "The spec the work was built from, saved with the run" }
+  evidence_path: { type: string, description: "The evidence file, saved with the run" }
+
+steps:
+  # --- Ready: check the ticket belongs here -----------------------------------------------------------------
+  - id: read_ticket
+    gate: read-dev-ticket
+    inputs: [ticket_key, ticket_type, system, resume_from]
+    outputs:
+      repo: { type: string, description: "owner/name of the repository, from the registry" }
+      prior_spec: { type: string, description: "The spec saved by the run named in resume_from, or none" }
+    outcomes: [build, design_only, not_here]
+
+  - id: return_early
+    gate: return-to-triage
+    effects: [move_ticket]
+    needs: [read_ticket]
+    when: { step: read_ticket, outcome: not_here }
+    inputs: [ticket_key]
+    outcomes: [returned]
+    on:
+      returned: end
+
+  # --- Design/Planning: a spec the gate tier cannot fault ----------------------------------------------------
+  - id: prepare
+    gate: prepare-worktree
+    needs: [return_early]
+    when: { step: read_ticket, outcome: [build, design_only] }
+    inputs: [ticket_key, repo, base_branch]
+    outputs:
+      worktree: { type: string, description: "A fresh worktree on the ticket's branch, cut from origin/<base_branch>" }
+      branch: { type: string, description: "<KEY>-<slug>" }
+      work_dir: { type: string, description: "<run folder>/work: the spec, evidence, feedback and answers live here, never in the worktree" }
+    outcomes: [ready]
+
+  - id: design
+    role: designer
+    agent:
+      by: ticket_type
+      map: { Research: design-writer }
+      default: spec-writer
+    brief: "Ticket {{ inputs.ticket_key }}, system {{ inputs.system }}. Read the ticket, the repository at the worktree, and every file in the run's work folder (hardening defects, review feedback, answers). If a prior spec is named, revise it rather than starting again."
+    needs: [prepare]
+    inputs: [ticket_key, ticket_type, system, worktree, work_dir, prior_spec, base_branch]
+    outputs:
+      spec_path: { type: string, contract: spec, description: "work_dir/spec.yaml for a build ticket; the design document for a Research ticket" }
+      plan_path: { type: string, description: "The plan written beside a Research ticket's design, else none" }
+      card: { type: string, description: "The one question, when the outcome is needs_input" }
+    outcomes: [ready, needs_input]
+
+  - id: route_question
+    gate: question-route
+    needs: [design]
+    when: { step: design, outcome: needs_input }
+    inputs: [ticket_type]
+    outcomes: [to_triage, to_josh]
+
+  - id: return_question
+    gate: return-to-triage
+    effects: [move_ticket]
+    needs: [route_question]
+    when: { step: route_question, outcome: to_triage }
+    inputs: [ticket_key, work_dir, worktree, card]
+    outcomes: [returned]
+    on:
+      returned: end
+
+  - id: ask_design
+    needs: [return_question]
+    when: { step: route_question, outcome: to_josh }
+    ask:
+      question: "The design of {{ inputs.ticket_key }} needs your answer before it can go on."
+      choices: [answered]
+    on:
+      answered: { goto: design, max_loops: 2, at_limit: design_stuck }
+
+  - id: lint
+    gate: lint-spec
+    needs: [ask_design]
+    when: { step: design, outcome: ready }
+    inputs: [ticket_type, spec_path, plan_path, worktree, work_dir]
+    outcomes: [complete, incomplete]
+    on:
+      incomplete: { goto: design, max_loops: 2, at_limit: design_stuck }
+
+  - id: harden
+    role: hardener
+    brief: "Attack the spec for {{ inputs.ticket_key }}. One pass. Only what would make a builder fail or guess."
+    needs: [lint]
+    inputs: [ticket_key, ticket_type, spec_path, plan_path, worktree]
+    outputs:
+      findings: { type: list, contract: feedback, description: "Defects, each quoting the spec or the ticket" }
+    outcomes: [pass, defects]
+
+  - id: check_harden
+    gate: check-review
+    needs: [harden]
+    when: { step: harden, outcome: defects }
+    inputs: [ticket_key, spec_path, work_dir, findings]
+    outcomes: [clean, rework]
+    on:
+      rework: { goto: design, max_loops: 1, at_limit: design_stuck }
+
+  - id: approve_design
+    needs: [check_harden]
+    when: { step: read_ticket, outcome: design_only }
+    ask:
+      question: "The design and plan for {{ inputs.ticket_key }} passed the hardening gate (paths in the ticket). Approve them?"
+      choices: [approve, revise]
+    on:
+      revise: { goto: design, max_loops: 1, at_limit: design_stuck }
+
+  - id: design_stuck
+    ask:
+      question: "The design of {{ inputs.ticket_key }} has used its rounds (three designer runs, two hardener runs) without passing. Allow one more round, or stop and leave it with me?"
+      choices: [retry, stop]
+      on_limit_only: true
+    on:
+      retry: { goto: design, max_loops: 1, at_limit: design_stuck }
+      stop: end
+
+  # --- In Progress: build, then let scripts and the spec judge it --------------------------------------------
+  - id: build
+    role: builder
+    brief: "Build every phase of the spec for {{ inputs.ticket_key }} in order, in the worktree. Read the work folder's feedback and answers files first."
+    needs: [approve_design]
+    when: { step: read_ticket, outcome: build }
+    inputs: [ticket_key, spec_path, worktree, work_dir]
+    outputs:
+      card: { type: string, description: "The judgment call, when the outcome is needs_judgment" }
+    outcomes: [done, needs_judgment]
+
+  - id: triage_question
+    role: build-triager
+    needs: [build]
+    when: { step: build, outcome: needs_judgment }
+    inputs: [ticket_key, spec_path, worktree, work_dir, card]
+    outputs:
+      answer: { type: string, description: "The answer, quoting the spec or a recorded decision" }
+    outcomes: [answered, redesign, escalate]
+    on:
+      answered: { goto: build, max_loops: 2, at_limit: build_stuck }
+      redesign: { goto: design, max_loops: 1, at_limit: design_stuck }
+
+  - id: ask_builder
+    needs: [triage_question]
+    when: { step: triage_question, outcome: escalate }
+    ask:
+      question: "A builder on {{ inputs.ticket_key }} hit a judgment call the spec does not settle."
+      choices: [answered, redesign]
+    on:
+      answered: { goto: build, max_loops: 2, at_limit: build_stuck }
+      redesign: { goto: design, max_loops: 1, at_limit: design_stuck }
+
+  - id: verify
+    gate: verify-build
+    needs: [ask_builder]
+    when: { step: build, outcome: done }
+    inputs: [ticket_key, spec_path, worktree, work_dir, base_branch]
+    outputs:
+      evidence_path: { type: string, contract: evidence, description: "work_dir/evidence.md" }
+    outcomes: [passed, failed]
+    on:
+      failed: { goto: build, max_loops: 2, at_limit: build_stuck }
+
+  - id: review_plan
+    role: plan-reviewer
+    needs: [verify]
+    when: { step: verify, outcome: passed }
+    inputs: [ticket_key, spec_path, evidence_path, worktree, base_branch]
+    outputs:
+      findings: { type: list, contract: feedback, description: "Defects, each citing a criterion of the spec by id and quoting it" }
+    outcomes: [complete, defects, plan_gap]
+    on:
+      plan_gap: { goto: design, max_loops: 1, at_limit: design_stuck }
+
+  - id: cite_check
+    gate: cite-check
+    needs: [review_plan]
+    when: { step: review_plan, outcome: defects }
+    inputs: [ticket_key, spec_path, work_dir, findings]
+    outcomes: [clean, rework]
+    on:
+      rework: { goto: build, max_loops: 2, at_limit: build_stuck }
+
+  - id: build_stuck
+    ask:
+      question: "The build of {{ inputs.ticket_key }} has used its runs without passing its checks or its review. Allow one more build, send it back to design, or stop and leave it with me?"
+      choices: [retry, redesign, stop]
+      on_limit_only: true
+    on:
+      retry: { goto: build, max_loops: 1, at_limit: build_stuck }
+      redesign: { goto: design, max_loops: 1, at_limit: design_stuck }
+      stop: end
+
+  # --- The pull request: written by a model, opened by a script ----------------------------------------------
+  - id: write_pr
+    role: pr-writer
+    needs: [cite_check]
+    inputs: [ticket_key, ticket_type, spec_path, plan_path, evidence_path, worktree, base_branch]
+    outputs:
+      pr_title: { type: string, description: "Starts with the ticket key" }
+      pr_body: { type: string, description: "What changed and why, from the spec; the evidence in brief" }
+    outcomes: [written]
+
+  - id: open_pr
+    gate: open-pr
+    needs: [write_pr]
+    inputs: [ticket_key, phi, repo, branch, worktree, base_branch, pr_title, pr_body]
+    outputs:
+      pr_url: { type: string, description: "The pull request" }
+      pr_number: { type: string, description: "Digits only" }
+    outcomes: [opened]
+
+  # --- Code Review: the laptop's PR audit, then fixes ---------------------------------------------------------
+  - id: queue_audit
+    gate: queue-audit
+    effects: [set_label]
+    needs: [open_pr]
+    inputs: [repo, pr_number]
+    outcomes: [queued]
+
+  - id: await_review
+    wait: review-state
+    needs: [queue_audit]
+    inputs: [repo, pr_number, work_dir]
+    outputs:
+      findings: { type: string, description: "The audit's verdict comment, or the failing checks, for the fixer" }
+      issue_count: { type: number, description: "N, the findings in the verdict comment (optional ones not counted)" }
+    outcomes: [ready, changes, checks_failed, blocked, stale]
+
+  - id: audit_stuck
+    needs: [await_review]
+    when: { step: await_review, outcome: [blocked, stale] }
+    ask:
+      question: "The audit of the pull request for {{ inputs.ticket_key }} is blocked or has not answered in 48 hours (see the PR). Queue it again, or stop and leave it with me?"
+      choices: [requeue, stop]
+    on:
+      requeue: { goto: queue_audit, max_loops: 2, at_limit: review_stuck }
+      stop: end
+
+  - id: fix_review
+    role: review-fixer
+    needs: [audit_stuck]
+    when: { step: await_review, outcome: [changes, checks_failed] }
+    inputs: [ticket_key, spec_path, worktree, work_dir, pr_number, findings]
+    outputs:
+      resolution: { type: string, description: "Commit, files changed, and the exact checks run with their results" }
+      card: { type: string, description: "The question, when the outcome is needs_input" }
+    outcomes: [fixed, needs_input]
+
+  - id: ask_fixer
+    needs: [fix_review]
+    when: { step: fix_review, outcome: needs_input }
+    ask:
+      question: "The fixer on the pull request for {{ inputs.ticket_key }} needs your answer."
+      choices: [answered, stop]
+    on:
+      answered: { goto: fix_review, max_loops: 2, at_limit: review_stuck }
+      stop: end
+
+  - id: after_fix
+    gate: after-fix
+    effects: [set_label]
+    needs: [ask_fixer]
+    when: { step: fix_review, outcome: fixed }
+    inputs: [ticket_key, phi, repo, pr_number, spec_path, worktree, work_dir, resolution, issue_count]
+    outcomes: [requeue, relabel, checks_failed]
+    on:
+      requeue: { goto: await_review, max_loops: 2, at_limit: review_stuck }
+      relabel: { goto: await_review, max_loops: 2, at_limit: review_stuck }
+      checks_failed: { goto: fix_review, max_loops: 2, at_limit: review_stuck }
+
+  - id: review_stuck
+    ask:
+      question: "The pull request for {{ inputs.ticket_key }} has used its fix rounds (three fixer runs) without a clean review. Allow one more fix, or stop and leave it with me?"
+      choices: [retry, stop]
+      on_limit_only: true
+    on:
+      retry: { goto: fix_review, max_loops: 1, at_limit: review_stuck }
+      stop: end
+
+  # --- Validation: merged by the graph in josh-360, by Josh elsewhere -----------------------------------------
+  - id: merge_rule
+    gate: merge-rule
+    needs: [after_fix]
+    inputs: [repo]
+    outcomes: [agent, josh]
+
+  - id: merge
+    gate: merge-pr
+    needs: [merge_rule]
+    when: { step: merge_rule, outcome: agent }
+    inputs: [repo, pr_number]
+    outcomes: [merged]
+
+  - id: await_merge
+    wait: pr-merged
+    needs: [merge]
+    when: { step: merge_rule, outcome: josh }
+    inputs: [repo, pr_number]
+    outcomes: [merged, closed]
+
+  - id: close_unmerged
+    gate: close-unmerged
+    effects: [move_ticket]
+    needs: [await_merge]
+    when: { step: await_merge, outcome: closed }
+    inputs: [ticket_key, worktree, branch, work_dir]
+    outcomes: [cancelled]
+    on:
+      cancelled: end
+
+  # --- Done: clean up only what is safe, and say what happened ------------------------------------------------
+  - id: clean_up
+    gate: clean-up
+    needs: [close_unmerged]
+    inputs: [repo, pr_number, worktree, branch, work_dir]
+    outcomes: [cleaned]
+
+  - id: close
+    gate: close-ticket
+    effects: [move_ticket]
+    needs: [clean_up]
+    inputs: [ticket_key, phi, pr_url, spec_path, evidence_path]
+    outcomes: [closed]
