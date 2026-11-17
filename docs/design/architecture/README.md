@@ -12,8 +12,9 @@ One page that shows josh-360 as a single application, drawn on 17 November 2026 
 
 - **The parts:** five layers (where Josh works, workflow, data, laptop base, what stays separate), each part tagged with its phase and the feature-tree ids it is built from.
 - **How data moves:** one ticket's trip from Jira through the runner, walker, Agent Manager, Needs you and the PR audit, and where each fact lands in `ledger.db` and `cache.db`.
+- **How it improves itself:** the self-improvement loop (friction facts, the session debrief, the weekly review, improvement tickets and the claim check) with the ticket that builds each part.
 - **Salvage map:** every feature of action-triage, Session Atlas, macbook-automations and agent-deck from the feature tree, plus claude-harness and the rest of the laptop, sorted into kept as is, onto the ledger, rebuilt or new, later, and dropped.
-- **Phase 1 and later:** the tickets in each phase, what keeps running meanwhile, and each gate.
+- **Phase 1 and later:** the tickets in each phase (all four graphs in phase 1, Josh, 17 November 2026), what keeps running meanwhile, and each gate.
 - **Points this raises:** three things the picture shows, each with a recommendation for the ticket that settles it.
 
 The published page is https://claude.ai/artifact/Ae3bfNBPprWqg4iZYUPbgM.
