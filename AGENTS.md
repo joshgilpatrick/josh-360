@@ -28,6 +28,7 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - A ticket is Ready before work starts: a separate agent signs it off, with no open questions.
 - Work in the cloud first, on made-up sample data, never real transcripts.
 - A step that must run on Josh's laptop is named in the ticket in advance.
+- Branches, session and thread titles, and PR titles start with the ticket key: branch `JP-<n>-<slug>`, title `JP-<n> <name>`. A cloud session cuts and pushes the key-named branch from `main` instead of keeping its `claude/...` branch (`docs/WORKFLOW.md` §1.6 and §3.8).
 - A separate agent reviews each pull request before it merges.
 - Each part of phase 1 ends with a short proof page Josh can read in minutes.
 - Permanent deletions wait in one list per phase, which Josh approves in one sitting. Retiring something means switching it off and archiving it, which needs nobody.
