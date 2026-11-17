@@ -48,7 +48,8 @@ HELP_COMMANDS = [[], ["spawn"], ["sessions"], ["kill"], ["archive"], ["wait"], [
 HELP_LIMIT = 4000
 ERR_LIMIT = 300
 MARKER_DELAY = 90
-CALL_TIMEOUT = 60
+CALL_TIMEOUT = 15
+SPAWN_TIMEOUT = 90
 SPAWN_TRIES = 3
 SEARCH = ["~/.local/bin", "~/bin", "~/.cargo/bin", "/opt/homebrew/bin", "/usr/local/bin"]
 
@@ -178,14 +179,19 @@ def spawn_once(am: str, state: Dict[str, object]) -> Dict[str, object]:
     attempts = int(state.get("spawn_attempts") or 0)
     # A spawn that worked is never repeated. One that was refused is tried at most SPAWN_TRIES times in all, in
     # case Agent Manager was simply not running; a refusal creates no session, so a retry cannot make two.
-    # A spawn that timed out may have made a session, so it is not repeated either.
-    if isinstance(earlier, dict) and (earlier.get("code") in (0, 124) or attempts >= SPAWN_TRIES):
+    # A spawn that timed out, or whose pass was killed before its answer was saved (`pending`), may have made a
+    # session, so it is not repeated either.
+    if isinstance(earlier, dict) and (earlier.get("code") in (0, 124) or earlier.get("pending")
+                                      or attempts >= SPAWN_TRIES):
         return earlier
+    # Saved before the call: if the pass dies during or after the spawn, the next pass sees it as pending.
     state["spawn_attempts"] = attempts + 1
+    state["spawn"] = {"attempt": attempts + 1, "pending": True}
+    save_state(state)
     folder = home() / "state"
     argv = [am, "spawn", "--name", PROBE_NAME, "--tool", "claude", "--directory", str(folder),
             "--prompt", PROBE_PROMPT, "--json"]
-    r = call(argv, timeout=120)
+    r = call(argv, timeout=SPAWN_TIMEOUT)
     result: Dict[str, object] = {"attempt": attempts + 1, "code": r["code"], "error": first_line(str(r["err"]))}
     if r["code"] == 0:
         result.update(shape(str(r["out"])))
@@ -196,6 +202,7 @@ def spawn_once(am: str, state: Dict[str, object]) -> Dict[str, object]:
         except ValueError:
             result["session_id"] = None
     state["spawn"] = result
+    save_state(state)
     return result
 
 
@@ -218,6 +225,8 @@ def detached_test(state: Dict[str, object]) -> Dict[str, object]:
         finally:
             devnull.close()
         test["started"] = time.time()
+        state["detached"] = test
+        save_state(state)
     state["detached"] = test
     return test
 
@@ -234,8 +243,9 @@ def build_report() -> Dict[str, object]:
                         "version": first_line(str(call([claude, "--version"])["out"])) if claude else None}
     report["agent_manager"] = {"path": am}
     if am:
-        report["agent_manager"].update(read_cli(am))  # type: ignore[union-attr]
+        # The spawn goes first, so the slow help calls can never push it past the job's timeout.
         report["spawn"] = spawn_once(am, state)
+        report["agent_manager"].update(read_cli(am))  # type: ignore[union-attr]
     spawned = report.get("spawn") or {}
     report["database"] = read_db(spawned.get("session_id") if isinstance(spawned, dict) else None)
     report["detached"] = detached_test(state)
