@@ -22,7 +22,7 @@ class InstallTest(LaptopCase):
         self.assertEqual(outside_before, self.snapshot(self.home, skip=self.j360))
         # Everything it made is under ~/.josh-360, apart from the copy of the repo itself.
         made = {p for p in self.snapshot(self.j360, skip=self.laptop_repo)}
-        self.assertEqual(made, {"state/", "logs/", "state/installed.json"})
+        self.assertEqual(made, {"state/", "logs/", "state/installed.json", "state/ledger.db", "state/machine-id"})  # JP-107 adds the ledger
 
     def test_running_twice_reports_no_changes(self):
         """Scenario: Running it twice is safe."""
@@ -31,7 +31,7 @@ class InstallTest(LaptopCase):
         before = self.snapshot(self.home)
         second = self.laptop("install.py", "--json", check=True)
         summary = json.loads(second.stdout.splitlines()[-1])
-        self.assertEqual(summary, {"result": "passed", "changed": 0, "unchanged": 4, "problems": 0})
+        self.assertEqual(summary, {"result": "passed", "changed": 0, "unchanged": 5, "problems": 0})
         self.assertNotIn("changed  ", second.stdout)
         self.assertEqual(before, self.snapshot(self.home))
 

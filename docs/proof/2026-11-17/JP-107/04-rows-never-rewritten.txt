@@ -1,0 +1,5 @@
+test_resume_adds_episode_2_and_keeps_episode_1 (test_ledger_record.Recorder.test_resume_adds_episode_2_and_keeps_episode_1)
+JP-107 scenario 4. ... ok
+----------------------------------------------------------------------
+Ran 1 test in 0.074s
+OK

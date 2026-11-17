@@ -1,0 +1,11 @@
+test_phi_folder_stores_no_notes_or_cost_ledger_title (test_ledger_record.Recorder.test_phi_folder_stores_no_notes_or_cost_ledger_title)
+Review Focus 6: nothing from STATE.md, and no title from the cost ledger either. ... ok
+test_phi_folder_stores_no_title ... ok
+----------------------------------------------------------------------
+Ran 2 tests in 0.157s
+OK
+test_phi_folder_stores_no_notes (test_ledger_state_notes.Notes.test_phi_folder_stores_no_notes)
+Review Focus 6. ... ok
+----------------------------------------------------------------------
+Ran 1 test in 0.077s
+OK

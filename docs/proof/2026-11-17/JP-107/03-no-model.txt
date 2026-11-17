@@ -1,0 +1,5 @@
+test_no_model_is_called (test_ledger_record.Recorder.test_no_model_is_called)
+JP-107 scenario 3. ... ok
+----------------------------------------------------------------------
+Ran 1 test in 0.093s
+OK

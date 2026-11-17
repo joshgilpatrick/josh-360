@@ -38,6 +38,7 @@ Tickets that add code add their own checks here or beside it. Exit 0 when everyt
 from __future__ import annotations
 
 import ast
+import json
 import os
 import re
 import subprocess
@@ -111,7 +112,12 @@ def laptop_problems() -> list[str]:
             problems.append("does not parse as bash: hooks/dispatch")
     jp96 = [ROOT / "scripts" / n for n in ("laptop_inventory.py", "laptop_figures.py", "laptop_inventory_job.py",
                                            "retire_focus_dashboard.py")]
-    for py in sorted((ROOT / "laptop").glob("*.py")) + sorted((ROOT / "hooks").rglob("*.py")) + jp96:
+    # JP-107: the ledger and its hooks (some hook files have no .py suffix) run on the laptop too.
+    ledger_hooks = [p for p in sorted((ROOT / "hooks").glob("*/*")) if p.is_file() and p.name != "README.md"
+                    and p.read_text(encoding="utf-8", errors="replace").startswith("#!/usr/bin/env python")]
+    ledger_files = sorted((ROOT / "ledger").glob("*.py")) + [ROOT / "scripts/conventions.py"] + ledger_hooks
+    for py in (sorted((ROOT / "laptop").glob("*.py")) + sorted((ROOT / "hooks").rglob("*.py")) + jp96
+               + ledger_files):
         try:
             ast.parse(py.read_text(encoding="utf-8"), filename=str(py), feature_version=(3, 9))
         except SyntaxError as e:
@@ -265,7 +271,16 @@ def conventions_problems() -> list[str]:
         registry, priorities = conventions.load(conventions.REGISTRY), conventions.load(conventions.PRIORITIES)
     except conventions.ConventionsFileError as exc:
         return [f"conventions: {exc}"]
-    return [f"conventions: {p}" for p in conventions.validate(registry, priorities)]
+    problems = [f"conventions: {p}" for p in conventions.validate(registry, priorities)]
+    # JP-107: the JSON copies the laptop and the gates read must match their YAML.
+    for source in (conventions.REGISTRY, conventions.PRIORITIES):
+        wanted = json.dumps(registry if source == conventions.REGISTRY else priorities, indent=2, sort_keys=True,
+                            ensure_ascii=False) + "\n"
+        copy = conventions.json_copy(source)
+        if not copy.is_file() or copy.read_text(encoding="utf-8") != wanted:
+            problems.append(f"conventions: {copy.relative_to(ROOT)} is out of date; "
+                            f"run python3 scripts/conventions.py export-json")
+    return problems
 
 
 INVENTORY_VERDICTS = {"keep", "migrate", "build new", "dismantle"}

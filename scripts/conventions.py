@@ -6,6 +6,9 @@ Commands:
   lookup    --folder PATH [--home DIR] or --repo NAME. Print the system, area, Jira space, default epic and
             priority as JSON. A folder or repository no system lists is Unassigned: nothing is guessed.
   priority  [--epic KEY] [--initiative KEY] [--area NAME]. Print the priority those Jira links fall under.
+  export-json [--check]  Write conventions/registry.json and conventions/priorities.json, the same data as the YAML
+            files, for code that has no YAML reader (the laptop's Python, the gates). With --check, write nothing and
+            exit 1 when a JSON copy differs from its YAML (scripts/check.py runs this).
 
 No AI and no network: answers come only from the two files. Rules: conventions/tickets.md, "Routing".
 """
@@ -17,8 +20,6 @@ import os
 import re
 import sys
 from pathlib import Path, PurePosixPath
-
-import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 REGISTRY = ROOT / "conventions/registry.yaml"
@@ -43,6 +44,8 @@ class ConventionsFileError(Exception):
 
 
 def load(path: Path) -> dict:
+    import yaml  # only here: the lookups below and the JSON copies need no YAML reader (the laptop has none)
+
     try:
         with open(path, encoding="utf-8") as handle:
             data = yaml.safe_load(handle)
@@ -384,6 +387,8 @@ def main(argv: list[str] | None = None) -> int:
     prio.add_argument("--epic")
     prio.add_argument("--initiative")
     prio.add_argument("--area")
+    export = sub.add_parser("export-json", help="write the JSON copies of both files")
+    export.add_argument("--check", action="store_true", help="write nothing; exit 1 when a copy is stale")
     args = parser.parse_args(argv)
     try:
         return _run(args)
@@ -407,7 +412,32 @@ def _run(args: argparse.Namespace) -> int:
                   else lookup_repo(registry, args.repo))
         print(json.dumps(answer, indent=2))
         return 0
+    if args.command == "export-json":
+        return _export_json(args)
     print(json.dumps({"priority": priority_for(load(args.priorities), args.epic, args.initiative, args.area)}))
+    return 0
+
+
+def json_copy(source: Path) -> Path:
+    return source.with_suffix(".json")
+
+
+def _export_json(args: argparse.Namespace) -> int:
+    stale = []
+    for source in (args.registry, args.priorities):
+        wanted = json.dumps(load(source), indent=2, sort_keys=True, ensure_ascii=False) + "\n"
+        target = json_copy(source)
+        current = target.read_text(encoding="utf-8") if target.is_file() else None
+        if current == wanted:
+            continue
+        stale.append(target.name)
+        if not args.check:
+            target.write_text(wanted, encoding="utf-8")
+    if args.check:
+        for name in stale:
+            print(f"{name}: out of date; run python3 scripts/conventions.py export-json")
+        return 1 if stale else 0
+    print("export-json: wrote " + (", ".join(stale) if stale else "nothing (already current)"))
     return 0
 
 

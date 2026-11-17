@@ -1,0 +1,5 @@
+OK
+check.py: ok (0 problem(s))
+Ran 234 tests in 11.694s
+
+OK

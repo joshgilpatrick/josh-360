@@ -1,0 +1,5 @@
+test_any_system_keeps_its_title (test_ledger_record.Recorder.test_any_system_keeps_its_title)
+JP-149: a registry system and an Unassigned folder both keep a title that passes the screen. ... ok
+----------------------------------------------------------------------
+Ran 1 test in 0.087s
+OK

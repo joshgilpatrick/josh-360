@@ -1,0 +1,159 @@
+{
+  "priorities": [
+    {
+      "covers": {
+        "areas": [
+          "EHR administration"
+        ],
+        "epics": [
+          "CI-1",
+          "CI-41",
+          "CI-42",
+          "CI-43",
+          "AD-119",
+          "AD-150",
+          "AD-219"
+        ],
+        "initiatives": [
+          "TECH-13",
+          "TECH-14",
+          "TECH-15",
+          "TECH-16",
+          "TECH-18"
+        ]
+      },
+      "id": "athena",
+      "kind": "standing",
+      "name": "Athena",
+      "rank": 1,
+      "shown_to": "department"
+    },
+    {
+      "covers": {
+        "areas": [
+          "Clinical quality programs"
+        ],
+        "epics": [
+          "AD-38",
+          "AD-197",
+          "AD-198",
+          "AD-305",
+          "CI-54",
+          "CI-55",
+          "CI-56"
+        ],
+        "initiatives": []
+      },
+      "id": "equip",
+      "kind": "standing",
+      "name": "EQuIP",
+      "rank": 2,
+      "shown_to": "department"
+    },
+    {
+      "covers": {
+        "areas": [],
+        "epics": [],
+        "initiatives": [
+          "TECH-25"
+        ]
+      },
+      "id": "pims",
+      "kind": "standing",
+      "name": "PIMS",
+      "rank": 3,
+      "shown_to": "department"
+    },
+    {
+      "covers": {
+        "areas": [],
+        "epics": [],
+        "initiatives": [
+          "TECH-26"
+        ]
+      },
+      "id": "ma-clinical-data-transfer",
+      "kind": "standing",
+      "name": "M&A: clinical data transfer",
+      "rank": 4,
+      "shown_to": "department"
+    },
+    {
+      "covers": {
+        "areas": [],
+        "epics": [
+          "AD-65",
+          "AD-88",
+          "AD-117",
+          "AD-118",
+          "AD-291",
+          "CI-50",
+          "CI-53"
+        ],
+        "initiatives": [
+          "TECH-17"
+        ]
+      },
+      "id": "clinician-tech-stack-ux",
+      "kind": "standing",
+      "name": "Clinician tech stack and UX",
+      "rank": 5,
+      "shown_to": "department"
+    },
+    {
+      "covers": {
+        "areas": [],
+        "epics": [],
+        "initiatives": [
+          "TECH-27"
+        ]
+      },
+      "id": "ai-scribing-utilization",
+      "kind": "standing",
+      "name": "AI scribing utilization",
+      "rank": 6,
+      "shown_to": "department"
+    },
+    {
+      "covers": {
+        "areas": [],
+        "epics": [],
+        "initiatives": []
+      },
+      "id": "internal-systems-applications",
+      "kind": "standing",
+      "name": "Internal Systems & Applications",
+      "notes": "Added by Josh at the JP-106 sitting. Covers the shared function app and Zus through the registry.",
+      "rank": 7,
+      "shown_to": "department"
+    },
+    {
+      "covers": {
+        "areas": [
+          "Automation and AI enablement"
+        ],
+        "epics": [
+          "JP-94",
+          "CI-57"
+        ],
+        "initiatives": []
+      },
+      "id": "devex",
+      "kind": "devex",
+      "name": "DevEx",
+      "shown_to": "josh"
+    },
+    {
+      "covers": {
+        "areas": [],
+        "epics": [],
+        "initiatives": []
+      },
+      "id": "unassigned",
+      "kind": "unassigned",
+      "name": "Unassigned",
+      "shown_to": "josh"
+    }
+  ],
+  "version": 1
+}

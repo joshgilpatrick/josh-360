@@ -1,0 +1,5 @@
+test_session_row_written_at_start (test_ledger_record.Recorder.test_session_row_written_at_start)
+JP-148 scenario 1: a SessionStart alone, transcript still growing, gives a row and no episode. ... ok
+----------------------------------------------------------------------
+Ran 1 test in 0.076s
+OK
