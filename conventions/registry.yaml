@@ -29,8 +29,8 @@
 #                 priority, the two must agree.
 #
 # Seeded on 16 November 2026 from labels and epics in Jira and from paths named in Josh's repositories.
-# Folders were not checked on the laptop; JP-105 (the laptop hookup) can confirm them. Josh confirms the
-# seeded rows at JP-106. Default choices are recorded in docs/decisions.md.
+# Folders were not checked on the laptop; JP-105 (the laptop hookup) can confirm them. Josh reviewed the
+# unassigned rows at JP-106 (16 November 2026). Default choices are recorded in docs/decisions.md.
 
 version: 1
 
@@ -140,7 +140,8 @@ systems:
     tracker: jira
     jira_space: AD
     default_epic: null
-    priority: unassigned
+    priority: equip
+    notes: Charta is part of EQuIP (Josh, JP-106).
 
   - name: survey-services
     description: Survey services
@@ -150,6 +151,7 @@ systems:
     jira_space: AD
     default_epic: null
     priority: unassigned
+    notes: Unassigned on purpose (Josh, JP-106).
 
   - name: training-services
     description: Training services
@@ -159,6 +161,7 @@ systems:
     jira_space: AD
     default_epic: null
     priority: unassigned
+    notes: Unassigned on purpose (Josh, JP-106).
 
   - name: fx-app-apps-services
     description: Azure Functions app for the clinical applications
@@ -168,7 +171,8 @@ systems:
     tracker: jira
     jira_space: AD
     default_epic: null
-    priority: unassigned
+    priority: internal-systems-applications
+    notes: Josh, JP-106.
 
   - name: fx-app-zus-services
     description: Zus enrollment and data exchange
@@ -178,7 +182,8 @@ systems:
     tracker: jira
     jira_space: AD
     default_epic: null
-    priority: unassigned
+    priority: internal-systems-applications
+    notes: Josh, JP-106.
 
   - name: synapse-pipelines
     description: Azure Synapse pipelines
