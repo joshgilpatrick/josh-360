@@ -1,12 +1,30 @@
 #!/usr/bin/env python3
-"""DRAFT gate: pr-merged. Designed in docs/superpowers/specs/2026-11-17-development-graph-design.md (JP-115); built in the JP-115 build.
+"""Wait pr-merged (JP-115): has Josh merged (or closed) the pull request? It only reads, and has no deadline.
 
-A wait. pending while the pull request is open; merged or closed when it is not.
+`merged` when GitHub says MERGED, `closed` when it says CLOSED; anything else, a failed read included, is `pending`.
 
-Outcomes: merged, closed (pending while waiting).
-Inputs arrive as GRAPH_INPUT_<NAME>; prints one JSON line (graphs/CONVENTION.md, "Gate scripts").
-Until it is built it refuses, so no run can pass through it by accident.
+Outcomes: merged, closed. Inputs: repo, pr_number.
 """
-import sys
+from lib.dev_github import GitHubError
+from lib.gate_run import GateError, execute, need
 
-sys.exit("pr-merged: not built yet (JP-115)")
+
+def run(inputs, deps):
+    repo = need(inputs, "repo")
+    try:
+        number = int(need(inputs, "pr_number"))
+    except ValueError:
+        raise GateError("pr_number is not a number")
+    try:
+        state = deps.github(repo).pr(number).state
+    except GitHubError as exc:
+        return "pending", None, "could not read the pull request: {}".format(str(exc)[:100])
+    if state == "MERGED":
+        return "merged", None, "merged"
+    if state == "CLOSED":
+        return "closed", None, "closed without merging"
+    return "pending", None, "waiting for the merge"
+
+
+if __name__ == "__main__":
+    execute(run, ["repo", "pr_number"])
