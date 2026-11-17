@@ -1,0 +1,115 @@
+A MADE-UP LAPTOP with a hook entry missing, no Jira email, az signed out and Atlas not loaded:
+
+Josh 360 doctor  2026-11-17 21:00 UTC  (laptop copy ~/.josh-360/repo)
+
+INSTALL AND FOLLOW
+  PASS  install.python                   Python 3.13.18 (/usr/local/bin/python3)
+  PASS  install.home                     ~/.josh-360 has state/ and logs/
+  PASS  install.copy                     ~/.josh-360/repo is a git checkout
+  PASS  install.runs-from-copy           the doctor runs from the laptop's copy
+  PASS  install.follows-main             on main at cf358b4, no local changes
+  PASS  install.installed-commit         the install record matches the copy (cf358b4)
+  PASS  install.follow-ran               the follow job ran 2 min ago and exited 0
+  PASS  install.not-paused               no PAUSED file
+  PASS  install.runner-launchd           com.jgilpatrick.josh-360-jobs is loaded in launchd
+  PASS  install.jobs-file                jobs.yaml lists 13 jobs
+
+BACKGROUND JOBS
+  PASS  jobs.ledger-record               ran 2 min ago, exit 0
+  PASS  jobs.ledger-summary              ran 2 min ago, exit 0
+  PASS  jobs.ledger-backup               ran 2 min ago, exit 0
+  PASS  jobs.ledger-upload               ran 2 min ago, exit 0
+  PASS  jobs.ticket-comments             ran 2 min ago, exit 0
+  PASS  jobs.session-atlas-service       ran 2 min ago, exit 0
+
+ONE-TIME JOBS AND BACKFILLS
+  PASS  backfills.inventory              succeeded 17 min ago
+  PASS  backfills.retire-focus-dashboard succeeded 17 min ago
+  PASS  backfills.ledger-backfill        succeeded 17 min ago; 1 sessions in the ledger
+  PASS  backfills.ledger-friction-catchup succeeded 17 min ago; 1 friction facts in the ledger
+  PASS  backfills.retire-session-atlas   succeeded 17 min ago; the old Atlas is archived under ~/Archive/josh-360-retired/
+
+CLAUDE CODE HOOKS
+  PASS  hooks.settings                   ~/.claude/settings.json is readable
+  PASS  hooks.dispatch-SessionStart      SessionStart runs hooks/dispatch (20-ledger-spool)
+  PASS  hooks.dispatch-SessionEnd        SessionEnd runs hooks/dispatch (20-ledger-spool)
+  PASS  hooks.dispatch-UserPromptSubmit  UserPromptSubmit runs hooks/dispatch (40-ticket-comments)
+  PASS  hooks.dispatch-PreToolUse        PreToolUse runs hooks/dispatch (10-atlas-removal-guard, 30-ticket-offer)
+  FAIL  hooks.dispatch-PostToolUse       no dispatcher entry for PostToolUse, so 40-jira-session-link, 40-ticket-comments never run
+        fix: python3 ~/.claude/scripts/add-josh-360-hooks.py (or: doctor --fix); it backs up settings.json first
+  PASS  hooks.dispatch-Notification      Notification runs hooks/dispatch (no hook files yet)
+  PASS  hooks.dispatch-Stop              Stop runs hooks/dispatch (no hook files yet)
+  PASS  hooks.dispatch-SubagentStop      SubagentStop runs hooks/dispatch (no hook files yet)
+  PASS  hooks.dispatch-PreCompact        PreCompact runs hooks/dispatch (no hook files yet)
+  PASS  hooks.dispatch-PostCompact       PostCompact runs hooks/dispatch (no hook files yet)
+  PASS  hooks.files                      hooks/dispatch and every hook file are executable
+  PASS  hooks.ledger-spool               JP-107: SessionStart, SessionEnd present and registered
+  PASS  hooks.ticket-offer               JP-110: PreToolUse present and registered
+  FAIL  hooks.ticket-comments            JP-118 hook is installed but PostToolUse has no dispatcher entry
+        fix: python3 ~/.claude/scripts/add-josh-360-hooks.py (or: doctor --fix); it backs up settings.json first
+  FAIL  hooks.atlas-guard                JP-111 hook is installed but PostToolUse has no dispatcher entry
+        fix: python3 ~/.claude/scripts/add-josh-360-hooks.py (or: doctor --fix); it backs up settings.json first
+  PASS  hooks.old-atlas                  no hook entries of the old Session Atlas remain
+  PASS  hooks.log                        no hook has failed (no hooks.log yet)
+
+DATABASES
+  PASS  data.ledger                      schema version 1 (current), integrity ok
+  PASS  data.ledger-shape                all 31 tables and 79 triggers from schema.sql are there
+  PASS  data.recursive-triggers          ledger/db.py sets it on every connection and SQLite 3.53.1 honours it
+  PASS  data.cache-db                    1 tables, user_version 3, integrity ok
+  PASS  data.backups                     1 backups kept, newest made 60 min ago
+  PASS  data.ledger-content              1 sessions and 1 episodes recorded
+
+SIGNS OF REAL USE
+  PASS  evidence.ticket-offer            1 ticket offers (JP-110) recorded
+  PASS  evidence.ticket-comments         1 ticket comment deliveries (JP-118) recorded
+  PASS  evidence.summaries               1 session summaries (JP-108) recorded
+  PASS  evidence.friction                1 friction facts (JP-112) recorded
+  SKIP  evidence.debriefs                no debriefs yet (JP-113); expected after a day or two of sessions with friction
+
+SERVICES
+  FAIL  services.atlas-launchd           com.josh360.session-atlas is not loaded: the worktree removal guard has no Atlas to ask
+        fix: python3 ~/.josh-360/repo/scripts/atlas_service.py (the hourly session-atlas-service job does this too)
+  PASS  services.old-atlas-gone          the old Session Atlas is not loaded
+  PASS  services.atlas-health            Atlas answers at http://127.0.0.1:8770/api/health
+  PASS  services.atlas-log               no recent Atlas errors about the ledger
+  PASS  services.node                    Node v22.20.0 at /tmp/josh360-doctor-ae4ix94d/stubs/node
+
+ACCOUNTS AND TOOLS
+  PASS  accounts.azure-config            account and container are set (account madeupstorage, container madeup-backups)
+  FAIL  accounts.az-login                az is not signed in
+        fix: az login
+  PASS  accounts.azure-upload            the last successful upload was 15 h ago
+  FAIL  accounts.jira-email              no Jira account email is set: ticket links and comment delivery cannot read Jira
+        fix: put your Atlassian email on one line in ~/.josh-360/state/jira-email (or: doctor --fix --jira-email you@example.com)
+  PASS  accounts.jira-token              a Jira token is in the environment
+  PASS  accounts.claude-cli              claude found at /opt/node22/bin/claude
+
+GRAPHS AND WALKER
+  PASS  graphs.compiled                  3 graphs, each compiled copy matches its source files
+  PASS  graphs.walker                    the walker starts on this Python
+
+DATES OWED
+  SKIP  owed.debrief-form                the debrief form is provisional; finalise it on or after 2026-12-01 (two weeks of friction rows, JP-113)
+
+ONLY YOU CAN CHECK (the doctor cannot see these; not counted above)
+  [JP-110] A session at its first commit with no ticket is offered one, once, and the commit still goes ahead.
+        how: In a throwaway folder with no ticket, start a Claude Code session, ask it to create a file and make a commit. Its next message should say "This has become ticket-sized work, want me to open a ticket?". Then evidence.ticket-offer turns green after the recorder's next pass.
+  [JP-118] A new Jira comment reaches the session working on that ticket.
+        how: Start a session on a branch named after a made-up test ticket, then comment on that ticket in Jira. Within about 10 minutes the session's next tool call should show the comment under "Josh 360: new comment(s) on a ticket you are working on". Then evidence.ticket-comments turns green.
+  [JP-111] Session Atlas's guard blocks a worktree removal that would lose work.
+        how: In a Claude Code session run `git worktree remove --force /tmp/x`. It should be blocked with a reason.
+  [JP-111] The moved Atlas behaves on macOS: the FSEvents burst, Finder and foreground-responsiveness gates claude-360 listed.
+        how: Use the laptop normally for a day with Atlas running and watch for slowness; `npm run artifacts -- status` in ~/.josh-360/repo/apps/session-atlas shows the first scan's progress.
+  [JP-109] The loose-ends list is real and the closeout agent's first run is sensible.
+        how: python3 ~/.josh-360/repo/ledger/loose_ends.py --fetch (long at first, about 1,000 before the ledger); then /closeout in a Claude Code session and watch the `by: josh` items it asks about.
+  [JP-121] The shared Jira library can set and clear the Flagged field on a real ticket.
+        how: python3 ~/.josh-360/repo/graphs/gates/set-flag.py --ticket JP-121 --on, then the same with --off.
+  [JP-121] A made-up to-do runs through the ticket creation graph to a real Jira ticket, then is cancelled.
+        how: python3 ~/.josh-360/repo/graphs/intake/submit.py --source todo --ref <id> against the JP space, approve the card in the Needs you tab, confirm the ticket in Jira, then cancel it.
+  [JP-105] The laptop tests pass on the Mac's own Python 3.9.
+        how: cd ~/.josh-360/repo/tests && /usr/bin/python3 -B -m unittest test_install test_follow test_hooks (ends with OK).
+
+Summary: 56 pass, 0 warn, 6 fail, 2 skipped. Exit 1: something needs fixing.
+hooks.dispatch-PostToolUse, hooks.ticket-comments, hooks.atlas-guard, accounts.jira-email can be fixed safely and reversibly with: python3 ~/.josh-360/repo/scripts/doctor.py --fix
+
