@@ -434,9 +434,9 @@ Five parts, in order. Each ends with something Josh can check in a few minutes.
 
 Two small tickets sit around these parts. The laptop is connected to josh-360 once, at the start, so that later installs arrive by merging. And every phase 1 design question is put to Josh in one sitting, after the design tickets are done.
 
-The gate to phase 2: the development pipeline carries a real ticket to a pull request, and the stores the ledger replaces are switched off and archived.
+The gate to phase 2: the development pipeline carries a real ticket to a pull request, a forwarded email becomes a signed-off deliverable in one run, and the stores the ledger replaces are switched off and archived.
 
-Josh moved every graph build into phase 1 on 16 November 2026 ("all graphs need to be phase 1"). Because the forwarded-email run below now needs only phase 1 work, JP-147 asks him whether the two gates should change. Until he answers, both gates stand as written here.
+Josh moved every graph build into phase 1 on 16 November 2026 ("all graphs need to be phase 1"), and on 17 November moved the forwarded-email run into this gate and gave phase 2 the gate below (JP-147).
 
 ### Phase 2: the full pipeline
 
@@ -444,7 +444,7 @@ Josh moved every graph build into phase 1 on 16 November 2026 ("all graphs need 
 - Decision memory reaches stage two for the first categories of question.
 - action-triage and Session Atlas run on the shared foundation, with every feature the inventory marked to keep.
 
-The gate to phase 3: a forwarded email becomes a signed-off deliverable in one run.
+The gate to phase 3: action-triage is archived, with its kept features running in josh-360, and the weekly review has filed its first improvement ticket.
 
 ### Phase 3: reflection
 
