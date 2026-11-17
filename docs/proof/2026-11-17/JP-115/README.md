@@ -29,7 +29,7 @@ The whole-run file also walks: a Research ticket (design stretch only), a build 
 
 - `03-checker-and-compile.txt`: the graph checker and `compile_graphs.py --check`.
 - `04-test-development-graph.txt`: `python3 -m unittest discover -s tests -t tests -p "test_development_graph.py" -v` (11 tests, OK).
-- `05-gate-tests.txt`: `python3 -m unittest discover -s graphs/tests -p "test_dev_*.py" -v` (261 tests, OK).
+- `05-gate-tests.txt`: `python3 -m unittest discover -s graphs/tests -p "test_dev_*.py" -v` (OK; rerun after the audit fix).
 - `06-check.txt`: `python3 scripts/check.py`, ending `check.py: ok (0 problem(s))`.
 - `01` and `02` are the design-time proof of the draft.
 
