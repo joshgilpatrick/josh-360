@@ -209,3 +209,17 @@ def remove_worktree(clone: Path, worktree: Path, branch: str, pushed_head: Optio
     if has_branch:
         git(clone, "branch", "-D", branch)
     return None
+
+
+def merges_for(registry_path: Path, repo: str) -> str:
+    """`agent` when the registry system that holds the repository's bare name lets agents merge there; `josh`
+    otherwise, an unknown repository (or an unreadable registry) included: the safe answer is the one that waits."""
+    bare = repo.split("/")[-1]
+    try:
+        systems = json.loads(Path(registry_path).read_text(encoding="utf-8")).get("systems") or []
+    except (OSError, ValueError):
+        return "josh"
+    for system in systems:
+        if bare in (system.get("repositories") or []):
+            return "agent" if system.get("merges") == "agent" else "josh"
+    return "josh"
