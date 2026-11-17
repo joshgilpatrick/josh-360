@@ -27,6 +27,8 @@ Everything Josh 360 keeps on the laptop is under `~/.josh-360/`: `repo/`, `state
 | `follow.py` | The `follow` job. |
 | `status.py` | Writes the `laptop-status` branch; `show` reads it. |
 | `pause.py` | The local pause switch. |
+| `check_jobs.py` | JP-119: compares what launchd runs with the macbook-automations startup list and prints each difference. |
+| `launchd-register.json` | JP-119: what may run beside the startup list, and why (managed by another project, retired, or waiting to move onto the list). |
 
 ## Commands
 
@@ -35,6 +37,7 @@ On the laptop:
 - `python3 ~/.josh-360/repo/laptop/install.py --dry-run` shows what an install would change.
 - `python3 ~/.josh-360/repo/laptop/run_jobs.py --list` shows each job and whether it is due.
 - `python3 ~/.josh-360/repo/laptop/pause.py on` (or `off`, `status`) pauses following.
+- `python3 ~/.josh-360/repo/laptop/check_jobs.py` prints any job that runs but is not on the startup list or in the register (`--json` for the report; exit 1 on a difference, 2 when launchd or the list could not be read).
 - Logs: `~/.josh-360/logs/<job>.log` and `~/.josh-360/logs/hooks.log`.
 
 ## Reading the status from the cloud
