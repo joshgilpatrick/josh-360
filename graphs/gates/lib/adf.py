@@ -70,3 +70,46 @@ def to_text(node: Optional[dict]) -> str:
 def plain(node: Optional[dict]) -> str:
     """to_text without the trailing line break."""
     return to_text(node).strip("\n")
+
+
+def bullets(items: List[str]) -> dict:
+    return {"type": "bulletList", "content": [{"type": "listItem", "content": [paragraph(str(i))]} for i in items]}
+
+
+def code_block(text: str, language: str = "gherkin") -> dict:
+    return {"type": "codeBlock", "attrs": {"language": language}, "content": [text_node(text.strip("\n"))]}
+
+
+def labelled(label: str, body: str) -> dict:
+    return {"type": "paragraph", "content": [text_node(label + ":", bold=True)] + ([text_node(" ")] + _inline(body)
+                                                                                     if body else [])}
+
+
+def ticket_description(ticket: dict) -> dict:
+    """Josh's ticket format (conventions/tickets.md, "Required sections") as ADF: a bold label per section, real
+    bullets and a Gherkin code block, in the order the checklist gives, then Repository and Where it runs."""
+    from lib import ready_checklist  # the gate's own folder is on sys.path
+
+    sections = ticket.get("sections") or {}
+    blocks: List[dict] = []
+    for check in ready_checklist.CHECKLIST.get(ticket.get("type"), []):
+        value = sections.get(check["section"])
+        kind = check["kind"]
+        if kind in ("list", "list_or_empty"):
+            blocks.append(labelled(check["label"], ""))
+            if value:
+                blocks.append(bullets(value))
+            elif kind == "list_or_empty":
+                blocks.append(paragraph("None."))
+        elif kind == "gherkin":
+            blocks.append(labelled(check["label"], ""))
+            blocks.append(code_block(str(value or "")))
+        else:
+            blocks.append(labelled(check["label"], str(value or "")))
+        if check["section"] == "acceptance_criteria":
+            blocks.append(labelled("Repository", str(ticket.get("repository") or "")))
+            blocks.append(labelled("Where it runs", str(ticket.get("where_it_runs") or "")))
+    if ticket.get("type") in ("Epic", "Subtask"):
+        if ticket.get("repository"):
+            blocks.append(labelled("Repository", str(ticket["repository"])))
+    return doc(*blocks)
