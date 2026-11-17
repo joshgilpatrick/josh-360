@@ -6,6 +6,7 @@
 - [How the build runs](#how-the-build-runs)
 - [The question round](#the-question-round)
 - [The phase 1 sitting](#the-phase-1-sitting)
+- [The feature-tree review](#the-feature-tree-review)
 - [The nine items once marked Proposed](#the-nine-items-once-marked-proposed)
 - [Default choices made while building](#default-choices-made-while-building)
 
@@ -72,6 +73,22 @@ Josh answered the fourteen phase 1 design questions on 16 November 2026 (JP-106,
 | 2026-11-16 | JP-106 | Bring back the rclone backup? (Josh's answer, Q13) | No. | Reinstall its job. |
 | 2026-11-16 | JP-106 | Archive the 131 unused skills? (Josh's answer, Q14) | Josh picked the keepers on a picker page: 67 kept (his 64, plus `control-cli`, `deslop` and `grill-with-docs`, which kept skills name), 64 archived at the phase close. The lists are in `docs/inventory/laptop.md`, appendix. | Restore from the archive. |
 | 2026-11-16 | JP-106 | How do action-triage, claude-360 and the MacBook automations relate to josh-360? (Josh, Q12 note) | They are melded into one application: kept features are extracted and rebuilt in josh-360 with one consistent look and codebase, not linked or nested. | Not expected to change. |
+
+## The feature-tree review
+
+Josh reviewed every call on the feature-tree page on 17 November 2026 (JP-143's page, written in by JP-145). `docs/design/feature-tree/tree.yaml` holds each call, Josh's reason and the reply to his comment, by node id.
+
+| Question | Decision |
+| --- | --- |
+| What does a "headless" session mean? (A16) | Every session has a surface in Agent Manager (or whichever front end the platform uses) and runs without expecting Josh, except where the graph or harness allows a question. No hidden runs that need a workaround to reach. |
+| Open in terminal and Send to Background? (A20, S7) | Retired: every session already lives in Agent Manager. |
+| Phone bridge? (A31) | Retired: Josh will not use the platform from a phone. |
+| Bifrost request labels and cost reconciliation? (A33, S8.4) | Labels retired. From Bifrost, only a yes/no signal that the provider received each request; no matching of Bifrost's estimated costs. |
+| Prompt settings? (A7) | Replaced by N1, one configuration surface for reviewing and updating graphs as well as prompts. |
+| How much of the Jira pickup daemon is reused? (A9) | It is scaffolding to judge against the design, never a reason to settle: the runner design keeps what serves it and rebuilds the rest. |
+| Dashboard, sessions grid and Needs attention? (S4, S5, S6) | Later: views wait until the data architecture is hardened. When they return they are designed afresh for Josh's purposes, not ported; the current views were never sufficient, so only their features may be reused. |
+| Session names and PR links? (S8.5) | Kept, on the ledger's session record (S2). |
+| agent-deck? (D1, D2) | Josh removes it himself on the laptop. |
 
 ## The nine items once marked Proposed
 
@@ -186,4 +203,6 @@ One row per choice: the date, the ticket, the question, the option taken, and ho
 | 2026-11-16 | JP-100 | The retire job needs to switch off a launchd job and move a plist, outside `~/.josh-360`. Allowed? | Yes, narrowly: one label, one plist, one new archive folder, `every: once`, with a dry run and a test against a fake `launchctl`. The install script's "writes only inside `~/.josh-360`" rule is for `laptop/install.py`, not for jobs. | Remove the `retire-focus-dashboard` entry from `jobs.yaml`, then put the plist back from the archive. |
 | 2026-11-17 | JP-143 | Josh asked for one app, not nested repositories. Where does each kept feature land? | Ten homes inside one shell (action-triage's edge pill and panel, with Session Atlas's dashboard rebuilt as tabs in it), listed in `docs/design/feature-tree/tree.yaml`. Josh reviews every call on the feature-tree page. | Change a feature's `home` in the tree and rebuild the page. |
 | 2026-11-17 | JP-143 | macbook-automations had no feature list. Which of its parts come in? | The DevEx parts (startup list, Agent Manager at login, OpenCode sync, transcript scrubber) come in; the personal chores (receipts, Idemeum log cleanup) stay outside. OpenCode sync is rebuilt to run on change, as Josh asked in Q11. | Change the M rows in the tree. |
-| 2026-11-17 | JP-143 | Keep agent-deck's hooks? | Drop: nothing on the laptop uses agent-deck, and its hook can auto-allow permissions in sessions it starts. Removal is `agent-deck hooks uninstall`, which waits for Josh's review of the page. | Tick D1 and D2 on the page. |
+| 2026-11-17 | JP-143 | Keep agent-deck's hooks? | Drop: nothing on the laptop uses agent-deck, and its hook can auto-allow permissions in sessions it starts. Josh agreed on 17 November and removes it himself. | Reinstall agent-deck. |
+| 2026-11-17 | JP-145 | Josh unticked S4, S5 and S6 and commented only on S4 ("not until after we have hardened data architecture"). Later or never? | Later, for all three. Josh confirmed in the thread the same evening. | Change `how: later` to `retire` on the node. |
+| 2026-11-17 | JP-145 | Josh's A7 note wants graphs configurable too. How to record it? | A new node N1 (built new, Settings), with A7 merged into it, rather than leaving A7 unticked with nothing in its place. | Remove N1 and set A7 back to drop/retire. |
