@@ -59,9 +59,9 @@ REQUIRED = [
     ".claude/agents/ceremony-reviewer.md",
     ".claude/agents/implementer.md",
 ] + [f".claude/skills/{s}/SKILL.md" for s in (
-    "ticket-lifecycle", "design-handoff", "pr-proof", "review-ceremony", "workflow-roles",
+    "ticket-lifecycle", "design-handoff", "pr-proof", "review-ceremony", "workflow-roles", "platform-doctor",
 )] + [f".claude/commands/{c}.md" for c in (
-    "design", "build", "fix", "review-pr", "ship", "session-end",
+    "design", "build", "fix", "review-pr", "ship", "session-end", "doctor",
 )]
 
 # JP-95: the home layout every later ticket builds into.
@@ -99,7 +99,8 @@ LAPTOP = [
     "jobs.yaml", "hooks/dispatch", "hooks/README.md", "laptop/README.md",
     "docs/superpowers/specs/2026-11-16-laptop-follows-josh-360-design.md",
     "laptop/launchd-register.json", "docs/phase-1-close-checklist.md",
-] + [f"laptop/{m}.py" for m in ("common", "install", "run_jobs", "follow", "status", "pause", "check_jobs")]
+] + [f"laptop/{m}.py" for m in ("common", "install", "run_jobs", "follow", "status", "pause", "check_jobs")] + [
+    "scripts/doctor.py", "scripts/doctor_job.py", "docs/platform-doctor.md"]
 
 
 def laptop_problems() -> list[str]:
@@ -115,7 +116,9 @@ def laptop_problems() -> list[str]:
             problems.append("does not parse as bash: hooks/dispatch")
     jp96 = [ROOT / "scripts" / n for n in ("laptop_inventory.py", "laptop_figures.py", "laptop_inventory_job.py",
                                            "retire_focus_dashboard.py", "retire_leftover_jobs.py",
-                                           "restore_retired_job.py", "launchd_check_job.py")]
+                                           "restore_retired_job.py", "launchd_check_job.py",
+                                           "doctor.py", "doctor_job.py")]
+    jp96 += sorted((ROOT / "scripts/doctor_lib").glob("*.py"))  # JP-152: the doctor runs on the laptop too
     # JP-107: the ledger and its hooks (some hook files have no .py suffix) run on the laptop too.
     ledger_hooks = [p for p in sorted((ROOT / "hooks").glob("*/*")) if p.is_file() and p.name != "README.md"
                     and p.read_text(encoding="utf-8", errors="replace").startswith("#!/usr/bin/env python")]

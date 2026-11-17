@@ -43,3 +43,5 @@ On the laptop:
 ## Reading the status from the cloud
 
 From any clone of josh-360: `python3 laptop/status.py show`. It prints `status.json` from the `laptop-status` branch: the installed commit, `main` at the time, the time (UTC), `passed`, `failed` or `paused`, a short reason and the counts, plus the names of any reports. To pause from the cloud, push a branch named `laptop-pause`; delete it to resume.
+
+`python3 laptop/status.py show <job>` prints one job's report, for example `show doctor` for the daily platform health check (JP-152, `docs/platform-doctor.md`).

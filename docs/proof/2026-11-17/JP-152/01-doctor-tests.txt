@@ -1,0 +1,60 @@
+test_a_crashing_check_fails_only_itself ... ok
+Scenario: An agent can read the result. ... ok
+test_misuse_exits_2 ... ok
+test_no_secret_reaches_the_output ... ok
+test_only_runs_one_group ... ok
+test_strict_fails_on_a_warning ... ok
+test_the_manual_list_covers_the_owed_proofs ... ok
+test_a_corrupt_ledger_fails_cleanly ... ok
+test_a_ledger_missing_its_triggers_fails ... ok
+test_a_missing_ledger_fails_and_is_fixable ... ok
+test_an_empty_ledger_warns_and_no_evidence_warns ... ok
+test_an_old_schema_version_fails ... ok
+test_backups_missing_warn_and_stale_fail ... ok
+test_cache_db_missing_warns_and_an_empty_one_fails ... ok
+test_recursive_triggers_must_be_turned_on_by_the_code ... ok
+test_the_cloud_reads_it_with_status_show ... ok
+test_the_report_reaches_the_status_branch_even_when_checks_fail ... ok
+Scenario: --fix only does safe reversible things. ... ok
+test_fix_leaves_a_failing_unfixable_check_failing ... ok
+test_fix_never_removes_a_pause_or_runs_an_install_while_paused ... ok
+test_the_jira_email_is_written_only_when_given_and_valid ... ok
+test_a_changed_graph_source_makes_the_compiled_copy_stale ... ok
+test_a_missing_compiled_copy_fails ... ok
+Scenario: A healthy laptop passes. ... ok
+test_every_group_the_ticket_names_is_checked ... ok
+test_every_job_in_jobs_yaml_has_its_own_line ... ok
+test_a_backfill_that_says_done_but_left_nothing_warns ... ok
+test_a_dispatcher_entry_for_the_wrong_event_fails ... ok
+test_a_failing_recurring_job_fails_and_an_overdue_one_warns ... ok
+Scenario: A missing part fails with one fix step. ... ok
+test_a_non_executable_hook_fails ... ok
+test_a_runner_that_is_not_loaded_fails ... ok
+test_a_stale_follow_job_warns_and_a_failed_one_fails ... ok
+test_an_event_without_hook_files_is_only_a_warning ... ok
+test_an_install_record_that_does_not_match_fails ... ok
+test_local_changes_in_the_copy_fail ... ok
+test_old_atlas_hooks_left_in_settings_fail ... ok
+test_once_jobs_that_never_ran_or_wait_are_not_failures_but_failed_ones_are ... ok
+test_paused_fails ... ok
+test_the_copy_behind_main_fails ... ok
+test_the_debrief_form_is_owed_from_1_december ... ok
+test_fix_dry_run_changes_nothing_and_says_what_it_would_do ... ok
+test_nothing_is_written_even_into_the_git_copy ... ok
+Scenario: The doctor changes nothing by default. ... ok
+test_the_command_runs_as_a_script_with_exit_codes ... ok
+test_a_node_that_is_too_old_fails ... ok
+test_a_secret_in_the_azure_settings_is_refused ... ok
+test_atlas_log_that_cannot_read_the_ledger_fails ... ok
+test_atlas_not_loaded_or_not_answering_fails ... ok
+test_atlas_waits_until_the_old_one_is_retired ... ok
+test_azure_configured_but_signed_out_fails ... ok
+test_azure_not_configured_warns_and_does_not_demand_a_login ... ok
+test_azure_upload_age_and_pending_redactions ... ok
+test_claude_missing_warns ... ok
+test_jira_email_and_token ... ok
+test_online_asks_jira_and_github_and_offline_does_not ... ok
+test_the_keychain_is_asked_about_never_read ... ok
+test_the_old_atlas_still_loaded_fails ... ok
+Ran 58 tests in 49.433s
+OK
