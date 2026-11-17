@@ -63,8 +63,8 @@ def gate(name: str):
 class FakeTicket:
     """Five calls, all recorded. `fail_on` names a call that raises GateError, as the real port does on no read-back."""
 
-    def __init__(self, description=DESCRIPTION, status="Ready", route=None, comments=None, fail_on=()):
-        self.tickets = {KEY: Ticket(KEY, status, description, route if route is not None else {"graph": "non-development"})}
+    def __init__(self, description=DESCRIPTION, status="Ready", route=None, comments=None, fail_on=(), key=KEY):
+        self.tickets = {key: Ticket(key, status, description, route if route is not None else {"graph": "non-development"})}
         self.posted = []        # (key, text)
         self.moves = []         # (key, status)
         self.flags = []         # (key, on)
