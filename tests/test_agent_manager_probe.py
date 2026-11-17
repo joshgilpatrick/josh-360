@@ -29,6 +29,7 @@ case "$*" in
   "terminal list --json") echo '[]'; exit 0 ;;
   spawn*) [ -n "$FAKE_SPAWN_KILLS_CALLER" ] && kill -9 "$PPID"
           [ -n "$FAKE_SPAWN_FAILS" ] && { echo "spawn refused" >&2; exit 1; }
+          case ":$PATH:" in *":$FAKE_CLAUDE_DIR:"*) ;; *) echo "claude is not installed" >&2; exit 1 ;; esac
           echo '{"id": "s-123", "name": "x"}'; exit 0 ;;
   *) echo "unexpected: $*" >&2; exit 64 ;;
 esac
@@ -43,6 +44,11 @@ class AgentManagerProbeTest(unittest.TestCase):
         self.fake = self.tmp / "agent-manager"
         self.fake.write_text(FAKE)
         self.fake.chmod(self.fake.stat().st_mode | stat.S_IXUSR)
+        # claude lives in a folder that is not on the job's PATH, as ~/.local/bin is not on launchd's.
+        self.claude = self.tmp / "local-bin" / "claude"
+        self.claude.parent.mkdir()
+        self.claude.write_text("#!/bin/sh\necho '2.1.0 (Claude Code)'\n")
+        self.claude.chmod(self.claude.stat().st_mode | stat.S_IXUSR)
         self.log = self.tmp / "calls.log"
         self.log.write_text("")
         self.db = self.tmp / "state.db"
@@ -55,7 +61,8 @@ class AgentManagerProbeTest(unittest.TestCase):
 
     def run_probe(self, **extra):
         env = dict(os.environ, JOSH360_HOME=str(self.tmp / "home"), JOSH360_AM_BIN=str(self.fake),
-                   JOSH360_CLAUDE_BIN="/bin/echo", JOSH360_AM_DB=str(self.db), FAKE_LOG=str(self.log), **extra)
+                   JOSH360_CLAUDE_BIN=str(self.claude), JOSH360_AM_DB=str(self.db), FAKE_LOG=str(self.log),
+                   FAKE_CLAUDE_DIR=str(self.claude.parent), PATH="/usr/bin:/bin", **extra)
         r = subprocess.run([sys.executable, str(PROBE)], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                            universal_newlines=True, timeout=60)
         self.assertEqual(r.returncode, 0, r.stderr)
@@ -90,13 +97,29 @@ class AgentManagerProbeTest(unittest.TestCase):
 
     def test_a_pass_killed_during_the_spawn_never_spawns_again(self):
         env = dict(os.environ, JOSH360_HOME=str(self.tmp / "home"), JOSH360_AM_BIN=str(self.fake),
-                   JOSH360_CLAUDE_BIN="/bin/echo", JOSH360_AM_DB=str(self.db), FAKE_LOG=str(self.log),
-                   FAKE_SPAWN_KILLS_CALLER="1")
+                   JOSH360_CLAUDE_BIN=str(self.claude), JOSH360_AM_DB=str(self.db), FAKE_LOG=str(self.log),
+                   FAKE_CLAUDE_DIR=str(self.claude.parent), PATH="/usr/bin:/bin", FAKE_SPAWN_KILLS_CALLER="1")
         killed = subprocess.run([sys.executable, str(PROBE)], env=env, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE, universal_newlines=True, timeout=60)
         self.assertNotEqual(killed.returncode, 0)  # the pass died mid-spawn, before printing anything
         report = self.run_probe()
         self.assertTrue(report["spawn"]["pending"])
+        self.run_probe()
+        self.assertEqual(len(self.calls("spawn --name")), 1)
+
+    def test_spawn_puts_claudes_folder_first_on_path(self):
+        report = self.run_probe()
+        self.assertEqual(report["spawn"]["code"], 0)
+        self.assertEqual(report["spawn"]["path_first"], str(self.claude.parent))
+
+    def test_first_probes_refusal_is_kept_and_does_not_use_up_the_new_tries(self):
+        state_dir = self.tmp / "home" / "state" / "agent-manager-probe"
+        state_dir.mkdir(parents=True)
+        refused = {"attempt": 3, "code": 1, "error": "agent-manager: claude is not installed"}
+        (state_dir / "state.json").write_text(json.dumps({"spawn": refused, "spawn_attempts": 3}))
+        report = self.run_probe()
+        self.assertEqual(report["spawn"]["session_id"], "s-123")
+        self.assertEqual(report["first_spawn"], refused)
         self.run_probe()
         self.assertEqual(len(self.calls("spawn --name")), 1)
 
