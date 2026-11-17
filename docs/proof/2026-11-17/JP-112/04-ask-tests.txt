@@ -1,0 +1,19 @@
+test_answers_are_capped (test_ledger_ask.Ask.test_answers_are_capped) ... ok
+test_changes_lists_only_sessions_with_commits_or_prs (test_ledger_ask.Ask.test_changes_lists_only_sessions_with_commits_or_prs) ... ok
+test_changes_live_says_not_built_yet (test_ledger_ask.Ask.test_changes_live_says_not_built_yet) ... ok
+test_find_by_branch_and_since (test_ledger_ask.Ask.test_find_by_branch_and_since) ... ok
+test_find_by_folder_includes_subfolders_and_not_lookalikes (test_ledger_ask.Ask.test_find_by_folder_includes_subfolders_and_not_lookalikes) ... ok
+test_home_by_either_id (test_ledger_ask.Ask.test_home_by_either_id) ... ok
+test_home_never_returns_priority (test_ledger_ask.Ask.test_home_never_returns_priority) ... ok
+test_missing_ledger_exits_2_and_creates_nothing (test_ledger_ask.Ask.test_missing_ledger_exits_2_and_creates_nothing) ... ask: there is no ledger at /tmp/josh360-ledger-7864cj9l/none/ledger.db
+test_no_query_returns_friction_cost_or_measures (test_ledger_ask.Ask.test_no_query_returns_friction_cost_or_measures) ... ok
+test_opens_read_only (test_ledger_ask.Ask.test_opens_read_only) ... ok
+test_precedent_returns_current_decisions_of_exactly_that_category (test_ledger_ask.Ask.test_precedent_returns_current_decisions_of_exactly_that_category) ... ok
+test_precedent_sql_is_the_spec_query (test_ledger_ask.Ask.test_precedent_sql_is_the_spec_query) ... ok
+test_precedent_stays_inside_its_category (test_ledger_ask.Ask.test_precedent_stays_inside_its_category)
+test_precedent_writes_a_lookup_row_and_skips_superseded (test_ledger_ask.Ask.test_precedent_writes_a_lookup_row_and_skips_superseded) ... ok
+test_run_shows_the_steps_so_far (test_ledger_ask.Ask.test_run_shows_the_steps_so_far) ... ok
+test_ticket_lists_sessions_and_runs (test_ledger_ask.Ask.test_ticket_lists_sessions_and_runs) ... ok
+test_unknown_query_exits_2 (test_ledger_ask.Ask.test_unknown_query_exits_2) ... usage: python3 -m unittest [-h] {home,ticket,find,precedent,run,changes} ...
+Ran 17 tests in 1.773s
+OK
