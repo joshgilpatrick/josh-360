@@ -26,6 +26,8 @@
 
 Ticket: [JP-99](https://eventuswh-analytics.atlassian.net/browse/JP-99). Draft schema: `ledger/schema.sql`, tested by `tests/test_ledger_schema.py`. Code lists: `ledger/codes.json`. Build plan: `docs/superpowers/plans/2026-11-16-ledger.md` (JP-107). Written 16 November 2026 from the vision, the laptop inventory (JP-96), the feature list (JP-97), the graph convention (JP-101, JP-139, JP-140), the three graph designs (JP-102, JP-103, JP-104), Session Atlas's two databases (claude-360 at `2da83a3`) and action-triage's daemon state (at `7785e6d`).
 
+Amended on 17 November 2026 by [JP-148](https://eventuswh-analytics.atlassian.net/browse/JP-148) with the five fixes the review of phase 1 (JP-146, "Fix before JP-107 starts") found before the database first exists: the session row is written at session start (A1), the patient-data rule is stated plainly and made stricter (A2), a withdrawn row can be replaced (A3), Agent Manager sessions are recorded as such (A4), and precedent stays inside its category (A5).
+
 ## Summary
 
 The ledger is one SQLite database on the laptop, `~/.josh-360/state/ledger.db`. It holds facts about sessions, graph runs and Josh's decisions. Rows are only ever added: a database trigger refuses every edit and every delete, and a wrong row is withdrawn by adding a correction. Big, rebuildable working tables (the cost importer's per-message rows, prices and the file catalog) sit beside it in a second file, `cache.db`, so the record that matters stays small enough to back up daily and keep forever.
@@ -66,12 +68,12 @@ Nothing here stores transcript text or file contents, and nothing stores a loose
 | Holds | Facts: sessions, homes, cost per session, summaries, friction, runs, decisions | The cost import's per-message rows and prices, scan marks, the file catalog, Atlas's job queues |
 | Rule | Append-only, enforced by triggers | Ordinary tables; may be deleted and rebuilt |
 | Location | `~/.josh-360/state/ledger.db` | `~/.josh-360/state/cache.db` (JP-111 moves Atlas's and the cost ledger's files here; until then the recorder reads `~/.claude/cost-ledger/ledger.db` read-only) |
-| Backup | Daily, compressed: 14 daily and 8 weekly copies in `~/.josh-360/backups/`, plus a copy of each in an Azure blob storage container | None: it is rebuilt from transcripts and the repository |
+| Backup | Daily, compressed: 14 daily and 8 weekly copies in `~/.josh-360/backups/`. A copy off the laptop, in Azure blob storage, is held until the stricter patient-data rule is built (see Backup below) | None: it is rebuilt from transcripts and the repository |
 | Kept | For ever (see [Expected size and retention](#expected-size-and-retention)) | Per-message rows for 90 days after their session's cost is copied into the ledger |
 
 **Engine.** SQLite, through Python 3.9's standard `sqlite3` module, because laptop code runs on `/usr/bin/python3` with the standard library only (`.claude/workflow.config.md`, Deploy). It needs no server, no install and no network. The schema uses nothing newer than SQLite 3.31: no `STRICT` tables and no `RETURNING`. Every connection turns on `PRAGMA foreign_keys` and `PRAGMA recursive_triggers` (without the second, `INSERT OR REPLACE` removes the old row without firing its delete trigger, a hole in the append-only rule), uses write-ahead logging (`journal_mode = WAL`) so the walker and the recorder can write at the same time, and waits up to five seconds for a lock (`busy_timeout`).
 
-**Backup.** A daily job, `ledger-backup` in `jobs.yaml`, copies the live database with SQLite's own backup call (safe while others write), runs `PRAGMA integrity_check` on the copy, compresses it with gzip and keeps the newest 14 daily and 8 weekly copies. To restore: stop the jobs with `laptop/pause.py on`, unzip the chosen copy over `ledger.db`, and resume. Josh also wants a copy off the laptop, in an Azure blob storage container and not OneDrive (JP-106, question 3). The same job uploads each new copy there; which container, and how the laptop signs in to it without a stored secret, is settled when that upload is built. The ledger holds no patient data, so the copy holds none either.
+**Backup.** A daily job, `ledger-backup` in `jobs.yaml`, copies the live database with SQLite's own backup call (safe while others write), runs `PRAGMA integrity_check` on the copy, compresses it with gzip and keeps the newest 14 daily and 8 weekly copies. To restore: stop the jobs with `laptop/pause.py on`, unzip the chosen copy over `ledger.db`, and resume. Josh also wants a copy off the laptop, in an Azure blob storage container and not OneDrive (JP-106, question 3). **That copy is held: nothing leaves the laptop yet** (JP-148, the review's question 2, stricter option). The patient-data check cannot prove the ledger holds no patient data (see [Patient data](#patient-data)), so the upload waits until two things are built: the per-system patient-data rule, and a `ledger/redact.py` that reaches the uploaded copies as well as the local ones (it replaces every uploaded copy that holds the redacted row, and removes any older version the container keeps). Which container, how the laptop signs in to it without a stored secret, and which ticket builds the upload are settled then; JP-107 builds no upload.
 
 **Schema versions.** `PRAGMA user_version` holds the version, and `schema_migrations` lists every migration applied. `ledger/schema.sql` builds a new database at the current version. Each later change is a numbered file, `ledger/migrations/NNNN-<name>.sql`, applied in order by the install script (JP-105's `laptop/install.py`) after a backup. A migration may only add: new tables, new columns with a default, new views, new indexes, new codes. It never rewrites rows. A change that needs different rows gets a new table and a view that joins old and new.
 
@@ -82,13 +84,15 @@ Nothing here stores transcript text or file contents, and nothing stores a loose
 1. Every table has a pair of triggers that refuse `UPDATE` and `DELETE`, and every connection turns on `recursive_triggers` so `INSERT OR REPLACE` is refused too. `tests/test_ledger_schema.py` fails if a table lacks them or a replace gets through.
 2. A fact that changes over time is a new row, not an edit. A resumed session gets a new episode. A session whose ticket moved epic gets a new home. A re-priced session gets a new cost batch. Views named `current_*` show the newest row.
 3. **A wrong row is withdrawn, not edited.** A row in `corrections` names the table and row, a reason (`wrong`, `duplicate`, `test-row` or `patient-data`) and, if there is one, the row that replaces it. Every view leaves withdrawn rows out, including a row that would otherwise hide another: withdrawing a wrong replacement, overrule, answer, stage change or branch mark brings back the row it had hidden (found by the audit of PR #18). `ledger/correct.py` writes corrections; Josh or a script may use it, and each row says which.
+   - *A withdrawal can be undone.* A correction that names the table `corrections` withdraws that correction, and the row comes back in every view. That second correction cannot itself be withdrawn, so the view `live_corrections` (the corrections in force) needs only one level and every view reads it. A row has at most one correction in force; withdrawing it again after an undo is a new correction (JP-148, A3).
+   - *A withdrawn row can be replaced.* Five tables hold one row per natural key: `session_episodes` and `session_summaries` and `debriefs` (one per episode), `step_results` (one per step start) and `run_ends` (one per run). Each carries a `version`, starting at 1. Once version 1 is withdrawn, version 2 may be written, and so on; a trigger refuses a new version while the one before it is still in force. The views `current_session_episodes`, `current_session_summaries`, `current_debriefs`, `current_step_results` and `current_run_ends` give the newest version not withdrawn, and every query reads them. The replacement is the next version, so its correction leaves `replacement_row_id` empty (the correction comes first). Found by the JP-146 review (A3): with a plain `UNIQUE` on the key, a withdrawn row could never be replaced.
 4. **One exception: patient data.** If patient data ever reaches a text column, withdrawing the row is not enough, because the text would still be in the file. `ledger/redact.py`, which only Josh runs, overwrites that one column of that one row with `withheld: patient data`, inside one transaction that drops and restores that table's update trigger, and adds a `redactions` row saying which table, row and column (never what was there). It then rewrites the backups that hold the row. This is a permanent change, so it is Josh's to run.
 5. A decision that stops applying is not a correction. Josh's overrule, a newer answer that supersedes it, and its promotion to a written rule are events, recorded in `decision_events`; the decision row stays as it was, so the history of what was decided is kept.
 
 ## Identity: machines, sessions and runs
 
 - **Machine.** `machines.machine_id` is eight random hex digits plus a prefix, `m-1a2b3c4d`, made once when the database is created and also written to `~/.josh-360/state/machine-id`. `label` is a plain name such as "work laptop".
-- **Session.** One row per session, written once. `session_uid` is `<machine_id>:<tool>:<tool session id>`; for Claude Code the tool session id is the transcript's file name. Subagents, resumes into a new id and forks are sessions of their own, tied together by `session_lineage` (carried over from Atlas's lineage and the cost ledger's session tree). OpenCode, Pi and Codex sessions use the same table with their own `tool`.
+- **Session.** One row per session, written once, **when the session starts** (JP-148, A1): the recorder writes it on its next pass from the `SessionStart` spool line, and `ledger.sessions.ensure` adds it whenever the walker, the recorder or the backfill meets a session that has no row yet. A walker step, an ask, a ticket link, a comment delivery or a model call made while the session is still running points at that row, so it cannot wait for the session to go quiet. `session_uid` is `<machine_id>:<tool>:<tool session id>`; for Claude Code the tool session id is the transcript's file name. Subagents, resumes into a new id and forks are sessions of their own, tied together by `session_lineage` (carried over from Atlas's lineage and the cost ledger's session tree). OpenCode, Pi and Codex sessions use the same table with their own `tool`.
 - **Episode.** A session can be resumed after it goes quiet. Each stretch of activity that ends with the session going quiet is an episode, numbered from 1. Everything recorded "when the session goes quiet" belongs to an episode, so a resume adds rows and never touches the old ones.
 - **Gone quiet.** A session has gone quiet when its `SessionEnd` hook fired, or when its transcript has not grown for 30 minutes. JP-107 owns this rule and JP-108 uses it.
 - **Graph run.** `run_id` is a random id the walker makes. A run names its graph, the graph file's version (`graph_version`, the last commit that changed `graphs/flows/<graph>.yaml`, as JP-140 set) and josh-360's commit when the run started (`repo_commit`), which also covers the roles, agents and gate scripts the run used. That second field answers JP-140's open question without a choice: a comparison can use either.
@@ -103,9 +107,9 @@ The draft schema, `ledger/schema.sql`, is the precise version; this section says
 
 | Table | One row per | Key fields |
 | --- | --- | --- |
-| `sessions` | Session, written the first time it is seen | `session_uid`, `machine_id`, `tool`, `tool_session_id`, `started_at`, `started_by` (josh, daemon, walker, desk, agent-manager, background, josh-360, unknown), `entrypoint`, `start_folder`, `transcript_path` |
+| `sessions` | Session, written when it starts (or the first time a writer meets it with no row) | `session_uid`, `machine_id`, `tool`, `tool_session_id`, `started_at`, `started_by` (josh, daemon, walker, desk, agent-manager, background, josh-360, unknown), `entrypoint`, `start_folder`, `transcript_path` |
 | `session_lineage` | Tie between two sessions | `child_uid`, `parent_uid`, `root_uid`, `kind` (subagent, resume, fork, spawned), `confidence` |
-| `session_episodes` | Stretch of activity that ended quiet | `episode`, `began_at`, `last_activity_at`, `quiet_at`, `end_reason`, `folder`, `git_root`, `repo`, `branch`, `worktree_path`, `title` (120 characters at most) and its source, `turns` |
+| `session_episodes` | Stretch of activity that ended quiet (the newest `version` not withdrawn) | `episode`, `version`, `began_at`, `last_activity_at`, `quiet_at`, `end_reason`, `folder`, `git_root`, `repo`, `branch`, `worktree_path`, `title` (120 characters at most) and its source (`withheld` when the patient-data rule kept it out), `turns` |
 | `session_refs` | Thing a session touched | `kind` (folder, branch, commit, pr, worktree, file), `repo`, `value` (a path, name, sha or URL), `source` |
 
 ### Homes and links
@@ -113,7 +117,7 @@ The draft schema, `ledger/schema.sql`, is the precise version; this section says
 | Table | One row per | Key fields |
 | --- | --- | --- |
 | `ticket_links` | Tie between a session or a run and a ticket | `tracker`, `ticket_key`, `relation` (touched, subject, created, duplicate-of), `source` (branch, jira-command, daemon, walker, offer, josh, backfill) |
-| `session_homes` | Answer to "where does this session belong", each time it changes | `method` (branch, ticket-link, registry, unassigned), `ticket_key`, `epic_key`, `initiative_key`, `area`, `system`, `priority`, `evidence`, `conventions_version`, `jira_read` |
+| `session_homes` | Answer to "where does this session belong", each time it changes | `method` (branch, ticket-link, registry, unassigned), `ticket_key`, `epic_key`, `initiative_key`, `area`, `system`, `priority`, `evidence`, `conventions_version`, `jira_read`, `patient_data` (1 for a flagged system, an unknown system or no home) |
 
 ### Cost and summaries
 
@@ -121,7 +125,7 @@ The draft schema, `ledger/schema.sql`, is the precise version; this section says
 | --- | --- | --- |
 | `session_costs` | Session and model, per pricing | `computed_at`, `model`, five token counts, `cost_usd`, `pricing_status`, `price_set` |
 | `model_calls` | Model call Josh 360 itself makes (summary, debrief, weekly review) | `purpose`, `subject_session_uid`, `model`, tokens, `cost_usd` |
-| `session_summaries` | Episode | `lines` (five lines and 800 characters at most), `method` (copied or model), `model_call_id`, `lines_withheld` |
+| `session_summaries` | Episode (newest `version` not withdrawn) | `lines` (five lines and 800 characters at most), `method` (copied or model), `model_call_id`, `lines_withheld`, `version` |
 | `session_state_notes` | U-turn, dead end or untold finding copied from STATE.md | `kind`, `note` (300 characters at most) |
 
 ### Friction
@@ -130,7 +134,7 @@ The draft schema, `ledger/schema.sql`, is the precise version; this section says
 | --- | --- | --- |
 | `session_facts` | Count per episode (JP-112) | `fact` (a code from `codes.json`), `value` |
 | `session_usage` | Skill, agent, tool, MCP server, hook or rule file per episode | `item_kind`, `item_name`, `loaded`, `uses` |
-| `debriefs` | Debriefed episode (JP-113) | `model_call_id`, `form_version`, `ended_how` (a code) |
+| `debriefs` | Debriefed episode (JP-113; newest `version` not withdrawn) | `model_call_id`, `form_version`, `ended_how` (a code), `version` |
 | `debrief_moments` | Moment in a debrief, five at most | `kind` (a code), `target_kind`, `target_name`, `pointer` (a transcript entry id, never its text) |
 
 ### Graph runs
@@ -139,9 +143,9 @@ The draft schema, `ledger/schema.sql`, is the precise version; this section says
 | --- | --- | --- |
 | `graph_runs` | Run | `run_id`, `graph_id`, `graph_source` (graph-file or external), `graph_version`, `repo_commit`, `subject_kind` (ticket, intake, pr) and `subject_ref`, `ticket_key`, `previous_run_id`, `phi`, `runner` |
 | `step_runs` | Start of a step | `step_id`, `step_kind`, `attempt`, `loop_count`, `tier`, `role`, `agent`, `allowed_by_josh`, `session_uid` |
-| `step_results` | End of a step | `outcome`, `model` (the one that actually answered), `session_uid`, `note` (a gate's one-line summary, 200 characters at most, empty when the run is `phi`) |
+| `step_results` | End of a step (newest `version` not withdrawn) | `version`, `outcome`, `model` (the one that actually answered), `session_uid`, `note` (a gate's one-line summary, 200 characters at most, empty when the run is `phi`) |
 | `run_files` | File a run produced or saved at closeout | `kind` (spec, plan, evidence, feedback, deliverable, output), `path`, `sha256` |
-| `run_ends` | Run that ended | `end_name` (`finished`, `<step>.<outcome>` or `exit_refused`), `score` (success, neutral, needs-josh) |
+| `run_ends` | Run that ended (newest `version` not withdrawn) | `version`, `end_name` (`finished`, `<step>.<outcome>` or `exit_refused`), `score` (success, neutral, needs-josh) |
 | `comment_deliveries` | Ticket comment passed to a session or run (JP-118) | `comment_id`, `author_account`, `via`; a unique index makes each delivery happen once |
 
 Notes:
@@ -156,11 +160,11 @@ Notes:
 
 | Table | One row per | Key fields |
 | --- | --- | --- |
-| `asks` | Question put to Josh | `ask_id`, the run, step or session that asked, `category`, `question_key` (`<graph>/<step>`), `system`, `work_type`, `ticket_key`, `question` and `choices` (500 characters each at most), `stage`, `suggested_answer` and `precedent_decision_id`, `channel` (needs-you, jira-flag, thread, terminal) |
+| `asks` | Question put to Josh | `ask_id`, the run, step or session that asked, `category` (the step plus its split, below), `question_key` (`<graph>/<step>`), `system`, `work_type`, `ticket_key`, `question` and `choices` (500 characters each at most), `stage`, `suggested_answer` and `precedent_decision_id`, `channel` (needs-you, jira-flag, thread, terminal) |
 | `decisions` | Answer | `ask_id`, the same lookup fields, `answer`, `how` (answered, confirmed-suggestion, changed-suggestion, from-memory, recorded), `decided_by` (josh or memory), `rests_on_decision_id`, `supersedes_decision_id` |
 | `decision_events` | Later event on a decision | `kind` (overruled, superseded, promoted-to-rule, miss), `related_decision_id`, `rule_path`, `event_by` |
 | `category_stages` | Stage change of a category | `category`, `stage` (1, 2, 3), `set_by` (josh, or demotion when a promoted category is overruled) |
-| `memory_lookups` | Precedent lookup | `question_key`, `system`, `work_type`, `found`, `used_decision_id` |
+| `memory_lookups` | Precedent lookup | `category`, `question_key`, `system`, `work_type`, `found`, `used_decision_id` |
 
 How the vision's four memory rules land:
 
@@ -169,9 +173,19 @@ How the vision's four memory rules land:
 - *A question Josh answers that had a usable precedent is a miss.* A `miss` event on the new decision, pointing at the precedent.
 - *An answer given several times becomes a written rule.* A `promoted-to-rule` event with the rule's file in josh-360.
 
-**What a category is** (JP-106, question 4, Josh chose C). By default a category is the asking step, `<graph>/<step>`, so Josh promotes "the triage questions" as one. An asking step may name details that split it further, and then the category carries them: JP-102's approval card names system, ticket type, shape and action, so a card for a single JP task in josh-360 is a different category from a parent with children in AD. A step that names no details stays one category. Where a step declares its split is settled by the decision command (JP-116) and the walker (JP-114).
+**What a category is** (JP-106, question 4, Josh chose C). By default a category is the asking step, `<graph>/<step>`, so Josh promotes "the triage questions" as one. An asking step may name details that split it further, and then the category carries them: JP-102's approval card names system, ticket type, shape and action, so a card for a single JP task in josh-360 is a different category from a parent with children in AD. A step that names no details stays one category.
 
-Lookup is exact: same `question_key`, same `system`, same `work_type`. An open question is an ask with no decision (`open_asks`). A run parks on an open ask and resumes when the decision is written, so a parked run survives a closed terminal (JP-114). The `questions/` folder action-triage's Needs you tab uses stays as the way a question reaches Josh and his answer comes back; the ledger is the record of both.
+A step declares its split in its graph file, as the ask's optional `split` list (`graphs/CONVENTION.md`, "Steps"; the checker refuses a name that is not a graph input or an output of a step above the ask). The walker (JP-114) writes the category as the step followed by `;<name>=<value>` for each name, in the order listed: `ticket-creation/approve;system=josh-360;type=task;shape=single;action=create`. With no split, `category` equals `question_key`. Categories are at most 240 characters.
+
+Lookup is exact and never wider than the category (JP-148, A5): same `category`, same `system`, same `work_type`. `ask.py precedent --category <category> --system <name> --work-type <kind>` runs exactly this query, and every call adds a `memory_lookups` row naming the category:
+
+```sql
+SELECT id, answer, decided_at, ticket_key FROM current_decisions
+WHERE category = :category AND system IS :system AND work_type IS :work_type
+ORDER BY decided_at DESC, id DESC LIMIT 3;
+```
+
+The schema enforces it too: a trigger refuses an ask whose suggestion, a decision from memory, or a lookup that uses a decision of another category. An approval given for a single ticket is never offered for an epic with children. An open question is an ask with no decision (`open_asks`). A run parks on an open ask and resumes when the decision is written, so a parked run survives a closed terminal (JP-114). The `questions/` folder action-triage's Needs you tab uses stays as the way a question reaches Josh and his answer comes back; the ledger is the record of both.
 
 ### Josh's marks
 
@@ -182,7 +196,7 @@ Lookup is exact: same `question_key`, same `system`, same `work_type`. An open q
 
 ## How a session finds its home
 
-The recorder works out a home when an episode goes quiet, with no model, in this order. The first step that gives an answer wins. Every answer is written to `session_homes` with the method, the evidence it used and the commit of `conventions/` it read.
+The recorder works out a home when an episode goes quiet, with no model, in this order. The first step that gives an answer wins. Every answer is written to `session_homes` with the method, the evidence it used, the commit of `conventions/` it read, and `patient_data`: 1 when the registry flags the home's system, when the system is not known, and for every Unassigned home. The recorder works the home out before it writes the episode, because the patient-data rule decides whether the episode may carry a title ([Patient data](#patient-data)).
 
 1. **Branch name.** The episode's branch starts with a ticket key: `^([A-Z][A-Z0-9]+-[0-9]+)([/-]|$)` (`conventions/tickets.md`, "Branches"), in a space the registry lists or a Linear team key. Method `branch`.
 2. **Ticket links.** Otherwise, the session's `ticket_links`: first the ticket of a graph run the session did a step for (`step_runs.session_uid`), then the newest link from the daemon, an accepted ticket offer, or Josh. A Jira command counts only when it moved or commented on the ticket, the rule the cost ledger's Jira hook already follows (`claude-360/src/costledger/jira-hook.ts`), so a session that only read a ticket is not homed under it. Method `ticket-link`.
@@ -195,14 +209,14 @@ As queries, with the registry and priorities read from their JSON copies (see th
 
 ```sql
 -- 1. Branch: the newest episode's branch, matched in the recorder (Python re), never by a model.
-SELECT branch FROM session_episodes WHERE session_uid = :uid ORDER BY episode DESC LIMIT 1;
+SELECT branch FROM current_session_episodes WHERE session_uid = :uid ORDER BY episode DESC LIMIT 1;
 
 -- 2. Ticket links: a run's ticket first, then the newest link from a trusted source.
 SELECT g.tracker, g.ticket_key FROM step_runs s JOIN graph_runs g ON g.run_id = s.run_id
 WHERE s.session_uid = :uid AND g.ticket_key IS NOT NULL ORDER BY s.started_at DESC LIMIT 1;
 SELECT tracker, ticket_key FROM ticket_links
 WHERE session_uid = :uid AND relation = 'touched' AND source IN ('daemon', 'walker', 'offer', 'josh', 'jira-command', 'backfill')
-  AND NOT EXISTS (SELECT 1 FROM corrections c WHERE c.table_name = 'ticket_links' AND c.row_id = ticket_links.id)
+  AND NOT EXISTS (SELECT 1 FROM live_corrections c WHERE c.table_name = 'ticket_links' AND c.row_id = ticket_links.id)
 ORDER BY linked_at DESC LIMIT 1;
 
 -- 3 and 4 are lookups in conventions/registry.json and conventions/priorities.json.
@@ -293,7 +307,8 @@ Hooks and scripts write the facts, never a working agent (vision guardrail 1). H
 | Tables | Written by | Ticket |
 | --- | --- | --- |
 | `machines`, `schema_migrations` | The install step | JP-107 |
-| `sessions`, `session_lineage`, `session_episodes`, `session_refs`, `session_homes`, `session_costs`, `session_state_notes`, `ticket_links` (branch, jira-command, backfill) | The recorder job, from the hook spool, the transcript, git and the cost import | JP-107 |
+| `sessions` | The recorder job, from the `SessionStart` spool line; `ledger.sessions.ensure` (built by JP-107) for the walker, the recorder and the backfill when a session has no row yet | JP-107 |
+| `session_lineage`, `session_episodes`, `session_refs`, `session_homes`, `session_costs`, `session_state_notes`, `ticket_links` (branch, jira-command, backfill) | The recorder job, from the hook spool, the transcript, git and the cost import | JP-107 |
 | `session_summaries`, `model_calls` | The summary script | JP-108 |
 | `branch_marks` | `ledger/ask.py keep`, which Josh runs | JP-109 |
 | `ticket_offers`, `ticket_links` (offer) | The offer hook, through the spool | JP-110 |
@@ -308,15 +323,29 @@ Hooks and scripts write the facts, never a working agent (vision guardrail 1). H
 
 ## Patient data
 
-No patient data in the ledger (vision, Standing rules). The design keeps it out in three layers.
+No patient data in the ledger (vision, Standing rules). **What follows is the whole rule, including what the check cannot catch** (JP-148, A2; the JP-146 review's question 2, where the stricter option is taken until Josh answers).
 
 1. **No column for it.** No column holds transcript text, message text, command output or file contents. Files are paths, transcript moments are entry ids, comments are ids, and friction is counts and codes. The test fails if a column is named for any of these.
 2. **Short text only, capped.** Twelve columns hold free text, and each has a length cap in the schema: a session's title (120 characters), its summary (five lines, 800 characters), a STATE.md note (300), a gate's one-line note (200), an ask's question, choices and suggested answer and a decision's answer (500 each), a stage change's reason and a branch mark's note (200), a home's evidence (300) and a machine's label (60). The test lists exactly these and fails if another free-text column appears or one loses its cap.
-3. **Checked before it is written.** Every writer passes those columns through one patient-data check, `graphs/gates/lib/patient_data.py` (the helper JP-102's plan names; whichever ticket lands first creates it). A line that fails is not stored: a summary line becomes `withheld: patient data` and is counted in `lines_withheld`. A run marked `phi` stores no question, note or answer text at all, only codes and paths. A session whose folder is inside a `.phi` folder stores no title, summary or notes.
+3. **No words of the session's own where patient data may be.** The registry flags every system whose work can see patient data, `patient_data: true` in `conventions/registry.yaml` (true when in doubt; every entry must say). A session whose home has `patient_data = 1` (a flagged system, a system the registry does not know, or no home at all), and a session whose folder is inside a `.phi` folder, keeps none of its own words in the ledger:
+   - no title (the episode's `title` is empty and `title_source` is `withheld`);
+   - no STATE.md notes;
+   - no first line of the first message;
+   - a summary built only from the ledger's own keys and counts (ticket, branch, pull request, turns), never from its words and never from a model call that reads the transcript.
+   If a later re-home moves a session that already has text under a flagged system, the rows are not edited: the recorder lists them in its pass report as `text-under-flagged-system`, and Josh decides whether to redact.
+4. **Checked before it is written.** Every other write of those columns passes through one check, `graphs/gates/lib/patient_data.py` (the helper JP-102's plan names; whichever ticket lands first creates it). A line that fails is not stored: a summary line becomes `withheld: patient data` and is counted in `lines_withheld`. A run marked `phi` stores no question, note or answer text at all, only codes and paths.
 
-The summary is the one place a session's own words could reach the ledger, because the vision builds it from the title, the first message and STATE.md. JP-99's acceptance criteria say no field stores message text. Josh chose at JP-106 (question 2) to keep a little of his own words: the summary's "what was asked" line copies the first line of the first message, 160 characters at most, after the same patient-data check. A line that fails the check is withheld like any other. This describes question-only sessions well with no model call; the one small model call is left for sessions whose first line is empty or withheld and whose title and STATE.md are too thin.
+**What the check catches, and what it does not.** The check is a copy check with a small pattern screen. It catches:
 
-If patient data is found in the ledger anyway, Josh runs `ledger/redact.py` ([The append-only rule](#the-append-only-rule), rule 4).
+- text that repeats a run of 10 or more characters from a source text it is handed (for example a ticket drafted from a forwarded email, checked against that email);
+- every non-empty text in a run already marked `phi`;
+- a few shapes of identifier, as a second net: a US social security number shape, a label such as `MRN`, `DOB`, `date of birth` or `patient id` followed by a value, a date with a year from 1900 to 2009 (a date of birth more often than a work date), and a run of seven or more digits (a record number).
+
+It does **not** catch patient data that is typed or written fresh with no source text to compare against: a patient's name in a session title, in a STATE.md note or in the first line Josh types, or anything the pattern screen does not recognise. That is why rule 3 keeps every session's own words out wherever patient data may be, instead of trusting the check to find it. For the unflagged systems (Josh 360's own work and a few tools), titles, notes and the first line are stored after the check, and the check is the only guard; Josh moves a system into the flagged set by setting its flag.
+
+The summary is the one place a session's own words could reach the ledger, because the vision builds it from the title, the first message and STATE.md. JP-99's acceptance criteria say no field stores message text. Josh chose at JP-106 (question 2) to keep a little of his own words: the summary's "what was asked" line copies the first line of the first message, 160 characters at most, after the same check, and only for a session rule 3 does not cover. A line that fails the check is withheld like any other. This describes question-only sessions well with no model call; the one small model call is left for sessions whose first line is empty or withheld and whose title and STATE.md are too thin, and never for a session rule 3 covers.
+
+If patient data is found in the ledger anyway, Josh runs `ledger/redact.py` ([The append-only rule](#the-append-only-rule), rule 4). Until it also reaches an uploaded copy, no copy leaves the laptop ([Storage](#storage), Backup).
 
 ## Loose ends are computed, never stored
 
@@ -342,7 +371,7 @@ Memory is pull only, and answers are small. Working agents get one command, `led
 | `home` | `--session <id>` | The session's current home: ticket, epic, system, method. Never the priority (working agents never see priorities). |
 | `ticket` | `--key <KEY>` | The sessions and runs on a ticket: ids, dates, titles, first summary line, graph and how each run ended |
 | `find` | `--folder <path>` or `--branch <name>`, `--since <date>` | Recent sessions there, with title and summary, so a session with no ticket can be found and picked up again |
-| `precedent` | `--question-key <graph/step> --system <name> --work-type <kind>` | Up to three current decisions with their ids, answers, dates and tickets. Every call adds a `memory_lookups` row. |
+| `precedent` | `--category <category> --system <name> --work-type <kind>` | Up to three current decisions of exactly that category, system and work type, with their ids, answers, dates and tickets (the query in [Decisions](#decisions)). Every call adds a `memory_lookups` row naming the category. |
 | `run` | `--run <id>` | A run's steps so far with outcomes and attempts (what the walker reads to say the next step) |
 | `changes` | `--system <name>` or `--repo <owner/name>`, `--since <date>` | The changelog answer, below |
 
@@ -356,12 +385,12 @@ Per-project changelog files cause merge conflicts across branches, and status li
 SELECT e.quiet_at, h.ticket_key, h.system, s.session_uid,
        (SELECT r.value FROM session_refs r WHERE r.session_uid = s.session_uid AND r.kind = 'pr'
         ORDER BY r.observed_at DESC LIMIT 1) AS pull_request,
-       (SELECT substr(m.lines, 1, instr(m.lines || char(10), char(10)) - 1) FROM session_summaries m
+       (SELECT substr(m.lines, 1, instr(m.lines || char(10), char(10)) - 1) FROM current_session_summaries m
         WHERE m.session_uid = s.session_uid ORDER BY m.episode DESC LIMIT 1) AS summary_line
 FROM sessions s
 JOIN current_homes h ON h.session_uid = s.session_uid
-JOIN session_episodes e ON e.session_uid = s.session_uid
-     AND e.episode = (SELECT MAX(episode) FROM session_episodes WHERE session_uid = s.session_uid)
+JOIN current_session_episodes e ON e.session_uid = s.session_uid
+     AND e.episode = (SELECT MAX(episode) FROM current_session_episodes WHERE session_uid = s.session_uid)
 WHERE h.system = :system AND e.quiet_at >= :since
   AND EXISTS (SELECT 1 FROM session_refs r WHERE r.session_uid = s.session_uid AND r.kind IN ('commit', 'pr'))
 ORDER BY e.quiet_at DESC LIMIT 20;
@@ -398,10 +427,10 @@ Transcripts are pointed at, not kept. When Claude Code's own clean-up removes a 
 ## Rules
 
 1. One ledger per machine, `~/.josh-360/state/ledger.db`, SQLite, standard library only.
-2. Every table is append-only, enforced by triggers. A wrong row is withdrawn with a `corrections` row. The only overwrite is Josh's patient-data redaction.
+2. Every table is append-only, enforced by triggers. A wrong row is withdrawn with a `corrections` row, a withdrawal can be undone once, and a withdrawn row in a one-per-key table is replaced by its next `version`. The only overwrite is Josh's patient-data redaction.
 3. Every session, run and machine has a text key that is unique across machines.
 4. Hooks write spool lines; scripts write the database; working agents never write it.
-5. No column holds transcript text, message text, command output or file contents. Free text lives only in the twelve capped columns, after the patient-data check. The one exception Josh chose (JP-106): a summary line may copy the first line of a session's first message, 160 characters at most.
+5. No column holds transcript text, message text, command output or file contents. Free text lives only in the twelve capped columns, after the patient-data check. The one exception Josh chose (JP-106): a summary line may copy the first line of a session's first message, 160 characters at most. A session under a flagged system, an unknown system or no home stores none of its own words.
 6. No table of loose ends. They are computed when asked.
 7. Tickets stay in their trackers; the ledger stores tracker and key.
 8. A session's home is worked out with no model, in the order branch, ticket links, registry, Unassigned, and each answer records its method and evidence.
@@ -410,7 +439,9 @@ Transcripts are pointed at, not kept. When Claude Code's own clean-up removes a 
 11. A decision answered from memory names the decision it rests on, or it is refused.
 12. Only Josh's own command raises a category's stage.
 13. A schema change is a numbered migration that only adds, applied by the install script after a backup.
-14. The ledger is backed up daily and kept for ever.
+14. The ledger is backed up daily and kept for ever. No copy leaves the laptop until redaction reaches it.
+15. A session's row is written when it starts, so anything recorded while it runs can point at it.
+16. Precedent is looked up within one category, system and work type, and never crosses a category.
 
 ## Acceptance criteria
 
@@ -442,6 +473,57 @@ Feature: One data model
 | Patient data has no home | `tests/test_ledger_schema.py`, `PatientDataHasNoHome` (no column named for transcript, message or file text; every free-text column capped; a sixth summary line refused) (`@auto`) |
 | Loose ends are not stored | `tests/test_ledger_schema.py`, `LooseEndsAreNotStored`, and [Loose ends are computed, never stored](#loose-ends-are-computed-never-stored) (`@auto`) |
 
+JP-148 added these, from its own ticket:
+
+```gherkin
+Feature: Ledger design carries the JP-146 review fixes
+
+  @auto
+  Scenario: A graph step can be tied to a running session
+    Given the amended schema and a session that has started but not gone quiet
+    When a step run is inserted for that session
+    Then the insert succeeds
+
+  @auto
+  Scenario: A withdrawn row can be replaced
+    Given a session summary that has been withdrawn
+    When a replacement summary is inserted for the same session and episode
+    Then the insert succeeds and the current view shows the replacement
+
+  @auto
+  Scenario: Agent Manager sessions are recorded as such
+    Given a session with AGENT_MANAGER_SESSION_ID set and no ticket key
+    When its starter is worked out
+    Then it is agent-manager
+
+  @auto
+  Scenario: Precedent stays inside its category
+    Given an approval recorded for a single ticket
+    When precedent is looked up for an epic with children
+    Then the single-ticket approval is not returned
+
+  @manual
+  Scenario: The patient-data rule is stated plainly
+    Given the amended data model
+    When Josh reads the patient-data section
+    Then it says what the check catches, what it does not, and what is never stored for a flagged system
+
+  @auto
+  Scenario: The suite stays green
+    Given the pull request
+    When python3 scripts/check.py runs
+    Then it exits 0
+```
+
+| Scenario | Proof |
+| --- | --- |
+| A graph step can be tied to a running session | `tests/test_ledger_schema.py`, `AGraphStepCanBeTiedToARunningSession` (`@auto`) |
+| A withdrawn row can be replaced | `tests/test_ledger_schema.py`, `AWithdrawnRowCanBeReplaced`, for all five tables, plus undoing a withdrawal (`@auto`) |
+| Agent Manager sessions are recorded as such | `tests/test_ledger_schema.py`, `AgentManagerSessionsAreRecordedAsSuch`, against the ordered rules in `ledger/codes.json` that the hook reads (`@auto`) |
+| Precedent stays inside its category | `tests/test_ledger_schema.py`, `PrecedentStaysInsideItsCategory`; the `split` key in `graphs/tests/test_check_graph.py` (`@auto`) |
+| The patient-data rule is stated plainly | [Patient data](#patient-data) (`@manual`, Josh reads it); the flag is checked by `tests/test_conventions.py`, `EverySystemSaysWhetherItHoldsPatientData`, and the schema side by `PatientDataRule` |
+| The suite stays green | `python3 scripts/check.py` on the pull request (`@auto`) |
+
 The test file also checks that the schema loads into an empty database, that every table refuses edits and deletes, that a resumed session adds rows, that a correction withdraws a home, that the step view carries the convention's eleven fields, that `exit_refused` always scores needs-josh, and that an answer from memory must rest on a decision.
 
 ## Out of scope
@@ -449,6 +531,7 @@ The test file also checks that the schema loads into an empty database, that eve
 - Building the ledger, the recorder or any writer (JP-107 and the tickets in [Who writes what](#who-writes-what)).
 - Dashboard queries and how measures are shown (phase 3, JP-130).
 - A cloud database, and merging two machines' ledgers (phase 3).
+- The upload of backups to Azure, held until the patient-data rule and a redaction that reaches the uploaded copies are built ([Storage](#storage)).
 - The final lists of friction facts and debrief kinds, settled from two weeks of real rows (JP-112, JP-113); `ledger/codes.json` holds the starting lists.
 - The layout of `cache.db` beyond which existing tables go there (JP-111).
 
@@ -465,6 +548,12 @@ Choices that can be undone, taken on the recommended option and recorded in `doc
 | Does a Jira command that only reads a ticket home a session under it? | No; only a transition or a comment, the cost ledger hook's own rule. | Count every Jira command in rule 2. |
 | Which version does a run record? | Both the graph file's commit (`graph_version`, JP-140) and josh-360's commit (`repo_commit`), which answers JP-140's open question about parts without a choice. | Drop `repo_commit`. |
 | Where do the growing code lists live? | `ledger/codes.json`, not `CHECK`s. | Move them into `CHECK`s with a migration each. |
+| How is a withdrawn row replaced (JP-148, A3)? | A `version` column in the five one-per-key tables, with a trigger that allows version n+1 only once version n is withdrawn, and `current_*` views that pick the newest version in force. Chosen over dropping the `UNIQUE`s, which would let a second pass write a duplicate with no correction. | Drop `version` and the triggers, and rely on writers alone. |
+| How do rows about an episode name it, once an episode has versions (A3)? | A trigger per table that the episode exists, in place of the composite foreign key, which SQLite cannot keep when the parent key is not unique. | Add a table of episode keys and point foreign keys at it. |
+| Can a withdrawal be undone (A3)? | Yes, once: a correction of a correction brings the row back, cannot itself be withdrawn, and `live_corrections` reads one level. Before JP-148 the views ignored a withdrawn correction. | Forbid corrections of corrections. |
+| Who counts as the starter of a session (A4)? | The first match in `ledger/codes.json`'s `started_by_env`: `JOSH360_RUN_ID` is walker; `ACTION_TRIAGE_TICKET_KEY` or `ACTION_TRIAGE_ALLOW_ATLASSIAN_WRITES` (set on every daemon spawn, PR audits included) is daemon; `DESK_WORKER=1` is desk; `AGENT_MANAGER_SESSION_ID` is agent-manager; else josh. | Reorder the rules in `codes.json`. |
+| Where does an ask declare its category split (A5)? | An optional `split` list on the ask step, checked by `graphs/tools/check_graph.py`. Optional, so no graph file becomes invalid and `convention` stays 1. | Move it into a per-graph table the decision command reads. |
+| How is the patient-data flag stored (A2)? | `patient_data: true/false` on every registry system, required, true when in doubt; homes carry it as `session_homes.patient_data`, which is 1 whenever the system is unknown. | Make the flag optional, defaulting to true. |
 
 ## Questions for Josh
 
