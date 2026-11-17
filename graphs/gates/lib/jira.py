@@ -83,6 +83,12 @@ class Jira:
     @classmethod
     def from_env(cls, environ: Optional[dict] = None, **kwargs) -> "Jira":
         env = os.environ if environ is None else environ
+        from lib import jira_fake  # tests only: a folder-backed Jira, honoured when its marker file exists
+
+        fake = jira_fake.folder_from(env)
+        if fake is not None and "transport" not in kwargs:
+            kwargs["transport"] = jira_fake.FileTransport(fake)
+            return cls(env.get("JOSH360_JIRA_SITE") or DEFAULT_SITE, "test@example.com", "fake-token", **kwargs)
         email = env.get("JOSH360_JIRA_EMAIL") or env.get("ACTION_AGENT_JIRA_EMAIL")
         token = env.get("JOSH360_JIRA_TOKEN")
         if not email or not token:

@@ -255,11 +255,13 @@ def offer_text(sid: str, trigger: str) -> str:
         "Josh 360 ticket offer (JP-110). This session is about to {moment} and no ticket is linked to it. Tell Josh "
         "once, in one line, in your next message: \"{line}\" Then carry on with what you were doing: do not wait for "
         "the answer, do not hold the commit, and do not ask again in this session.\n"
-        "If Josh says yes: open the ticket (Josh's using-jira flow until the ticket creation graph exists), name the "
-        "branch after its key (<KEY>/<slug>), then run: python3 {script} --session {sid} accepted <KEY>\n"
+        "If Josh says yes: start the ticket creation graph with: python3 {submit} --source session --ref {sid}\n"
+        "Josh approves the ticket on a card in the Needs you tab, so carry on meanwhile. When he gives you the ticket's "
+        "key, name the branch after it (<KEY>/<slug>), then run: python3 {script} --session {sid} accepted <KEY>\n"
         "If Josh says no: run: python3 {script} --session {sid} declined\n"
         "If he does not answer, do nothing more."
-    ).format(moment=moment, line=ONE_LINE, script=script, sid=sid)
+    ).format(moment=moment, line=ONE_LINE, script=script, sid=sid,
+             submit=script.parent.parent / "graphs" / "intake" / "submit.py")
 
 
 # -- the hook -----------------------------------------------------------------------------------------------------

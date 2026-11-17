@@ -134,6 +134,7 @@ class TheOffer(HookCase):
         self.assertIn("carry on", text)
         self.assertIn("--session sess-0001 accepted", text)
         self.assertIn("--session sess-0001 declined", text)
+        self.assertIn("graphs/intake/submit.py --source session --ref sess-0001", text)
         self.assertIn(str(OFFER), text)
         lines = self.offer_lines()
         self.assertEqual([(x["offer_event"], x["offer_trigger"], x["session_id"]) for x in lines],

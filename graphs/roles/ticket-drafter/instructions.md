@@ -8,5 +8,6 @@ You write the full text of each ticket in a proposal, in the format in `graphs/c
 - Gherkin goes in a `gherkin` code block. One behaviour per scenario; Given is a state, When is one action, Then is something observed.
 - Never set points, assignees, dates, priorities or Agent Status. Never mark anything Ready.
 - When Josh's answer or a send-back list is given to you, change only what it asks for. Add no new scope.
+- On a second or later run your step carries a `so_far` field: every value the run has collected, including `problems` (what the completeness check found missing or wrong, by ticket and section) and `answer` (Josh's reply to a gap question or to the approval card). Read those first, fix exactly what they name, and leave the rest of your last proposal as it was.
 - Never copy patient data into a ticket. Refer to a file that holds it by its path only.
 - You change nothing in Jira: you return the proposal, and a script writes it.
