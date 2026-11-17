@@ -10,6 +10,7 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import ledger_transcripts as tr  # noqa: E402
 from ledger_helpers import FAKE_PHONE, NOW, ROOT, LedgerCase  # noqa: E402
+from test_ledger_costs import cost_ledger, message  # noqa: E402
 from test_ledger_homes import CONV  # noqa: E402
 from ledger import record, spool  # noqa: E402
 
@@ -126,7 +127,8 @@ class Recorder(LedgerCase):
         before = {t: self.count(t) for t in ("sessions", "session_episodes", "session_refs", "session_homes",
                                               "ticket_links")}
         again = self.run_pass()
-        self.assertEqual(again, {"sessions": 0, "episodes": 0, "refs": 0, "homes": 0, "skipped": 0})
+        self.assertEqual(again, {"sessions": 0, "episodes": 0, "refs": 0, "homes": 0, "skipped": 0, "costs": 0,
+                                 "notes": 0})
         self.assertEqual(before, {t: self.count(t) for t in before})
 
     def test_a_lost_mark_does_not_record_the_same_stretch_twice(self):
@@ -230,6 +232,103 @@ class Recorder(LedgerCase):
             return fake_git(folder, args)
         counts = self.run_pass(git=git)
         self.assertEqual((counts["episodes"], counts["skipped"]), (1, 1))
+
+    # -- cost, notes, titles from the cost ledger, re-homing ---------------------------------------------------
+
+    def quiet_session(self, folder=FOLDER, sid="sess-0001"):
+        self.start(sid=sid, folder=folder)
+        self.end(sid=sid)
+        tr.write(self.tfile(sid), tr.plain(folder, session_id=sid) + [
+            tr.line("system", "2026-11-17T09:09:00Z", sid, subtype="compact_boundary")], mtime=NOW_EPOCH - 60)
+
+    def test_cost_links_notes_and_facts_are_written_with_the_episode(self):
+        self.quiet_session()
+        cdb = cost_ledger()
+        message(cdb, 1, cost=2.0)
+        cdb.execute("INSERT INTO jira_session_links VALUES ('JP-902', 'claude-code', 'sess-0001', 'worked', ?)",
+                    ("2026-11-17T09:05:00Z",))
+        home = self.tmp / "claude-home"
+        notes = home / "session-state" / "sess-0001" / "STATE.md"
+        notes.parent.mkdir(parents=True)
+        notes.write_text("## U-turns\n- a -> b: because; told the user yes\n\n## Dead ends\n- x: y; do not retry\n",
+                         encoding="utf-8")
+        counts = record.record_pass(self.conn, now=NOW, spool=self.spool, projects=self.projects, git=fake_git,
+                                    jira=jira_ok, conventions=CONV, state=self.state, cost_db=cdb, claude_home=home)
+        self.assertEqual((counts["costs"], counts["notes"]), (1, 2))
+        self.assertEqual(self.rows("SELECT cost_usd FROM current_session_costs"), [(2.0,)])
+        self.assertEqual(self.rows("SELECT ticket_key, source FROM ticket_links ORDER BY source"),
+                         [("JP-900", "branch"), ("JP-902", "jira-command")])
+        self.assertEqual(self.rows("SELECT fact, value FROM session_facts ORDER BY fact"),
+                         [("compactions", 1), ("dead_ends", 1), ("u_turns", 1)])
+
+    def test_phi_folder_stores_no_notes_or_cost_ledger_title(self):
+        """Review Focus 6: nothing from STATE.md, and no title from the cost ledger either."""
+        folder = "/tmp/made-up/.phi/export"
+        self.quiet_session(folder)
+        cdb = cost_ledger()
+        cdb.execute("INSERT INTO session_labels VALUES ('claude-code', 'sess-0001', 'custom_title', 'Made up', ?)",
+                    (NOW,))
+        home = self.tmp / "claude-home"
+        notes = home / "session-state" / "sess-0001" / "STATE.md"
+        notes.parent.mkdir(parents=True)
+        notes.write_text("## Dead ends\n- a secret thing: failed; do not retry\n", encoding="utf-8")
+        record.record_pass(self.conn, now=NOW, spool=self.spool, projects=self.projects, git=fake_git, jira=jira_ok,
+                           conventions=CONV, state=self.state, cost_db=cdb, claude_home=home)
+        self.assertEqual(self.count("session_state_notes"), 0)
+        self.assertEqual(self.rows("SELECT title, title_source FROM session_episodes"), [(None, "withheld")])
+
+    def test_cost_ledger_title_follows_the_same_rule(self):
+        self.quiet_session()
+        cdb = cost_ledger()
+        cdb.execute("INSERT INTO session_labels VALUES ('claude-code', 'sess-0001', 'ai_title', 'From cost ledger', ?)",
+                    (NOW,))
+        record.record_pass(self.conn, now=NOW, spool=self.spool, projects=self.projects, git=fake_git, jira=jira_ok,
+                           conventions=CONV, state=self.state, cost_db=cdb)
+        self.assertEqual(self.rows("SELECT title, title_source FROM session_episodes"),
+                         [("From cost ledger", "ai")])
+
+    def test_cost_ledger_title_with_patient_data_is_withheld(self):
+        self.quiet_session()
+        cdb = cost_ledger()
+        cdb.execute("INSERT INTO session_labels VALUES ('claude-code', 'sess-0001', 'ai_title', ?, ?)",
+                    ("Call " + FAKE_PHONE, NOW))
+        record.record_pass(self.conn, now=NOW, spool=self.spool, projects=self.projects, git=fake_git, jira=jira_ok,
+                           conventions=CONV, state=self.state, cost_db=cdb)
+        self.assertEqual(self.rows("SELECT title, title_source FROM session_episodes"), [(None, "withheld")])
+
+    def test_rehome_writes_only_changed_homes(self):
+        self.quiet_session()
+        self.run_pass()
+        self.assertEqual(record.rehome_recent(self.conn, NOW, jira_ok, CONV), {"homes": 0})
+        other = lambda key: {"epic_key": "JP-999", "initiative_key": "TECH-901", "area": None, "system": None}  # noqa
+        self.assertEqual(record.rehome_recent(self.conn, NOW, other, CONV), {"homes": 1})
+        self.assertEqual(self.count("session_homes"), 2)
+        self.assertEqual(self.rows("SELECT epic_key FROM current_homes"), [("JP-999",)])
+
+    def test_rehome_leaves_old_sessions_alone(self):
+        self.quiet_session()
+        self.run_pass()
+        other = lambda key: {"epic_key": "JP-999", "initiative_key": None, "area": None, "system": None}  # noqa
+        self.assertEqual(record.rehome_recent(self.conn, "2026-12-30T00:00:00Z", other, CONV), {"homes": 0})
+
+    def test_a_failed_jira_read_is_repeated_when_jira_answers(self):
+        self.quiet_session()
+        self.run_pass(jira=lambda key: None)
+        self.assertEqual(record.rehome_recent(self.conn, NOW, lambda key: None, CONV, only_failed=True), {"homes": 0})
+        self.assertEqual(record.rehome_recent(self.conn, NOW, jira_ok, CONV, only_failed=True), {"homes": 1})
+        self.assertEqual(self.rows("SELECT jira_read, epic_key FROM current_homes"), [("ok", "JP-901")])
+        self.assertEqual(record.rehome_recent(self.conn, NOW, jira_ok, CONV, only_failed=True), {"homes": 0})
+
+    def test_recopy_costs_adds_a_batch_after_repricing(self):
+        self.quiet_session()
+        cdb = cost_ledger()
+        message(cdb, 1, cost=1.0)
+        record.record_pass(self.conn, now=NOW, spool=self.spool, projects=self.projects, git=fake_git, jira=jira_ok,
+                           conventions=CONV, state=self.state, cost_db=cdb)
+        cdb.execute("INSERT INTO pricing_runs (id, started_at) VALUES (2, 'x')")
+        cdb.execute("INSERT INTO message_costs VALUES (2, 1, 'model-a', 5.0, NULL, 'priced')")
+        self.assertEqual(record.recopy_costs_recent(self.conn, cdb, "2026-11-18T00:00:00Z"), {"costs": 1})
+        self.assertEqual(self.rows("SELECT cost_usd FROM current_session_costs"), [(5.0,)])
 
     # -- no model, no network ----------------------------------------------------------------------------------
 
