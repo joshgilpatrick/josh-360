@@ -1,0 +1,14 @@
+$ cd tests && python3 -m unittest -v test_walker_compile
+test_a_change_to_a_graph_makes_its_copy_stale_for_the_check_and_for_the_walker (test_walker_compile.Compiling.test_a_change_to_a_graph_makes_its_copy_stale_for_the_check_and_for_the_walker) ... ok
+test_a_missing_copy_fails_the_check (test_walker_compile.Compiling.test_a_missing_copy_fails_the_check) ... ok
+test_every_real_graph_has_an_up_to_date_copy (test_walker_compile.Compiling.test_every_real_graph_has_an_up_to_date_copy) ... ok
+test_the_copy_holds_the_graph_the_tiers_and_the_hash_of_every_source (test_walker_compile.Compiling.test_the_copy_holds_the_graph_the_tiers_and_the_hash_of_every_source) ... ok
+test_a_copy_made_by_hand_for_a_rejected_graph_is_refused_by_the_walker_too (test_walker_compile.RefusingARejectedGraph.test_a_copy_made_by_hand_for_a_rejected_graph_is_refused_by_the_walker_too) ... ok
+test_a_graph_the_checker_refuses_gets_no_copy_and_no_run (test_walker_compile.RefusingARejectedGraph.test_a_graph_the_checker_refuses_gets_no_copy_and_no_run) ... ok
+test_a_graph_with_no_ticket_names_its_subject (test_walker_compile.RefusingARejectedGraph.test_a_graph_with_no_ticket_names_its_subject) ... ok
+test_unknown_and_missing_inputs_are_refused (test_walker_compile.RefusingARejectedGraph.test_unknown_and_missing_inputs_are_refused) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 1.363s
+
+OK

@@ -1,0 +1,5 @@
+$ python3 graphs/tools/check_graph.py
+check_graph: ok (3 graph(s))
+
+$ python3 graphs/tools/compile_graphs.py --check
+compile_graphs: ok (3 graph(s))

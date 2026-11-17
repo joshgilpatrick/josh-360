@@ -23,6 +23,7 @@
 - [Out of scope](#out-of-scope)
 - [Question for Josh](#question-for-josh)
 - [Choices made while designing](#choices-made-while-designing)
+- [As built](#as-built)
 
 Ticket JP-102. Builds in JP-121. Sources: Josh's notes (`docs/source-notes/jira-ticket-agent-context.md`), `conventions/tickets.md` and `conventions/registry.yaml` (JP-98), `graphs/CONVENTION.md` (JP-101), and `docs/vision-and-roadmap.md`. The draft graph is `graphs/flows/ticket-creation.yaml`; it passes `python3 graphs/tools/check_graph.py`.
 
@@ -516,3 +517,15 @@ These can be undone, so they were taken without asking and recorded in `docs/dec
 | Unmatched items | Josh is asked for an epic or area, with suggestions, before the card. | Let the card carry the question instead. |
 | Gate stubs | The draft's gate scripts exist and refuse to run ("not built yet"), so the checker can pass and nothing passes through them by accident. | Delete the stubs and the draft graph. |
 | Staleness | A created ticket not Ready after 14 days is a weekly-review candidate to cancel. | Change the number, or drop the rule. |
+
+## As built
+
+Built in JP-121 in two pull requests: the shared Jira library first, then the graph.
+
+- **Gates.** Every gate in the graph is a real script in `graphs/gates/`: `intake-admitted`, `route-ticket`, `duplicate-rule`, `ticket-complete`, `create-tickets`, `link-source` and `intake-closed`. They share `lib/contracts.py`, `lib/sources.py`, `lib/ready_checklist.py`, `lib/card.py`, `lib/adf.py` and the Jira library `lib/jira.py`. A gate reads its inputs from the walker and prints one JSON line.
+- **The graph.** `graphs/flows/ticket-creation.yaml` is unchanged in shape. It declares the extra gate inputs and outputs the scripts use: `check_draft` takes the intake record, the route and the candidates and outputs `problems` and `card`; `write` takes the source; `link_source` takes `match_key`.
+- **Draft re-runs.** The walker adds `so_far` to a re-run role step's action, so a draft after a failed check, a gap answer or a "change" sees `problems` and `answer`.
+- **Starting a run.** `graphs/intake/submit.py --source email|todo|session|manual --ref <pointer>`; the JP-110 ticket offer calls it on a yes. See `graphs/intake/README.md`.
+- **Tests.** One test file per gate, and `graphs/tests/test_ticket_creation_run.py`, which walks the whole graph with the real walker and real gates against a folder-backed fake Jira. Proof: `docs/proof/2026-11-17/JP-121/`.
+- **Run caps.** `draft` runs three times at most; the fourth goes to the `stuck` question (tested).
+- **Still to do.** The end-to-end run on the laptop against the real JP space (plan Task 9, step 5), and the action-triage hand-offs (plan Task 10, a separate pull request that waits for the phase close).

@@ -1,12 +1,29 @@
 #!/usr/bin/env python3
-"""DRAFT gate: move-ticket. Shared by every graph; first added as a stub by JP-104's draft; built in JP-123.
+"""Gate move-ticket (shared by every graph; built in JP-123): move a JP ticket to the status of the step's stretch.
 
-Moves the ticket to the Jira status of the step's stretch in the graph header, and reads the move back. Shared with the other graphs.
+The walker sets GRAPH_INPUT_TARGET_STATUS from the graph header's stretch for the step. The move is read back through
+the shared Jira client; a ticket already there is left alone, so a run again after a crash does nothing twice. Only
+JP tickets move here: the other spaces have their own workflows.
 
-Outcomes: moved.
-Inputs arrive as GRAPH_INPUT_<NAME>; prints one JSON line (graphs/CONVENTION.md, "Gate scripts").
-Until it is built it refuses, so no run can pass through it by accident.
+Outcomes: moved. Inputs: ticket_key, target_status.
 """
-import sys
+import re
 
-sys.exit("move-ticket: not built yet (JP-123)")
+from lib.gate_run import GateError, execute, need
+
+JP_STATUSES = ("Not Started", "Ready", "Design/Planning", "In Progress", "Code Review", "Validation", "Done", "Cancelled")
+
+
+def run(inputs, deps):
+    key = need(inputs, "ticket_key")
+    status = need(inputs, "target_status")
+    if not re.match(r"^JP-\d+$", key):
+        raise GateError("{} is not a JP ticket: this gate moves JP tickets only".format(key))
+    if status not in JP_STATUSES:
+        raise GateError("'{}' is not a JP status".format(status[:40]))
+    deps.ticket.move(key, status)
+    return "moved", None, "moved to " + status
+
+
+if __name__ == "__main__":
+    execute(run, ["ticket_key", "target_status"])

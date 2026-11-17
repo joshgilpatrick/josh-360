@@ -1,0 +1,9 @@
+$ cd tests && python3 -m unittest -v test_walker.Asking.test_a_parked_run_leaves_a_question_in_needs_you_and_a_flag_and_no_session test_walker.Asking.test_the_answer_is_saved_as_a_decision_in_its_category test_walker.Asking.test_the_cli_answer_command_writes_the_same_file_the_app_does
+test_a_parked_run_leaves_a_question_in_needs_you_and_a_flag_and_no_session (test_walker.Asking.test_a_parked_run_leaves_a_question_in_needs_you_and_a_flag_and_no_session) ... ok
+test_the_answer_is_saved_as_a_decision_in_its_category (test_walker.Asking.test_the_answer_is_saved_as_a_decision_in_its_category) ... ok
+test_the_cli_answer_command_writes_the_same_file_the_app_does (test_walker.Asking.test_the_cli_answer_command_writes_the_same_file_the_app_does) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 1.068s
+
+OK

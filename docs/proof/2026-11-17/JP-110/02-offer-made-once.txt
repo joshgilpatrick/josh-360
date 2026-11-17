@@ -1,0 +1,7 @@
+# Scenario 2: the offer is made once
+test_the_offer_is_made_once (tests.test_ledger_offer.TheOffer.test_the_offer_is_made_once) ... ok
+test_two_hooks_firing_together_offer_once (tests.test_ledger_offer.TheOffer.test_two_hooks_firing_together_offer_once) ... ok
+test_another_session_is_offered_on_its_own (tests.test_ledger_offer.TheOffer.test_another_session_is_offered_on_its_own) ... ok
+----------------------------------------------------------------------
+Ran 3 tests in 0.484s
+OK

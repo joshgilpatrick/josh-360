@@ -47,19 +47,23 @@ def started_by(env: Mapping[str, str], codes: Path = CODES) -> str:
     return rules["default"]
 
 
-def append(event: str, payload: Dict[str, object], now: str, folder: Optional[Path] = None) -> None:
-    """One line, in <folder>/<YYYY-MM-DD>.jsonl, written with one write call to a file opened in append mode, so two
-    hooks firing together do not interleave."""
-    folder = folder or spool_dir()
+def write_line(folder: Path, line: Dict[str, object], now: str) -> None:
+    """One JSON line, in <folder>/<YYYY-MM-DD>.jsonl, written with one write call to a file opened in append mode, so
+    two hooks firing together do not interleave."""
     folder.mkdir(parents=True, exist_ok=True)
-    line = {k: payload.get(k) for k in KEYS}
-    line["event"], line["at"] = event, now
     data = (json.dumps(line, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
     fd = os.open(str(folder / (now[:10] + ".jsonl")), os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
     try:
         os.write(fd, data)
     finally:
         os.close(fd)
+
+
+def append(event: str, payload: Dict[str, object], now: str, folder: Optional[Path] = None) -> None:
+    """A SessionStart or SessionEnd line: exactly the keys in KEYS and nothing else."""
+    line = {k: payload.get(k) for k in KEYS}
+    line["event"], line["at"] = event, now
+    write_line(folder or spool_dir(), line, now)
 
 
 def read_since(folder: Path, mark: Dict[str, object]) -> Tuple[List[Dict[str, object]], Dict[str, object]]:

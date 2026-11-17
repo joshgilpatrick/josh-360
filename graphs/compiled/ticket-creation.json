@@ -1,0 +1,487 @@
+{
+ "agents": {},
+ "compiled": 1,
+ "graph": {
+  "convention": 1,
+  "description": "One loose input (a forwarded email, a to-do, a session that crossed the ticket threshold, a ticket asked for by hand, and later a Notion action item) becomes one complete ticket, or a parent with children, in Josh's format, routed by the registry, checked for duplicates and approved by Josh before anything is written. An open duplicate gets a comment instead. Tickets end in Not Started; the triage and sign-off graph marks them Ready.\n",
+  "graph": "ticket-creation",
+  "header": {
+   "access": {
+    "approve": "read",
+    "ask_gap": "read",
+    "check_draft": "read",
+    "decompose": "read",
+    "draft": "read",
+    "duplicate_rule": "read",
+    "find_duplicates": "read",
+    "link_source": "josh",
+    "read_intake": "read",
+    "route": "read",
+    "stuck": "read",
+    "write": "shared",
+    "write_failed": "read"
+   },
+   "asks_josh": [
+    "ask_gap",
+    "stuck",
+    "approve",
+    "write_failed"
+   ],
+   "end_states": {
+    "approve.drop": "neutral",
+    "ask_gap.drop": "neutral",
+    "finished": "success",
+    "route.personal": "neutral",
+    "stuck.drop": "needs-josh"
+   },
+   "entry_gate": "intake-admitted",
+   "exit_gate": "intake-closed",
+   "jira": [
+    {
+     "status": "Not Started",
+     "steps": [
+      "read_intake",
+      "route",
+      "find_duplicates",
+      "duplicate_rule",
+      "decompose",
+      "draft",
+      "check_draft",
+      "ask_gap",
+      "stuck",
+      "approve",
+      "write",
+      "write_failed",
+      "link_source"
+     ]
+    }
+   ],
+   "ledger": [
+    "run",
+    "step",
+    "outcome",
+    "loop_count",
+    "session",
+    "tier",
+    "ticket",
+    "started_at",
+    "ended_at",
+    "graph_version",
+    "model"
+   ]
+  },
+  "inputs": {
+   "named_parent": {
+    "default": "none",
+    "description": "A ticket key Josh named outright",
+    "type": "string"
+   },
+   "named_space": {
+    "default": "none",
+    "description": "A space Josh named outright",
+    "type": "string"
+   },
+   "source": {
+    "description": "email, todo, session, manual (notion in the second wave)",
+    "required": true,
+    "type": "string"
+   },
+   "source_ref": {
+    "description": "Pointer to the input; never its text",
+    "required": true,
+    "type": "string"
+   }
+  },
+  "outputs": {
+   "ticket_keys": {
+    "description": "The tickets created, parent first; empty after a comment or a drop",
+    "type": "list"
+   }
+  },
+  "steps": [
+   {
+    "brief": "Source: {{ inputs.source }}, at {{ inputs.source_ref }}.",
+    "id": "read_intake",
+    "inputs": [
+     "source",
+     "source_ref"
+    ],
+    "outcomes": [
+     "recorded"
+    ],
+    "outputs": {
+     "intake_record": {
+      "contract": "intake-record",
+      "description": "Path to the record",
+      "type": "string"
+     }
+    },
+    "role": "intake-reader"
+   },
+   {
+    "gate": "route-ticket",
+    "id": "route",
+    "inputs": [
+     "intake_record",
+     "named_space",
+     "named_parent"
+    ],
+    "needs": [
+     "read_intake"
+    ],
+    "on": {
+     "personal": "end"
+    },
+    "outcomes": [
+     "matched",
+     "unmatched",
+     "personal"
+    ],
+    "outputs": {
+     "route": {
+      "description": "space, parent, area, priority, system, labels, rule",
+      "type": "string"
+     }
+    }
+   },
+   {
+    "brief": "A match asks for the same deliverable. Search JP, AD and CI, open and closed, starting with the routed system's space.\n",
+    "id": "find_duplicates",
+    "inputs": [
+     "intake_record",
+     "route"
+    ],
+    "needs": [
+     "route"
+    ],
+    "outcomes": [
+     "searched"
+    ],
+    "outputs": {
+     "candidates": {
+      "description": "key, summary, status, why it matches",
+      "type": "list"
+     }
+    },
+    "role": "jira-searcher"
+   },
+   {
+    "gate": "duplicate-rule",
+    "id": "duplicate_rule",
+    "inputs": [
+     "candidates",
+     "intake_record"
+    ],
+    "needs": [
+     "find_duplicates"
+    ],
+    "outcomes": [
+     "open_match",
+     "new_light",
+     "new_full"
+    ],
+    "outputs": {
+     "match_key": {
+      "description": "The open match, or the Done or Cancelled one to link; none when there is no match",
+      "type": "string"
+     },
+     "match_status": {
+      "description": "The match's status, or none",
+      "type": "string"
+     }
+    }
+   },
+   {
+    "id": "decompose",
+    "inputs": [
+     "intake_record",
+     "route"
+    ],
+    "needs": [
+     "duplicate_rule"
+    ],
+    "outcomes": [
+     "shaped"
+    ],
+    "outputs": {
+     "shape": {
+      "description": "single, parent_with_subtasks or epic_with_tickets, with its children",
+      "type": "string"
+     }
+    },
+    "role": "decomposer",
+    "when": {
+     "outcome": "new_full",
+     "step": "duplicate_rule"
+    }
+   },
+   {
+    "id": "draft",
+    "inputs": [
+     "intake_record",
+     "route",
+     "match_key",
+     "shape"
+    ],
+    "needs": [
+     "duplicate_rule",
+     "decompose"
+    ],
+    "outcomes": [
+     "drafted"
+    ],
+    "outputs": {
+     "proposal": {
+      "contract": "ticket-proposal",
+      "description": "Path to the proposal",
+      "type": "string"
+     }
+    },
+    "role": "ticket-drafter"
+   },
+   {
+    "gate": "ticket-complete",
+    "id": "check_draft",
+    "inputs": [
+     "proposal",
+     "source",
+     "source_ref",
+     "intake_record",
+     "route",
+     "candidates"
+    ],
+    "needs": [
+     "draft"
+    ],
+    "on": {
+     "fixable": {
+      "at_limit": "stuck",
+      "goto": "draft",
+      "max_loops": 2
+     }
+    },
+    "outcomes": [
+     "pass",
+     "fixable",
+     "needs_josh"
+    ],
+    "outputs": {
+     "card": {
+      "description": "The approval card's text, or the gap question for Josh",
+      "type": "string"
+     },
+     "problems": {
+      "description": "What is missing or wrong, by ticket and section; never quotes the source",
+      "type": "list"
+     }
+    }
+   },
+   {
+    "ask": {
+     "choices": [
+      "answered",
+      "drop"
+     ],
+     "question": "A new ticket from {{ inputs.source }} needs one answer before it can be drafted."
+    },
+    "id": "ask_gap",
+    "needs": [
+     "check_draft"
+    ],
+    "on": {
+     "answered": {
+      "at_limit": "stuck",
+      "goto": "draft",
+      "max_loops": 2
+     },
+     "drop": "end"
+    },
+    "when": {
+     "outcome": "needs_josh",
+     "step": "check_draft"
+    }
+   },
+   {
+    "ask": {
+     "choices": [
+      "one_more",
+      "show_it",
+      "drop"
+     ],
+     "on_limit_only": true,
+     "question": "The ticket from {{ inputs.source_ref }} reached its drafting limit. Try one more round, show it for approval as it is, or drop it?"
+    },
+    "id": "stuck",
+    "on": {
+     "drop": "end",
+     "one_more": {
+      "at_limit": "stuck",
+      "goto": "draft",
+      "max_loops": 1
+     }
+    }
+   },
+   {
+    "ask": {
+     "approves": [
+      "write"
+     ],
+     "approves_on": [
+      "approve"
+     ],
+     "choices": [
+      "approve",
+      "change",
+      "drop"
+     ],
+     "question": "Create this from {{ inputs.source }}?"
+    },
+    "id": "approve",
+    "needs": [
+     "check_draft",
+     "ask_gap"
+    ],
+    "on": {
+     "change": {
+      "at_limit": "stuck",
+      "goto": "draft",
+      "max_loops": 2
+     },
+     "drop": "end"
+    }
+   },
+   {
+    "effects": [
+     "set_label"
+    ],
+    "gate": "create-tickets",
+    "id": "write",
+    "inputs": [
+     "proposal",
+     "match_key",
+     "source",
+     "source_ref"
+    ],
+    "needs": [
+     "approve"
+    ],
+    "on": {
+     "partial": {
+      "at_limit": "write_failed",
+      "goto": "write",
+      "max_loops": 1
+     }
+    },
+    "outcomes": [
+     "created",
+     "commented",
+     "partial"
+    ],
+    "outputs": {
+     "missing": {
+      "description": "Tickets or links not yet confirmed, by proposal reference",
+      "type": "list"
+     },
+     "ticket_keys": {
+      "description": "Created keys, parent first",
+      "type": "list"
+     }
+    },
+    "when": {
+     "outcome": "approve",
+     "step": "approve"
+    }
+   },
+   {
+    "ask": {
+     "choices": [
+      "done"
+     ],
+     "on_limit_only": true,
+     "question": "Jira did not confirm every ticket from {{ inputs.source_ref }}. The ones that exist are listed. Finish by hand, then say done."
+    },
+    "id": "write_failed"
+   },
+   {
+    "gate": "link-source",
+    "id": "link_source",
+    "inputs": [
+     "source",
+     "source_ref",
+     "ticket_keys",
+     "match_key"
+    ],
+    "needs": [
+     "write"
+    ],
+    "outcomes": [
+     "linked"
+    ]
+   }
+  ],
+  "title": "Ticket creation"
+ },
+ "max_runs": {
+  "cheap": 5,
+  "gate": 2,
+  "mid": 3
+ },
+ "roles": {
+  "decomposer": {
+   "may_change": false,
+   "reviewer": false,
+   "tier": "gate",
+   "title": "Decomposer"
+  },
+  "intake-reader": {
+   "may_change": false,
+   "reviewer": false,
+   "tier": "mid",
+   "title": "Intake reader"
+  },
+  "jira-searcher": {
+   "may_change": false,
+   "reviewer": false,
+   "tier": "cheap",
+   "title": "Jira searcher"
+  },
+  "ticket-drafter": {
+   "may_change": false,
+   "reviewer": false,
+   "tier": "mid",
+   "title": "Ticket drafter"
+  }
+ },
+ "sources": {
+  "flows/ticket-creation.yaml": "9ccd46dce61609fd36718158ce0972f4ac2dfa8b3b309adb3434beabe1d361db",
+  "roles/decomposer/role.yaml": "22903280b9f5f22c2245714ddd0834905ea2f9d547d7b31b67df1d2b3808eb44",
+  "roles/intake-reader/role.yaml": "e120fdcec4b38156d0e0bd8b16b8f6d8f3fd1bd8180e7f53bc9e385637fa236a",
+  "roles/jira-searcher/role.yaml": "465f5d9a7010810b7ae11e05a55486eb025ee68b021c4a8397ec1cdefc8e1634",
+  "roles/ticket-drafter/role.yaml": "392bcc63415c2ce8d1593dcf345b9ed21cd4d999cdc7571d936d5ed16b7ef44a",
+  "tiers.yaml": "af81c945dec4862af3be1d3957865dd692e7c77e42df42fa43b35c1fe3a14d44"
+ },
+ "tiers": {
+  "cheap": [
+   {
+    "effort": "high",
+    "model": "claude-haiku-5-5"
+   },
+   {
+    "effort": "medium",
+    "model": "claude-sonnet-5-5"
+   }
+  ],
+  "gate": [
+   {
+    "effort": "high",
+    "model": "claude-opus-5-5"
+   }
+  ],
+  "mid": [
+   {
+    "effort": "medium",
+    "model": "claude-sonnet-5-5"
+   }
+  ]
+ }
+}
