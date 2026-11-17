@@ -115,8 +115,8 @@ class AppendOnly(LedgerTest):
         db = self.ledger()
         seed(db)
         home = """INSERT INTO session_homes (session_uid, episode, method, tracker, ticket_key, priority, evidence,
-                  conventions_version, jira_read, patient_data, derived_at, recorded_by)
-                  VALUES (?, 1, ?, ?, ?, ?, ?, 'c1', ?, 1, ?, 'test')"""
+                  conventions_version, jira_read, derived_at, recorded_by)
+                  VALUES (?, 1, ?, ?, ?, ?, ?, 'c1', ?, ?, 'test')"""
         db.execute(home, (S1, "branch", "jira", "JP-900", "devex", "JP-900/sample", "ok", "2026-11-16T10:00:00Z"))
         db.execute(home, (S1, "unassigned", None, None, "unassigned", "/tmp/made-up", "not-needed", "2026-11-16T11:00:00Z"))
         self.assertEqual(db.execute("SELECT method FROM current_homes").fetchall(), [("unassigned",)])
@@ -498,7 +498,8 @@ class PrecedentStaysInsideItsCategory(LedgerTest):
 
 
 class PatientDataRule(LedgerTest):
-    """JP-148 (A2): the schema side of the stricter patient-data rule; the rest is the writers' (design, "Patient data")."""
+    """JP-149 (Josh's answer to the JP-146 review, question 2): every system may hold patient data, so a session's
+    system never withholds its words; only the patient-data screen, or a .phi folder, does (design, "Patient data")."""
 
     def test_a_withheld_title_holds_no_text(self):
         db = self.ledger()
@@ -509,15 +510,31 @@ class PatientDataRule(LedgerTest):
             db.execute(add, (S1, T, T, T, "Some words", T))
         db.execute(add, (S1, T, T, T, None, T))
 
-    def test_a_home_with_no_known_system_counts_as_patient_data(self):
+    def test_a_home_says_nothing_about_patient_data(self):
+        db = self.ledger()
+        columns = {row[1] for row in db.execute("PRAGMA table_info(session_homes)")}
+        self.assertNotIn("patient_data", columns)
+
+    def test_a_session_keeps_its_own_words_whatever_its_system(self):
+        """JP-149 scenario: a session homed to any registry system stores its title and summary lines."""
+        systems = re.findall(r"^  - name: ([a-z0-9._-]+)$", (ROOT / "conventions" / "registry.yaml").read_text(encoding="utf-8"),
+                             flags=re.M)
+        self.assertGreater(len(systems), 20)
         db = self.ledger()
         seed(db)
-        add = """INSERT INTO session_homes (session_uid, episode, method, priority, evidence, conventions_version,
-                 jira_read, patient_data, derived_at, recorded_by) VALUES (?, 1, 'unassigned', 'unassigned', '/tmp/made-up',
-                 'c1', 'not-needed', ?, ?, 'test')"""
-        with self.assertRaises(sqlite3.IntegrityError):
-            db.execute(add, (S1, 0, T))
-        db.execute(add, (S1, 1, T))
+        for episode, system in enumerate(systems, start=2):
+            db.execute("""INSERT INTO session_episodes (session_uid, episode, began_at, last_activity_at, quiet_at, end_reason,
+                          title, title_source, recorded_at, recorded_by) VALUES (?, ?, ?, ?, ?, 'quiet', ?, 'custom', ?, 'test')""",
+                       (S1, episode, T, T, T, f"Fix the import in {system}", T))
+            db.execute("""INSERT INTO session_homes (session_uid, episode, method, area, system, priority, evidence,
+                          conventions_version, jira_read, derived_at, recorded_by)
+                          VALUES (?, ?, 'registry', 'made-up', ?, 'unassigned', '/tmp/made-up', 'c1', 'not-needed', ?, 'test')""",
+                       (S1, episode, system, T))
+            db.execute("""INSERT INTO session_summaries (session_uid, episode, method, lines, written_at, recorded_by)
+                          VALUES (?, ?, 'copied', ?, ?, 'test')""", (S1, episode, f"Asked: fix the import in {system}", T))
+        titles = db.execute("SELECT COUNT(*) FROM session_episodes WHERE episode >= 2 AND title LIKE 'Fix the import in %'")
+        lines = db.execute("SELECT COUNT(*) FROM session_summaries WHERE episode >= 2 AND lines_withheld = 0")
+        self.assertEqual((titles.fetchone()[0], lines.fetchone()[0]), (len(systems), len(systems)))
 
 
 if __name__ == "__main__":
