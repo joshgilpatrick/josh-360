@@ -320,7 +320,7 @@ Hooks and scripts write the facts, never a working agent (vision guardrail 1). H
 | `debriefs`, `debrief_moments` | The debrief script (`ledger/debrief.py`), sharing the summary's call (`ledger/summary.py`) | JP-113 |
 | `graph_runs`, `step_runs`, `step_results`, `run_files`, `run_ends`, `asks`, `ticket_links` (walker) | The walker | JP-114 |
 | `decisions`, `decision_events`, `category_stages`, `memory_lookups` | The decision command (stage changes only from Josh's own command) | JP-116 |
-| `comment_deliveries` | The comment relay | JP-118 |
+| `comment_deliveries` | The comment relay (`ledger/comments.py`) | JP-118 |
 | `graph_runs` for `pr-audit`, `ticket_links` (daemon) | action-triage's daemon, once it moves onto the ledger | JP-124 |
 | `corrections` | `ledger/correct.py` | JP-107 |
 | `redactions` | `ledger/redact.py`, Josh only | JP-107 |
