@@ -178,6 +178,7 @@ button.chip.sub { margin-left: 10px; width: calc(100% - 10px); font-size: 12.5px
   <nav class="jump" aria-label="Sections">
     <a href="#parts">The parts</a>
     <a href="#flow">How data moves</a>
+    <a href="#improve">How it improves itself</a>
     <a href="#salvage">Salvage map</a>
     <a href="#phases">Phase 1 and later</a>
     <a href="#points">Points this raises</a>
@@ -199,7 +200,7 @@ button.chip.sub { margin-left: 10px; width: calc(100% - 10px); font-size: 12.5px
       <div class="canvas"><svg id="svg-flow" viewBox="0 0 1110 610" role="img" aria-label="A Ready ticket in Jira is picked up by the runner, which asks the walker for the next step and starts that step's session in Agent Manager. The session's hooks feed the recorder, its questions go to Needs you, and its pull request goes to the PR audit and then to Josh. Walker, Needs you, recorder and cost import all write to ledger.db, which agents read through ask.py, the window reads, and a daily job backs up."></svg></div>
       <figcaption>
         <ol>
-          <li>A ticket reaches Ready in Jira (Josh, or the triage graph from phase 2).</li>
+          <li>A ticket reaches Ready in Jira (Josh, or the triage graph).</li>
           <li>The runner asks the walker what happens next. The walker reads the run so far and names the step.</li>
           <li>The runner starts that step's session in Agent Manager, where Josh can always see it.</li>
           <li>The session's hooks append one line each to a spool file; the recorder job turns spool, transcript and git into ledger rows. The hourly cost import fills cache.db and copies each session's total into the ledger.</li>
@@ -207,6 +208,23 @@ button.chip.sub { margin-left: 10px; width: calc(100% - 10px); font-size: 12.5px
           <li>The session opens a pull request.</li>
           <li>The PR audit comments, then Josh signs off.</li>
           <li>A script moves the Jira status. The walker records how the run ended; the loose-ends check is the exit gate.</li>
+        </ol>
+      </figcaption>
+    </figure>
+  </section>
+
+  <section id="improve" aria-labelledby="improve-h">
+    <h2 id="improve-h">How it improves itself</h2>
+    <p class="intro">The loop Josh approved on 15 November 2026 (the vision's "How the system measures and improves itself"). Scripts count friction in every session, one small model call explains it when a session earns one, and a weekly review turns repeats into improvement tickets that go through the same pipeline as any other work. The headline number is <strong>Josh's messages per finished ticket</strong>, read beside the share of work signed off first time: if the first falls while the second holds, it is working.</p>
+    <figure>
+      <div class="canvas"><svg id="svg-improve" viewBox="0 0 1110 420" role="img" aria-label="Sessions and graph runs feed a friction-facts script with no model, which flags the sessions that earn a one-call debrief. Facts and debriefs land in ledger.db beside graph-run scores and decisions. A weekly review and threshold scripts read the ledger and file improvement tickets, at most five open. Josh prioritises them; they pass the Ready gate and the development graph like any ticket, the change merges, and ten runs later the ledger checks whether the number it named moved."></svg></div>
+      <figcaption>
+        <ol>
+          <li><b>Phase 1 collects.</b> Friction facts (JP-112) start first and run for about two weeks; the debrief form (JP-113) is settled only after looking at those real rows. Graph runs already record their version, model and end state (JP-140, done), and Josh's answers become decision records (JP-116).</li>
+          <li><b>Phase 2 acts.</b> The weekly review, the threshold scripts and the claim check are one ticket (JP-127). Starting thresholds: three repeats, five open improvement tickets, ten runs, in a file Josh can edit.</li>
+          <li><b>Phase 3 shows.</b> The dashboard design (JP-130) includes an improvement page: the headline measure and the open improvement tickets.</li>
+          <li><b>Cost:</b> no model call on any turn. At most one small call per session when it goes quiet (shared with the five summary lines), and one review a week.</li>
+          <li><b>The line:</b> the system may improve itself without Josh, but never reduce his oversight without him. Thresholds, budgets, gates and memory stages stay his. Working agents never see the measures or the debriefs, and nothing rates Josh's own choices.</li>
         </ol>
       </figcaption>
     </figure>
@@ -232,11 +250,11 @@ button.chip.sub { margin-left: 10px; width: calc(100% - 10px); font-size: 12.5px
 
   <section id="phases" aria-labelledby="phases-h">
     <h2 id="phases-h">Phase 1 and later</h2>
-    <p class="intro">Phase 1 builds the data layer and one working graph. The app features move in during phase 2, and the views come back in phase 3. Each gate is a check Josh makes before the next phase starts.</p>
+    <p class="intro">Phase 1 builds the data layer and all four graphs (Josh, 17 November 2026). The app features move in during phase 2, and the views come back in phase 3. Each gate is a check Josh makes before the next phase starts.</p>
     <div class="phases">
       <div class="phase p1">
         <div class="eyebrow">Phase 1 · foundation</div>
-        <h3>The ledger, the walker and the first graph</h3>
+        <h3>The ledger, the walker and the four graphs</h3>
         <div>
           <h4>Unified data model</h4>
           <ul class="tickets">
@@ -255,6 +273,9 @@ button.chip.sub { margin-left: 10px; width: calc(100% - 10px); font-size: 12.5px
           <ul class="tickets">
             <li><span class="k">JP-114</span><span>The walker</span></li>
             <li><span class="k">JP-115</span><span>The development graph</span></li>
+            <li><span class="k">JP-121</span><span>Ticket creation graph</span></li>
+            <li><span class="k">JP-122</span><span>Triage and sign-off graph</span></li>
+            <li><span class="k">JP-123</span><span>Non-development graph</span></li>
             <li><span class="k">JP-117</span><span>The runner in Agent Manager, carrying a real ticket to a pull request</span></li>
             <li><span class="k">JP-118</span><span>New ticket comments passed to the sessions working on it</span></li>
           </ul>
@@ -273,15 +294,12 @@ button.chip.sub { margin-left: 10px; width: calc(100% - 10px); font-size: 12.5px
           </ul>
         </div>
         <p class="meanwhile"><strong>Running unchanged meanwhile:</strong> the action-triage app and daemon (Tickets tab, Needs you, PR audit, Email Research Desk) until JP-124, and Session Atlas until JP-111 moves its data.</p>
-        <p class="gate"><b>Gate to phase 2:</b> the development graph carries a real ticket to a pull request, and the stores the ledger replaces are switched off and archived.</p>
+        <p class="gate"><b>Gate to phase 2 (proposed):</b> the development graph carries a real ticket to a pull request, a forwarded email becomes a signed-off deliverable in one run, and the stores the ledger replaces are switched off and archived.</p>
       </div>
       <div class="phase p2">
-        <div class="eyebrow">Phase 2 · full pipeline</div>
-        <h3>The other graphs and the app</h3>
+        <div class="eyebrow">Phase 2 · one app</div>
+        <h3>The app, the queue and the review</h3>
         <ul class="tickets">
-          <li><span class="k">JP-121</span><span>Ticket creation graph</span></li>
-          <li><span class="k">JP-122</span><span>Triage and sign-off graph</span></li>
-          <li><span class="k">JP-123</span><span>Non-development graph</span></li>
           <li><span class="k">JP-124</span><span>action-triage's features rebuilt in josh-360: the window, intake, tickets, the Jira watch, PR audit, Needs you, the desk, the command line and Settings (N1)</span></li>
           <li><span class="k">JP-125</span><span>Needs you as the one place for agent decisions</span></li>
           <li><span class="k">JP-126</span><span>Decision memory stage two</span></li>
@@ -289,7 +307,7 @@ button.chip.sub { margin-left: 10px; width: calc(100% - 10px); font-size: 12.5px
           <li><span class="k">JP-128</span><span>Retire the sprint skill</span></li>
           <li><span class="k">JP-129</span><span>Close phase 2</span></li>
         </ul>
-        <p class="gate"><b>Gate to phase 3:</b> a forwarded email becomes a signed-off deliverable in one run.</p>
+        <p class="gate"><b>Gate to phase 3 (proposed):</b> action-triage is switched off and archived with every feature it kept running in josh-360, and the weekly review has filed its first improvement ticket.</p>
       </div>
       <div class="phase p3">
         <div class="eyebrow">Phase 3 · reflection</div>
@@ -392,7 +410,7 @@ function drawParts() {
 
     { x: 150, y: 194, w: 240, h: 136, title: "Runner", lines: ["Watches Jira for Ready tickets", "Starts each step in Agent Manager", "Safety rails, watchdog,", "self-checks"], from: "A9 as scaffold, A16-A18", tag: "P1 JP-117" },
     { x: 405, y: 194, w: 170, h: 136, title: "Walker", lines: ["Says the next step", "Writes every step", "to the ledger"], from: "new", tag: "P1 JP-114" },
-    { x: 590, y: 194, w: 270, h: 136, title: "Graphs", lines: ["Development (P1, JP-115)", "Ticket creation, triage and", "non-development (P2)", "Roles, agents, gates, tiers"], from: "A2 and A27 become steps", tag: "P1+P2" },
+    { x: 590, y: 194, w: 270, h: 136, title: "Graphs", lines: ["Development (JP-115), ticket", "creation (JP-121), triage (JP-122),", "non-development (JP-123)", "Roles, agents, gates, tiers"], from: "A2 and A27 become steps", tag: "P1" },
     { x: 875, y: 194, w: 210, h: 136, title: "PR audit", lines: ["The development graph's", "review step; runs on the", "action-triage daemon today"], from: "A21, A22, A34.1 as is", tag: "P2 JP-124", josh: "Josh signs off" },
 
     { x: 150, y: 374, w: 200, h: 120, title: "Recorder", lines: ["Hooks append one line;", "a job writes the rows", "from spool, transcript, git"], from: "S1.1-S1.3, H6", tag: "P1 JP-107" },
@@ -423,6 +441,33 @@ function drawParts() {
     el(svg, "text", { x: hx + w / 2, y: hy + 13.5, "text-anchor": "middle", class: "svg-chip-text" }, h);
     hx += w + 6;
   }
+}
+
+function drawImprove() {
+  const svg = document.getElementById("svg-improve");
+  defs(svg, svg.id + "-head");
+  const c = [20, 245, 470, 695], W = 180, R1 = 30, R2 = 230, H = 104;
+  [
+    { x: c[0], y: R1, w: W, h: H, title: "Sessions", lines: ["Every session and graph", "run, visible in", "Agent Manager"], tag: "today" },
+    { x: c[1], y: R1, w: W, h: H, title: "Facts", lines: ["A script counts friction", "in each session; no", "model, no message text"], tag: "P1 JP-112" },
+    { x: c[2], y: R1, w: W, h: H, title: "Debrief", lines: ["One small call when a", "session earns it; codes", "and pointers, no quotes"], tag: "P1 JP-113" },
+    { x: c[3], y: R1, w: 395, h: H, title: "ledger.db", lines: ["Friction facts and debriefs; graph runs scored", "success, neutral or needs-Josh (JP-140);", "decisions (JP-116); the measures as queries"], tag: "P1 JP-107", core: true },
+    { x: c[3], y: R2, w: 395, h: H, title: "Weekly review", lines: ["Reads ledger rows, not transcripts; acts on", "three or more repeats, opens transcripts", "only for the top few. Thresholds act sooner."], tag: "P2 JP-127" },
+    { x: c[2], y: R2, w: W, h: H, title: "Improvement ticket", lines: ["Rows attached; names", "the number to move;", "five open at most"], josh: "Josh prioritises" },
+    { x: c[1], y: R2, w: W, h: H, title: "Development graph", lines: ["Ready gate, build, PR", "audit (JP-115), like", "any other ticket"], josh: "Josh signs off" },
+    { x: c[0], y: R2, w: W, h: H, title: "Change merged", lines: ["A script or gate first,", "a tighter skill or rule", "next, new text last"] },
+  ].forEach(b => box(svg, b));
+  const m1 = R1 + H / 2, m2 = R2 + H / 2;
+  arrow(svg, 200, m1, 243, m1, "reads", { lx: 222, ly: m1 - 8 });
+  arrow(svg, 425, m1, 468, m1, "flags", { lx: 447, ly: m1 - 8 });
+  arrow(svg, 650, m1, 693, m1, "writes", { lx: 672, ly: m1 - 8 });
+  arrow(svg, 892, R1 + H, 892, R2 - 2, "weekly", { lx: 901, ly: 186, anchor: "start" });
+  arrow(svg, 695, m2, 652, m2, "files", { lx: 673, ly: m2 - 8 });
+  arrow(svg, 470, m2, 427, m2, "Ready", { lx: 448, ly: m2 - 8 });
+  arrow(svg, 245, m2, 202, m2, "merges", { lx: 223, ly: m2 - 8 });
+  arrow(svg, 110, R2, 110, R1 + H + 2, "next runs", { lx: 119, ly: 186, anchor: "start" });
+  el(svg, "rect", { x: 20, y: 364, width: 1070, height: 40, rx: 6, class: "svg-chip" });
+  el(svg, "text", { x: 34, y: 389, class: "svg-line" }, "Claim check (JP-127): ten runs after a change merges, the ledger shows whether its number moved. If it did not, a follow-up ticket proposes undoing it.");
 }
 
 function drawFlow() {
@@ -579,6 +624,7 @@ try { const saved = localStorage.getItem("arch-source"); if (saved && (saved ===
 
 drawParts();
 drawFlow();
+drawImprove();
 drawMatrix();
 drawFilter();
 drawSources();
