@@ -12,6 +12,6 @@ test_every_tree_feature_and_laptop_row_is_in_the_page (tests.test_architecture_p
 test_the_page_carries_each_call (tests.test_architecture_page.TheSalvageMapCoversEveryFeature.test_the_page_carries_each_call) ... ok
 
 ----------------------------------------------------------------------
-Ran 9 tests in 0.217s
+Ran 9 tests in 0.244s
 
 OK
