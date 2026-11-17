@@ -242,6 +242,59 @@ class Jira:
             return None
         return parsed.get("value") if isinstance(parsed, dict) else None
 
+    def exists(self, key: str) -> Optional[bool]:
+        """True when the ticket exists, False when Jira says it does not (404), None when the answer is unknown."""
+        try:
+            parsed = self._ok(self._call("GET", f"/rest/api/3/issue/{key}", params={"fields": "summary"}), "exists")
+        except JiraError as err:
+            return False if err.status == 404 else None
+        return True if isinstance(parsed, dict) and parsed.get("key") else None
+
+    def myself(self) -> Optional[str]:
+        """The accountId of the account the credentials belong to. None when unknown."""
+        try:
+            parsed = self._ok(self._call("GET", "/rest/api/3/myself"), "myself")
+        except JiraError:
+            return None
+        account = parsed.get("accountId") if isinstance(parsed, dict) else None
+        return account or None
+
+    def changelog(self, key: str) -> Optional[List[dict]]:
+        """Every change to the ticket, oldest first, as {"created", "author" (accountId), "items": [{"field",
+        "fieldId", "from", "to"}]}. None when any page could not be read (a half-read history is unknown)."""
+        out: List[dict] = []
+        start = 0
+        while True:
+            try:
+                parsed = self._ok(self._call("GET", f"/rest/api/3/issue/{key}/changelog",
+                                             params={"startAt": start, "maxResults": 100}), "changelog " + key)
+            except JiraError:
+                return None
+            if not isinstance(parsed, dict):
+                return None
+            rows = parsed.get("values") or []
+            for row in rows:
+                out.append({"created": row.get("created") or "",
+                            "author": (row.get("author") or {}).get("accountId") or "",
+                            "items": [{"field": i.get("field") or "", "fieldId": i.get("fieldId") or "",
+                                       "from": i.get("fromString") if i.get("fromString") is not None else i.get("from"),
+                                       "to": i.get("toString") if i.get("toString") is not None else i.get("to")}
+                                      for i in row.get("items") or []]})
+            start += len(rows)
+            if not rows or parsed.get("isLast") or start >= int(parsed.get("total") or 0):
+                return out
+
+    def read_property(self, key: str, name: str) -> Tuple[str, object]:
+        """("set", value), ("unset", None) when Jira says the property does not exist, or ("unknown", None).
+        get_property cannot tell the last two apart; use this where an unknown must not be read as unset."""
+        try:
+            parsed = self._ok(self._call("GET", f"/rest/api/3/issue/{key}/properties/{name}"), "property")
+        except JiraError as err:
+            return ("unset", None) if err.status == 404 else ("unknown", None)
+        if not isinstance(parsed, dict):
+            return "unknown", None
+        return "set", parsed.get("value")
+
     def create_meta(self, project: str) -> Optional[Dict[str, str]]:
         """{issue type name: id} for a project, from Jira's create metadata. None when unknown."""
         try:
@@ -283,6 +336,17 @@ class Jira:
         except JiraError:
             return False
         return isinstance(back, dict) and back.get("id") == comment_id
+
+    def set_description(self, key: str, document: dict) -> bool:
+        """Replace the ticket's description (an ADF document). True only when a read-back shows the same text."""
+        self._screen_adf(document)
+        try:
+            self._ok(self._call("PUT", f"/rest/api/3/issue/{key}", {"fields": {"description": document}}),
+                     "description")
+        except JiraError:
+            return False
+        after = self.get(key, ["description"])
+        return after is not None and after["description"] == adf.plain(document)
 
     def transition(self, key: str, status_name: str) -> bool:
         """Move the ticket to the named status. True only when a read-back shows it there (also when it was

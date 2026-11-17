@@ -5,7 +5,9 @@ with no YAML reader. A gate input holds a path to the file, or the JSON itself.
 
     load_json(value)            the object behind a path or inline JSON; raises ContractError
     load_record(value)          the intake record, checked
-    load_proposal(value)        the ticket proposal, checked
+    load_proposal(value)        the ticket proposal, checked (ticket creation: create or comment_on_match)
+    load_revision(value)        a drafter's revision of one existing ticket (triage, JP-122), checked
+    load_question(value)        the one question a drafter returns with needs_josh, checked
     record_problems(record)     [] or one line per problem
     proposal_problems(p)        [] or one line per problem
     value_of(field)             a field that is text or {"value": ..., "basis": ...}, as its value
@@ -112,6 +114,52 @@ def proposal_problems(proposal: Any) -> List[str]:
         if not isinstance(ticket.get("sections"), dict):
             problems.append(f"{label}: missing 'sections'")
     return problems
+
+
+def revision_problems(proposal: Any) -> List[str]:
+    """A revision is a ticket proposal with `action: revise`, written by triage's `revise` step. It holds exactly one
+    ticket, which names the existing ticket by `key` and carries the whole ticket text (a script rewrites the
+    description from it), the `closes` list of gap numbers it answers and the `authors` session ids."""
+    if not isinstance(proposal, dict):
+        return ["revision: must be a JSON object"]
+    if proposal.get("action") != "revise":
+        return ["revision: 'action' must be revise"]
+    problems = []
+    tickets = proposal.get("tickets")
+    if not isinstance(tickets, list) or len(tickets) != 1 or not isinstance(tickets[0], dict):
+        return ["revision: 'tickets' must hold exactly one ticket"]
+    ticket = tickets[0]
+    for key in ("key", "type", "repository", "where_it_runs"):
+        if not _text(ticket.get(key)):
+            problems.append(f"revision: ticket is missing '{key}'")
+    if not isinstance(ticket.get("sections"), dict) or not ticket.get("sections"):
+        problems.append("revision: ticket is missing 'sections'")
+    closes = proposal.get("closes")
+    if not isinstance(closes, list) or not all(isinstance(n, int) and not isinstance(n, bool) for n in closes):
+        problems.append("revision: 'closes' must be a list of gap numbers")
+    authors = proposal.get("authors")
+    if not isinstance(authors, list) or not authors or not all(isinstance(a, str) and a.strip() for a in authors):
+        problems.append("revision: 'authors' must list the session id of every step that wrote it (the sign-off "
+                        "check needs them)")
+    return problems
+
+
+def load_revision(value: Any) -> dict:
+    return _load(value, revision_problems)
+
+
+def question_problems(proposal: Any) -> List[str]:
+    """What the `revise` step returns with the outcome needs_josh: the one question, its recommendation and why."""
+    if not isinstance(proposal, dict) or proposal.get("action") != "revise":
+        return ["question: 'action' must be revise"]
+    ask = proposal.get("needs_josh")
+    if not isinstance(ask, dict):
+        return ["question: missing 'needs_josh'"]
+    return [f"question: '{k}' is empty" for k in ("question", "recommendation", "reason") if not _text(ask.get(k))]
+
+
+def load_question(value: Any) -> dict:
+    return _load(value, question_problems)['needs_josh']
 
 
 def _load(value: Any, checker) -> dict:

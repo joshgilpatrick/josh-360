@@ -67,6 +67,38 @@ def to_text(node: Optional[dict]) -> str:
     return inner
 
 
+def to_marked(node: Optional[dict]) -> str:
+    """Like to_text, but it keeps what a reader of a ticket needs to find its sections: strong text is wrapped in
+    ``**``, a code block is fenced (```` ```gherkin ````), and a list item starts with "- ". Triage reads tickets
+    through this, so a bold label opens a section and a heading or plain line does not."""
+    if not isinstance(node, dict):
+        return ""
+    kind = node.get("type")
+    if kind == "text":
+        text = str(node.get("text", ""))
+        if any(m.get("type") == "strong" for m in node.get("marks") or []) and text.strip():
+            lead = text[:len(text) - len(text.lstrip())]
+            trail = text[len(text.rstrip()):]
+            return lead + "**" + text.strip() + "**" + trail
+        return text
+    if kind == "hardBreak":
+        return "\n"
+    if kind == "mention":
+        return str((node.get("attrs") or {}).get("text", ""))
+    if kind == "codeBlock":
+        language = str((node.get("attrs") or {}).get("language") or "")
+        body = "".join(str(c.get("text", "")) for c in node.get("content") or [])
+        return "```" + language + "\n" + body.strip("\n") + "\n```\n"
+    inner = "".join(to_marked(child) for child in node.get("content") or [])
+    if kind == "listItem":
+        return "- " + inner.strip("\n").replace("\n", "\n  ") + "\n"
+    if kind in ("bulletList", "orderedList"):
+        return inner
+    if kind in BLOCKS:
+        return inner + "\n"
+    return inner
+
+
 def plain(node: Optional[dict]) -> str:
     """to_text without the trailing line break."""
     return to_text(node).strip("\n")
@@ -109,6 +141,10 @@ def ticket_description(ticket: dict) -> dict:
         if check["section"] == "acceptance_criteria":
             blocks.append(labelled("Repository", str(ticket.get("repository") or "")))
             blocks.append(labelled("Where it runs", str(ticket.get("where_it_runs") or "")))
+    open_questions = sections.get("open_questions")
+    if ticket.get("type") == "Research" and isinstance(open_questions, list) and open_questions:
+        blocks.append(labelled("Open questions", ""))   # a Research ticket's questions are its work (triage rule 6)
+        blocks.append(bullets(open_questions))
     if ticket.get("type") in ("Epic", "Subtask"):
         if ticket.get("repository"):
             blocks.append(labelled("Repository", str(ticket["repository"])))
