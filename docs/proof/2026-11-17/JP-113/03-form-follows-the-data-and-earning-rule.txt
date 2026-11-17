@@ -1,0 +1,11 @@
+test_after_finalising_only_the_final_lists_are_accepted ... ok
+test_finalising_records_the_lists_and_the_date_range_of_at_least_two_weeks (tests.test_ledger_debrief.TheFormFollowsTheData.test_finalising_records_the_lists_and_the_date_range_of_at_least_two_weeks)
+test_it_is_not_finalised_from_less_than_two_weeks_of_rows (tests.test_ledger_debrief.TheFormFollowsTheData.test_it_is_not_finalised_from_less_than_two_weeks_of_rows)
+test_no_rows_at_all_is_refused ... ok
+test_the_shipped_form_is_provisional_and_says_so ... ok
+test_the_shipped_lists_are_consistent ... ok
+test_a_graph_run_earns_by_the_walker_or_by_a_step ... ok
+test_each_threshold_earns_and_a_clean_josh_session_does_not ... ok
+test_the_thresholds_are_data_a_zero_switches_one_off ... ok
+Ran 9 tests in 0.532s
+OK

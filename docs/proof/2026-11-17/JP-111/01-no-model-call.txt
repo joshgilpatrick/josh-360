@@ -1,0 +1,10 @@
+✔ no model client, API host, provider setting or claude launch in src/ or hooks/ (7.117159ms)
+✔ package.json carries no runtime dependency, so no model SDK can be pulled in (0.175782ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 73.624443

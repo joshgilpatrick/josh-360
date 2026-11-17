@@ -16,6 +16,10 @@ there is not, one call on the cheap tier writes the first three lines from a sho
 once more on the tier's next model and then the lines are built from what exists. A session in a `.phi` folder never
 gets a call and never copies its words. At most MAX_CALLS calls are made in one run.
 
+JP-113 shares this call with the debrief (`ledger/debrief.py`): an episode that earns a debrief and has a thin summary
+gets one call that writes both, an episode that earns one and can be copied gets a debrief-only call, and an episode
+with a model call made since it went quiet is never called again.
+
     python3 ledger/summary.py        one pass over the real ledger; prints the counts
 """
 from __future__ import annotations
@@ -35,7 +39,8 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from ledger import _repo  # noqa: E402,F401
 from laptop import common  # noqa: E402
-from ledger import db, homes, record, state_notes, summary_sources  # noqa: E402
+from ledger import db, friction, homes, record, state_notes, summary_sources  # noqa: E402
+from ledger import debrief as debrief_form, debrief_sources  # noqa: E402
 from ledger.text import CAPS, short_text  # noqa: E402
 
 BY = "ledger/summary.py"
@@ -262,10 +267,15 @@ def claude_caller(binary: str, models: List[Tuple[str, str]], workdir: Path) -> 
 
 PENDING_SQL = """
 SELECT e.session_uid, e.episode, s.tool_session_id, s.transcript_path, e.folder, e.branch, e.title, e.title_source,
-       e.turns, e.end_reason, e.began_at, e.last_activity_at, e.quiet_at
+       e.turns, e.end_reason, e.began_at, e.last_activity_at, e.quiet_at,
+       NOT EXISTS (SELECT 1 FROM session_summaries m WHERE m.session_uid = e.session_uid AND m.episode = e.episode)
 FROM current_session_episodes e JOIN sessions s ON s.session_uid = e.session_uid
 WHERE instr(s.tool_session_id, '+') = 0
-  AND NOT EXISTS (SELECT 1 FROM session_summaries m WHERE m.session_uid = e.session_uid AND m.episode = e.episode)
+  AND (NOT EXISTS (SELECT 1 FROM session_summaries m WHERE m.session_uid = e.session_uid AND m.episode = e.episode)
+       OR (e.quiet_at >= ?
+           AND NOT EXISTS (SELECT 1 FROM debriefs d WHERE d.session_uid = e.session_uid AND d.episode = e.episode)
+           AND NOT EXISTS (SELECT 1 FROM model_calls c WHERE c.subject_session_uid = e.session_uid
+                           AND c.called_at >= e.quiet_at)))
 ORDER BY e.quiet_at DESC"""
 
 
@@ -275,7 +285,7 @@ def _count(conn: sqlite3.Connection, sql: str, *args: object) -> int:
 
 def build_material(conn: sqlite3.Connection, row: tuple, claude_home: Optional[Path] = None,
                    with_excerpt: bool = False) -> Material:
-    uid, episode, sid, transcript, folder, branch, title, title_source, turns, end_reason, began, last, quiet = row
+    uid, episode, sid, transcript, folder, branch, title, title_source, turns, end_reason, began, last, quiet = row[:13]
     m = Material(uid=uid, episode=episode, phi=not homes.keeps_words(folder))
     path = Path(transcript) if transcript else None
     if not m.phi:
@@ -311,59 +321,126 @@ def build_material(conn: sqlite3.Connection, row: tuple, claude_home: Optional[P
     return m
 
 
-def _write(conn: sqlite3.Connection, m: Material, lines: List[str], withheld: int, now: str,
-           result: Optional[CallResult], used: bool) -> None:
-    """The summary row, and the model call's row when a call was made, in one transaction. method is `model` only
+def _record_call(conn: sqlite3.Connection, uid: str, result: CallResult, purpose: str, now: str) -> int:
+    return conn.execute(
+        "INSERT INTO model_calls (purpose, subject_session_uid, model, input_tokens, output_tokens, cost_usd, "
+        "called_at, recorded_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (purpose, uid, result.model, result.input_tokens, result.output_tokens, result.cost_usd, now, BY)).lastrowid
+
+
+def _write(conn: sqlite3.Connection, m: Material, now: str, *, result: Optional[CallResult] = None,
+           purpose: str = "summary", lines: Optional[List[str]] = None, withheld: int = 0, used: bool = False,
+           debrief: Optional[Tuple[debrief_form.Parsed, Dict[str, str], dict]] = None) -> None:
+    """The model call's row (when a call was made), the summary row (when `lines` is given) and the debrief (when
+    `debrief` is given: the parsed form, its handles and the form file), in one transaction. method is `model` only
     when the call's own lines were used."""
     with db.transaction(conn):
-        call_id = None
-        if result is not None:
-            call_id = conn.execute(
-                "INSERT INTO model_calls (purpose, subject_session_uid, model, input_tokens, output_tokens, cost_usd, "
-                "called_at, recorded_by) VALUES ('summary', ?, ?, ?, ?, ?, ?, ?)",
-                (m.uid, result.model, result.input_tokens, result.output_tokens, result.cost_usd, now, BY)).lastrowid
-        conn.execute(
-            "INSERT INTO session_summaries (session_uid, episode, method, model_call_id, lines, lines_withheld, "
-            "version, written_at, recorded_by) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)",
-            (m.uid, m.episode, "model" if used else "copied", call_id if used else None, "\n".join(lines), withheld,
-             now, BY))
+        call_id = _record_call(conn, m.uid, result, purpose, now) if result is not None else None
+        if lines is not None:
+            conn.execute(
+                "INSERT INTO session_summaries (session_uid, episode, method, model_call_id, lines, lines_withheld, "
+                "version, written_at, recorded_by) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)",
+                (m.uid, m.episode, "model" if used else "copied", call_id if used else None, "\n".join(lines),
+                 withheld, now, BY))
+        if debrief is not None:
+            parsed, handles, form = debrief
+            debrief_form.write_debrief(conn, m.uid, m.episode, parsed, handles, call_id, form, now, BY)
+
+
+def _trimmed(conn: sqlite3.Connection, row: tuple, m: Material, claude_home: Optional[Path]) -> debrief_sources.Trimmed:
+    """The trimmed copy the debrief call reads (JP-113)."""
+    uid, episode, sid, transcript = row[0], row[1], row[2], row[3]
+    started_by = conn.execute("SELECT started_by FROM sessions WHERE session_uid = ?", (uid,)).fetchone()
+    state_file = state_notes.state_file(sid, claude_home)
+    return debrief_sources.build(
+        Path(transcript) if transcript else None, who=friction.who_for(started_by[0] if started_by else None, False),
+        since=row[10], until=row[11], state_file=state_file, compactions_dir=state_file.parent / "compactions",
+        compacted=bool(debrief_form.episode_facts(conn, uid, episode).get("compactions")))
 
 
 def summarise_pending(conn: sqlite3.Connection, now: str, *, call: Optional[Caller], claude_home: Optional[Path] = None,
-                      state: Optional[dict] = None, max_calls: int = MAX_CALLS,
-                      recent_days: int = RECENT_DAYS) -> Dict[str, int]:
-    """Write the summary of every episode that has none. `call` None means no model may be called. `state` holds the
-    failed attempts per episode ({"attempts": {...}}); pass the same dict on the next run."""
+                      state: Optional[dict] = None, max_calls: int = MAX_CALLS, recent_days: int = RECENT_DAYS,
+                      form: Optional[dict] = None) -> Dict[str, int]:
+    """Write the summary of every episode that has none, and the debrief of every episode that earns one. `call` None
+    means no model may be called. `state` holds the failed attempts per episode ({"attempts": {...}}); pass the same
+    dict on the next run.
+
+    An episode gets at most one model call: combined (the summary is thin and the episode earns a debrief), alone for
+    the debrief (the summary can be copied), or alone for the summary (thin, no debrief). An episode with a model call
+    made after it went quiet is never called again, whatever the call's answer was."""
     state = state if state is not None else {}
     attempts: Dict[str, int] = state.setdefault("attempts", {})
-    counts = {"copied": 0, "model": 0, "calls": 0, "failed": 0, "waiting": 0, "skipped": 0}
+    counts = {"copied": 0, "model": 0, "calls": 0, "failed": 0, "waiting": 0, "skipped": 0, "debriefs": 0,
+              "rejected": 0}
     recent_since = record._stamp(record._epoch(now) - recent_days * 86400)
-    for row in conn.execute(PENDING_SQL).fetchall():
+    try:
+        form = form if form is not None else debrief_form.load_form()
+        codes = debrief_form.load_codes()
+    except (OSError, ValueError) as e:
+        _log("debrief: the form could not be read, so no debrief is written: {}".format(type(e).__name__))
+        form, codes = None, {}
+    for row in conn.execute(PENDING_SQL, (recent_since,)).fetchall():
         key = "{}#{}".format(row[0], row[1])
         try:
+            need_summary = bool(row[13])
             m = build_material(conn, row, claude_home)
-            lines, withheld, result, used = None, m.withheld, None, False
-            may_call = call is not None and row[12] >= recent_since and attempts.get(key, 0) < MAX_ATTEMPTS
-            if is_thin(m) and may_call:
+            may_call = call is not None and not m.phi and row[12] >= recent_since and attempts.get(key, 0) < MAX_ATTEMPTS \
+                and not conn.execute("SELECT 1 FROM model_calls WHERE subject_session_uid = ? AND called_at >= ?",
+                                     (row[0], row[12])).fetchone()
+            earn = debrief_form.earns(conn, row[0], row[1], form) if may_call and form is not None else None
+            thin = need_summary and is_thin(m)
+            plan = ("combined" if thin else "debrief") if earn else ("summary" if thin and may_call else None)
+            if plan is None and not need_summary:
+                continue
+            lines, withheld, result, used, parsed = None, m.withheld, None, False, None
+            handles: Dict[str, str] = {}
+            if plan is not None:
                 if counts["calls"] >= max_calls:
                     counts["waiting"] += 1
-                    continue
+                    if plan != "debrief" or not need_summary:
+                        continue
+                    plan = None  # the summary can be copied now; the debrief waits for a free call
+            if plan == "summary":
                 m = build_material(conn, row, claude_home, with_excerpt=True)
+                prompt = make_prompt(m)
+            elif plan is not None:
+                trimmed = _trimmed(conn, row, m, claude_home)
+                handles = trimmed.handles
+                prompt = debrief_form.make_prompt(trimmed.text, debrief_form.episode_facts(conn, row[0], row[1]), form, codes, with_summary=plan == "combined")
+            if plan is not None:
                 counts["calls"] += 1
-                result = call(make_prompt(m), attempts.get(key, 0))
+                result = call(prompt, attempts.get(key, 0))
                 if result is None:
                     attempts[key] = attempts.get(key, 0) + 1
                     counts["failed"] += 1
-                    continue  # tried again on the next run, until MAX_ATTEMPTS
-                model_lines, hit = parse_model_lines(result.text)
-                if model_lines:
-                    lines, again = compose(m, model_lines)
-                    withheld, used = again + hit, True
-            if lines is None:
+                    if plan != "debrief" or not need_summary:
+                        continue  # tried again on the next run, until MAX_ATTEMPTS
+                    plan = None   # the summary is copied now and the debrief retried on a later run
+                elif plan == "summary":
+                    model_lines, hit = parse_model_lines(result.text)
+                    if model_lines:
+                        lines, again = compose(m, model_lines)
+                        withheld, used = again + hit, True
+                else:
+                    try:
+                        parsed = debrief_form.parse_output(result.text, handles, form, codes,
+                                                           with_summary=plan == "combined")
+                    except debrief_form.FormError as e:
+                        counts["rejected"] += 1
+                        _log("debrief: output for {} was not the form and was not stored: {}".format(key, e))
+                    else:
+                        if plan == "combined" and parsed.summary:
+                            lines, again = compose(m, parsed.summary)
+                            withheld, used = again + parsed.withheld + m.withheld, True
+            if need_summary and lines is None:
                 lines, withheld = compose(m)
-            _write(conn, m, lines, withheld, now, result, used)
+            purpose = {"combined": "summary-and-debrief", "debrief": "debrief", "summary": "summary"}.get(plan)
+            _write(conn, m, now, result=result, purpose=purpose or "summary",
+                   lines=lines if need_summary else None, withheld=withheld, used=used,
+                   debrief=(parsed, handles, form) if parsed is not None else None)
             attempts.pop(key, None)
-            counts["model" if used else "copied"] += 1
+            counts["model" if used else "copied"] += 1 if need_summary else 0
+            counts["debriefs"] += 1 if parsed is not None else 0
         except Exception as e:  # noqa: BLE001  (one bad episode never stops the others)
             _log("summary: could not summarise {}: {}".format(key, type(e).__name__))
             counts["skipped"] += 1
