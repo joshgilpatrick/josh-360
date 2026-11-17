@@ -25,6 +25,9 @@ Checks:
  11. JP-101: every graph passes the graph checker (graphs/tools/check_graph.py), and the checker's own tests
      in graphs/tests/ pass (skipped with --fast). Both need PyYAML (requirements.txt). Markdown under graphs/
      is anchor-checked too.
+ 12. JP-143: the feature tree (docs/design/feature-tree/tree.yaml) passes scripts/feature_tree.py check: every
+     feature has a stable id, a keep or drop call, a rationale, every JP-97 row (A1-A35, S1-S16) is in it,
+     and the built review page is up to date. Needs PyYAML.
 
 Tickets that add code add their own checks here or beside it. Exit 0 when everything passes, 1 otherwise.
 """
@@ -359,6 +362,9 @@ def main() -> int:
     code, output = run_quietly(["graphs/tools/check_graph.py"])
     if code != 0:
         problems.append(f"graph checker failed:\n{output}")
+    code, output = run_quietly(["scripts/feature_tree.py", "check"])
+    if code != 0:
+        problems.append(f"feature tree check failed:\n{output}")
     if "--fast" not in sys.argv[1:]:
         code, output = run_quietly(["-m", "unittest", "discover", "-s", "graphs/tests"])
         if code != 0:
