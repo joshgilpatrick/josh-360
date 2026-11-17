@@ -16,6 +16,7 @@ Made-up question, no real data.
 | Scenario | Proof | Test |
 | --- | --- | --- |
 | A parked question is headless and its deadline is the far-future value; parking again keeps the record unchanged | `01-walker-tests.txt` (the test failed with the old deadline before the fix) | `test_the_needs_you_tab_would_accept_an_answer_to_a_parked_question` |
+| Parking the same step again keeps an answer Josh already gave | `01-walker-tests.txt` | `test_parking_the_same_step_again_keeps_an_answer_josh_already_gave` |
 | A parked question is still answered and picked up by the walker | `01-walker-tests.txt` | the `Asking` tests |
 | The whole suite passes | `02-suite.txt` | `python3 scripts/check.py` |
 
