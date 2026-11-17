@@ -1,0 +1,14 @@
+Copied, no model (title, first line and STATE.md timeline):
+  Asked: Draft the made-up widget plan
+  About: A made-up widget plan
+  Status: plan written and checked
+  Work: JP-900, branch JP-900/sample-work, folder josh_360; 2 commits, 2 turns
+  Ended: went quiet 2026-11-17 09:40Z after 10m; 1 U-turn, 1 dead end
+
+Thin, one cheap-tier call (fake model; the Work and Ended lines come from the ledger):
+  Asked: a made-up request
+  Outcome: it was answered
+  Work: JP-900, branch JP-900/sample-work, folder josh_360; 2 commits, 2 turns
+  Ended: went quiet 2026-11-17 09:40Z after 10m
+
+model_calls: [('summary', 'model-0', 120, 30, 0.002)]

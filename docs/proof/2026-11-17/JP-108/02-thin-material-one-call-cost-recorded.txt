@@ -1,0 +1,7 @@
+test_thin_material_means_one_call_and_its_cost_is_recorded (test_ledger_summary.Summaries.test_thin_material_means_one_call_and_its_cost_is_recorded)
+JP-108 scenario 2. ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.088s
+
+OK
