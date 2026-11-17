@@ -89,6 +89,8 @@ details.area > summary .ac { font: 500 12px var(--mono); color: var(--muted); }
 .cmt textarea { width: 100%; box-sizing: border-box; min-height: 56px; font: 14px/1.5 var(--body); padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); resize: vertical; }
 .cmtline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .has-cmt { font-size: 13px; color: var(--mine); }
+.reply { font-size: 14px; border-left: 3px solid var(--mine); background: var(--mine-soft); padding: 6px 10px; border-radius: 0 8px 8px 0; }
+.reply b { font-weight: 600; color: var(--mine); }
 .feat.changed > .row1 .box { box-shadow: 0 0 0 3px var(--mine-soft); }
 .feat[hidden] { display: none; }
 
@@ -105,13 +107,13 @@ details.area > summary .ac { font: 500 12px var(--mono); color: var(--muted); }
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">JP-143 · Josh 360 · one app</div>
+    <div class="eyebrow">JP-143 · JP-145 · Josh 360 · one app</div>
     <h1>What comes into josh-360</h1>
     <p class="lede">Every feature in action-triage, claude-360 and macbook-automations, plus the agent-deck hooks on your laptop, as a tree. A ticked box means the feature is extracted and built into josh-360 as part of one app with one look; an unticked box means it is not brought in. Each call has its reason beside it.</p>
-    <p class="lede">Untick or tick anything you disagree with, and comment on any call. Your changes save as you go. Press <strong>Send review</strong> when you are done and I write your calls into the feature list and the move tickets (JP-111, JP-124).</p>
+    <p class="lede">Your review of 17 November is written in: every box now shows the call you made, and my reply sits under each of your comments. You can still tick, untick and comment; changes save as you go, and <strong>Send review</strong> tells me to write them in again.</p>
     <div class="legend">
-      <div><span class="chip keep">as is</span><span class="chip keep">onto the ledger</span><span class="chip keep">rebuilt</span><span class="chip keep">merged</span> how a kept feature comes in</div>
-      <div><span class="chip drop">retired</span><span class="chip drop">stays outside</span><span class="chip drop">merged into …</span> why a feature is not brought in: switched off and archived, left running where it is, or another copy survives</div>
+      <div><span class="chip keep">as is</span><span class="chip keep">onto the ledger</span><span class="chip keep">rebuilt</span><span class="chip keep">merged</span><span class="chip keep">built new</span> how a kept feature comes in</div>
+      <div><span class="chip drop">retired</span><span class="chip drop">stays outside</span><span class="chip drop">merged into …</span><span class="chip drop">later</span> why a feature is not brought in now: switched off and archived, left running where it is, another copy survives, or it waits until the ledger is hardened</div>
       <div><span class="chip mine">your call</span> marks a box you changed</div>
     </div>
     <div id="stats" class="stats"></div>
@@ -140,7 +142,7 @@ details.area > summary .ac { font: 500 12px var(--mono); color: var(--muted); }
 
 <script>
 const DATA = /*__DATA__*/null;
-const HOW = { "as-is": "as is", ledger: "onto the ledger", rebuilt: "rebuilt", merged: "merged", retire: "retired", outside: "stays outside" };
+const HOW = { "as-is": "as is", ledger: "onto the ledger", rebuilt: "rebuilt", merged: "merged", new: "built new", retire: "retired", outside: "stays outside", later: "later" };
 const DOC = "reviews/featureTree";
 let state = { nodes: {}, submittedAt: null };
 let db = null, docRef = null, saveTimer = null, saving = false, pending = false, filter = "all", query = "";
@@ -174,12 +176,13 @@ function featHTML(n) {
     </div>
     <div class="body">
       <div class="what">${fmt(n.what)}</div>
-      <div class="why" id="w-${esc(n.id)}"><b>${n.call === "keep" ? "Why keep:" : "Why not bring in:"}</b> ${fmt(n.why)}${into}</div>
+      <div class="why" id="w-${esc(n.id)}"><b>${n.call === "keep" ? "Why keep:" : n.how === "later" ? "Why later:" : "Why not bring in:"}</b> ${fmt(n.why)}${into}</div>
       ${n.carrier ? `<div class="meta">Carried by ${esc(n.carrier)}</div>` : ""}
       <div class="cmt">
         <div class="cmtline"><button type="button" class="small cbtn">Comment</button><span class="has-cmt" hidden></span></div>
         <textarea id="c-${esc(n.id)}" placeholder="Your comment on this call" hidden aria-label="Comment on ${esc(n.id)}"></textarea>
       </div>
+      ${n.reply ? `<div class="reply" id="r-${esc(n.id)}"><b>My reply:</b> ${fmt(n.reply)}</div>` : ""}
     </div>
   </div>`;
 }
