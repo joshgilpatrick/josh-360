@@ -1,0 +1,83 @@
+$ ls ~/Library/LaunchAgents ~
+com.eventus.clickup-notion-sync.plist
+com.eventus.qa-waker-watchdog.plist
+com.omnara.daemon.plist
+.omnara
+Library
+
+$ python3 scripts/retire_leftover_jobs.py
+{
+  "dry_run": false,
+  "items": [
+    {
+      "actions": [
+        "bootout com.eventus.qa-waker-watchdog ok",
+        "moved the plist to <made-up>/home/Archive/josh-360-retired/2026-11-17/qa-waker-watchdog"
+      ],
+      "archived_to": "<made-up>/home/Archive/josh-360-retired/2026-11-17/qa-waker-watchdog",
+      "label": "com.eventus.qa-waker-watchdog",
+      "ok": true,
+      "was_loaded": true
+    },
+    {
+      "actions": [
+        "not loaded; nothing to bootout",
+        "moved the plist to <made-up>/home/Archive/josh-360-retired/2026-11-17/clickup-notion-sync"
+      ],
+      "archived_to": "<made-up>/home/Archive/josh-360-retired/2026-11-17/clickup-notion-sync",
+      "label": "com.eventus.clickup-notion-sync",
+      "ok": true,
+      "was_loaded": false
+    },
+    {
+      "actions": [
+        "bootout com.omnara.daemon ok",
+        "moved the plist to <made-up>/home/Archive/josh-360-retired/2026-11-17/omnara",
+        "moved .omnara to the archive"
+      ],
+      "archived_to": "<made-up>/home/Archive/josh-360-retired/2026-11-17/omnara",
+      "label": "com.omnara.daemon",
+      "ok": true,
+      "was_loaded": true
+    }
+  ],
+  "job": "retire-leftover-jobs",
+  "result": "ok"
+}
+exit 0
+
+$ ls ~/Library/LaunchAgents; ls -A ~; ls ~/Archive/josh-360-retired/2026-11-17/omnara
+Archive
+Library
+README.md
+com.omnara.daemon.plist
+data-.omnara
+retired.json
+
+$ cat retired.json
+{
+  "data": {
+    "name": "data-.omnara",
+    "original": "<made-up>/home/.omnara"
+  },
+  "label": "com.omnara.daemon",
+  "plist": {
+    "name": "com.omnara.daemon.plist",
+    "original_dir": "<made-up>/home/Library/LaunchAgents"
+  },
+  "retired_on": "2026-11-17",
+  "schema": 1,
+  "was_loaded": true
+}
+
+$ python3 scripts/restore_retired_job.py ~/Archive/josh-360-retired/2026-11-17/omnara
+moved <made-up>/home/Archive/josh-360-retired/2026-11-17/omnara/com.omnara.daemon.plist -> <made-up>/home/Library/LaunchAgents/com.omnara.daemon.plist
+moved <made-up>/home/Archive/josh-360-retired/2026-11-17/omnara/data-.omnara -> <made-up>/home/.omnara
+loaded com.omnara.daemon
+exit 0
+$ ls ~/Library/LaunchAgents; ls -A ~; cat fake launchd state for omnara
+com.omnara.daemon.plist
+.omnara
+Archive
+Library
+loaded
