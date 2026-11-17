@@ -1,12 +1,40 @@
 #!/usr/bin/env python3
-"""DRAFT gate: prepare-worktree. Designed in docs/superpowers/specs/2026-11-17-development-graph-design.md (JP-115); built in the JP-115 build.
+"""Gate prepare-worktree (JP-115): a worktree for the ticket, cut from a fresh origin base, and the run's work folder.
 
-Fetches the repository's clone, cuts <KEY>-<slug> from a fresh origin/<base_branch> (reusing the branch when it exists), adds a worktree under the clone's .claude/worktrees/, and makes the run's work folder outside it.
+Fetches the clone, then: no branch named <KEY>-* gives a new <KEY>-<slug of the ticket's summary> cut from
+origin/<base_branch>; one is reused; more than one is a GateError naming them. A summary the patient-data screen flags
+gives the slug `work`. The clone's own checkout is never touched. The work folder is the run's, outside every
+repository, and is made when missing.
 
-Outcomes: ready.
-Inputs arrive as GRAPH_INPUT_<NAME>; prints one JSON line (graphs/CONVENTION.md, "Gate scripts").
-Until it is built it refuses, so no run can pass through it by accident.
+Outcomes: ready. Inputs: ticket_key, repo, base_branch.
 """
-import sys
+from lib import dev_git, patient_data
+from lib.gate_run import GateError, execute, need
 
-sys.exit("prepare-worktree: not built yet (JP-115)")
+
+def run(inputs, deps):
+    key = need(inputs, "ticket_key")
+    repo = need(inputs, "repo")
+    base = need(inputs, "base_branch")
+    try:
+        clone = dev_git.clone_for(deps.registry_path, repo, deps.environ)
+        dev_git.git(clone, "fetch", "origin")
+        existing = dev_git.ticket_branches(clone, key)
+        if len(existing) > 1:
+            raise GateError("{} has more than one branch: {}".format(key, ", ".join(existing)))
+        if existing:
+            branch = existing[0]
+        else:
+            summary = deps.ticket.read(key).summary
+            words = "" if patient_data.scan(summary, None, False, external=True) else summary
+            branch = "{}-{}".format(key, dev_git.slug(words))
+        worktree = dev_git.add_worktree(clone, branch, base)
+    except dev_git.GitError as exc:
+        raise GateError(str(exc))
+    deps.work_dir.mkdir(parents=True, exist_ok=True)
+    return "ready", {"worktree": str(worktree), "branch": branch, "work_dir": str(deps.work_dir)}, \
+        "worktree for {} on {}".format(key, branch)
+
+
+if __name__ == "__main__":
+    execute(run, ["ticket_key", "repo", "base_branch"])
