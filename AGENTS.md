@@ -35,7 +35,7 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 **Questions.**
 
 - Design questions are collected, each with a recommendation, and put to Josh in one sitting per phase (JP-106 for phase 1). Builds that do not wait on an answer carry on.
-- When a question comes up during building and the choice can be undone, take the recommended option, record it in `docs/decisions.md`, and carry on.
+- When a question comes up during building and the choice can be undone, take the recommended option, record it as a row in `docs/decisions/JP-<n>.md` (your ticket's own file; `docs/decisions/README.md`), and carry on.
 - Only a permanent deletion or a write to something shared stops the work to ask Josh.
 
 **Data rule.** Reading any data Josh can access is allowed. A write to anything shared (a shared database, or an app other people use) needs Josh's confirmation in the thread, and a write that affects other users goes through the SQL write safety ceremony.
@@ -46,6 +46,7 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 
 - Install once: `pip install -r requirements.txt` (PyYAML).
 - Checks and tests: `python3 scripts/check.py` (add `--fast` to skip `tests/`).
+- Decisions (JP-153): `python3 scripts/decisions.py list [--ticket JP-n]` prints the build-time choices; `check` validates the files (part of `scripts/check.py`).
 - Conventions: `python3 scripts/conventions.py check`, and `python3 scripts/conventions.py lookup --folder <path>` or `--repo <name>` to find where work belongs.
 - Laptop inventory (JP-96, run on the laptop only, read-only, standard library only): `python3 scripts/laptop_inventory.py --out ~/josh-360-inventory.json`
 - What the laptop has installed: `python3 laptop/status.py show` (reads the `laptop-status` branch).
@@ -66,7 +67,7 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - `conventions/`: ticket conventions (`tickets.md`), the system registry (`registry.yaml`) and the standing priorities (`priorities.yaml`). Ticket rules for all of Josh's work start here.
 - `docs/surface-map.md`: every surface Josh works through, and where its configuration lives.
 - `docs/vision-and-roadmap.md`: the approved vision and roadmap (the requirements source).
-- `docs/decisions.md`: decisions from the question round, and default choices made while building.
+- `docs/decisions.md`: Josh's decisions from the question rounds. `docs/decisions/`: default choices made while building, one file per ticket.
 - `docs/source-notes/`: Josh's notes for the four graphs and the brainstorm, unchanged.
 - `docs/WORKFLOW.md`: how work is done here.
 - `docs/superpowers/specs/`, `docs/superpowers/plans/`: design specs and implementation plans.

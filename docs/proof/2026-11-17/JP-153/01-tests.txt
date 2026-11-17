@@ -1,0 +1,17 @@
+test_a_badly_named_or_shaped_file_is_refused (tests.test_decisions.TestChecker.test_a_badly_named_or_shaped_file_is_refused) ... ok
+test_a_row_for_another_ticket_is_refused_and_says_where_it_belongs (tests.test_decisions.TestChecker.test_a_row_for_another_ticket_is_refused_and_says_where_it_belongs) ... ok
+test_a_well_formed_file_passes (tests.test_decisions.TestChecker.test_a_well_formed_file_passes) ... ok
+test_an_escaped_pipe_does_not_split_a_cell (tests.test_decisions.TestChecker.test_an_escaped_pipe_does_not_split_a_cell) ... ok
+test_rows_left_in_the_old_table_are_refused_and_say_where_they_belong (tests.test_decisions.TestChecker.test_rows_left_in_the_old_table_are_refused_and_say_where_they_belong) ... ok
+test_the_real_decision_files_pass (tests.test_decisions.TestChecker.test_the_real_decision_files_pass) ... ok
+test_two_prs_that_record_decisions_merge_cleanly (tests.test_decisions.TestMerges.test_two_prs_that_record_decisions_merge_cleanly) ... ok
+test_without_the_attribute_the_same_appends_do_conflict (tests.test_decisions.TestMerges.test_without_the_attribute_the_same_appends_do_conflict)
+The discriminator: it is merge=union that removes the conflict, not luck. ... ok
+test_a_merge_main_push_reruns_the_suite (tests.test_decisions.TestWorkflow.test_a_merge_main_push_reruns_the_suite) ... ok
+test_a_push_to_an_unlabelled_pr_is_skipped_in_its_own_group (tests.test_decisions.TestWorkflow.test_a_push_to_an_unlabelled_pr_is_skipped_in_its_own_group) ... ok
+test_the_old_triggers_still_stand (tests.test_decisions.TestWorkflow.test_the_old_triggers_still_stand) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.225s
+
+OK

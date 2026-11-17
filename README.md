@@ -23,7 +23,8 @@ The requirements are in [`docs/vision-and-roadmap.md`](docs/vision-and-roadmap.m
 | `conventions/` | Ticket conventions, the system registry and the standing priorities. |
 | `docs/surface-map.md` | Every surface Josh works through, and where its configuration lives. |
 | `docs/vision-and-roadmap.md` | The approved vision and roadmap. |
-| `docs/decisions.md` | Josh's decisions and the default choices made while building. |
+| `docs/decisions.md` | Josh's recorded decisions. |
+| `docs/decisions/` | The default choices made while building, one file per ticket (`JP-<n>.md`). |
 | `docs/source-notes/` | Josh's original notes, unchanged. |
 | `docs/WORKFLOW.md` | How work is done here. |
 | `docs/superpowers/` | Design specs and implementation plans. |

@@ -301,7 +301,7 @@ Every store the inventories found that holds session, run or decision data, and 
 | STATE.md (`~/.claude/session-state/`) | Stays the live record; its U-turns, dead ends and untold findings are copied into `session_state_notes`, and its compaction count into `session_facts` |
 | `/focus` files, compaction summaries, handoff files | Left behind (JP-100) |
 | claude-mem, Obsidian staging, context-mode, agentmemory | Left behind (dismantled, JP-96) |
-| `docs/decisions.md` | Josh's answers from the question rounds are loaded as `recorded` decisions by JP-116; agents' default choices stay in the file, which remains the record of build-time choices |
+| `docs/decisions.md` | Josh's answers from the question rounds are loaded as `recorded` decisions by JP-116; agents' default choices stay in `docs/decisions/JP-<n>.md`, one file per ticket (JP-153), which remain the record of build-time choices |
 | Jira and Linear tickets | Stay in their trackers; the ledger holds keys |
 
 ## Who writes what
