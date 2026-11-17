@@ -12,7 +12,7 @@ Otherwise the apply pass makes the planned changes and prints them. A second run
 
 It writes only inside JOSH360_HOME (default ~/.josh-360): every write goes through common.Lane.
 
-Later tickets add their own steps to STEPS (for example the ledger database).
+Later tickets add their own steps to STEPS (the ledger step is JP-107's).
 """
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ from typing import Callable, List, Tuple
 sys.dont_write_bytecode = True  # keep the laptop's copy clean
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import (REPO_ROOT, Lane, Unexpected, dump_json, git, home, load_jobs, logs_dir,  # noqa: E402
-                    read_json, require_laptop_copy, state_dir)
+                    now_utc, read_json, require_laptop_copy, state_dir)
 
 HOOK_EVENTS = {
     "SessionStart", "SessionEnd", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Notification",
@@ -51,6 +51,34 @@ def step_home() -> Plan:
         elif not folder.exists():
             actions.append(("create folder {}".format(folder), lambda lane, f=folder: lane.mkdir(f)))
     return actions, problems
+
+
+def step_ledger() -> Plan:
+    """JP-107: create the ledger from ledger/schema.sql, or apply the migrations it has not had."""
+    sys.path.insert(0, str(REPO_ROOT))
+    from ledger import db as ledger_db  # noqa: E402
+
+    path = ledger_db.ledger_path()
+    if path.is_symlink() or (path.exists() and not path.is_file()):
+        return [], ["{} exists but is not a regular file".format(path)]
+    if path.is_file():
+        try:
+            conn = ledger_db.sqlite3.connect("file:{}?mode=ro".format(path), uri=True)
+            try:
+                current = ledger_db.user_version(conn)
+            finally:
+                conn.close()
+        except ledger_db.sqlite3.Error as e:
+            return [], ["{} cannot be read: {}".format(path, e)]
+        if current >= ledger_db.newest_version():
+            return [], []
+
+    def apply(lane: Lane) -> None:
+        lane.check(path)
+        lane.check(ledger_db.backups_dir())
+        ledger_db.ensure(path, ledger_db.backups_dir(), now_utc())
+
+    return [("create or migrate the ledger", apply)], []
 
 
 def step_jobs() -> Plan:
@@ -98,6 +126,7 @@ def step_installed_commit() -> Plan:
 
 STEPS = [
     ("home folders", step_home),
+    ("ledger", step_ledger),
     ("jobs file", step_jobs),
     ("hooks", step_hooks),
     ("installed commit", step_installed_commit),
