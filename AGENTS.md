@@ -40,7 +40,7 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 
 **Data rule.** Reading any data Josh can access is allowed. A write to anything shared (a shared database, or an app other people use) needs Josh's confirmation in the thread, and a write that affects other users goes through the SQL write safety ceremony.
 
-**Patient-data rule.** No patient data in the ledger, summaries, decision records, tickets, commits or logs. Refer to a file that holds it by path only. Folders that hold it are named `.phi`, which `.gitignore` ignores.
+**Patient-data rule** (Josh, 17 November 2026; `docs/design/data-model.md`, "Patient data"). Assume every system may hold patient data. Nothing that identifies a patient goes to GitHub or Jira (commits, pull requests, comments, tickets) or into logs; gates check what they write there with `graphs/gates/lib/patient_data.py`. The ledger, summaries and decision records avoid patient names, dates of birth, social security numbers and phone numbers; unique identifiers such as record numbers are fine there. Data goes only to platforms Josh's organisation owns or has a BAA with (every current one does); confirm that before adding a new connector or platform. Refer to a file that holds patient data by path only. Folders that hold it are named `.phi`, which `.gitignore` ignores.
 
 ## Commands
 
