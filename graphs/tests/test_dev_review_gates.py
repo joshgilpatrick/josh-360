@@ -53,7 +53,15 @@ class TestHelpers(unittest.TestCase):
         rows.append(Check("lint", "cancel", "2026-11-17T11:00:00Z"))
         self.assertEqual(dev_review.check_state(rows), "failed")
         self.assertEqual(dev_review.check_state([]), "none")
-        self.assertEqual(dev_review.check_state([Check("a", "skipping", "")]), "green")
+
+    def test_a_skipped_check_is_not_a_pass(self):
+        skipped = Check("suite", "skipping", "2026-11-17T10:00:00Z")
+        self.assertEqual(dev_review.check_state([skipped]), "none")
+        self.assertEqual(dev_review.check_state([skipped, Check("lint", "pass", "")]), "green")
+        self.assertEqual(dev_review.check_state([skipped, Check("lint", "pending", "")]), "pending")
+        self.assertEqual(dev_review.check_state([skipped, Check("lint", "fail", "")]), "failed")
+        # the old skipped run is superseded once the real run is registered
+        self.assertEqual(dev_review.check_state([skipped, Check("suite", "pending", "2026-11-17T11:00:00Z")]), "pending")
 
     def test_audit_bots_env_and_login_matching(self):
         self.assertIn("eventus-action-agent", dev_review.audit_bots({}))
@@ -301,6 +309,12 @@ class ReviewState(ReviewCase):
 
     def test_ready_with_no_checks_waits_for_the_grace(self):
         self.github.labels = [RD]
+        self.assertEqual(self.outcome(now=datetime(2026, 11, 17, 10, 20, tzinfo=timezone.utc)), "pending")
+        self.assertEqual(self.outcome(now=datetime(2026, 11, 17, 10, 31, tzinfo=timezone.utc)), "ready")
+
+    def test_ready_with_only_a_skipped_check_waits_for_the_grace(self):
+        self.github.labels = [RD]
+        self.github.check_rows = [Check("suite", "skipping", "2026-11-17T10:00:00Z")]
         self.assertEqual(self.outcome(now=datetime(2026, 11, 17, 10, 20, tzinfo=timezone.utc)), "pending")
         self.assertEqual(self.outcome(now=datetime(2026, 11, 17, 10, 31, tzinfo=timezone.utc)), "ready")
 
