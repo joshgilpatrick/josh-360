@@ -27,6 +27,9 @@
 #                 Only an epic with an end belongs here; an open-ended catch-all epic does not.
 #   priority      An id from conventions/priorities.yaml. If priorities.yaml maps the system's area to a
 #                 priority, the two must agree.
+#   merges        Who merges a pull request: agent (the development graph merges it, once the review and
+#                 the checks are green) or josh (he merges it himself). Optional; absent means josh.
+#                 Only josh-360 is agent (JP-115).
 #
 # Seeded on 16 November 2026 from labels and epics in Jira and from paths named in Josh's repositories.
 # Folders were not checked on the laptop; JP-105 (the laptop hookup) can confirm them. Josh reviewed the
@@ -205,6 +208,7 @@ systems:
     jira_space: JP
     default_epic: JP-94
     priority: devex
+    merges: agent
 
   - name: josh-projects
     description: Josh's working repository, including agent_tools (Jira, Outlook and other command-line tools)
