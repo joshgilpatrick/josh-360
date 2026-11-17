@@ -1,0 +1,36 @@
+{
+  "dry_run": false,
+  "items": [
+    {
+      "actions": [
+        "not loaded; nothing to bootout",
+        "no plist in ~/Library/LaunchAgents; nothing to archive"
+      ],
+      "label": "com.eventus.qa-waker-watchdog",
+      "ok": true,
+      "was_loaded": false
+    },
+    {
+      "actions": [
+        "not loaded; nothing to bootout",
+        "no plist in ~/Library/LaunchAgents; nothing to archive"
+      ],
+      "label": "com.eventus.clickup-notion-sync",
+      "ok": true,
+      "was_loaded": false
+    },
+    {
+      "actions": [
+        "not loaded; nothing to bootout",
+        "moved the plist to /Users/jgilpatrick/Archive/josh-360-retired/2026-11-17/omnara",
+        "moved .omnara to the archive"
+      ],
+      "archived_to": "/Users/jgilpatrick/Archive/josh-360-retired/2026-11-17/omnara",
+      "label": "com.omnara.daemon",
+      "ok": true,
+      "was_loaded": false
+    }
+  ],
+  "job": "retire-leftover-jobs",
+  "result": "ok"
+}
