@@ -1,0 +1,35 @@
+# Scenario 1: first commit with no ticket
+# A real run of the hook through hooks/dispatch in a throwaway repo (made-up session id and folder)
+
+$ echo <PreToolUse input: git commit> | hooks/dispatch PreToolUse
+{
+    "hookSpecificOutput": {
+        "hookEventName": "PreToolUse",
+        "additionalContext": "Josh 360 ticket offer (JP-110). This session is about to make its first commit and no ticket is linked to it. Tell Josh once, in one line, in your next message: \"This has become ticket-sized work, want me to open a ticket?\" Then carry on with what you were doing: do not wait for the answer, do not hold the commit, and do not ask again in this session.\nIf Josh says yes: open the ticket (Josh's using-jira flow until the ticket creation graph exists), name the branch after its key (<KEY>/<slug>), then run: python3 /home/claude/josh-360/ledger/offer.py --session sess-demo-0001 accepted <KEY>\nIf Josh says no: run: python3 /home/claude/josh-360/ledger/offer.py --session sess-demo-0001 declined\nIf he does not answer, do nothing more."
+    }
+}
+exit code: 0
+
+# spool line the hook appended (the recorder writes the ledger row):
+{"at":"2026-11-17T17:15:55Z","event":"TicketOffer","offer_event":"offered","offer_trigger":"first-commit","session_id":"sess-demo-0001","ticket_key":null}
+
+# Same session, next commit (scenario 2): nothing printed, exit 0
+exit code: 0
+spool lines: 1
+
+# Tests
+test_a_new_branch_with_no_ticket_key_offers_too (tests.test_ledger_offer.TheOffer.test_a_new_branch_with_no_ticket_key_offers_too) ... ok
+test_another_session_is_offered_on_its_own (tests.test_ledger_offer.TheOffer.test_another_session_is_offered_on_its_own) ... ok
+test_first_commit_with_no_ticket_offers_one_line_and_goes_ahead (tests.test_ledger_offer.TheOffer.test_first_commit_with_no_ticket_offers_one_line_and_goes_ahead) ... ok
+test_it_runs_under_dispatch (tests.test_ledger_offer.TheOffer.test_it_runs_under_dispatch) ... ok
+test_the_offer_is_made_once (tests.test_ledger_offer.TheOffer.test_the_offer_is_made_once) ... ok
+test_two_hooks_firing_together_offer_once (tests.test_ledger_offer.TheOffer.test_two_hooks_firing_together_offer_once) ... ok
+test_a_branch_comes_before_a_commit_in_one_command (tests.test_ledger_offer.Recognising.test_a_branch_comes_before_a_commit_in_one_command) ... ok
+test_commits (tests.test_ledger_offer.Recognising.test_commits) ... ok
+test_everything_else_is_not_a_trigger (tests.test_ledger_offer.Recognising.test_everything_else_is_not_a_trigger) ... ok
+test_new_branches (tests.test_ledger_offer.Recognising.test_new_branches) ... ok
+test_the_directory_after_dash_c_is_kept (tests.test_ledger_offer.Recognising.test_the_directory_after_dash_c_is_kept) ... ok
+test_the_ticket_pattern_is_the_recorders (tests.test_ledger_offer.Recognising.test_the_ticket_pattern_is_the_recorders) ... ok
+----------------------------------------------------------------------
+Ran 12 tests in 0.828s
+OK
