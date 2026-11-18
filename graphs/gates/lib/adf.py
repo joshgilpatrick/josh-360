@@ -120,11 +120,14 @@ def labelled(label: str, body: str) -> dict:
 def ticket_description(ticket: dict) -> dict:
     """Josh's ticket format (conventions/tickets.md, "Required sections") as ADF: a bold label per section, real
     bullets and a Gherkin code block, in the order the checklist gives, then Repository and Where it runs."""
-    from lib import ready_checklist  # the gate's own folder is on sys.path
+    from lib import ready_checklist, validation_section  # the gate's own folder is on sys.path
 
     sections = ticket.get("sections") or {}
     blocks: List[dict] = []
-    for check in ready_checklist.CHECKLIST.get(ticket.get("type"), []):
+    checks = ready_checklist.CHECKLIST.get(ticket.get("type"), [])
+    # Repository and Where it runs follow the last of the sections that come straight after Acceptance criteria
+    last_before_fields = "validation" if any(c["section"] == "validation" for c in checks) else "acceptance_criteria"
+    for check in checks:
         value = sections.get(check["section"])
         kind = check["kind"]
         if kind in ("list", "list_or_empty"):
@@ -136,9 +139,16 @@ def ticket_description(ticket: dict) -> dict:
         elif kind == "gherkin":
             blocks.append(labelled(check["label"], ""))
             blocks.append(code_block(str(value or "")))
+        elif kind == "validation":
+            lines, scenarios = validation_section.split(validation_section.canonical(str(value or "")))
+            blocks.append(labelled(check["label"], ""))
+            if lines:
+                blocks.append(bullets(lines))
+            if scenarios.strip():
+                blocks.append(code_block(scenarios))
         else:
             blocks.append(labelled(check["label"], str(value or "")))
-        if check["section"] == "acceptance_criteria":
+        if check["section"] == last_before_fields:
             blocks.append(labelled("Repository", str(ticket.get("repository") or "")))
             blocks.append(labelled("Where it runs", str(ticket.get("where_it_runs") or "")))
     open_questions = sections.get("open_questions")
