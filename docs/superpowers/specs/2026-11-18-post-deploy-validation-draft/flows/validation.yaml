@@ -57,10 +57,11 @@ steps:
     outputs:
       needed: { type: string, description: "yes, no (the section says no, or there is no section) or unreadable" }
       criteria: { type: list, description: "One entry per @validate scenario", contract: validation-plan }
-      starts: { type: string, description: "When the watch begins: at Deployed, a date, or a ticket reaching Done" }
+      starts: { type: string, description: "When the watch begins: at Deployed, on a date, or after a ticket reaches Done. The watch takes no reading before then" }
       check_every_hours: { type: number, description: "Hours between checks" }
       complete_when: { type: string, description: "'<n> checks in a row pass' or 'after <n> events'" }
-      give_up_days: { type: number, description: "Days after which the watch ends without being complete" }
+      give_up_days: { type: number, description: "Days after the watch begins at which it ends without being complete" }
+      fail_after: { type: number, description: "Failing checks in a row that end the watch early: the Fail after line, or 3 when it is left out" }
       section_version: { type: string, description: "Hash of the Validation section, so a later edit is seen" }
       problems: { type: list, description: "When unreadable: each line the script could not read, and what would pass" }
     outcomes: [watch, not_needed, unreadable]
@@ -69,15 +70,16 @@ steps:
     gate: start-watch
     needs: [read_criteria]
     when: { step: read_criteria, outcome: watch }
-    inputs: [ticket_key, criteria, starts, check_every_hours, complete_when, give_up_days, section_version]
+    inputs: [ticket_key, criteria, starts, check_every_hours, complete_when, give_up_days, fail_after, section_version]
     outputs:
       watch_file: { type: string, description: "This round's plan and check log, in the run's work folder", contract: validation-plan }
     outcomes: [started]
 
   # ---- Collect readings on the ticket's own timetable: no session, no model -----------------------
   # The runner calls this every five minutes. The script answers pending at once, from one small file,
-  # until a check is due; then it runs each criterion's collector, adds one line to the check log and
-  # grades the log against "Complete when" and "Give up after".
+  # until the watch has begun (the Starts line) and a check is due; then it runs each criterion's
+  # collector, adds one line to the check log and grades the log against "Complete when", "Fail after"
+  # and "Give up after".
   - id: watch
     wait: watch-criteria
     needs: [start_watch]
