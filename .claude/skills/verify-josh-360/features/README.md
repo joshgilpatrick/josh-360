@@ -61,7 +61,7 @@ Each of these is a user-facing feature with no recipe yet. Add a file here when 
 - Friction facts and measures (JP-112): written by the recorder; `ledger/measures.py` [sandbox].
 - Loose ends and closeout (JP-109): `ledger/loose_ends.py`, `ledger/closeout.py`, `/closeout`. Reads GitHub and Jira live [laptop; `--json` without `--fetch` runs in the sandbox].
 - Graph runner (JP-117): the `graph-runner` job, `graphs/runner/runner.py`, the Agent Manager binding and the `20-graph-step*` hooks. Needs Jira and Agent Manager [laptop].
-- The triage, development and non-development graphs (JP-122, JP-115, JP-123): their entry gates read Jira, and their exit gate `no-loose-ends` is still a stub [laptop; whole runs are automated in `tests/test_triage_run.py`, `tests/test_nondev_graph_run.py` and `graphs/tests/`].
+- The triage, development and non-development graphs (JP-122, JP-115, JP-123): their entry gates read Jira [laptop; whole runs are automated in `tests/test_triage_run.py`, `tests/test_nondev_graph_run.py` and `graphs/tests/`].
 - Ledger backup and Azure copy (JP-107, JP-150): the `ledger-backup` and `ledger-upload` jobs [backup in the sandbox; upload on the laptop after `az login`].
 - Session Atlas (JP-111): the headless service, the worktree removal guard hook and the cost import in `apps/session-atlas` [laptop; `npm test` in that folder].
 - Startup list check and retired jobs (JP-119): `laptop/check_jobs.py`, `scripts/restore_retired_job.py` [laptop, needs launchd].
