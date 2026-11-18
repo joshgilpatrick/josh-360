@@ -13,7 +13,7 @@
 
 ## Workflow
 
-This repo follows `docs/WORKFLOW.md` (tickets, design gate, proof, review ceremony, merge). Values: `.claude/workflow.config.md`. Skills in `.claude/skills/`: `ticket-lifecycle`, `design-handoff`, `pr-proof`, `review-ceremony`, `workflow-roles`, `platform-doctor`. Commands: `/design`, `/build`, `/fix`, `/review-pr`, `/ship`, `/session-end`, `/closeout`, `/doctor`. Subagents in `.claude/agents/`: `implementer` (one plan task, test first), `ceremony-reviewer` (fallback cloud review of a PR) and `closeout` (Josh's loose ends).
+This repo follows `docs/WORKFLOW.md` (tickets, design gate, proof, review ceremony, merge). Values: `.claude/workflow.config.md`. Skills in `.claude/skills/`: `ticket-lifecycle`, `design-handoff`, `pr-proof`, `review-ceremony`, `workflow-roles`, `platform-doctor`, `verify-josh-360` (drives and proves features on a sandbox laptop; its feature map is `features/README.md`). Commands: `/design`, `/build`, `/fix`, `/review-pr`, `/ship`, `/session-end`, `/closeout`, `/doctor`. Subagents in `.claude/agents/`: `implementer` (one plan task, test first), `ceremony-reviewer` (fallback cloud review of a PR) and `closeout` (Josh's loose ends).
 
 Status and history live in Jira (project `JP`, epic JP-94, label `josh-360`). There is no status file in the repo.
 
@@ -46,7 +46,7 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 ## Commands
 
 - Install once: `pip install -r requirements.txt` (PyYAML).
-- Checks and tests: `python3 scripts/check.py` (add `--fast` to skip `tests/`).
+- Checks and tests: `python3 scripts/check.py` (add `--fast` to skip `tests/`). The documentation checks on their own: `python3 scripts/docs_check.py` (JP-158).
 - Decisions (JP-153): `python3 scripts/decisions.py list [--ticket JP-n]` prints the build-time choices; `check` validates the files (part of `scripts/check.py`).
 - Conventions: `python3 scripts/conventions.py check` (`export-json` rewrites `conventions/registry.json` and `priorities.json` from the YAML; `export-json --check` is part of `scripts/check.py`), and `python3 scripts/conventions.py lookup --folder <path>` or `--repo <name>` to find where work belongs.
 - Laptop inventory (JP-96, run on the laptop only, read-only, standard library only): `python3 scripts/laptop_inventory.py --out ~/josh-360-inventory.json`
@@ -72,6 +72,7 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - `graphs/runner/`, `graphs/bindings/agent-manager/`: the graph runner (JP-117) that starts Agent Manager sessions for role steps, and its binding; `hooks/*/20-graph-step*` are its rails.
 - `conventions/`: ticket conventions (`tickets.md`), the system registry (`registry.yaml`) and the standing priorities (`priorities.yaml`), with JSON copies of both for code that has no YAML reader. Ticket rules for all of Josh's work start here.
 - `docs/surface-map.md`: every surface Josh works through, and where its configuration lives.
+- `docs/architecture.md`: one page on how the parts fit together; `docs/README.md` maps every document.
 - `docs/vision-and-roadmap.md`: the approved vision and roadmap (the requirements source).
 - `docs/decisions.md`: Josh's decisions from the question rounds. `docs/decisions/`: default choices made while building, one file per ticket.
 - `docs/source-notes/`: Josh's notes for the four graphs and the brainstorm, unchanged.
@@ -84,7 +85,7 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - `docs/phase-1-close-checklist.md`: the changes to Josh's other repositories that wait for the phase 1 close, with their steps in order.
 - `.claude/`: workflow values, skills, commands and subagents.
 - `.github/`: the pull request template and `workflows/test.yml`, which runs the `suite` check.
-- `scripts/check.py`: the repo's checks, run by CI as the `suite` job.
+- `scripts/check.py`: the repo's checks, run by CI as the `suite` job; `scripts/docs_check.py` holds the documentation checks it runs.
 - `scripts/conventions.py`: checks and reads the registry and the priorities file.
 - `scripts/laptop_inventory.py`, `scripts/laptop_figures.py`: the read-only laptop inventory and starting figures (JP-96); `scripts/laptop_inventory_job.py` runs it once as the `inventory` job and its report lands on `laptop-status` as `reports/inventory.json`.
 - `scripts/decisions.py`: lists and checks the per-ticket decision files (JP-153).
