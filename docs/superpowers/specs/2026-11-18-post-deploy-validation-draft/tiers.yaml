@@ -1,0 +1,18 @@
+# The three tiers, cheapest first, mapped to models. This is the only file that names a model.
+# The first entry in a list is used; the rest are fallbacks, in order. Every entry names a model AND an effort
+# (low, medium or high); the checker refuses one without. See graphs/CONVENTION.md, "Tiers".
+# max_runs is the most times one role step of this tier runs in one graph run, loops included (JP-139).
+# It counts by the tier, not by whichever model answered, so a fallback model counts against its tier.
+convention: 1
+tiers:
+  cheap:                                          # fully specified, mechanical work
+    - { model: claude-haiku-5-5, effort: high }
+    - { model: claude-sonnet-5-5, effort: medium }  # when Haiku is out of tokens
+  mid:                                            # intake, design, moderate ambiguity
+    - { model: claude-sonnet-5-5, effort: medium }
+  gate:                                           # judgments that need the most foresight; never builds
+    - { model: claude-opus-5-5, effort: high }
+max_runs:
+  cheap: 5
+  mid: 3
+  gate: 2
