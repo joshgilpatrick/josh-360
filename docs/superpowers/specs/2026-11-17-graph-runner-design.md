@@ -189,7 +189,7 @@ A run that stops (a failed gate, a step abandoned past its cap with no ask to re
 
 - `graph_runs.runner` is `agent-manager`.
 - Every step run carries its attempt, loop count and tier (walker); every role step result carries the Claude Code session id (`record --session`) and the model used (`record --model`). The ledger's own record job adds the session row from the hook spool, so session, run and step join in one query.
-- `runner.py report --run <id>` prints the run as the ledger recorded it: each step with its outcome, loop count, session, tier, model, Jira status and times. The proof page is that output.
+- `runner.py report --run <id>` prints the run as the ledger recorded it: each step with its outcome, loop count, session, tier, model, Jira status and times. Every attempt of a role step also shows its Agent Manager session and, for an attempt the runner abandoned, its Claude Code session (from the link file, since an abandoned attempt records none in the ledger) and the reason word, so the report answers "which sessions did this run start?" (added 18 November, PR #59). The proof page is that output.
 
 ## Seeing and stopping it
 
