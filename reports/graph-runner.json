@@ -1,0 +1,27 @@
+{
+  "ended_runs": [],
+  "host": "job",
+  "open_runs": [],
+  "rails": true,
+  "runs": {
+    "between": 0,
+    "open": 0,
+    "parked": 0,
+    "queued": 0,
+    "stopped": 0,
+    "waiting": 0,
+    "working": 0
+  },
+  "session_limit": 2,
+  "sessions_live": 0,
+  "status": "ok",
+  "stopped": [],
+  "waiting_over_7_days": [],
+  "watch": {
+    "development": {
+      "jira": "no-credentials",
+      "skipped": {},
+      "started": []
+    }
+  }
+}
