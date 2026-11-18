@@ -27,7 +27,11 @@ class Running(RunnerCase):
 
     def forget_everything(self):
         """Drop every in-process object of the runner: the next call is built from the files and the ledger alone."""
-        for name in [n for n in sys.modules if n.startswith("runner_lib") or n.startswith("josh360_binding")]:
+        names = [n for n in sys.modules if n.startswith("runner_lib") or n.startswith("josh360_binding")]
+        if not hasattr(self, "_kept_modules"):                 # put the originals back afterwards: other test files patch them
+            self._kept_modules = {n: sys.modules[n] for n in names}
+            self.addCleanup(lambda: sys.modules.update(self._kept_modules))
+        for name in names:
             del sys.modules[name]
 
     def run_state(self, ticket):
