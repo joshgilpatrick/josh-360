@@ -162,7 +162,7 @@ class CommandLine(unittest.TestCase):
     def test_default_run_checks_every_flow_under_root(self):
         result = run_cli("--root", str(PARTS))
         self.assertEqual(result.returncode, 0, result.stdout)
-        self.assertIn("2 graph(s)", result.stdout)
+        self.assertIn("{} graph(s)".format(len(list((PARTS / "flows").glob("*.yaml")))), result.stdout)
 
     def test_the_repository_graphs_folder_passes(self):
         result = run_cli()
