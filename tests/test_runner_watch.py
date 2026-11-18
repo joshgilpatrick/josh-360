@@ -36,7 +36,7 @@ class Watching(RunnerCase):
         finally:
             conn.close()
 
-    def test_ready_in_an_open_sprint_starts_a_run(self):
+    def test_ready_with_the_run_label_starts_a_run(self):
         self.jira_issue("JP-901")
         got = self.watch()
         self.assertEqual(got, {"runner-sample": {"jira": "ok", "started": ["JP-901"], "skipped": {}}})
@@ -47,8 +47,8 @@ class Watching(RunnerCase):
         self.assertEqual((inputs["ticket_type"], inputs["system"], inputs["resume_from"], inputs["phi"]),
                          ("Story", "sample", "none", True))
 
-    def test_ready_in_the_backlog_starts_nothing(self):
-        self.jira_issue("JP-901", sprint=False)
+    def test_ready_without_the_run_label_starts_nothing(self):
+        self.jira_issue("JP-901", queued=False)
         got = self.watch()
         self.assertEqual(got["runner-sample"]["started"], [])
         self.assertEqual(self.runs(), [])
@@ -80,6 +80,11 @@ class Watching(RunnerCase):
         self.assertTrue(set(RULE["inputs"]) <= set(have))
         required = {n for n, spec in have.items() if spec.get("required") and n != "ticket_key"}
         self.assertTrue(required <= set(RULE["inputs"]))
+
+    def test_shipped_rule_names_the_label_the_triage_graph_knows(self):
+        from lib.triage import RUN_LABEL
+        self.assertIn('labels = "{}"'.format(RUN_LABEL), RULE["jql"])
+        self.assertNotIn("sprint", RULE["jql"].lower())
 
     def test_one_run_per_pass_in_rank_order(self):
         for key in ("JP-901", "JP-902", "JP-903"):

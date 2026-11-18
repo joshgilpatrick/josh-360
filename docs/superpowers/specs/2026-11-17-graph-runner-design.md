@@ -98,7 +98,7 @@ The runner is the one place that decides when a run starts (walker design, B1; t
 {
   "development": {
     "on": true,
-    "jql": "project = JP AND status = Ready AND sprint in openSprints() AND issuetype in (Story, Bug, Task, Research)",
+    "jql": "project = JP AND status = Ready AND labels = \"ready-to-run\" AND issuetype in (Story, Bug, Task, Research)",
     "route": "development",
     "inputs": {
       "ticket_type": "issuetype",
@@ -120,7 +120,7 @@ For each graph that is `on`, each pass:
 3. Builds the walker's inputs from the mapping: a field of the ticket, the route record, or the `action-triage.spec` property, with a default after `|`. A missing value with no default skips the ticket with a reason in the report.
 4. Calls `walker.py start --graph <g> --ticket <KEY> --runner agent-manager --input ...`. The walker then runs the graph's entry gate (`ready`), which checks the route record's signed-off version, refuses the sixth run in 24 hours, and writes the run. A refusal is logged and the ticket is tried again next pass; the entry gate writes nothing when it refuses.
 
-At most one new run starts per pass, so a sprint that suddenly holds twenty Ready tickets is taken up at a steady pace, oldest rank first.
+At most one new run starts per pass, so twenty Ready tickets that all get the label at once is taken up at a steady pace, oldest rank first.
 
 **A returned ticket resumes.** When triage makes a returned ticket Ready again, its route record's `returned_from` becomes the input `resume_from`, and the development graph's designer revises the saved spec (JP-115). The runner does nothing special.
 
@@ -189,7 +189,7 @@ A run that stops (a failed gate, a step abandoned past its cap with no ask to re
 
 - `graph_runs.runner` is `agent-manager`.
 - Every step run carries its attempt, loop count and tier (walker); every role step result carries the Claude Code session id (`record --session`) and the model used (`record --model`). The ledger's own record job adds the session row from the hook spool, so session, run and step join in one query.
-- `runner.py report --run <id>` prints the run as the ledger recorded it: each step with its outcome, loop count, session, tier, model, Jira status and times. The proof page is that output.
+- `runner.py report --run <id>` prints the run as the ledger recorded it: each step with its outcome, loop count, session, tier, model, Jira status and times. Every attempt of a role step also shows its Agent Manager session and, for an attempt the runner abandoned, its Claude Code session (from the link file, since an abandoned attempt records none in the ledger) and the reason word, so the report answers "which sessions did this run start?" (added 18 November, PR #59). The proof page is that output.
 
 ## Seeing and stopping it
 
@@ -203,7 +203,7 @@ The feature tree makes A9 reference material: its rules stand, its code does not
 
 | A9 rule | Here |
 | --- | --- |
-| A9.1 start gate: who set Queued, a valid Repository, a parseable spec; every check fails closed | Who: Josh's sprint is the start signal, on a ticket that triage signed off with his account. Repository: `read-dev-ticket` refuses a system with no repository in the registry. Spec: the runner skips a ticket whose `action-triage.spec` does not parse. Unknown reads start nothing. |
+| A9.1 start gate: who set Queued, a valid Repository, a parseable spec; every check fails closed | Who: Josh's `ready-to-run` label is the start signal (the sprint, until 18 November 2026), on a ticket that triage signed off with his account. Repository: `read-dev-ticket` refuses a system with no repository in the registry. Spec: the runner skips a ticket whose `action-triage.spec` does not parse. Unknown reads start nothing. |
 | A9.2 branch contract and slot clearing | The graph's own `prepare-worktree` gate (fresh `origin/<base>`, `<KEY>-<slug>`) and `clean-up` |
 | A9.3 Jira status moves | The walker's `move-ticket` at each stretch, read back |
 | A9.4 run records | The ledger |
@@ -228,9 +228,9 @@ Two facts this design rests on cannot be checked from the cloud, so a temporary 
 
 The ticket's proof is JP-116 ("Record Josh's decisions in the ledger, stage one"), carried from Ready to a reviewed, merged pull request by this runner. In order:
 
-1. **Josh turns sprints on for JP** (Project settings, Features; JP is a team-managed project) and creates a sprint. Nothing can start a run until then (JP-149 decision).
+1. **Josh adds nothing yet.** Sprints are not turned on for JP (Josh, 18 November 2026: not a gate for Josh 360), so the start signal is the label `ready-to-run` on a Ready ticket, in place of "in an open sprint". Turning sprints on later is a one-line change to the rule in `starts.json`.
 2. **JP-116 is triaged.** It needs a route record, which only the triage graph writes. A one-time job, `jp-117-triage-jp-116`, runs `runner.py start --graph triage --ticket JP-116 --input reason=new`; the triage run goes through the same runner and sessions. Triage signs it off and makes it Ready. It stays in the backlog.
-3. **Josh moves JP-116 into the started sprint.** That is the start signal, and his only act.
+3. **Josh adds the label `ready-to-run` to JP-116.** That is the start signal, and his only act.
 4. **The runner starts the development run** at its next tick, and the run goes design, harden, build, verify, review, pull request, the laptop's PR audit, fixes, merge (josh-360 lets agents merge), clean-up, Done. Jira moves at each stretch.
 5. **The proof page**, `docs/proof/phase-1-graphs.md`, is `runner.py report --run <id>` as published to `laptop-status`, with the pull request and the Jira history. A cloud session commits it.
 
@@ -347,7 +347,7 @@ These go into `docs/decisions/JP-117.md` when the build makes them; each can be 
 | --- | --- | --- | --- |
 | 1 | A five-minute tick plus a detached `advance` per run, no long-lived daemon | No new launchd entry; nothing to restart; a run is never waited on inside a pass | Run `runner.py loop` in a terminal (the fallback) |
 | 2 | Start rules in `graphs/runner/starts.json`, not in graph files | The convention keeps runner facts out of graphs (`graphs/bindings/README.md`) | Move them into a binding folder |
-| 3 | At most one new run per pass | A sprint full of Ready tickets is taken up at a steady pace | Raise it in `starts.json` |
+| 3 | At most one new run per pass | A batch of labelled Ready tickets is taken up at a steady pace | Raise it in `starts.json` |
 | 4 | The result file, not the session's state, ends a step | Interactive sessions rest instead of exiting | Not needed |
 | 5 | Sessions are linked by a hook reading a marker line in the first prompt | The session can start before `spawn` returns | Link from the spawn reply only |
 | 6 | Turn cap 200 tool calls, reflection every 40, time cap 3 hours, rest timeout 10 minutes | action-triage's numbers, counted per tool call because an interactive session has no turn count | Settings in `graphs/runner/settings.json` |
@@ -369,3 +369,7 @@ Written when the build's pull request opened. What differs from the design above
 - **Report.** `status.snapshot` lists only `agent-manager` runs and the step rows of runs that ended in the last 14 days; `runner.py report --from-json` prints the proof page from a published snapshot.
 - **`jobs.yaml`.** `graph-runner` (every 5 minutes) and `jp-117-triage-jp-116` (hourly, not `once`: a `once` job stops at its first exit 0 and a refusal must be tried again). `agent-manager-probe` is removed.
 - **Not yet proven.** The laptop checks in the plan's "Laptop checks owed after the build" and the proof run (Task 13) follow the merge; this section is finished with them.
+
+### Start signal changed to a label (18 November 2026)
+
+Josh is not ready to organise sprints and does not want them to gate Josh 360, so the start rule is `status = Ready AND labels = "ready-to-run"` (still one rule in `graphs/runner/starts.json`, and the one place that reads it). The triage graph's Ready comment reads the same label (`lib.triage.RUN_LABEL`, `port.has_run_label`): "starts now" when it is on the ticket, "starts when Josh queues it" when it is not. Sprints can come back later by changing the one JQL line. Decision row: `docs/decisions/JP-117.md`.

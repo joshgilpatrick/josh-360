@@ -121,7 +121,7 @@ jobs:
     every: 5m
     timeout: 5m
     report: true
-    description: JP-117. Watches Jira for tickets that should have a graph run (Ready and in an open sprint) and moves every open run forward one step, each model step in a visible Agent Manager session. No model call of its own. The report is counts, ids, step names and times only.
+    description: JP-117. Watches Jira for tickets that should have a graph run (Ready and labelled ready-to-run) and moves every open run forward one step, each model step in a visible Agent Manager session. No model call of its own. The report is counts, ids, step names and times only.
 
   - id: jp-117-triage-jp-116
     run: graphs/runner/triage_jp116_job.py

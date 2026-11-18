@@ -30,7 +30,8 @@ def folder_from(environ: dict) -> Optional[Path]:
 
 def _judge(issues: list, jql: str) -> Optional[list]:
     """The small JQL subset a test can ask for (JP-117): ORDER BY is dropped, then each ` AND ` clause is one of
-    `project = X`, `status = X` (quoted or bare), `sprint in openSprints()` and `issuetype in (A, B)`. Any other clause
+    `project = X`, `status = X` (quoted or bare), `labels = X` (quoted or bare), `sprint in openSprints()` and
+    `issuetype in (A, B)`. Any other clause
     returns None (the fake answers 400), so a test can never pass on a rule the fake did not judge."""
     text = re.split(r"\s+ORDER\s+BY\s+", jql, flags=re.I)[0]
     found = list(issues)
@@ -44,6 +45,11 @@ def _judge(issues: list, jql: str) -> Optional[list]:
         if m:
             want = m.group(1) if m.group(1) is not None else m.group(2)
             found = [i for i in found if ((i.get("fields") or {}).get("status") or {}).get("name") == want]
+            continue
+        m = re.match(r"^labels\s*=\s*(?:\"([^\"]*)\"|(\S+))$", clause, re.I)
+        if m:
+            want = m.group(1) if m.group(1) is not None else m.group(2)
+            found = [i for i in found if want in ((i.get("fields") or {}).get("labels") or [])]
             continue
         if re.match(r"^sprint\s+in\s+openSprints\(\)$", clause, re.I):
             found = [i for i in found if any(isinstance(sp, dict) and sp.get("state") == "active"

@@ -12,7 +12,7 @@
 
 ## What it is
 
-The graph runner (JP-117) takes a ticket that is Ready and in an open sprint from there to the end of its graph, with no one starting anything by hand. The job `graph-runner` runs `tick_job.py` every five minutes. Each pass reads Jira (read-only) against the rules in `starts.json`, starts at most one new run through the walker, and launches a detached `runner.py advance --run <id>` for every run that can move. `advance` asks the walker for the next step and does what it says: a gate runs, a question goes to Needs you, and a role step starts one visible Agent Manager session through the binding in `graphs/bindings/agent-manager/`. The session writes its outcome to the step's result file; the next `advance` records it and asks the walker again. The runner holds no graph logic, writes nothing to Jira, and makes no model call of its own. Python 3.9, standard library only.
+The graph runner (JP-117) takes a ticket that is Ready and carries the label `ready-to-run` from there to the end of its graph, with no one starting anything by hand. The job `graph-runner` runs `tick_job.py` every five minutes. Each pass reads Jira (read-only) against the rules in `starts.json`, starts at most one new run through the walker, and launches a detached `runner.py advance --run <id>` for every run that can move. `advance` asks the walker for the next step and does what it says: a gate runs, a question goes to Needs you, and a role step starts one visible Agent Manager session through the binding in `graphs/bindings/agent-manager/`. The session writes its outcome to the step's result file; the next `advance` records it and asks the walker again. The runner holds no graph logic, writes nothing to Jira, and makes no model call of its own. Python 3.9, standard library only.
 
 Four hooks (`hooks/*/20-graph-step*`) put rails on those sessions and on no others: they link the session to its run, cap its tool calls and time, refuse questions to Josh and writes to Jira or GitHub, and nudge it once for its result. The shell rules read command text, so they narrow the obvious paths and are not a boundary (`hooks/README.md`).
 
@@ -20,7 +20,7 @@ Four hooks (`hooks/*/20-graph-step*`) put rails on those sessions and on no othe
 
 - On the laptop: `python3 ~/.josh-360/repo/graphs/runner/runner.py status` (add `--json`). It lists open runs with their step and state (`working`, `queued`, `parked`, `waiting`, `stopped`, `between`), live sessions against the limit, whether the four hooks are registered (`rails`), stopped runs, and every run that has waited more than seven days.
 - From the cloud: `python3 laptop/status.py show graph-runner`. The report holds counts, ids, step names, outcomes and times only.
-- One run's step table: `runner.py report --run <id>`, or from a published report: `runner.py report --run <id> --from-json <file>` (`--json` for the data). The published report keeps the runs that ended in the last 14 days.
+- One run's step table: `runner.py report --run <id>`, or from a published report: `runner.py report --run <id> --from-json <file>` (`--json` for the data). Each role attempt shows its Claude Code session, its Agent Manager session and, if the runner gave up on it, why (`never-started`, `session-gone`, `time-cap`, ...), so every session a run started is listed, including the ones it abandoned. The published report keeps the runs that ended in the last 14 days.
 
 ## Starting and stopping it
 

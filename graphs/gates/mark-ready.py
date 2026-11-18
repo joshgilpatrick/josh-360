@@ -42,7 +42,7 @@ def run(inputs, deps):
         raise GateError("the route record on {} did not read back from Jira".format(key))
     if not deps.jira.transition(key, "Ready"):
         raise GateError("{} was not confirmed in Ready by Jira".format(key))
-    if not deps.jira.comment(key, copy.ready(run_id, signer, graph, system, port.in_open_sprint(snap.issue))):
+    if not deps.jira.comment(key, copy.ready(run_id, signer, graph, system, port.has_run_label(snap.issue))):
         raise GateError("the Ready comment on {} was not confirmed by Jira".format(key))
     return "moved", None, "Ready, routed to {} ({})".format(graph, system)
 

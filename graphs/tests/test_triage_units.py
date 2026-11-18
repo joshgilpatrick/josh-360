@@ -276,6 +276,14 @@ class TheCopyMatchesTheSpec(unittest.TestCase):
         self.assertTrue(copy.is_return_note("Returned to triage | from run r"))
 
 
+class TheRunLabel(unittest.TestCase):
+    def test_a_ticket_with_the_label_starts_now_and_one_without_waits(self):
+        from lib.triage import RUN_LABEL, port
+        self.assertTrue(port.has_run_label({"fields": {"labels": ["x", RUN_LABEL]}}))
+        self.assertFalse(port.has_run_label({"fields": {"labels": ["x"]}}))
+        self.assertFalse(port.has_run_label({"fields": {}}))
+
+
 class TheNewSharedPieces(unittest.TestCase):
     def test_the_version_changes_with_the_description_the_summary_the_type_labels_and_links(self):
         base = ticket_version(ticket())

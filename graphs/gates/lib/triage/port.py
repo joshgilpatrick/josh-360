@@ -11,12 +11,12 @@ from typing import List, NamedTuple, Optional
 
 from lib.gate_run import GateError
 from lib.jira import FLAG_FIELD
-from lib.triage import AGENT_STATUS_FIELDS, QUEUED, SPRINT_FIELD
+from lib.triage import AGENT_STATUS_FIELDS, QUEUED, RUN_LABEL
 from lib.triage import copy, times
 from lib.triage.ticket import Ticket, ticket_from_issue, ticket_version
 
 FIELDS = ["summary", "status", "issuetype", "labels", "parent", "description", "issuelinks", "created", FLAG_FIELD,
-          "creator", "subtasks", SPRINT_FIELD]
+          "creator", "subtasks"]
 AUTHORS_PROPERTY = "josh360.authors"
 ROUTE_PROPERTY = "josh360.route"
 SPEC_PROPERTY = "action-triage.spec"
@@ -127,10 +127,9 @@ def author_kind(creator: Optional[str], allowed: List[str]) -> str:
     return "own" if creator and creator in allowed else "other"
 
 
-def in_open_sprint(issue: dict) -> bool:
-    """True when the ticket is in an active sprint, so it is not in the backlog and starts as soon as it is Ready."""
-    value = ((issue.get("fields") or {}).get(SPRINT_FIELD)) or []
-    return any(isinstance(s, dict) and str(s.get("state", "")).lower() == "active" for s in value)
+def has_run_label(issue: dict) -> bool:
+    """True when the ticket carries the label that says it may be run, so it starts as soon as it is Ready."""
+    return RUN_LABEL in (((issue.get("fields") or {}).get("labels")) or [])
 
 
 class CommentPort:

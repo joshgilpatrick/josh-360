@@ -6,7 +6,7 @@ Inputs: ticket_key. The graph's own name comes from JOSH360_GRAPH, which the wal
 hand run may give GRAPH_INPUT_GRAPH instead. Outcomes: pass, refuse.
 Rule (graphs/contracts/route-record.md): the ticket's status is Ready, its route record names this graph, and the
 ticket's version is still the one that was signed off. A ticket edited after sign-off is not Ready in fact, so it goes
-back to triage. When a run may start is the runner's rule (Ready and not in the backlog, JP-117), not this gate's.
+back to triage. When a run may start is the runner's rule (Ready and labelled `ready-to-run`, JP-117), not this gate's.
 """
 
 from lib.gate_run import GateError, execute, need

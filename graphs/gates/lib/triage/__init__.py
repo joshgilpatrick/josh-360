@@ -20,8 +20,9 @@ shells around them. Design: docs/superpowers/specs/2026-11-16-triage-graph-desig
 # AD is customfield_10452 and JP is customfield_10453. The entry gate reads the changelog for either.
 AGENT_STATUS_FIELDS = ("customfield_10453", "customfield_10452")
 QUEUED = "Queued"
-# Jira's own sprint field. A ticket in an active sprint is "not in the backlog": it starts as soon as it is Ready.
-SPRINT_FIELD = "customfield_10020"
+# The label that says a Ready ticket may be run (Josh, 18 November 2026): until he turns sprints on for JP, the label
+# is the start signal. The runner's start rule (graphs/runner/starts.json) names the same label.
+RUN_LABEL = "ready-to-run"
 
 TRIAGE_TYPES = ("Story", "Task", "Bug", "Research")
 RETURN_BUDGET = 2          # a ticket may come back to triage twice; the third return of an own ticket goes to Josh

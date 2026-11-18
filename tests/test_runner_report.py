@@ -132,6 +132,34 @@ class Reporting(RunnerCase):
         build = [s for s in report["steps"] if s["step"] == "build"][0]
         self.assertEqual(build["jira_status"], "In Progress")
 
+    def test_an_abandoned_attempt_names_its_sessions_and_why_it_ended(self):
+        run = self.start("valid", "JP-906", *AM)
+        self.assertEqual(self.advance(run), "spawned")
+        self.session_starts(run, "design", session_id="cc-gone")
+        self.am_set("s-1", archived=1)
+        self.assertEqual(self.advance(run), "spawned")             # attempt 1 abandoned, attempt 2 spawned
+        design = [s for s in self.report(run)["steps"] if s["step"] == "design"]
+        first, second = design[0], design[1]
+        self.assertEqual((first["attempt"], first["outcome"]), (1, "_abandoned"))
+        self.assertEqual((first["session"], first["am_session"], first["reason"]), ("cc-gone", "s-1", "session-gone"))
+        self.assertEqual((second["attempt"], second["am_session"], second["reason"]), (2, "s-2", None))
+
+    def test_an_attempt_that_never_started_has_a_reason_and_no_session(self):
+        run = self.start("valid", "JP-907", *AM)
+        self.write_session(run, "spawning")
+        self.later(10 * 60)
+        self.advance(run)
+        first = [s for s in self.report(run)["steps"] if s["step"] == "design"][0]
+        self.assertEqual((first["session"], first["am_session"], first["reason"]), (None, None, "never-started"))
+
+    def test_an_unreadable_session_file_does_not_stop_the_report(self):
+        run = self.start("valid", "JP-908", *AM)
+        self.assertEqual(self.advance(run), "spawned")
+        from runner_lib import sessionfile
+        sessionfile.path(run, "design", 1).write_text("{not json")
+        first = [s for s in self.report(run)["steps"] if s["step"] == "design"][0]
+        self.assertEqual((first["am_session"], first["reason"]), (None, "unreadable"))
+
     def test_report_for_a_run_that_does_not_exist_is_refused(self):
         with self.assertRaises(ValueError):
             self.report("r-000000000000")
@@ -159,8 +187,8 @@ class Reporting(RunnerCase):
         self.assertTrue(out.startswith("# JP-905 · valid · " + run))
         header = [l for l in out.splitlines() if l.startswith("| Step")][0]
         self.assertEqual([c.strip() for c in header.strip("|").split("|")],
-                         ["Step", "Kind", "Attempt", "Loops", "Tier", "Model", "Session", "Outcome", "Jira status",
-                          "Started", "Ended"])
+                         ["Step", "Kind", "Attempt", "Loops", "Tier", "Model", "Session", "Agent Manager session",
+                          "Outcome", "Why it ended", "Jira status", "Started", "Ended"])
         rows = [l for l in out.splitlines() if l.startswith("| ") and not l.startswith(("| Step", "| ---"))]
         self.assertEqual(len(rows), len(report["steps"]))
         self.assertIn("finished", out)
