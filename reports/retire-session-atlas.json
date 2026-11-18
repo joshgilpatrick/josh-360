@@ -1,0 +1,18 @@
+{
+  "actions": [
+    "not loaded; nothing to bootout",
+    "no old plist; nothing to archive",
+    "settings.json names no old Atlas hooks",
+    "cache.db: kept-existing"
+  ],
+  "archived": {
+    "atlas.db": false,
+    "cost-ledger": false
+  },
+  "cache_db": "kept-existing",
+  "dry_run": false,
+  "job": "retire-session-atlas",
+  "label": "com.eventus.claude-atlas",
+  "result": "ok",
+  "was_loaded": false
+}
