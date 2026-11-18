@@ -232,12 +232,15 @@ def _started(run_id: str, a: dict, doc: dict, cfg: dict, binding, now: Callable[
     if result.exists():
         if not _parses(result) and now() - result.stat().st_mtime < float(cfg["result_settle_seconds"]):
             return "working"                              # it may still be being written
-        argv = ["record", "--run", run_id, "--step", step, "--result-file", str(result), "--model",
-                str((doc.get("handle") or {}).get("model") or ""), "--tool", "claude-code"]
+        argv = ["record", "--run", run_id, "--step", step, "--result-file", str(result)]
+        model = (doc.get("handle") or {}).get("model")      # a session adopted through its link has no model to name
+        if model:
+            argv += ["--model", str(model)]
+        argv += ["--tool", "claude-code"]
         if link and link.get("session_id"):
             argv += ["--session", link["session_id"]]
         try:
-            walk.call(*[x for x in argv if x != ""], root=root)
+            walk.call(*argv, root=root)
         except walk.WalkerRefused as err:
             paths.log("advance {}: result of {} refused: {}".format(run_id, step, str(err)[:200]))
             return _abandon(run_id, doc, "bad-result", now, root, off)
