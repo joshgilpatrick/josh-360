@@ -102,6 +102,16 @@ class Advancing(RunnerCase):
                          ("started", doc["intent_at"], "s-1"))
         self.assertEqual(self.spawns(), 1)
 
+    def test_a_result_from_a_session_adopted_through_the_link_is_recorded(self):
+        self.started()                                       # its handle, once adopted, has no model
+        doc = self.session_doc(self.run_id)
+        sessionfile.write(self.run_id, "design", 1, dict(doc, state="spawning", handle=None, started_at=None))
+        self.assertEqual(self.advance(self.run_id), "working")
+        self.session_ends(self.run_id, "design", "ready", {"spec_path": "spec-1"})
+        self.advance(self.run_id)
+        self.assertEqual(self.session_doc(self.run_id)["state"], "recorded")
+        self.assertEqual(self.design_attempts()[0]["outcome"], "ready")
+
     def test_crash_before_spawn_is_abandoned_after_the_link_timeout(self):
         self.write_session(self.run_id, "spawning")
         self.later(9 * MINUTE)
