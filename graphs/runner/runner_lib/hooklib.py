@@ -86,7 +86,228 @@ def link(payload: dict, environ: dict, now: float) -> Result:
     return NOTHING
 
 
-FUNCTIONS: Dict[str, Callable[[dict, dict, float], Result]] = {"UserPromptSubmit": link}
+# -- the guard -----------------------------------------------------------------------------------------------------
+
+SECRET_NAME = re.compile(r"(^|[/\s'\"=:])\.env(\.[A-Za-z0-9_-]+)?($|[\s'\";|&)])")
+SECRET_PARTS = ("credentials", ".aws/", ".config/gh/hosts.yml", ".netrc", "library/keychains/")
+FILE_WORDS = re.compile(r"(?<![\w./-])(tee|rm|mv|cp|ln|touch|mkdir|chmod|truncate|dd|install)(?![\w./-])|\bsed\s+-i\b")
+INTERPRETERS = re.compile(r"(?<![\w./-])(python3?|node|perl|ruby)(?![\w-])")
+HARMLESS_REDIRECTS = re.compile(r"\d*>&\d+|&?>>?\s*/dev/null|\d+>>?\s*/dev/null")
+GIT_WRITES = re.compile(r"\bgit\s+(?:-\S+\s+)*(commit|push|add|merge|rebase|reset|stash|tag|cherry-pick|revert|apply|am)\b")
+GH_READ = re.compile(r"^(?:(?:pr|issue|repo|run|release|workflow)\s+(?:view|list|diff|checks|status|watch)\b|search\b|auth\s+status\b)")
+GH_API_WRITE = re.compile(r"(?:^|\s)(?:-X|--method|-f|-F|--field|--raw-field|--input)(?:\s|=|$)")
+COMMAND_START = r"(?:^|[;&|(\n]|\$\()\s*"
+JIRA_WORDS = re.compile(r"\b(create|edit|update|transition|comment|assign|delete|link|move|archive|attach)\b")
+JIRA_READ_PREFIXES = ("get", "search", "list", "discover", "executeread", "atlassian")
+
+
+def _deny(message: str) -> Result:
+    return (2, "", message)
+
+
+def _reads_only() -> Result:
+    return _deny("this step only reads: write nothing but your result and files in the work folder")
+
+
+def _expand(path: str) -> str:
+    return os.path.realpath(os.path.expanduser(path))
+
+
+def _is_secret(text: str) -> bool:
+    lowered = text.lower()
+    return bool(SECRET_NAME.search(text)) or any(part in lowered for part in SECRET_PARTS)
+
+
+def calls(session_id: str) -> int:
+    path = graph_sessions.folder() / (session_id + ".calls")
+    try:
+        return path.stat().st_size
+    except OSError:
+        return 0
+
+
+def _count_call(session_id: str) -> int:
+    path = graph_sessions.folder() / (session_id + ".calls")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(str(path), "ab") as handle:
+        handle.write(b".")
+    return calls(session_id)
+
+
+def _runs_dir() -> Path:
+    return runfolder.runs_dir()
+
+
+def _home() -> Path:
+    from laptop import common
+    return common.home()
+
+
+def _protected(path: str, ent: dict) -> bool:
+    """A file path the step may not change: the rails, the ledger, the settings, another run, this run's own files."""
+    real = _expand(path)
+    result = _expand(ent["result_file"])
+    if real == result:
+        return False
+    home = _home()
+    for prefix in (home / "repo", home / "state"):
+        if _under(real, str(prefix)):
+            return True
+    for name in ("settings.json", "settings.local.json"):
+        if real == _expand(os.path.join("~", ".claude", name)):
+            return True
+    runs = str(_runs_dir().resolve()) if _runs_dir().exists() else str(_runs_dir())
+    if _under(real, runs):
+        mine = os.path.join(runs, str(ent["run"]))
+        if _under(real, mine):
+            return not any(_under(real, os.path.join(mine, part)) for part in ("work", "prompts"))
+        return True
+    return False
+
+
+def _under(path: str, folder: str) -> bool:
+    folder = folder.rstrip("/")
+    return path == folder or path.startswith(folder + "/")
+
+
+def _mentions_protected(text: str, ent: dict) -> bool:
+    """Does shell text name a protected path? Both spellings of each prefix are looked for."""
+    home = _home()
+    prefixes = [str(home / "repo") + "/", str(home / "state") + "/", str(home.resolve() / "repo") + "/",
+                str(home.resolve() / "state") + "/"]
+    for name in ("settings.json", "settings.local.json"):
+        prefixes += [os.path.join("~", ".claude", name), _expand(os.path.join("~", ".claude", name)),
+                     os.path.join(os.path.expanduser("~"), ".claude", name)]
+    if any(p in text for p in prefixes):
+        return True
+    runs = _runs_dir()
+    for base in {str(runs), str(runs.resolve())}:
+        for found in re.finditer(re.escape(base) + r"/?(r-[0-9a-z]+)?([^\s'\";|&<>)]*)", text):
+            if found.group(1) is None:
+                return True
+            if found.group(1) != ent["run"]:
+                return True
+            rest = found.group(2).lstrip("/")
+            if not (rest.startswith("work") or rest.startswith("prompts") or os.path.join(base, found.group(1), rest) == ent["result_file"]):
+                return True
+    return False
+
+
+def _writes(command: str) -> bool:
+    """A redirect to a file (harmless ones such as 2>&1 and /dev/null are taken out first)."""
+    return ">" in HARMLESS_REDIRECTS.sub(" ", command)
+
+
+def _gh_denied(command: str) -> bool:
+    for found in re.finditer(COMMAND_START + r"gh\s+([^;&|\n]*)", command):
+        args = found.group(1).strip()
+        if GH_READ.match(args):
+            continue
+        if args.startswith("api") and not GH_API_WRITE.search(args):
+            continue
+        return True
+    return False
+
+
+def _bash(command: str, ent: dict) -> Optional[Result]:
+    if _gh_denied(command):
+        return _deny("only gate scripts write to GitHub")
+    for found in re.finditer(COMMAND_START + r"(?:jira|acli)\s+([^;&|\n]*)", command):
+        if JIRA_WORDS.search(found.group(1)):
+            return _deny("only gate scripts write to Jira")
+    if re.search(COMMAND_START + r"security\s+(?:find-|dump-|export)", command):
+        return _deny("a step session does not read the keychain")
+    if _is_secret(command):
+        return _deny("a step session does not read secrets")
+    if _mentions_protected(command, ent) and (_writes(command) or FILE_WORDS.search(command) or INTERPRETERS.search(command)):
+        return _deny("a step session does not change the runner, the ledger or another run")
+    return None
+
+
+def guard(payload: dict, environ: dict, now: float) -> Result:
+    """PreToolUse: deny what a graph step's session must not do. A session with no entry is untouched."""
+    session_id = payload.get("session_id")
+    if not graph_sessions.is_graph_session(session_id):
+        return NOTHING
+    try:
+        ent = entry(session_id)
+    except Unreadable:
+        return _deny("graph step guard: this session's run link cannot be read")
+    if ent is None:
+        return NOTHING
+    tool = payload.get("tool_name") or ""
+    given = payload.get("tool_input") if isinstance(payload.get("tool_input"), dict) else {}
+    target = given.get("file_path") or given.get("notebook_path") or ""
+    if tool == "Write" and isinstance(target, str) and target and _expand(target) == _expand(ent["result_file"]):
+        return NOTHING
+    cfg = paths.settings()
+    if _count_call(session_id) > int(cfg["turn_cap"]):
+        return _deny("turn cap reached: use the Write tool to write your result with the outcome that fits, then stop")
+    if now - float(ent.get("started_at") or now) >= float(cfg["time_cap_seconds"]):
+        return _deny("time cap reached: use the Write tool to write your result with the outcome that fits, then stop")
+    if tool == "AskUserQuestion":
+        return _deny("a step session does not ask questions: end with the outcome that says you need input")
+    if tool.startswith("mcp__"):
+        _, _, rest = tool.partition("mcp__")
+        server, _, name = rest.partition("__")
+        lowered_server, lowered = server.lower(), name.lower()
+        if ("atlassian" in lowered_server or "jira" in lowered_server) and not lowered.startswith(JIRA_READ_PREFIXES):
+            return _deny("only gate scripts write to Jira")
+        if "github" in lowered_server and not (lowered.startswith(("get_", "list_", "search_")) or lowered.endswith("_read")):
+            return _deny("only gate scripts write to GitHub")
+    if tool == "Bash":
+        command = given.get("command") if isinstance(given.get("command"), str) else ""
+        denied = _bash(command, ent)
+        if denied:
+            return denied
+        if ent.get("access") == "read":
+            if GIT_WRITES.search(command):
+                return _reads_only()
+            if (_writes(command) or FILE_WORDS.search(command)) and ent["work_dir"] not in command \
+                    and ent["result_file"] not in command:
+                return _reads_only()
+        return NOTHING
+    if tool in ("Read", "Grep", "Glob"):
+        texts = [v for v in given.values() if isinstance(v, str)]
+        if any(_is_secret(t) for t in texts):
+            return _deny("a step session does not read secrets")
+        return NOTHING
+    if tool in ("Write", "Edit", "NotebookEdit"):
+        if isinstance(target, str) and target:
+            if _protected(target, ent):
+                return _deny("a step session does not change the runner, the ledger or another run")
+            if ent.get("access") == "read" and not _under(_expand(target), _expand(ent["work_dir"])):
+                return _reads_only()
+    return NOTHING
+
+
+def reflect(payload: dict, environ: dict, now: float) -> Result:
+    """PostToolUse: every `reflect_every` tool calls, once, ask the session whether it is looping."""
+    session_id = payload.get("session_id")
+    if not graph_sessions.is_graph_session(session_id):
+        return NOTHING
+    try:
+        if entry(session_id) is None:
+            return NOTHING
+    except Unreadable:
+        return NOTHING
+    every = max(1, int(paths.settings()["reflect_every"]))
+    n = calls(session_id)
+    marker_path = graph_sessions.folder() / (session_id + ".reflected")
+    try:
+        done = int(marker_path.read_text() or 0)
+    except (OSError, ValueError):
+        done = 0
+    if n // every <= done:
+        return NOTHING
+    marker_path.write_text(str(n // every))
+    text = ("Josh 360 graph step: you have made {} tool calls. Are you looping? Reassess, and if you are stuck, end with "
+            "the outcome that says so.").format(n)
+    return (0, json.dumps({"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": text}}) + "\n", "")
+
+
+FUNCTIONS: Dict[str, Callable[[dict, dict, float], Result]] = {"UserPromptSubmit": link, "PreToolUse": guard,
+                                                              "PostToolUse": reflect}
 
 
 def main(event: str) -> int:
