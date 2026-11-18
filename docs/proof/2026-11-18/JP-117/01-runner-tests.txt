@@ -8,8 +8,6 @@ test_runner_runs: test_the_read_step_is_guarded_as_read_and_the_build_step_is_no
 test_runner_runs: test_triage_job_starts_once ... ok
 test_runner_runs: test_triage_job_waits_when_the_walker_does_not_admit_the_run ... ok
 test_runner_runs: test_triage_job_waits_without_jira_credentials ... ok
-test_runner_runs: Ran 10 tests in 6.185s
-test_runner_runs: OK
 test_runner_tick: test_a_walker_refusal_is_exit_2_with_an_error ... ok
 test_runner_tick: test_advance_command ... ok
 test_runner_tick: test_report_from_the_published_json ... ok
@@ -35,9 +33,11 @@ test_runner_tick: test_report_does_not_change_between_idle_passes ... ok
 test_runner_tick: test_stopped_run_is_launched_once ... ok
 test_runner_tick: test_tick_starts_a_run_and_launches_its_advance ... ok
 test_runner_tick: test_two_ticks_at_once ... ok
-test_runner_tick: Ran 25 tests in 4.425s
-test_runner_tick: OK
 test_runner_advance: test_a_refused_spawn_is_retried_with_the_same_key_and_comments ... ok
+test_runner_advance: test_a_refused_spawn_that_linked_anyway_is_adopted ... ok
+test_runner_advance: test_a_spawn_with_no_id_and_no_link_is_abandoned_after_the_link_timeout ... ok
+test_runner_advance: test_a_spawn_with_no_id_in_the_reply_is_not_spawned_again ... ok
+test_runner_advance: test_an_attempt_the_walker_ended_does_not_hold_a_session_slot ... ok
 test_runner_advance: test_an_old_nudge_does_not_use_up_the_rest_wait ... ok
 test_runner_advance: test_archive_can_be_switched_off ... ok
 test_runner_advance: test_bad_run_id_is_refused ... ok
@@ -64,8 +64,6 @@ test_runner_advance: test_time_cap_abandons_after_the_grace ... ok
 test_runner_advance: test_two_advances_never_drive_one_run ... ok
 test_runner_advance: test_unknown_state_changes_nothing ... ok
 test_runner_advance: test_working_again_restarts_the_rest_wait ... ok
-test_runner_advance: Ran 27 tests in 9.986s
-test_runner_advance: OK
 test_runner_report: test_first_note_tells_josh_in_words ... ok
 test_runner_report: test_note_once ... ok
 test_runner_report: test_notify_escapes_and_asks_osascript ... ok
@@ -83,12 +81,12 @@ test_runner_report: test_snapshot_states ... ok
 test_runner_report: test_text_lists_open_runs_stops_and_long_waits ... ok
 test_runner_report: test_the_off_switch_and_missing_rails_show ... ok
 test_runner_report: test_waits_over_seven_days_are_listed ... ok
-test_runner_report: Ran 17 tests in 6.851s
-test_runner_report: OK
+test_graph_step_hooks: test_a_wrapper_before_gh_does_not_hide_a_write ... ok
 test_graph_step_hooks: test_ask_user_question_is_denied ... ok
 test_graph_step_hooks: test_gh_reads_pass_and_writes_do_not ... ok
 test_graph_step_hooks: test_github_write_tool_is_denied_and_a_read_is_allowed ... ok
 test_graph_step_hooks: test_guard_file_blocks_through_the_dispatcher ... ok
+test_graph_step_hooks: test_home_folder_spellings_of_the_protected_paths_are_denied ... ok
 test_graph_step_hooks: test_jira_cli_writes_are_denied ... ok
 test_graph_step_hooks: test_jira_write_tool_is_denied_and_a_read_is_allowed ... ok
 test_graph_step_hooks: test_josh_step_may_commit_and_push ... ok
@@ -96,12 +94,14 @@ test_graph_step_hooks: test_other_sessions_are_untouched ... ok
 test_graph_step_hooks: test_read_step_writes_only_its_result_and_work_folder ... ok
 test_graph_step_hooks: test_reflection_every_forty_calls ... ok
 test_graph_step_hooks: test_secrets_and_the_keychain_are_denied ... ok
+test_graph_step_hooks: test_ssh_keys_are_secrets ... ok
 test_graph_step_hooks: test_the_rails_and_other_runs_are_protected ... ok
 test_graph_step_hooks: test_the_run_folder_outside_work_is_protected ... ok
 test_graph_step_hooks: test_time_cap_denies_everything_but_the_result ... ok
 test_graph_step_hooks: test_turn_cap_denies_everything_but_the_result ... ok
 test_graph_step_hooks: test_unreadable_entry_is_denied ... ok
 test_graph_step_hooks: test_first_prompt_with_the_marker_links_the_session ... ok
+test_graph_step_hooks: test_guard_file_denies_a_graph_session_when_the_runner_code_cannot_load ... ok
 test_graph_step_hooks: test_hook_file_runs_through_the_dispatcher ... ok
 test_graph_step_hooks: test_marker_for_a_recorded_step_does_not_link ... ok
 test_graph_step_hooks: test_marker_may_follow_text_agent_manager_adds ... ok
@@ -115,9 +115,8 @@ test_graph_step_hooks: test_stop_hook_active_never_blocks ... ok
 test_graph_step_hooks: test_stop_in_an_ordinary_session_is_quiet ... ok
 test_graph_step_hooks: test_stop_passes_new_comments_on ... ok
 test_graph_step_hooks: test_stop_without_a_result_is_nudged_once ... ok
-test_graph_step_hooks: Ran 30 tests in 8.634s
-test_graph_step_hooks: OK
 test_runner_watch: test_build_inputs ... ok
+test_runner_watch: test_credentials_come_from_the_email_file_and_the_keychain_when_the_environment_has_none ... ok
 test_runner_watch: test_failed_search_starts_and_ends_nothing ... ok
 test_runner_watch: test_missing_input_with_no_default_is_skipped ... ok
 test_runner_watch: test_no_credentials_is_not_a_crash ... ok
@@ -133,5 +132,3 @@ test_runner_watch: test_rules_file_is_checked ... ok
 test_runner_watch: test_shipped_rule_names_only_inputs_the_development_graph_has ... ok
 test_runner_watch: test_spec_that_is_not_an_object_is_skipped ... ok
 test_runner_watch: test_ticket_with_an_open_run_is_skipped ... ok
-test_runner_watch: Ran 16 tests in 2.777s
-test_runner_watch: OK
