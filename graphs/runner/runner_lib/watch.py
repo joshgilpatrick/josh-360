@@ -39,7 +39,7 @@ def load_rules(path: Path = RULES) -> dict:
     for name, rule in graphs.items():
         if not isinstance(rule, dict) or not isinstance(rule.get("on"), bool):
             raise ValueError("starts: '{}' needs an 'on' of true or false".format(name))
-        if not rule["on"]:
+        if not rule.get("on"):
             continue
         if not isinstance(rule.get("jql"), str) or not rule["jql"].strip():
             raise ValueError("starts: '{}' is on and has no jql".format(name))
