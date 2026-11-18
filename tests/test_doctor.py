@@ -109,7 +109,7 @@ class MissingParts(h.DoctorCase):
         r = self.results()
         self.assertEqual(r["hooks.dispatch-PostToolUse"].status, "fail")
         self.assertIn("add-josh-360-hooks.py", r["hooks.dispatch-PostToolUse"].fix)
-        for name in ("hooks.atlas-guard", "hooks.ticket-comments"):
+        for name in ("hooks.atlas-guard", "hooks.ticket-comments", "hooks.graph-step"):
             self.assertEqual(r[name].status, "fail", name)
         self.assertEqual(r["hooks.dispatch-Stop"].status, "pass")
         code, text = run_cli(self)
