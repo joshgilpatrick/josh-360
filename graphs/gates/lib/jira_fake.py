@@ -10,10 +10,12 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
+SPRINT_FIELD = "customfield_10020"
 MARKER = "fake-jira.json"
 CALLS = "calls.jsonl"
 
@@ -24,6 +26,36 @@ def folder_from(environ: dict) -> Optional[Path]:
         return None
     folder = Path(os.path.expanduser(value))
     return folder if (folder / MARKER).is_file() else None
+
+
+def _judge(issues: list, jql: str) -> Optional[list]:
+    """The small JQL subset a test can ask for (JP-117): ORDER BY is dropped, then each ` AND ` clause is one of
+    `project = X`, `status = X` (quoted or bare), `sprint in openSprints()` and `issuetype in (A, B)`. Any other clause
+    returns None (the fake answers 400), so a test can never pass on a rule the fake did not judge."""
+    text = re.split(r"\s+ORDER\s+BY\s+", jql, flags=re.I)[0]
+    found = list(issues)
+    for clause in re.split(r"\s+AND\s+", text.strip(), flags=re.I):
+        clause = clause.strip()
+        m = re.match(r"^project\s*=\s*(\S+)$", clause, re.I)
+        if m:
+            found = [i for i in found if str(i.get("key", "")).startswith(m.group(1).strip('"') + "-")]
+            continue
+        m = re.match(r"^status\s*=\s*(?:\"([^\"]*)\"|(\S+))$", clause, re.I)
+        if m:
+            want = m.group(1) if m.group(1) is not None else m.group(2)
+            found = [i for i in found if ((i.get("fields") or {}).get("status") or {}).get("name") == want]
+            continue
+        if re.match(r"^sprint\s+in\s+openSprints\(\)$", clause, re.I):
+            found = [i for i in found if any(isinstance(sp, dict) and sp.get("state") == "active"
+                                             for sp in (i.get("fields") or {}).get(SPRINT_FIELD) or [])]
+            continue
+        m = re.match(r"^issuetype\s+in\s*\(([^)]*)\)$", clause, re.I)
+        if m:
+            names = [n.strip().strip('"') for n in m.group(1).split(",")]
+            found = [i for i in found if ((i.get("fields") or {}).get("issuetype") or {}).get("name") in names]
+            continue
+        return None
+    return found
 
 
 class FileTransport:
@@ -82,6 +114,13 @@ class FileTransport:
                 props["{}|{}".format(key, prop["key"])] = prop["value"]
             return 201, {"key": key}
         if method == "POST" and bare == "/rest/api/3/search/jql":
+            if state.get("search_fails"):
+                return 500, {}
+            if state.get("apply_jql"):
+                found = _judge(list(issues.values()), (data or {}).get("jql") or "")
+                if found is None:
+                    return 400, {"errorMessages": ["the fake cannot judge this JQL"]}
+                return 200, {"issues": found[: int((data or {}).get("maxResults") or 100)], "isLast": True}
             return 200, {"issues": list(issues.values()), "isLast": True}
         if method == "GET" and parts[:4] == ["rest", "api", "3", "issue"] and len(parts) == 5:
             return (200, issues[parts[4]]) if parts[4] in issues else (404, {})
