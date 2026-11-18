@@ -1,0 +1,9 @@
+$ node --test test/cli/recompute-projects.test.ts
+ok 1 - an alias added later rewrites the stored session and artifact project names
+ok 2 - a new sensitive pattern raises the flag and never lowers one
+ok 3 - npm run recompute-projects runs against the configured database and prints its counts
+ok 4 - with no cache.db it changes nothing, creates nothing and exits 1
+ok 5 - every package.json script names a file that exists
+# tests 5
+# pass 5
+# fail 0
