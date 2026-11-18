@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+# JP-117: the rails for a graph step's session (turn and time caps, no questions, no Jira or GitHub writes, no secrets,
+# no edits to the runner or another run, read-only steps). Acts only on sessions the runner started; exit 2 blocks.
+# See graphs/runner/runner_lib/hooklib.py.
+import sys
+sys.dont_write_bytecode = True
+from pathlib import Path
+
+try:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "graphs" / "runner"))
+    from runner_lib import hooklib
+    code = hooklib.main("PreToolUse")
+except Exception:
+    code = 0
+sys.exit(0 if code is None else code)
