@@ -9,6 +9,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import ticket_creation_helpers as h
+from triage_helpers import VALIDATION_YES
 
 
 class TheCompletenessGate(unittest.TestCase):
@@ -37,6 +38,27 @@ class TheCompletenessGate(unittest.TestCase):
         out = self.check(bad)
         self.assertEqual(out["outcome"], "fixable")
         self.assertIn("t1: Why is empty", out["outputs"]["problems"])
+
+    def test_proposal_without_validation_is_fixable(self):
+        out = self.check(h.proposal(tickets=[h.ticket(sections=h.section_set(validation=""))]))
+        self.assertEqual(out["outcome"], "fixable")
+        self.assertIn("t1: Validation is empty", out["outputs"]["problems"])
+
+    def test_proposal_with_an_unreadable_validation_names_the_item(self):
+        text = "- Needed: yes\n- Starts: at Deployed\n- Check every: daily\n"
+        out = self.check(h.proposal(tickets=[h.ticket(sections=h.section_set(validation=text))]))
+        self.assertEqual(out["outcome"], "fixable")
+        self.assertTrue([p for p in out["outputs"]["problems"] if p.startswith("t1: Validation V3:")],
+                        out["outputs"]["problems"])
+
+    def test_a_proposal_that_needs_a_watch_passes(self):
+        out = self.check(h.proposal(tickets=[h.ticket(sections=h.section_set(validation=VALIDATION_YES))]))
+        self.assertEqual(out["outcome"], "pass")
+
+    def test_a_proposal_may_leave_the_gherkin_fence_out(self):
+        bare = VALIDATION_YES.replace("```gherkin\n", "").replace("\n```", "")
+        out = self.check(h.proposal(tickets=[h.ticket(sections=h.section_set(validation=bare))]))
+        self.assertEqual(out["outcome"], "pass")
 
     def test_a_gap_is_needs_josh(self):
         out = self.check(h.proposal(gaps=["What does done look like for the export?"]))
@@ -105,6 +127,36 @@ class TheCompletenessGate(unittest.TestCase):
     def test_a_proposal_that_is_not_well_formed_is_fixable(self):
         out = self.check({"action": "create"})
         self.assertEqual(out["outcome"], "fixable")
+
+
+class TheRenderedValidation(unittest.TestCase):
+    """The description the gate's ticket would get reads back as the section the proposal wrote (JP-165)."""
+
+    def read_back(self, text):
+        from lib import adf, validation_section
+        ticket = h.ticket(sections=h.section_set(validation=text))
+        marked = adf.to_marked(adf.ticket_description(ticket))
+        return validation_section.parse(marked), validation_section.parse_text(validation_section.canonical(text))
+
+    def test_rendered_no_reads_back(self):
+        got, _ = self.read_back(h.NO_VALIDATION)
+        self.assertEqual(got["needed"], "no")
+        self.assertEqual(got["reason"], "The change is a document; nothing runs.")
+
+    def test_rendered_yes_reads_back(self):
+        got, want = self.read_back(VALIDATION_YES)
+        self.assertEqual(got["problems"], [])
+        self.assertEqual(got["criteria"], want["criteria"])
+        for key in ("needed", "starts_kind", "check_every_hours", "complete_kind", "complete_n", "give_up_days",
+                    "fail_after"):
+            self.assertEqual(got[key], want[key], key)
+
+    def test_validation_comes_after_acceptance_criteria_and_before_repository(self):
+        from lib import adf
+        ticket = h.ticket(sections=h.section_set(validation=h.NO_VALIDATION))
+        marked = adf.to_marked(adf.ticket_description(ticket))
+        order = [marked.index(label) for label in ("**Acceptance criteria:**", "**Validation:**", "**Repository:**")]
+        self.assertEqual(order, sorted(order))
 
 
 if __name__ == "__main__":
