@@ -10,7 +10,7 @@
 | Triage (JP-122) | `triageable` (entry), `ticket-facts`, `ready-check`, `route`, `check-sign-off`, `triage-verdict`, `apply-revision`, `post-question`, `send-back`, `mark-ready` |
 | Non-development (JP-123) | `read-ticket`, `gap-check`, `pick-path`, `check-deliverable`, `check-review`, `sign-off-rule`, `deliver`, `share`, `close-ticket`, `move-ticket`, `return-to-triage` |
 | Development (JP-115) | the gates listed under "The development gates" below |
-| Shared | `ready` (entry gate of the development and non-development graphs), `no-loose-ends` (exit gate of the triage, development and non-development graphs; still a stub that refuses to run, JP-109) |
+| Shared | `ready` (entry gate of the development and non-development graphs), `no-loose-ends` (exit gate of the triage, development and non-development graphs; built in JP-161 on JP-109's loose-ends finder) |
 | Walker effects | `set-flag` and `post-comment`: the walker calls them, no graph step names them |
 
 The ticket creation gates are written like the others, over the shared Jira library `lib/jira.py` (`lib/jira_fake.py` is a Jira in a folder, for tests that run the scripts as separate processes). Their other parts in `lib/`: `adf.py` (Atlassian Document Format helpers), `card.py` (the approval card text), `contracts.py` (reads and checks the intake record and the ticket proposal), `sources.py` (where an intake item lives and whether it may start a run or be linked) and `ready_checklist.py` (the per-type checklist as data, which `ticket-complete` reads).
