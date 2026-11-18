@@ -34,7 +34,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "on main at 97ae6ed, no local changes",
+      "detail": "on main at 7752abf, no local changes",
       "fix": "",
       "group": "install",
       "id": "install.follows-main",
@@ -42,7 +42,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "the install record matches the copy (97ae6ed)",
+      "detail": "the install record matches the copy (7752abf)",
       "fix": "",
       "group": "install",
       "id": "install.installed-commit",
@@ -50,7 +50,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "the follow job ran 83s ago and exited 0",
+      "detail": "the follow job ran 10 min ago and exited 0",
       "fix": "",
       "group": "install",
       "id": "install.follow-ran",
@@ -74,7 +74,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "jobs.yaml lists 15 jobs",
+      "detail": "jobs.yaml lists 17 jobs",
       "fix": "",
       "group": "install",
       "id": "install.jobs-file",
@@ -82,7 +82,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "ran 54s ago, exit 0",
+      "detail": "ran 10 min ago, exit 0",
       "fix": "",
       "group": "jobs",
       "id": "jobs.ledger-record",
@@ -90,7 +90,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "ran 2s ago, exit 0",
+      "detail": "ran 10 min ago, exit 0",
       "fix": "",
       "group": "jobs",
       "id": "jobs.ledger-summary",
@@ -122,7 +122,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "ran 51 min ago, exit 0",
+      "detail": "ran 21 min ago, exit 0",
       "fix": "",
       "group": "jobs",
       "id": "jobs.session-atlas-service",
@@ -130,15 +130,31 @@
     },
     {
       "auto_fix": null,
-      "detail": "has not run yet (runs every 1440 min)",
-      "fix": "wait for the next runner pass, or: python3 ~/.josh-360/repo/laptop/run_jobs.py",
+      "detail": "ran 24 h ago, exit 0",
+      "fix": "",
       "group": "jobs",
       "id": "jobs.launchd-check",
-      "status": "warn"
+      "status": "pass"
     },
     {
       "auto_fix": null,
-      "detail": "succeeded 24 h ago",
+      "detail": "ran 15 min ago, exit 0",
+      "fix": "",
+      "group": "jobs",
+      "id": "jobs.graph-runner",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "ran 20 min ago, exit 0",
+      "fix": "",
+      "group": "jobs",
+      "id": "jobs.jp-117-triage-jp-116",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "succeeded 2 days ago",
       "fix": "",
       "group": "backfills",
       "id": "backfills.inventory",
@@ -146,7 +162,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "succeeded 21 h ago",
+      "detail": "succeeded 45 h ago",
       "fix": "",
       "group": "backfills",
       "id": "backfills.retire-focus-dashboard",
@@ -154,7 +170,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "succeeded 5 h ago; 35111 sessions in the ledger",
+      "detail": "succeeded 29 h ago; 35205 sessions in the ledger",
       "fix": "",
       "group": "backfills",
       "id": "backfills.ledger-backfill",
@@ -162,7 +178,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "succeeded 2 h ago; 12778 friction facts in the ledger",
+      "detail": "succeeded 26 h ago; 13388 friction facts in the ledger",
       "fix": "",
       "group": "backfills",
       "id": "backfills.ledger-friction-catchup",
@@ -170,19 +186,19 @@
     },
     {
       "auto_fix": null,
-      "detail": "last try 51 min ago exited 1; it retries hourly",
-      "fix": "read ~/.josh-360/logs/retire-session-atlas.log",
+      "detail": "succeeded 5 h ago; the old Atlas is archived under ~/Archive/josh-360-retired/",
+      "fix": "",
       "group": "backfills",
       "id": "backfills.retire-session-atlas",
-      "status": "fail"
+      "status": "pass"
     },
     {
       "auto_fix": null,
-      "detail": "has not run yet",
-      "fix": "wait for the next runner pass, or: python3 ~/.josh-360/repo/laptop/run_jobs.py",
+      "detail": "succeeded 22 h ago",
+      "fix": "",
       "group": "backfills",
       "id": "backfills.retire-leftover-jobs",
-      "status": "warn"
+      "status": "pass"
     },
     {
       "auto_fix": null,
@@ -210,7 +226,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "UserPromptSubmit runs hooks/dispatch (40-ticket-comments)",
+      "detail": "UserPromptSubmit runs hooks/dispatch (20-graph-step, 40-ticket-comments)",
       "fix": "",
       "group": "hooks",
       "id": "hooks.dispatch-UserPromptSubmit",
@@ -218,7 +234,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "PreToolUse runs hooks/dispatch (10-atlas-removal-guard, 30-ticket-offer)",
+      "detail": "PreToolUse runs hooks/dispatch (10-atlas-removal-guard, 20-graph-step-guard, 30-ticket-offer)",
       "fix": "",
       "group": "hooks",
       "id": "hooks.dispatch-PreToolUse",
@@ -226,7 +242,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "PostToolUse runs hooks/dispatch (40-jira-session-link, 40-ticket-comments)",
+      "detail": "PostToolUse runs hooks/dispatch (20-graph-step-reflect, 40-jira-session-link, 40-ticket-comments)",
       "fix": "",
       "group": "hooks",
       "id": "hooks.dispatch-PostToolUse",
@@ -242,7 +258,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "Stop runs hooks/dispatch (no hook files yet)",
+      "detail": "Stop runs hooks/dispatch (20-graph-step-stop)",
       "fix": "",
       "group": "hooks",
       "id": "hooks.dispatch-Stop",
@@ -314,19 +330,27 @@
     },
     {
       "auto_fix": null,
-      "detail": "settings.json still has hook entries of the old Session Atlas (JP-111)",
-      "fix": "it is removed by the retire-session-atlas job once ledger-backfill has succeeded; check backfills.retire-session-atlas",
+      "detail": "JP-117: UserPromptSubmit, PreToolUse, PostToolUse, Stop present and registered",
+      "fix": "",
       "group": "hooks",
-      "id": "hooks.old-atlas",
-      "status": "fail"
+      "id": "hooks.graph-step",
+      "status": "pass"
     },
     {
       "auto_fix": null,
-      "detail": "hooks that failed in the last 24 hours: failed x2",
-      "fix": "read ~/.josh-360/logs/hooks.log",
+      "detail": "no hook entries of the old Session Atlas remain",
+      "fix": "",
+      "group": "hooks",
+      "id": "hooks.old-atlas",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "no hook failed in the last 24 hours",
+      "fix": "",
       "group": "hooks",
       "id": "hooks.log",
-      "status": "warn"
+      "status": "pass"
     },
     {
       "auto_fix": null,
@@ -354,15 +378,15 @@
     },
     {
       "auto_fix": null,
-      "detail": "~/.josh-360/state/cache.db does not exist yet; the headless Session Atlas creates it",
-      "fix": "check backfills.retire-session-atlas and services.atlas-launchd",
+      "detail": "56 tables, user_version 0, integrity ok",
+      "fix": "",
       "group": "data",
       "id": "data.cache-db",
-      "status": "warn"
+      "status": "pass"
     },
     {
       "auto_fix": null,
-      "detail": "1 backups kept, newest made 5 h ago",
+      "detail": "2 backups kept, newest made 5 h ago",
       "fix": "",
       "group": "data",
       "id": "data.backups",
@@ -370,7 +394,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "35111 sessions and 3332 episodes recorded",
+      "detail": "35205 sessions and 3482 episodes recorded",
       "fix": "",
       "group": "data",
       "id": "data.ledger-content",
@@ -378,7 +402,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "1 ticket offers (JP-110) recorded",
+      "detail": "2 ticket offers (JP-110) recorded",
       "fix": "",
       "group": "evidence",
       "id": "evidence.ticket-offer",
@@ -386,15 +410,15 @@
     },
     {
       "auto_fix": null,
-      "detail": "no ticket comment deliveries (JP-118) yet in the ledger (comment_deliveries)",
-      "fix": "not yet seen: the manual check is in the list below (comment on a ticket a session is working on)",
+      "detail": "50 ticket comment deliveries (JP-118) recorded",
+      "fix": "",
       "group": "evidence",
       "id": "evidence.ticket-comments",
-      "status": "warn"
+      "status": "pass"
     },
     {
       "auto_fix": null,
-      "detail": "843 session summaries (JP-108) recorded",
+      "detail": "961 session summaries (JP-108) recorded",
       "fix": "",
       "group": "evidence",
       "id": "evidence.summaries",
@@ -402,7 +426,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "12778 friction facts (JP-112) recorded",
+      "detail": "13388 friction facts (JP-112) recorded",
       "fix": "",
       "group": "evidence",
       "id": "evidence.friction",
@@ -410,7 +434,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "20 debriefs recorded",
+      "detail": "69 debriefs recorded",
       "fix": "",
       "group": "evidence",
       "id": "evidence.debriefs",
@@ -418,11 +442,11 @@
     },
     {
       "auto_fix": null,
-      "detail": "waits for the retire-session-atlas job to succeed (see backfills.retire-session-atlas)",
+      "detail": "com.josh360.session-atlas is loaded in launchd",
       "fix": "",
       "group": "services",
       "id": "services.atlas-launchd",
-      "status": "skip"
+      "status": "pass"
     },
     {
       "auto_fix": null,
@@ -434,19 +458,19 @@
     },
     {
       "auto_fix": null,
-      "detail": "waits for the retire-session-atlas job to succeed",
-      "fix": "",
+      "detail": "Atlas does not answer at http://127.0.0.1:8770/api/health",
+      "fix": "read ~/.josh-360/atlas/atlas.log and ~/.josh-360/logs/session-atlas.err.log",
       "group": "services",
       "id": "services.atlas-health",
-      "status": "skip"
+      "status": "fail"
     },
     {
       "auto_fix": null,
-      "detail": "no Atlas log yet",
+      "detail": "no recent Atlas errors about the ledger",
       "fix": "",
       "group": "services",
       "id": "services.atlas-log",
-      "status": "skip"
+      "status": "pass"
     },
     {
       "auto_fix": null,
@@ -481,12 +505,12 @@
       "status": "warn"
     },
     {
-      "auto_fix": "jira-email",
-      "detail": "no Jira account email is set: ticket links and comment delivery cannot read Jira",
-      "fix": "put your Atlassian email on one line in ~/.josh-360/state/jira-email (or: doctor --fix --jira-email you@example.com)",
+      "auto_fix": null,
+      "detail": "the Jira account email is set (from ~/.josh-360/state/jira-email)",
+      "fix": "",
       "group": "accounts",
       "id": "accounts.jira-email",
-      "status": "fail"
+      "status": "pass"
     },
     {
       "auto_fix": null,
@@ -506,7 +530,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "3 graphs, each compiled copy matches its source files",
+      "detail": "4 graphs, each compiled copy matches its source files",
       "fix": "",
       "group": "graphs",
       "id": "graphs.compiled",
@@ -584,10 +608,10 @@
   "ok": false,
   "schema": 1,
   "summary": {
-    "fail": 3,
-    "pass": 53,
-    "skip": 4,
-    "warn": 6
+    "fail": 1,
+    "pass": 66,
+    "skip": 1,
+    "warn": 1
   },
-  "time": "2026-11-17T21:34:30Z"
+  "time": "2026-11-18T21:36:22Z"
 }
