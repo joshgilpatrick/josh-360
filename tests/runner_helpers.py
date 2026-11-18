@@ -47,6 +47,43 @@ class RunnerCase(WalkerCase):
                  for event in paths.EVENTS if event != without}
         self.claude_settings.write_text(json.dumps({"hooks": hooks}))
 
+    # -- the fake Jira -----------------------------------------------------------------------------------------
+    def jira_file(self):
+        return self.jira_dir / "fake-jira.json"
+
+    def jira_state(self, **changes):
+        state = json.loads(self.jira_file().read_text())
+        state.update(changes)
+        self.jira_file().write_text(json.dumps(state))
+
+    def jira_issue(self, key, status="Ready", sprint=True, issuetype="Story", route="default", spec=None):
+        """Add a made-up ticket: in an open sprint or the backlog, with a route record (`route=None` for none)."""
+        state = json.loads(self.jira_file().read_text())
+        state.setdefault("issues", {})[key] = {"key": key, "fields": {
+            "status": {"name": status}, "issuetype": {"name": issuetype},
+            "customfield_10020": [{"state": "active"}] if sprint else []}}
+        props = state.setdefault("properties", {})
+        if route == "default":
+            route = {"graph": "runner-sample", "system": "sample", "returned_from": ""}
+        if route is not None:
+            props["{}|josh360.route".format(key)] = route
+        if spec is not None:
+            props["{}|action-triage.spec".format(key)] = spec
+        self.jira_file().write_text(json.dumps(state))
+
+    def jira_calls(self):
+        path = self.jira_dir / "calls.jsonl"
+        return [json.loads(line) for line in path.read_text().splitlines()] if path.is_file() else []
+
+    def end_sample_run(self, ticket="JP-901"):
+        """Walk a runner-sample run to its end (Josh says stop at `confirm`); returns the run id."""
+        run = self.walker("start", "--graph", "runner-sample", "--ticket", ticket, "--runner", "agent-manager")["run"]
+        self.do_role(run, "draft", "ready", {"note": "a made-up note"})
+        self.assertEqual(self.walker("next", "--run", run)["step"], "confirm")
+        self.answer_in_app(run, "confirm", "stop")
+        self.assertEqual(self.walker("next", "--run", run)["action"], "done")
+        return run
+
     def later(self, seconds):
         self.now += seconds
         return self.now
