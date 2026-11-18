@@ -45,6 +45,15 @@ def settings() -> dict:
     return merged
 
 
+def graphs_root(root: Optional[Path] = None) -> Optional[Path]:
+    """The graphs folder to hand the walker: `root`, else JOSH360_GRAPHS_ROOT (tests use another folder, and the detached
+    `advance` the tick starts has to find the same one), else None, which is the walker's own default."""
+    if root:
+        return Path(root)
+    named = os.environ.get("JOSH360_GRAPHS_ROOT")
+    return Path(named) if named else None
+
+
 def state_dir() -> Path:
     return common.state_dir() / "runner"
 
