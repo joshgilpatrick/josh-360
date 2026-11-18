@@ -402,7 +402,7 @@ From section 7 of `docs/source-notes/research-action-item-pipeline.md`:
 
 Built on 17 November 2026 under Josh's ruling that any unblocked JP-94 ticket may be built without waiting for Ready. The gates, their tests and a run of the whole graph through the real walker are in the repository; the design above did not change, except as listed.
 
-**Parts.** The eleven gates this graph owns are real scripts: `read-ticket`, `gap-check`, `check-deliverable`, `pick-path`, `check-review`, `close-ticket`, `deliver`, `sign-off-rule`, `share`, and the two shared ones, `move-ticket` and `return-to-triage`. `ready` (JP-122) and `no-loose-ends` (JP-109) are still stubs. How a gate is written, and the shared files in `graphs/gates/lib/`, are in `graphs/gates/README.md`. The shared Jira client is JP-121's `lib/jira.py`.
+**Parts.** The eleven gates this graph owns are real scripts: `read-ticket`, `gap-check`, `check-deliverable`, `pick-path`, `check-review`, `close-ticket`, `deliver`, `sign-off-rule`, `share`, and the two shared ones, `move-ticket` and `return-to-triage`. `ready` (JP-122) and `no-loose-ends` (JP-161) are real scripts too. How a gate is written, and the shared files in `graphs/gates/lib/`, are in `graphs/gates/README.md`. The shared Jira client is JP-121's `lib/jira.py`.
 
 **Changes to the graph file.** Each carries a value a gate needed and the draft did not pass it.
 
