@@ -32,13 +32,13 @@ Preconditions:
 - **Gate and end.** Run `$S run --run <id> --name walker-next-2 -- python3 graphs/tools/walker.py next --run <run id>`. The walker runs the `route-ticket` gate, which finds `family_os` tracked in Linear, and prints `{"action": "done", "end": "route.personal", "score": "neutral"}`.
 - **Status.** Run `$S run --run <id> --name walker-status -- python3 graphs/tools/walker.py status --run <run id>`. `"ended": "route.personal"` and steps `_entry` (pass), `read_intake` (recorded), `route` (personal).
 - **Ledger.** Run `$S ledger --run <id> --name walker-rows "SELECT g.run_id, g.graph_id, g.subject_kind, e.end_name, e.score FROM graph_runs g LEFT JOIN run_ends e ON e.run_id = g.run_id"`. One row: `ticket-creation`, `intake`, `route.personal`, `neutral`.
-- **Refusal.** Run `$S run --run <id> --name walker-refuse -- python3 graphs/tools/walker.py start --graph non-development --ticket JP-9001 --runner cli`. Exit code `0` (the walker always exits 0 with JSON) and `{"error": "the entry gate 'ready' did not admit the run: ... Jira credentials missing ..."}`; no run folder is made.
+- **Refusal.** Run `$S run --run <id> --name walker-refuse -- python3 graphs/tools/walker.py start --graph non-development --ticket JP-9001 --runner cli`. Exit code `2` and `{"error": "the entry gate 'ready' did not admit the run: gate 'ready' failed (1): Jira credentials missing: ..."}`; no new run folder is made.
 
 ## Gotchas
 
-- The walker prints JSON and exits `0` even when it refuses; read the `error` key, not the exit code.
+- The walker prints JSON either way. A refusal exits `2` with an `error` key; read the key, since `submit.py` prints its refusal as one line on stderr instead.
 - Only a repository tracked in Linear (`family_os` today) ends the run at `route`. Any other route goes on to `find_duplicates`, which reads Jira and fails in the sandbox.
 - The triage, development and non-development graphs read Jira in their entry gate, and their exit gate `no-loose-ends` is a stub that refuses to run, so none can finish anywhere yet. On the laptop, drive their first steps against a made-up JP ticket and cancel it afterwards.
 - The walker reads `graphs/compiled/`, not the YAML. After changing a graph, run `python3 graphs/tools/compile_graphs.py` and commit before launching.
-- `submit.py` refuses a second open run for the same `--ref`; use a new ref or `walker.py abandon --run <id>` first.
+- `submit.py` refuses a second open run for the same `--ref` (exit `2`, `the entry gate 'intake-admitted' did not admit the run: it printed 'refused'`), even after the first has ended. Use a new `--ref` for each run.
 - A result file outside the step's `results/` path, or an outcome the step does not declare, is refused.
