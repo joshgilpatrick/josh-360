@@ -352,9 +352,9 @@ class TheFakeSearch(unittest.TestCase):
         path = Path(tmp)
         issues = {
             "JP-1": {"key": "JP-1", "fields": {"status": {"name": "Ready"}, "issuetype": {"name": "Story"},
-                                                self.SPRINT: [{"state": "active"}]}},
+                                                "labels": ["ready-to-run"], self.SPRINT: [{"state": "active"}]}},
             "JP-2": {"key": "JP-2", "fields": {"status": {"name": "Ready"}, "issuetype": {"name": "Story"},
-                                                self.SPRINT: []}},
+                                                "labels": ["other"], self.SPRINT: []}},
             "JP-3": {"key": "JP-3", "fields": {"status": {"name": "In Progress"}, "issuetype": {"name": "Bug"},
                                                 self.SPRINT: [{"state": "active"}]}},
             "JP-4": {"key": "JP-4", "fields": {"status": {"name": "Ready"}, "issuetype": {"name": "Epic"},
@@ -363,20 +363,21 @@ class TheFakeSearch(unittest.TestCase):
         (path / jira_fake.MARKER).write_text(json.dumps(dict(state, issues=issues)))
         return Jira("https://x.atlassian.net", "a@b.c", "t", transport=jira_fake.FileTransport(path))
 
-    JQL = ("project = JP AND status = Ready AND sprint in openSprints() AND issuetype in (Story, Bug, Task) "
+    JQL = ('project = JP AND status = Ready AND labels = "ready-to-run" AND issuetype in (Story, Bug, Task) '
            "ORDER BY Rank ASC")
 
-    def test_fake_search_applies_status_sprint_and_type(self):
+    def test_fake_search_applies_status_label_and_type(self):
         with TemporaryDirectory() as tmp:
             client = self.folder(tmp, apply_jql=True)
             self.assertEqual([i["key"] for i in client.search(self.JQL, ["status"])], ["JP-1"])
             self.assertEqual([i["key"] for i in client.search('status = "In Progress"')], ["JP-3"])
+            self.assertEqual([i["key"] for i in client.search("sprint in openSprints() AND status = Ready")], ["JP-1", "JP-4"])
 
     def test_fake_search_refuses_a_clause_it_cannot_judge(self):
         with TemporaryDirectory() as tmp:
             client = self.folder(tmp, apply_jql=True)
             with self.assertRaises(JiraError) as caught:      # a 4xx raises in the shared client, as for Jira itself
-                client.search("project = JP AND labels = josh-360")
+                client.search("project = JP AND assignee = me")
             self.assertEqual(caught.exception.status, 400)
 
     def test_fake_search_without_the_flag_returns_everything(self):
