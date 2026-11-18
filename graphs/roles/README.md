@@ -8,7 +8,7 @@ One folder per role: `role.yaml` (`title`, `may_change`, `tier`, optional `revie
 | `jira-searcher` | ticket-creation, non-development | Looks for existing Jira tickets that match a request. |
 | `decomposer` | ticket-creation | Decides whether a request is one ticket or a parent with children, and proposes the shape. |
 | `ticket-drafter` | ticket-creation, triage | Writes the full text of each ticket in a proposal (`contracts/ticket-proposal.md`). |
-| `sign-off` | triage | Decides whether one drafted ticket is Ready, on the five items scripts cannot check. |
+| `sign-off` | triage | Decides whether one drafted ticket is Ready, on the six items scripts cannot check. |
 | `precedent-judge` | non-development | Decides whether an earlier ticket's resolution already answers this one. |
 | `researcher` | non-development | Produces a non-development ticket's deliverable and its evidence. |
 | `work-checker` | non-development | Checks a finished deliverable against its ticket and lists defects only. |
