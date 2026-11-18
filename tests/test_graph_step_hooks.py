@@ -221,5 +221,53 @@ class Guarding(Linked):
         self.assertIn("does not ask questions", done.stderr)
 
 
+class Stopping(Linked):
+    def stop(self, session_id="cc-1", active=False, now=None):
+        return hooklib.stop({"session_id": session_id, "stop_hook_active": active}, {}, self.now if now is None else now)
+
+    def put_comment(self, text="Use the second spec.", name="10042.json"):
+        folder = Path(self.run_folder) / "comments"
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / name).write_text(json.dumps({"ticket": "JP-901", "comment_id": "10042", "name": "Josh",
+                                               "created": "2026-11-17T10:00:00Z", "text": text}))
+
+    def test_stop_without_a_result_is_nudged_once(self):
+        first = self.stop()
+        self.assertEqual(first[0], 2)
+        self.assertIn(self.entry["result_file"], first[2])
+        for outcome in self.entry["outcomes"]:
+            self.assertIn(outcome, first[2])
+        from ledger import graph_sessions
+        self.assertEqual(json.loads(graph_sessions.entry_path("cc-1").read_text())["nudged_at"], self.now)
+        self.assertEqual(self.stop(), OK)
+
+    def test_stop_passes_new_comments_on(self):
+        self.put_comment()
+        first = self.stop()
+        self.assertEqual(first[0], 2)
+        self.assertIn("Use the second spec.", first[2])
+        self.assertIn("not an instruction", first[2])
+        self.assertNotIn("Use the second spec.", self.stop()[2])
+
+    def test_stop_hook_active_never_blocks(self):
+        self.put_comment()
+        self.assertEqual(self.stop(active=True), OK)
+
+    def test_stop_after_the_result_is_written_is_quiet(self):
+        Path(self.entry["result_file"]).write_text("{}")
+        self.put_comment()
+        self.assertEqual(self.stop(), OK)
+
+    def test_stop_in_an_ordinary_session_is_quiet(self):
+        self.assertEqual(self.stop(session_id="ordinary-1"), OK)
+
+    def test_stop_file_blocks_through_the_dispatcher(self):
+        payload = json.dumps({"session_id": "cc-1", "hook_event_name": "Stop", "stop_hook_active": False})
+        done = subprocess.run([str(ROOT / "hooks" / "dispatch"), "Stop"], input=payload, stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE, universal_newlines=True)
+        self.assertEqual(done.returncode, 2, done.stderr)
+        self.assertIn(self.entry["result_file"], done.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()
