@@ -142,6 +142,23 @@ class Guarding(Linked):
                           "a step session does not read the keychain")
         self.assertAllowed(self.pre("Read", file_path="/x/environment.md"))
 
+    def test_home_folder_spellings_of_the_protected_paths_are_denied(self):
+        for spelling in ("~/.josh-360", "$HOME/.josh-360", "${HOME}/.josh-360"):
+            self.assertDenied(self.bash("rm {}/state/graph-sessions/mine.json".format(spelling)),
+                              "a step session does not change the runner")
+            self.assertDenied(self.bash("rm {}/repo/hooks/PreToolUse/20-graph-step-guard".format(spelling)),
+                              "a step session does not change the runner")
+        self.assertAllowed(self.bash("cat ~/.josh-360/repo/graphs/roles/builder/instructions.md"))
+
+    def test_ssh_keys_are_secrets(self):
+        self.assertDenied(self.bash("cat ~/.ssh/id_ed25519"), "a step session does not read secrets")
+        self.assertDenied(self.pre("Read", file_path="/Users/x/.ssh/id_rsa"), "a step session does not read secrets")
+
+    def test_a_wrapper_before_gh_does_not_hide_a_write(self):
+        for bad in ("env gh pr create", "command gh pr merge 1", "exec gh issue close 3", "env GH_PAGER=cat gh pr merge 2"):
+            self.assertDenied(self.bash(bad), "only gate scripts write to GitHub")
+        self.assertAllowed(self.bash("env gh pr view 4"))
+
     def test_the_rails_and_other_runs_are_protected(self):
         self.assertDenied(self.pre("Edit", file_path=self.home + "/repo/hooks/PreToolUse/20-graph-step-guard"),
                           "a step session does not change the runner")
