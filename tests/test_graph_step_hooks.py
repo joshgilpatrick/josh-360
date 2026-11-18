@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -246,6 +247,9 @@ class Guarding(Linked):
         self.assertIn("2 tool calls", doc["additionalContext"])
 
     def test_guard_file_blocks_through_the_dispatcher(self):
+        # the dispatcher runs as its own process on the real clock, so the session must have started "now" on it
+        # (the made-up clock of these tests drifts past the time cap as real time passes)
+        self.set_entry(started_at=time.time())
         payload = json.dumps({"session_id": "cc-1", "hook_event_name": "PreToolUse", "tool_name": "AskUserQuestion",
                               "tool_input": {"questions": []}})
         done = subprocess.run([str(ROOT / "hooks" / "dispatch"), "PreToolUse"], input=payload, stdout=subprocess.PIPE,
