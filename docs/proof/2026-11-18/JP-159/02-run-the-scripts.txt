@@ -1,0 +1,10 @@
+$ npm run recompute-projects   (made-up HOME with an empty cache.db)
+sessions=0 artifacts=0 sensitive=0
+exit 0
+
+$ npm run recompute-projects   (made-up HOME with no cache.db)
+recompute-projects: <home>/.josh-360/state/cache.db does not exist; nothing to recompute (the headless Session Atlas creates it)
+exit 1
+
+$ npm run backfill
+npm error Missing script: "backfill"
