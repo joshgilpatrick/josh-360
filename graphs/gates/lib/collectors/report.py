@@ -13,15 +13,14 @@ from . import reading
 
 FIELDS = {"value": "value", "age_hours": "number"}
 COUNTS_EVENTS = False
-ARGUMENT = re.compile(r"^([a-z0-9][a-z0-9-]{0,63}) ([A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*)$")
+ARGUMENT = re.compile(r"^[a-z0-9][a-z0-9-]{0,63} [A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*$")
 
 
 def read(argument: str, since: str, deps) -> dict:
     try:
-        found = ARGUMENT.fullmatch(argument or "")
-        if found is None:
+        if ARGUMENT.fullmatch(argument or "") is None:
             return reading.take(None, FIELDS)
-        report_id, dotted = found.group(1), found.group(2)
+        report_id, dotted = argument.split(" ", 1)
         path = reading.state_dir(deps) / "reports" / (report_id + ".json")
         current = json.loads(path.read_text(encoding="utf-8"))
         for part in dotted.split("."):
