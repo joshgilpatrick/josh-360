@@ -3,7 +3,7 @@
 
 Inputs: ticket_key, defects (the sign-off role's list), version (the ticket version it judged), authors.
 Outcomes: ready (no defect survived), gaps (some survived), invalid.
-Output: kept (the defects that name J1 to J5 and quote the ticket exactly).
+Output: kept (the defects that name J1 to J6 and quote the ticket exactly).
 invalid when the signing session is one of the ticket's authors, when the signing session is not on record (an author
 is then not ruled out), or when the ticket changed while it was being judged. A dropped defect is saved with its reason
 in the run folder (outputs/dropped-defects.json) and never reaches the author. The signing session comes from the
