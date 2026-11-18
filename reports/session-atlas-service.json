@@ -1,8 +1,12 @@
 {
-  "actions": [],
+  "actions": [
+    "wrote the plist",
+    "loaded the service"
+  ],
   "dry_run": false,
   "job": "session-atlas-service",
   "label": "com.josh360.session-atlas",
-  "reason": "retire-session-atlas has not succeeded yet",
-  "result": "waiting"
+  "loaded": true,
+  "node": "26.10",
+  "result": "ok"
 }
