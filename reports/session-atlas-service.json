@@ -1,6 +1,6 @@
 {
   "actions": [
-    "already running on the latest code"
+    "restarted the service"
   ],
   "dry_run": false,
   "job": "session-atlas-service",
