@@ -105,6 +105,43 @@ class RunnerCase(WalkerCase):
     def am_behaviour(self, **doc):
         (self.am_dir / "behaviour.json").write_text(json.dumps(doc))
 
+    # -- step sessions (hooks) ---------------------------------------------------------------------------------
+    def fake_spawn(self, run, key="0123456789abcdef"):
+        """What `advance` does for a step: write its session file, spawn through the binding, mark it started.
+        Returns the session file's document. (Task 9's advance writes the same shape.)"""
+        import binding
+        from runner_lib import hooklib, sessionfile
+        a = self.walker("next", "--run", run)
+        self.assertEqual(a["action"], "run", a)
+        doc = {"run": run, "step": a["step"], "attempt": a["attempt"], "graph": a["graph"], "ticket": a["ticket"],
+               "access": a["access"], "tier": a["tier"], "outcomes": a["outcomes"], "result_file": a["result_file"],
+               "work_dir": a["work_dir"], "key": key, "state": "spawning", "intent_at": self.now, "started_at": None,
+               "handle": None, "comments": "", "resting_since": None, "spawn_failures": 0, "ended_at": None,
+               "reason": None, "closed": None}
+        sessionfile.write(run, a["step"], a["attempt"], doc)
+        doc["handle"] = binding.start(a, hooklib.marker(run, a["step"], a["attempt"], key), "")
+        doc.update(state="started", started_at=self.now)
+        sessionfile.write(run, a["step"], a["attempt"], doc)
+        return doc
+
+    def logged_prompt(self, run, step, attempt=1):
+        for call in self.am_calls("spawn"):
+            prompt = call[call.index("--prompt") + 1]
+            if "run={} step={} attempt={} ".format(run, step, attempt) in prompt.splitlines()[0]:
+                return prompt
+        raise AssertionError("no spawn was logged for {} {} {}".format(run, step, attempt))
+
+    def session_starts(self, run, step, attempt=1, session_id="cc-1"):
+        """The session's first prompt reaches the link hook; returns the entry it wrote (or None)."""
+        from runner_lib import hooklib
+        prompt = self.logged_prompt(run, step, attempt)
+        am = "s-1"
+        for call in self.am_calls("spawn"):
+            if prompt == call[call.index("--prompt") + 1]:
+                am = "s-{}".format(self.am_calls("spawn").index(call) + 1)
+        hooklib.link({"session_id": session_id, "prompt": prompt}, {"AGENT_MANAGER_SESSION_ID": am}, self.now)
+        return hooklib.entry(session_id)
+
     def later(self, seconds):
         self.now += seconds
         return self.now
