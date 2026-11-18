@@ -21,6 +21,7 @@
 - [Out of scope](#out-of-scope)
 - [Questions for Josh](#questions-for-josh)
 - [Choices made by default](#choices-made-by-default)
+- [As built](#as-built)
 
 Ticket JP-117 (Story). Status: **approved by Josh on 17 November 2026** ("Approve as written", which takes the three recommendations under [Questions for Josh](#questions-for-josh)), in the thread "JP-117 Design the graph runner for Agent Manager". A separate session writes the build plan, starting from the probe's answer ([below](#the-probe-and-the-fallback-if-a-job-cannot-spawn)), and a build session follows it.
 
@@ -354,3 +355,17 @@ These go into `docs/decisions/JP-117.md` when the build makes them; each can be 
 | 8 | Session names `<KEY> - <Step Title> (<run short id>)` in group `josh-360/graph-runs` | Josh's naming convention for Jira sessions | Change `binding.py` |
 | 9 | A stopped run is a report line, a notification and the flag, not a Needs you question | Only the graph's named points may ask Josh | Not needed |
 | 10 | The proof's triage of JP-116 is started by a one-time job | Josh starts nothing by hand, and triage's own triggers stay off (Q1) | Run `runner.py start` by hand |
+
+## As built
+
+Written when the build's pull request opened. What differs from the design above; the choices behind each are rows in `docs/decisions/JP-117.md`.
+
+- **Host.** The probe said a job can start an Agent Manager session (with Claude Code's folder first on the PATH) and a detached child outlives a pass, so `host` is `job`. `runner.py loop` and the heartbeat check are built behind the same setting (`terminal`) as the fallback; the "advance inside the tick" variant is not built.
+- **The job is `graphs/runner/tick_job.py`**, because a job is a `.py` file with no arguments. It always exits 0 and prints a report; a problem is in the JSON.
+- **The walker's `run` answer** gained `graph`, `ticket`, `access`, `work_dir` and `phi`, so the binding and the guard need nothing from the graph files.
+- **Session files.** One per step attempt, `<run>/sessions/<step>-<attempt>.json`, written before the spawn (`spawning`), with a link file beside it written by the link hook. The marker line in the first prompt carries a key that must match.
+- **Rails.** The guard counts tool calls in `graph-sessions/<id>.calls`; the Bash rules read command text and are not a boundary. The ledger's offer and comment hooks stay quiet in a step session.
+- **Off switch.** `advance` still records a session that has finished, then returns `off`; it calls the walker only while a role step's row is open.
+- **Report.** `status.snapshot` lists only `agent-manager` runs and the step rows of runs that ended in the last 14 days; `runner.py report --from-json` prints the proof page from a published snapshot.
+- **`jobs.yaml`.** `graph-runner` (every 5 minutes) and `jp-117-triage-jp-116` (hourly, not `once`: a `once` job stops at its first exit 0 and a refusal must be tried again). `agent-manager-probe` is removed.
+- **Not yet proven.** The laptop checks in the plan's "Laptop checks owed after the build" and the proof run (Task 13) follow the merge; this section is finished with them.
