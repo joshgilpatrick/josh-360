@@ -1,0 +1,74 @@
+# A made-up graph for the runner's tests (JP-117; not a real graph). Two gates that do not depend on each other sit
+# between a role step and an ask, then a step that writes and a step that only reads.
+convention: 1
+graph: runner-sample
+title: Sample graph for the runner's tests
+description: >
+  A made-up ticket gets a draft, two independent checks, Josh's go, a build and a read-only look.
+
+header:
+  jira:
+    - { status: In Progress, steps: [draft, check_a, check_b, confirm, make, look] }
+  entry_gate: ready
+  exit_gate: no-loose-ends
+  asks_josh: [confirm]
+  ledger: [run, step, outcome, loop_count, session, tier, graph_version, model]
+  access:
+    draft: josh
+    check_a: read
+    check_b: read
+    confirm: read
+    make: josh
+    look: read
+  end_states:
+    finished: success
+    confirm.stop: needs-josh
+
+inputs:
+  ticket_key: { type: string, required: true, description: Jira key of the made-up ticket }
+  system: { type: string, default: none, description: The ticket's system label }
+  ticket_type: { type: string, default: Task, description: The ticket's issue type }
+  resume_from: { type: string, default: none, description: The ticket's last ended run if it came back }
+  phi: { type: boolean, default: false, description: True when no ticket text may be kept }
+
+steps:
+  - id: draft
+    role: designer
+    brief: "Ticket: {{ inputs.ticket_key }}."
+    inputs: [ticket_key]
+    outputs:
+      note: { type: string }
+    outcomes: [ready]
+
+  - id: check_a
+    gate: lint-spec
+    needs: [draft]
+    inputs: [note]
+    outcomes: [pass]
+
+  - id: check_b
+    gate: check-review
+    needs: [draft]
+    inputs: [note]
+    outcomes: [clean]
+
+  - id: confirm
+    needs: [check_a, check_b]
+    ask:
+      question: "Go ahead and make {{ inputs.ticket_key }}?"
+      choices: [go, stop]
+    on:
+      stop: end
+
+  - id: make
+    role: builder
+    needs: [confirm]
+    when: { step: confirm, outcome: go }
+    inputs: [note]
+    outcomes: [done]
+
+  - id: look
+    role: publisher
+    needs: [make]
+    inputs: [note]
+    outcomes: [pass]
