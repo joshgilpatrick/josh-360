@@ -31,6 +31,7 @@ Read `README.md` for what it is and how it runs. This file holds the rules agent
 
 - Migrations live in `src/db/migrations.ts`. Add new ones at the end with the next id. Migrations 1 to 13 stay as they are, because the catalog's shape check replays them.
 - Each migration runs in its own transaction.
+- Before a migration runs, `migrate()` sets aside any table, index or trigger it is about to create that already exists (`src/db/legacy-names.ts`, JP-163): it is renamed with a `legacy_` prefix, rows kept, and the migration runs. A `cache.db` seeded from the old cost ledger once carried an `artifacts` table of the old shape. Write new migrations with plain `CREATE`, as before; do not add `IF NOT EXISTS` to hide a clash.
 - A migration that drops tables with foreign keys can be slow to run with enforcement on. Mark it `noForeignKeys: true` so `migrate()` turns enforcement off for it and checks `PRAGMA foreign_key_check` before commit.
 - Migrations 6 and 8 are guarded by a preflight backup check (`src/db/preflight.ts`) when the database has data. Do not bypass it. Any new destructive migration needs the same guard added in `src/db/database.ts`.
 - `cache.db` is rebuildable working state. Anything that must last belongs in the ledger, not here.

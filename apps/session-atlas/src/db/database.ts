@@ -3,6 +3,7 @@ import { chmodSync, mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { MIGRATIONS, type Migration } from './migrations.ts'
 import { nowIso } from '../util/time.ts'
+import { setAsideLegacy } from './legacy-names.ts'
 import { assertLedgerPreflight, ledgerGuardApplies, recordPreflightBackup, usageCleanupGuardApplies } from './preflight.ts'
 
 export type AtlasDb = {
@@ -21,6 +22,9 @@ export function migrate(db: AtlasDb, list: Migration[] = MIGRATIONS): number {
     if (m.noForeignKeys) db.raw.exec('PRAGMA foreign_keys = OFF')
     try {
       db.transaction(() => {
+        // JP-163: a table, index or trigger this migration is about to create cannot be Atlas's own if it already exists.
+        const moved = setAsideLegacy(db, m.sql)
+        if (moved.length > 0) process.stderr.write(`migration ${m.id}: set aside legacy ${moved.join(', ')}\n`)
         // Backup guards (spec 2026-10-06 sections 5 and 7): migration 6 on a database with legacy usage rows, and migration 8
         // (which drops the usage tables) on a database with sessions, run only against a manifest whose fingerprint still
         // matches, verified inside this exclusive transaction.
