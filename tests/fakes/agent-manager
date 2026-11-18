@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+"""A fake `agent-manager` for the runner's tests (JP-117). Nothing real: it logs every call and keeps a made-up
+sessions table. $FAKE_AM_DIR holds calls.jsonl, state.db, groups.json and an optional behaviour.json:
+{"spawn_fails": "<text>"}, {"refuse_model": "<model>"}, {"spawn_hangs": true}, {"needs_claude": true}."""
+import json
+import os
+import sqlite3
+import sys
+import time
+
+folder = os.environ["FAKE_AM_DIR"]
+argv = sys.argv[1:]
+with open(os.path.join(folder, "calls.jsonl"), "a") as log:
+    log.write(json.dumps(argv) + "\n")
+try:
+    behaviour = json.load(open(os.path.join(folder, "behaviour.json")))
+except (OSError, ValueError):
+    behaviour = {}
+
+
+def flags(args):
+    out = {}
+    i = 0
+    while i < len(args):
+        if args[i].startswith("--"):
+            if args[i] == "--json":
+                out["json"] = True
+                i += 1
+            else:
+                out[args[i][2:]] = args[i + 1]
+                i += 2
+        else:
+            i += 1
+    return out
+
+
+def db():
+    conn = sqlite3.connect(os.path.join(folder, "state.db"))
+    conn.execute("CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, name TEXT, status TEXT, archived INTEGER, "
+                 "group_name TEXT, cwd TEXT, model TEXT, effort TEXT, agent_session_id TEXT)")
+    return conn
+
+
+if not argv:
+    sys.exit(0)
+command = argv[0]
+if command == "spawn":
+    f = flags(argv[1:])
+    if behaviour.get("needs_claude"):
+        found = any(os.access(os.path.join(d, "claude"), os.X_OK) for d in os.environ.get("PATH", "").split(":") if d)
+        if not found:
+            sys.stderr.write("agent-manager: claude is not installed; install it with: curl -fsSL https://claude.ai/install.sh | bash\n")
+            sys.exit(1)
+    if behaviour.get("spawn_hangs"):
+        time.sleep(300)
+    if behaviour.get("refuse_model") and f.get("model") == behaviour["refuse_model"]:
+        sys.stderr.write("unknown model {}\n".format(f.get("model")))
+        sys.exit(1)
+    if behaviour.get("spawn_fails"):
+        sys.stderr.write(behaviour["spawn_fails"] + "\n")
+        sys.exit(1)
+    conn = db()
+    n = conn.execute("SELECT COUNT(*) FROM sessions").fetchone()[0] + 1
+    sid = "s-{}".format(n)
+    conn.execute("INSERT INTO sessions VALUES (?, ?, 'working', 0, ?, ?, ?, ?, NULL)",
+                 (sid, f.get("name"), f.get("group"), f.get("directory"), f.get("model"), f.get("effort")))
+    conn.commit()
+    print(json.dumps({"id": sid}))
+elif command == "create-group":
+    path = os.path.join(folder, "groups.json")
+    groups = json.load(open(path)) if os.path.exists(path) else []
+    if argv[1] in groups:
+        sys.stderr.write("group already exists\n")
+        sys.exit(1)
+    groups.append(argv[1])
+    json.dump(groups, open(path, "w"))
+elif command == "archive":
+    conn = db()
+    conn.execute("UPDATE sessions SET archived = 1 WHERE id = ?", (argv[1],))
+    conn.commit()
+    print(json.dumps({"id": argv[1], "archived": True}))
+else:
+    sys.stderr.write("fake agent-manager: no such command {}\n".format(command))
+    sys.exit(2)
