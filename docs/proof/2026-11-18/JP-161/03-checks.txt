@@ -1,0 +1,2 @@
+compile_graphs: ok (4 graph(s))
+check.py: ok (0 problem(s))
