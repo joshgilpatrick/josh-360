@@ -1,0 +1,14 @@
+{
+  "per_pass": 1,
+  "graphs": {
+    "development": {
+      "on": true,
+      "jql": "project = JP AND status = Ready AND sprint in openSprints() AND issuetype in (Story, Bug, Task, Research)",
+      "route": "development",
+      "inputs": {"ticket_type": "issuetype", "system": "route.system", "resume_from": "last_run|none", "phi": "spec.phi_risk|true"}
+    },
+    "non-development": {"on": false, "note": "Same rule with route non-development; switched on by a later ticket (spec Q1)."},
+    "triage": {"on": false, "note": "The five triage triggers are not designed here (spec Q1)."},
+    "ticket-creation": {"on": false, "note": "Started from a session, not from Jira."}
+  }
+}
