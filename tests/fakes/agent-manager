@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """A fake `agent-manager` for the runner's tests (JP-117). Nothing real: it logs every call and keeps a made-up
 sessions table. $FAKE_AM_DIR holds calls.jsonl, state.db, groups.json and an optional behaviour.json:
-{"spawn_fails": "<text>"}, {"refuse_model": "<model>"}, {"spawn_hangs": true}, {"needs_claude": true}."""
+{"spawn_fails": "<text>"}, {"refuse_model": "<model>"}, {"spawn_hangs": true}, {"needs_claude": true},
+{"spawn_no_id": true} (the session is made but the reply has no id)."""
 import json
 import os
 import sqlite3
@@ -65,7 +66,7 @@ if command == "spawn":
     conn.execute("INSERT INTO sessions VALUES (?, ?, 'working', 0, ?, ?, ?, ?, NULL)",
                  (sid, f.get("name"), f.get("group"), f.get("directory"), f.get("model"), f.get("effort")))
     conn.commit()
-    print(json.dumps({"id": sid}))
+    print("{}" if behaviour.get("spawn_no_id") else json.dumps({"id": sid}))
 elif command == "create-group":
     path = os.path.join(folder, "groups.json")
     groups = json.load(open(path)) if os.path.exists(path) else []
