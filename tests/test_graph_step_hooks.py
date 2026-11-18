@@ -77,5 +77,149 @@ class Linking(RunnerCase):
         self.assertTrue(self.entry_file().is_file())
 
 
+class Linked(RunnerCase):
+    """A linked step session `cc-1` (step `design`, access josh) and helpers to feed it tool calls."""
+
+    def setUp(self):
+        super().setUp()
+        self.run_id = self.start("valid", "JP-901")
+        self.fake_spawn(self.run_id)
+        self.entry = self.session_starts(self.run_id, "design")
+        self.home = os.environ["JOSH360_HOME"]
+        self.run_folder = os.environ["JOSH360_RUNS"] + "/" + self.run_id
+        self.work = self.entry["work_dir"]
+
+    def set_entry(self, **changes):
+        from ledger import graph_sessions
+        path = graph_sessions.entry_path("cc-1")
+        doc = json.loads(path.read_text())
+        doc.update(changes)
+        path.write_text(json.dumps(doc))
+
+    def pre(self, tool, session_id="cc-1", now=None, **tool_input):
+        return hooklib.guard({"session_id": session_id, "tool_name": tool, "tool_input": tool_input}, {},
+                             self.now if now is None else now)
+
+    def bash(self, command, **kw):
+        return self.pre("Bash", command=command, **kw)
+
+    def assertDenied(self, result, words=""):
+        self.assertEqual(result[0], 2, result)
+        self.assertTrue(result[2].startswith(words) or words in result[2], result)
+
+    def assertAllowed(self, result):
+        self.assertEqual(result, OK)
+
+
+class Guarding(Linked):
+    def test_ask_user_question_is_denied(self):
+        self.assertDenied(self.pre("AskUserQuestion", questions=[]), "a step session does not ask questions")
+
+    def test_jira_write_tool_is_denied_and_a_read_is_allowed(self):
+        self.assertDenied(self.pre("mcp__Atlassian_MCP__editJiraIssue", issueIdOrKey="JP-1"), "only gate scripts write to Jira")
+        self.assertAllowed(self.pre("mcp__Atlassian_MCP__getJiraIssue", issueIdOrKey="JP-1"))
+
+    def test_github_write_tool_is_denied_and_a_read_is_allowed(self):
+        self.assertDenied(self.pre("mcp__github__create_pull_request"), "only gate scripts write to GitHub")
+        self.assertAllowed(self.pre("mcp__github__get_file_contents"))
+        self.assertAllowed(self.pre("mcp__github__pull_request_read"))
+
+    def test_gh_reads_pass_and_writes_do_not(self):
+        for ok in ("gh pr view 5", "gh api repos/o/r/pulls", "gh pr checks 5 && gh run list", "gh search prs x"):
+            self.assertAllowed(self.bash(ok))
+        for bad in ("gh pr create", "gh pr merge 5", "gh api -X POST repos/o/r/issues",
+                    "gh api repos/o/r/labels -f name=x", "echo hi; gh issue comment 3 --body x"):
+            self.assertDenied(self.bash(bad), "only gate scripts write to GitHub")
+
+    def test_jira_cli_writes_are_denied(self):
+        self.assertDenied(self.bash("acli jira workitem transition --key JP-1"), "only gate scripts write to Jira")
+        self.assertAllowed(self.bash("ls docs/jira-notes"))
+
+    def test_secrets_and_the_keychain_are_denied(self):
+        self.assertDenied(self.pre("Read", file_path="/x/.env"), "a step session does not read secrets")
+        self.assertDenied(self.bash("cat ~/.aws/credentials"), "a step session does not read secrets")
+        self.assertDenied(self.bash("security find-generic-password -s jira-claude-api-key -w"),
+                          "a step session does not read the keychain")
+        self.assertAllowed(self.pre("Read", file_path="/x/environment.md"))
+
+    def test_the_rails_and_other_runs_are_protected(self):
+        self.assertDenied(self.pre("Edit", file_path=self.home + "/repo/hooks/PreToolUse/20-graph-step-guard"),
+                          "a step session does not change the runner")
+        self.assertDenied(self.pre("Write", file_path=os.environ["JOSH360_RUNS"] + "/r-aaaaaaaaaaaa/work/x.md"),
+                          "a step session does not change the runner")
+        self.assertDenied(self.bash("echo x > " + self.home + "/state/ledger.db"), "a step session does not change the runner")
+        self.assertDenied(self.bash("python3 " + self.home + "/repo/graphs/tools/walker.py abandon --run r-1"),
+                          "a step session does not change the runner")
+        self.assertAllowed(self.pre("Write", file_path=self.work + "/notes.md"))
+        self.assertAllowed(self.bash("cat " + self.home + "/repo/graphs/roles/builder/instructions.md 2>/dev/null"))
+
+    def test_the_run_folder_outside_work_is_protected(self):
+        self.assertDenied(self.pre("Write", file_path=self.run_folder + "/sessions/design-1.json"),
+                          "a step session does not change the runner")
+        self.assertAllowed(self.pre("Write", file_path=self.run_folder + "/prompts/x.md"))
+
+    def test_read_step_writes_only_its_result_and_work_folder(self):
+        self.set_entry(access="read")
+        for bad in (("Edit", {"file_path": "/work/tree/a.py"}), ("Bash", {"command": "git commit -m x"}),
+                    ("Bash", {"command": "echo x > /tmp/y"}), ("Bash", {"command": "cp a.txt b.txt"}),
+                    ("Bash", {"command": "python3 x.py > out.txt"})):
+            self.assertDenied(self.pre(bad[0], **bad[1]), "this step only reads")
+        for good in (("Write", {"file_path": self.work + "/findings.md"}), ("Bash", {"command": "git diff main"}),
+                     ("Bash", {"command": "git diff main 2>&1"}), ("Bash", {"command": "ls missing 2>/dev/null"}),
+                     ("Bash", {"command": "python3 -m unittest tests.test_x"}),
+                     ("Bash", {"command": "python3 scripts/check.py --fast"}),
+                     ("Bash", {"command": "echo x > " + self.work + "/y"})):
+            self.assertAllowed(self.pre(good[0], **good[1]))
+
+    def test_josh_step_may_commit_and_push(self):
+        self.assertAllowed(self.bash("git commit -m x"))
+        self.assertAllowed(self.bash("git push"))
+
+    def test_turn_cap_denies_everything_but_the_result(self):
+        self.settings(turn_cap=3)
+        for _ in range(3):
+            self.assertAllowed(self.pre("Read", file_path="/x/a.txt"))
+        self.assertDenied(self.pre("Read", file_path="/x/a.txt"), "turn cap reached")
+        self.assertAllowed(self.pre("Write", file_path=self.entry["result_file"]))
+
+    def test_time_cap_denies_everything_but_the_result(self):
+        later = self.now + 3 * 3600
+        self.assertDenied(self.pre("Read", now=later, file_path="/x/a.txt"), "time cap reached")
+        self.assertAllowed(self.pre("Write", now=later, file_path=self.entry["result_file"]))
+
+    def test_unreadable_entry_is_denied(self):
+        from ledger import graph_sessions
+        graph_sessions.entry_path("cc-1").write_text("{")
+        self.assertDenied(self.pre("Read", file_path="/x/a.txt"), "graph step guard")
+
+    def test_other_sessions_are_untouched(self):
+        for tool, tool_input in (("AskUserQuestion", {}), ("mcp__Atlassian_MCP__editJiraIssue", {}),
+                                 ("Bash", {"command": "cat .env"})):
+            self.assertAllowed(self.pre(tool, session_id="ordinary-1", **tool_input))
+        from ledger import graph_sessions
+        self.assertFalse((graph_sessions.folder() / "ordinary-1.calls").exists())
+
+    def test_reflection_every_forty_calls(self):
+        self.settings(reflect_every=2)
+        out = []
+        for _ in range(5):
+            self.pre("Read", file_path="/x/a.txt")
+            code, printed, err = hooklib.reflect({"session_id": "cc-1", "tool_name": "Read"}, {}, self.now)
+            self.assertEqual((code, err), (0, ""))
+            out.append(printed)
+        self.assertEqual([bool(o) for o in out], [False, True, False, True, False])
+        doc = json.loads(out[1])["hookSpecificOutput"]
+        self.assertEqual(doc["hookEventName"], "PostToolUse")
+        self.assertIn("2 tool calls", doc["additionalContext"])
+
+    def test_guard_file_blocks_through_the_dispatcher(self):
+        payload = json.dumps({"session_id": "cc-1", "hook_event_name": "PreToolUse", "tool_name": "AskUserQuestion",
+                              "tool_input": {"questions": []}})
+        done = subprocess.run([str(ROOT / "hooks" / "dispatch"), "PreToolUse"], input=payload, stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE, universal_newlines=True)
+        self.assertEqual(done.returncode, 2, done.stderr)
+        self.assertIn("does not ask questions", done.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()
