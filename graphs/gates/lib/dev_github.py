@@ -34,6 +34,7 @@ REVIEW_LABELS: Dict[str, Tuple[str, str]] = {
 }
 
 PR_FIELDS = "number,url,state,labels,headRefOid,headRefName,baseRefName,mergeCommit"
+BRANCH_NAME = re.compile(r"[\w./-]{1,100}")   # used through fullmatch
 PR_URL = re.compile(r"^https://github\.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)/pull/([0-9]+)/?$")
 
 
@@ -192,6 +193,30 @@ class GitHub:
 
     def merge_squash(self, number: int, head_sha: str) -> None:
         self._gh("pr", "merge", str(number), "--repo", self.repo, "--squash", "--match-head-commit", head_sha)
+
+    def default_branch(self) -> str:
+        """The name of the repository's default branch."""
+        _, out = self._gh("api", "repos/{}".format(self.repo))
+        row = _json(out, "the repository")
+        name = row.get("default_branch") if isinstance(row, dict) else None
+        if not isinstance(name, str) or not BRANCH_NAME.fullmatch(name):
+            raise GitHubError("the default branch was not readable")
+        return name
+
+    def workflow_runs(self, workflow: str, branch: str, since: str) -> List[dict]:
+        """Completed runs of one workflow file on one branch, created at or after `since`, newest first, at most 100,
+        each `{"conclusion": str, "created_at": str}` and nothing else (the validation watch counts them, JP-166)."""
+        _, out = self._gh("api", "-X", "GET", "repos/{}/actions/workflows/{}/runs".format(self.repo, quote(workflow, safe="")),
+                          "-f", "branch=" + branch, "-f", "status=completed", "-f", "created=>=" + since,
+                          "-f", "per_page=100")
+        body = _json(out, "the workflow runs")
+        rows = body.get("workflow_runs") if isinstance(body, dict) else None
+        if not isinstance(rows, list):
+            raise GitHubError("the workflow runs were not readable")
+        runs = [{"conclusion": str(row.get("conclusion") or ""), "created_at": str(row.get("created_at") or "")}
+                for row in rows if isinstance(row, dict)]
+        runs.sort(key=lambda run: run["created_at"], reverse=True)
+        return runs[:100]
 
     def delete_branch(self, branch: str) -> None:
         self._gh("api", "-X", "DELETE", "repos/{}/git/refs/heads/{}".format(self.repo, quote(branch, safe="/")),
