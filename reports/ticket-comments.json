@@ -1,9 +1,9 @@
 {
-  "delivered": 0,
+  "delivered": 45,
   "read_failed": 0,
-  "skipped": 0,
-  "status": "no-jira-credentials",
+  "skipped": 1,
+  "status": "ok",
   "system": 0,
-  "targets": 0,
-  "tickets": 0
+  "targets": 29,
+  "tickets": 25
 }
