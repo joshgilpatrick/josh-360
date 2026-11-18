@@ -17,7 +17,7 @@ The spec is [`docs/superpowers/specs/2026-11-18-post-deploy-validation-design.md
 | The validation graph is drawn step by step: kind, tier where a model is used, outcomes; a check that needs no judgment calls no model; every end state is classed | @manual | Spec, "The flow at a glance" and "The steps" (eleven steps, none uses a model, so none has a tier; the table of ends and scores). For Josh to read. |
 | The failure and no-data paths are designed | @manual | Spec, "When the criteria are not met" and "When no data arrives, and the one question". For Josh to read. |
 | The draft graph passes the checker | @auto | [Commands run](#commands-run): `check_graph: ok (1 graph(s))`, exit 0 |
-| Josh approves the spec | @manual | Waiting for Josh in the thread "JP-164 Design post-deploy validation". |
+| Josh approves the spec | @manual | Approved on 18 November 2026 in the thread "JP-164 Design post-deploy validation": Josh chose "Approve: I judge them, once" on the decision card. The plan and the build tickets are written by a separate plan session. |
 
 ## Commands run
 
