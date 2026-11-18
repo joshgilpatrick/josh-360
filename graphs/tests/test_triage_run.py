@@ -25,6 +25,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "graphs" / "tools"))
 from ledger import _repo  # noqa: E402,F401
 from ledger import db  # noqa: E402
+from laptop import common  # noqa: E402
 from walker_lib import cli, questions  # noqa: E402
 
 NOW = "2026-11-17T12:00:00Z"
@@ -123,18 +124,43 @@ class RunCase(unittest.TestCase):
         body.update(over)
         return self.file("revision.json", body)
 
-    def stopped_at_the_exit(self, run):
-        """JP-109 owns the exit gate, so a run that has reached its end stops at its stub; nothing else is wrong."""
+    def finishes_at_the_exit(self, run):
+        """The exit gate (`no-loose-ends`, JP-161) stops the run until the recorder has written the episodes of the
+        run's sessions, since what they left is unknown until then. Once they are recorded, a retry finishes it."""
         out = self.nxt(run)
         self.assertEqual((out["action"], out["step"]), ("stopped", "_exit"), out)
-        self.assertIn("JP-109", out["reason"])
+        self.assertIn("not recorded yet", out["reason"])
+        self.record_sessions(run)
+        self.walker("retry", "--run", run)
+        done = self.nxt(run)
+        self.assertEqual(done["action"], "done", done)
+        self.assertEqual(self.walker("status", "--run", run)["ended"], "finished")
+
+    def record_sessions(self, run):
+        """What the recorder writes once a session goes quiet: an episode, here in a folder that is no repository, so
+        the session touched nothing that can be loose."""
+        conn = db.connect(Path(os.environ["JOSH360_HOME"]) / "state" / "ledger.db")
+        try:
+            uids = {r[0] for r in conn.execute(
+                "SELECT x.session_uid FROM step_results x JOIN step_runs r ON r.id = x.step_run_id "
+                "WHERE r.run_id = ? AND x.session_uid IS NOT NULL", (run,))}
+            now = common.now_utc()
+            for uid in uids:
+                conn.execute(
+                    "INSERT INTO session_episodes (session_uid, episode, began_at, last_activity_at, quiet_at, "
+                    "end_reason, folder, title, title_source, recorded_at, recorded_by) "
+                    "VALUES (?, 1, ?, ?, ?, 'session-end', ?, 'A title', 'ai', ?, 'test')",
+                    (uid, now, now, now, str(self.tmp / "not-a-repository"), now))
+            conn.commit()
+        finally:
+            conn.close()
 
 
 class AnOwnTicketBecomesReady(RunCase):
     def test_a_complete_own_ticket_becomes_ready_with_one_route(self):
         run = self.start()
         self.signs_off(run)
-        self.stopped_at_the_exit(run)
+        self.finishes_at_the_exit(run)
         self.assertEqual(self.status(), "Ready")
         route = self.prop("josh360.route")
         self.assertEqual((route["graph"], route["system"], route["signed_by"]), ("development", "josh-360", "s-signer"))
@@ -144,7 +170,7 @@ class AnOwnTicketBecomesReady(RunCase):
     def test_the_comment_on_ready_is_in_the_result_evidence_next_gate_shape(self):
         run = self.start()
         self.signs_off(run)
-        self.stopped_at_the_exit(run)
+        self.finishes_at_the_exit(run)
         text = json.dumps(self.state()["comments"][KEY])
         self.assertIn("Triage: Ready | run {}, signed off by session s-signer".format(run), text)
         self.assertIn("route: development (josh-360) | next gate: starts when Josh queues it", text)
@@ -152,7 +178,7 @@ class AnOwnTicketBecomesReady(RunCase):
     def test_the_route_record_is_written_before_the_move(self):
         run = self.start()
         self.signs_off(run)
-        self.stopped_at_the_exit(run)
+        self.finishes_at_the_exit(run)
         paths = [w["path"] for w in self.writes()]
         self.assertLess(paths.index("/rest/api/3/issue/JP-9001/properties/josh360.route"),
                         paths.index("/rest/api/3/issue/JP-9001/transitions"))
@@ -171,7 +197,7 @@ class AnOwnTicketBecomesReady(RunCase):
         self.assertEqual((again["step"], again["attempt"]), ("sign_off", 2), again)
         self.assertEqual(self.status(), "Not Started")
         self.signs_off_again(run, "s-other")
-        self.stopped_at_the_exit(run)
+        self.finishes_at_the_exit(run)
         self.assertEqual(self.status(), "Ready")
         self.assertEqual(self.prop("josh360.route")["signed_by"], "s-other")
 
@@ -186,7 +212,7 @@ class AnOwnTicketBecomesReady(RunCase):
         run = self.start()
         made_up = {"item": "J1", "quote": "this sentence is not in the ticket", "problem": "unclear", "needed": "more"}
         self.signs_off(run, defects=[made_up])
-        self.stopped_at_the_exit(run)                # nothing survived, so the ticket is Ready
+        self.finishes_at_the_exit(run)                # nothing survived, so the ticket is Ready
         self.assertEqual(self.status(), "Ready")
         dropped = json.loads((self.tmp / "runs" / run / "outputs" / "dropped-defects.json").read_text())
         self.assertEqual(dropped[0]["reason"], "quote not in ticket")
@@ -217,7 +243,7 @@ class ACheckThatFailsGoesToTheDrafterAndBack(RunCase):
         self.walker("record", "--run", run, "--step", "revise", "--result-file", self.file("r.json", {
             "outcome": "revised", "outputs": {"proposal": fixed}}), "--session", "s-drafter")
         self.signs_off(run)
-        self.stopped_at_the_exit(run)
+        self.finishes_at_the_exit(run)
         self.assertEqual(self.status(), "Ready")
         self.assertIn("s-drafter", self.prop("josh360.authors"))
         texts = [json.dumps(c) for c in self.state()["comments"][KEY]]
@@ -370,7 +396,7 @@ class ReturnsFromAnotherGraph(RunCase):
         self.walker("record", "--run", run, "--step", "revise", "--result-file", self.file("r.json", {
             "outcome": "revised", "outputs": {"proposal": self.revision(answered)}}), "--session", "s-drafter")
         self.signs_off(run)
-        self.stopped_at_the_exit(run)
+        self.finishes_at_the_exit(run)
         self.assertEqual(self.status(), "Ready")
         route = self.prop("josh360.route")
         self.assertEqual((route["returns"], route["returned_from"]), (1, "c-ret-1"))
@@ -444,7 +470,7 @@ class TheHandOffToTheTargetGraph(RunCase):
                    t.issue("JP-94", type_="Epic", desc=None)])
         run = self.start()
         self.signs_off(run)
-        self.stopped_at_the_exit(run)
+        self.finishes_at_the_exit(run)
         self.assertEqual(self.prop("josh360.route")["graph"], "non-development")
         started = self.walker("start", "--graph", "non-development", "--ticket", KEY)
         self.assertTrue(started["started"], started)
@@ -454,7 +480,7 @@ class TheHandOffToTheTargetGraph(RunCase):
                    t.issue("JP-94", type_="Epic", desc=None)])
         run = self.start()
         self.signs_off(run)
-        self.stopped_at_the_exit(run)
+        self.finishes_at_the_exit(run)
         self.edit(KEY, summary="Edited after sign-off")
         refused = self.walker("start", "--graph", "non-development", "--ticket", KEY, code=2)
         self.assertIn("did not admit", json.dumps(refused))

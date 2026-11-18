@@ -1,0 +1,21 @@
+test_a_leftover_worktree_refuses (test_gate_no_loose_ends.Fails.test_a_leftover_worktree_refuses) ... ok
+test_a_subagents_loose_work_counts (test_gate_no_loose_ends.Fails.test_a_subagents_loose_work_counts) ... ok
+test_loose_work_refuses_with_the_list (test_gate_no_loose_ends.Fails.test_loose_work_refuses_with_the_list) ... ok
+test_a_session_named_only_when_the_step_started_counts (test_gate_no_loose_ends.Passes.test_a_session_named_only_when_the_step_started_counts) ... ok
+test_a_step_cut_off_before_any_session_is_skipped (test_gate_no_loose_ends.Passes.test_a_step_cut_off_before_any_session_is_skipped) ... ok
+test_nothing_loose_passes_and_the_runs_own_ticket_is_not_read (test_gate_no_loose_ends.Passes.test_nothing_loose_passes_and_the_runs_own_ticket_is_not_read) ... ok
+test_work_of_sessions_outside_the_run_is_not_counted (test_gate_no_loose_ends.Passes.test_work_of_sessions_outside_the_run_is_not_counted) ... ok
+test_a_broken_ledger_stops_the_script (test_gate_no_loose_ends.UnknownIsNotEmpty.test_a_broken_ledger_stops_the_script) ... ok
+test_a_role_step_with_no_session_stops (test_gate_no_loose_ends.UnknownIsNotEmpty.test_a_role_step_with_no_session_stops) ... ok
+test_a_run_not_in_the_ledger_stops (test_gate_no_loose_ends.UnknownIsNotEmpty.test_a_run_not_in_the_ledger_stops) ... ok
+test_a_session_not_recorded_yet_stops (test_gate_no_loose_ends.UnknownIsNotEmpty.test_a_session_not_recorded_yet_stops) ... ok
+test_an_episode_older_than_the_step_stops (test_gate_no_loose_ends.UnknownIsNotEmpty.test_an_episode_older_than_the_step_stops) ... ok
+test_github_that_cannot_answer_stops (test_gate_no_loose_ends.UnknownIsNotEmpty.test_github_that_cannot_answer_stops) ... ok
+test_jira_that_cannot_answer_about_another_ticket_stops (test_gate_no_loose_ends.UnknownIsNotEmpty.test_jira_that_cannot_answer_about_another_ticket_stops) ... ok
+test_the_script_reads_the_real_ledger (test_gate_no_loose_ends.UnknownIsNotEmpty.test_the_script_reads_the_real_ledger) ... ok
+test_the_script_without_a_run_stops (test_gate_no_loose_ends.UnknownIsNotEmpty.test_the_script_without_a_run_stops) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 4.119s
+
+OK

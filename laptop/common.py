@@ -137,9 +137,22 @@ def parse_every(text: str) -> Optional[int]:
 
 
 def _scalar(raw: str, where: str) -> str:
+    """One value. Plain text, or text in quotes read the way YAML reads it (JP-160).
+
+    In single quotes, '' is one quote and a lone quote is refused. In double quotes, a backslash or a
+    quote is refused, because YAML would read it as an escape this reader does not do. Either way the
+    value is what yaml.safe_load gives, or the file is refused; scripts/check.py compares the two.
+    """
     raw = raw.strip()
     if len(raw) >= 2 and raw[0] == raw[-1] and raw[0] in "\"'":
-        return raw[1:-1]
+        inner = raw[1:-1]
+        if raw[0] == "'":
+            if "'" in inner.replace("''", ""):
+                raise Unexpected("{}: a quote inside single quotes must be doubled ('')".format(where))
+            return inner.replace("''", "'")
+        if "\\" in inner or '"' in inner:
+            raise Unexpected("{}: no backslash or double quote inside double quotes".format(where))
+        return inner
     if raw[:1] in "[{&*!|>%@`\"'" or " #" in raw:
         raise Unexpected("{}: only plain or quoted text is allowed here".format(where))
     return raw

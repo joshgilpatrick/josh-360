@@ -18,7 +18,7 @@ from lib.gate_run import GateError  # noqa: E402
 from walker_lib import gates  # noqa: E402
 
 GRAPHS = ROOT / "graphs"
-STUBS = ("ready", "no-loose-ends")   # owned by JP-122 and JP-109: not built here, so the test lets them pass
+STUBS = ("ready", "no-loose-ends")   # tested in their own tickets (JP-122, JP-161), so the test lets them pass
 
 
 class NonDevelopmentRun(WalkerCase):

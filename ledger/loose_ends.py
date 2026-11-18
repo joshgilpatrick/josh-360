@@ -209,6 +209,7 @@ class Collector:
         for uid, started in self.conn.execute("SELECT session_uid, started_at FROM sessions"):
             self.quiet[uid] = started
         self.pr_urls: Dict[str, Set[str]] = {}
+        self.skip_tickets: Set[str] = set()
 
     def skip(self, reason: str, example: str) -> None:
         entry = self.unchecked.setdefault(reason, {"reason": reason, "count": 0, "examples": []})
@@ -364,7 +365,7 @@ class Collector:
     def _tickets(self, only: Optional[Set[str]]) -> None:
         by_key: Dict[Tuple[str, str], Set[str]] = {}
         for uid, tracker, key in self.conn.execute(TICKETS_SQL):
-            if only is None or uid in only:
+            if (only is None or uid in only) and key not in self.skip_tickets:
                 by_key.setdefault((tracker or "jira", key), set()).add(uid)
         for (tracker, key), uids in sorted(by_key.items()):
             if tracker != "jira":
@@ -383,16 +384,26 @@ def _epoch(stamp: str) -> float:
 
 
 def collect(conn: sqlite3.Connection, live: Optional[Live] = None, now: Optional[str] = None,
-            session: Optional[str] = None, fetch: bool = False) -> dict:
-    """{"as_of", "items", "unchecked", "counts"}. Items are oldest first; each carries its sessions and its age."""
+            session: Optional[str] = None, fetch: bool = False, sessions: Optional[Iterable[str]] = None,
+            skip_tickets: Iterable[str] = ()) -> dict:
+    """{"as_of", "items", "unchecked", "counts"}. Items are oldest first; each carries its sessions and its age.
+
+    `session` narrows to one session by its ledger id or tool session id; `sessions` to a set of ledger ids (the
+    no-loose-ends gate passes a graph run's sessions, JP-161). An empty set lists nothing. Tickets in `skip_tickets`
+    are neither read nor listed (the gate's own run ticket, whose status is the graph's to set)."""
     now = now or common.now_utc()
     only: Optional[Set[str]] = None
-    if session:
+    if sessions is not None:
+        if session:
+            raise ValueError("give one session or a set of sessions, not both")
+        only = set(sessions)
+    elif session:
         only = {r[0] for r in conn.execute(
             "SELECT session_uid FROM sessions WHERE session_uid = ? OR tool_session_id = ?", (session, session))}
         if not only:
             raise ValueError("no session {} in the ledger".format(session))
     collector = Collector(conn, live or Live(), now, fetch)
+    collector.skip_tickets = set(skip_tickets)
     collector.run(only)
     items = []
     for item in collector.items.values():

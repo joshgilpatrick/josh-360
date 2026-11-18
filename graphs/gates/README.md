@@ -54,3 +54,13 @@ Each is a `run(inputs, deps)` function and a four-line `__main__` that calls `li
 | `signoff.py`, `verdict.py` | the sign-off defect filter, the verdict and the return count |
 | `copy.py` | every comment, word for word from the spec |
 | `port.py`, `runs.py`, `times.py` | reading a ticket and its history; the run folder and the ledger; comparing times |
+
+## The exit gate (JP-161)
+
+`no-loose-ends` closes the triage, development and non-development graphs. It asks JP-109's loose-ends finder (`ledger/loose_ends.py`) about the sessions that did this run's role steps, with their subagents, resumes and forks, and nothing else. `pass` means nothing is loose, and the run is `finished`. `loose` means something is: the full list goes to `<run>/work/loose-ends.md`, the ledger's summary holds counts only, and the run ends as `exit_refused` for Josh to close. The run's own ticket is never read or listed, because where it ends is the graph's to say (triage leaves it Ready).
+
+Unknown is not empty, so these stop the run instead (exit 1; `walker.py retry --run <id>` runs the gate again): the ledger cannot be read, the run is not in it, a role step that ended names no session, a session has no recorded episode covering its step yet, or the finder could not check something (git, `gh` or Jira did not answer). A step cut off before any session was named is skipped. The recorder writes a session's episode only once it goes quiet, so a run that reaches its end within about half an hour of its last role step stops here until the recorder catches up.
+
+| File in `lib/` | What it holds |
+| --- | --- |
+| `loose_ends_gate.py` | the run's sessions from the ledger, the recorded-yet check, and the call to the finder |
