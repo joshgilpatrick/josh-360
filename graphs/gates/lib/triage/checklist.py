@@ -1,4 +1,5 @@
-"""The Ready checklist (JP-122): C1 to C13 for every type, then B1 and B2 (Bug), S1 (Story) and R1 and R2 (Research).
+"""The Ready checklist (JP-122): C1 to C13 for every type, then B1 and B2 (Bug), S1 (Story), R1 and R2 (Research) and
+V1 to V7 (the Validation section of a Story, Task or Bug; JP-165, `lib/triage/validation_items.py`).
 
 Python 3.9, standard library only. This is now the source of the list; the spec's "The Ready checklist" table says what
 each item means, and graphs/contracts/ready-checklist.md says what a failure holds. Required sections and their order
@@ -24,6 +25,7 @@ from lib.triage import TRIAGE_TYPES
 from lib.triage.gherkin import find_gherkin_blocks, read_feature, strip_blocks
 from lib.triage.registry import RepoLookup
 from lib.triage.ticket import Ticket
+from lib.triage.validation_items import check_validation
 
 TEST_TAGS = ("@auto", "@e2e", "@manual")
 PLACEHOLDERS = {"tbd", "todo", "?", "...", "…", "n/a", "na", "fill in", "fill this in", "to be decided", "to be determined"}
@@ -59,11 +61,13 @@ def failure(item: str, where: str, found: str, needed: str) -> Dict[str, str]:
 
 def required_labels(ticket_type: str) -> List[str]:
     """The sections a ticket of this type needs, in order: Repository and Where it runs follow the acceptance
-    criteria, as they do in the ticket format."""
+    criteria, or the Validation section that follows them, as they do in the ticket format."""
+    checks = ready_checklist.CHECKLIST.get(ticket_type, [])
+    last = "validation" if any(c["section"] == "validation" for c in checks) else "acceptance_criteria"
     labels: List[str] = []
-    for check in ready_checklist.CHECKLIST.get(ticket_type, []):
+    for check in checks:
         labels.append(check["label"])
-        if check["section"] == "acceptance_criteria":
+        if check["section"] == last:
             labels += ["Repository", "Where it runs"]
     return labels
 
@@ -95,6 +99,8 @@ def check_sections(ticket: Ticket, labels: List[str]) -> List[dict]:
     out: List[dict] = []
     for label in labels:
         n = ticket.count(label)
+        if n == 0 and label == "Validation":
+            continue            # V1 reports a missing Validation section, with what to write
         if n == 0:
             out.append(failure(_item_for(ticket, label, "C2"), label, "missing",
                                "Add a bold {} section.".format(label)))
@@ -112,6 +118,8 @@ def check_sections(ticket: Ticket, labels: List[str]) -> List[dict]:
     for label in present:
         text = ticket.section(label) or ""
         item = _item_for(ticket, label, "C3")
+        if label == "Validation":
+            continue            # V1 to V7 own what the section says
         if label == "Acceptance criteria":
             if not text.strip():
                 out.append(failure(item, label, "empty", "Say what is true when the work is done."))
@@ -255,7 +263,7 @@ def check_open_questions(ticket: Ticket, ctx: Context) -> List[dict]:
                 if bullet and bullet.group(1).strip() and not bullet.group(1).strip().lower().startswith("answered:"):
                     out.append(failure("C12", "Open questions", bullet.group(1),
                                        "Answer it (start the line Answered:) or remove it; Ready has no open question."))
-        body = strip_blocks(text) if label == "Acceptance criteria" else text
+        body = strip_blocks(text) if label in ("Acceptance criteria", "Validation") else text
         for line in _unquoted(body).split("\n"):
             stripped = line.strip()
             if label != "Open questions" and stripped.endswith("?"):
@@ -308,6 +316,7 @@ def run_checklist(ticket: Ticket, ctx: Context) -> List[dict]:
     acceptance = ticket.section("Acceptance criteria")
     if acceptance is not None and acceptance.strip():
         out += check_gherkin_text(acceptance, "Acceptance criteria")
+    out += check_validation(ticket)
     out += checkrepository_of(ticket, ctx)
     out += check_where_it_runs(ticket)
     out += check_links(ticket, ctx)
