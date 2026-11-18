@@ -24,6 +24,8 @@ NAMED = [
     ("ticket-offer", "JP-110", ["PreToolUse/30-ticket-offer"]),
     ("ticket-comments", "JP-118", ["PostToolUse/40-ticket-comments", "UserPromptSubmit/40-ticket-comments"]),
     ("atlas-guard", "JP-111", ["PreToolUse/10-atlas-removal-guard", "PostToolUse/40-jira-session-link"]),
+    ("graph-step", "JP-117", ["UserPromptSubmit/20-graph-step", "PreToolUse/20-graph-step-guard",
+                              "PostToolUse/20-graph-step-reflect", "Stop/20-graph-step-stop"]),
 ]
 
 

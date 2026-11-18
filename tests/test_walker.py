@@ -42,6 +42,14 @@ class WalkingAGraph(WalkerCase):
         statuses = [e["status"] for e in self.log() if e.get("gate") == "move-ticket"]
         self.assertEqual(statuses, ["Design/Planning", "In Progress", "Code Review", "Validation"])
 
+    def test_run_answer_names_graph_ticket_access_and_work_dir(self):
+        run = self.start()
+        out = self.walker("next", "--run", run)
+        self.assertEqual((out["action"], out["step"]), ("run", "design"))
+        self.assertEqual((out["graph"], out["ticket"], out["access"], out["phi"]), ("valid", "JP-901", "josh", False))
+        self.assertTrue(out["work_dir"].endswith("/work"))
+        self.assertTrue(Path(out["work_dir"]).is_dir())
+
     def test_the_ledger_has_the_scoring_fields_for_every_step(self):
         run = self.start()
         self.do_role(run, "design", "ready", {"spec_path": "spec-1"}, session="sess-0001", model="claude-sonnet-5-5")

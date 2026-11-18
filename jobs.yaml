@@ -116,9 +116,16 @@ jobs:
     report: true
     description: JP-119. Compares what runs on the laptop with the macbook-automations startup list and laptop/launchd-register.json, and reports any difference. Job labels and counts only; changes nothing.
 
-  - id: agent-manager-probe
-    run: scripts/agent_manager_probe_job.py
-    every: 10m
-    timeout: 10m
+  - id: graph-runner
+    run: graphs/runner/tick_job.py
+    every: 5m
+    timeout: 5m
     report: true
-    description: JP-117, temporary. Finds out whether a laptop job can start an Agent Manager session and whether a detached child outlives a pass, before the graph runner is built on either. Starts one throwaway session named "JP-117 probe - safe to archive". Reports help text, exit codes, field names and statuses only. Removed by the runner's build.
+    description: JP-117. Watches Jira for tickets that should have a graph run (Ready and in an open sprint) and moves every open run forward one step, each model step in a visible Agent Manager session. No model call of its own. The report is counts, ids, step names and times only.
+
+  - id: jp-117-triage-jp-116
+    run: graphs/runner/triage_jp116_job.py
+    every: 1h
+    timeout: 5m
+    report: true
+    description: JP-117, temporary. Starts the triage run of JP-116, the runner's proof ticket, once the runner has ticked; does nothing once that run exists. Removed with the proof page.

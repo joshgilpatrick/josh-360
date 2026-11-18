@@ -40,7 +40,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from ledger import _repo  # noqa: E402
 from laptop import common  # noqa: E402
-from ledger import spool  # noqa: E402
+from ledger import graph_sessions, spool  # noqa: E402
 
 EVENTS = ("PostToolUse", "UserPromptSubmit")
 SYSTEM_PREFIX = "\U0001F916"
@@ -413,6 +413,8 @@ def hook_main(event: str, stdin: TextIO, stdout: TextIO) -> int:
         data = json.loads(stdin.read())
         sid = data.get("session_id") if isinstance(data, dict) else None
         if not isinstance(sid, str) or not SESSION_ID.match(sid):
+            return 0
+        if graph_sessions.is_graph_session(sid):   # JP-117: a step session gets its comments once, through its run
             return 0
         items = _take(inbox_root() / sid)
         if items:

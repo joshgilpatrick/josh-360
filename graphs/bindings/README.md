@@ -1,6 +1,6 @@
 # Bindings
 
-Everything specific to one runner, in `bindings/<tool>/` (Agent Manager first). Runner keys such as `model`, `mode` or `isolation` go here, never in a graph file. The checker does not read this folder.
+Everything specific to one runner, in `bindings/<tool>/` (Agent Manager first: [agent-manager/](agent-manager/README.md), JP-117). Runner keys such as `model`, `mode` or `isolation` go here, never in a graph file. The checker does not read this folder.
 
 ## Ticket comments for a running step (JP-118)
 

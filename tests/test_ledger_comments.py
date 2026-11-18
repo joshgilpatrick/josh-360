@@ -460,6 +460,15 @@ class HookCase(Base):
 
 
 class TheHooks(HookCase):
+    def test_hook_inbox_is_quiet_in_a_graph_session(self):
+        self.deliver_one()
+        folder = self.home / "state" / "graph-sessions"        # JP-117: the runner's link for a step session
+        folder.mkdir(parents=True)
+        (folder / "sess-0001.json").write_text("{}")
+        result = self.run_hook("PostToolUse")
+        self.assertEqual((result.returncode, result.stdout), (0, ""))
+
+
     def test_the_session_is_told_on_both_events(self):
         for event in ("PostToolUse", "UserPromptSubmit"):
             self.deliver_one() if event == "PostToolUse" else self.deliver_ticket_two()

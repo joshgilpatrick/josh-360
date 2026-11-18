@@ -303,6 +303,9 @@ def hook_main(stdin: TextIO, stdout: TextIO) -> int:
     """The hook body. Always 0: it never blocks a command, and an error is logged (without the input) and skipped."""
     try:
         data = json.loads(stdin.read())
+        from ledger import graph_sessions  # JP-117: a graph step's session has its ticket by construction
+        if graph_sessions.is_graph_session(data.get("session_id") if isinstance(data, dict) else None):
+            return 0
         trigger = decide(data)
         if trigger is None:
             return 0

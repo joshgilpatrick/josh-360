@@ -1,0 +1,9 @@
+{
+  "group": "josh-360/graph-runs",
+  "tool": "claude",
+  "prompt_max_bytes": 60000,
+  "id_fields": ["id", "session_id"],
+  "status": {"working": ["working", "starting"], "resting": ["idle", "waiting", "finished"], "gone": ["dead"]},
+  "archive": ["archive"],
+  "models": {}
+}

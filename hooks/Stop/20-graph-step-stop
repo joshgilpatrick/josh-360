@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+# JP-117: when a graph step's session stops, pass waiting ticket comments on and nudge once if its result is missing.
+# Acts only on sessions the runner started; exit 2 sends the message back to the session. See graphs/runner/runner_lib/hooklib.py.
+import sys
+sys.dont_write_bytecode = True
+from pathlib import Path
+
+try:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "graphs" / "runner"))
+    from runner_lib import hooklib
+    code = hooklib.main("Stop")
+except Exception:
+    code = 0
+sys.exit(0 if code is None else code)
