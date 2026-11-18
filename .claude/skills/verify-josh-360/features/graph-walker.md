@@ -38,7 +38,7 @@ Preconditions:
 
 - The walker prints JSON either way. A refusal exits `2` with an `error` key; read the key, since `submit.py` prints its refusal as one line on stderr instead.
 - Only a repository tracked in Linear (`family_os` today) ends the run at `route`. Any other route goes on to `find_duplicates`, which reads Jira and fails in the sandbox.
-- The triage, development and non-development graphs read Jira in their entry gate, and their exit gate `no-loose-ends` is a stub that refuses to run, so none can finish anywhere yet. On the laptop, drive their first steps against a made-up JP ticket and cancel it afterwards.
+- The triage, development and non-development graphs read Jira in their entry gate, so none can run in the sandbox. On the laptop, drive their first steps against a made-up JP ticket and cancel it afterwards.
 - The walker reads `graphs/compiled/`, not the YAML. After changing a graph, run `python3 graphs/tools/compile_graphs.py` and commit before launching.
 - `submit.py` refuses a second open run for the same `--ref` (exit `2`, `the entry gate 'intake-admitted' did not admit the run: it printed 'refused'`), even after the first has ended. Use a new `--ref` for each run.
 - A result file outside the step's `results/` path, or an outcome the step does not declare, is refused.
