@@ -1,4 +1,4 @@
-"""JP-117, Task 12: whole runs from the sprint to the end, driven by real ticks with a fake Agent Manager, a fake Jira and
+"""JP-117, Task 12: whole runs from the label to the end, driven by real ticks with a fake Agent Manager, a fake Jira and
 a made-up clock; the JP-116 triage job; and what must stay out of the runner's code."""
 import io
 import json
@@ -92,7 +92,7 @@ class Running(RunnerCase):
     def spawn_names(self):
         return [call[call.index("--name") + 1] for call in self.am_calls("spawn")]
 
-    def test_a_ticket_goes_from_the_sprint_to_the_end_with_no_hand_start(self):
+    def test_a_labelled_ticket_goes_to_the_end_with_no_hand_start(self):
         self.jira_issue("JP-901")
         run, end = self.drive("JP-901")
         self.assertEqual(end, "finished")
