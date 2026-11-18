@@ -5,8 +5,8 @@ never writes, and gives up after 10 seconds. A failed read returns None, which t
 `jira_read = failed` and tries again on a later pass; it is never turned into Unassigned.
 
 Credentials: the account email from JOSH360_JIRA_EMAIL (or ACTION_AGENT_JIRA_EMAIL, or the one-line file
-~/.josh-360/state/jira-email); the token from JOSH360_JIRA_TOKEN, else the macOS keychain item `jira-claude-api-key`,
-account `jgilpatrick`, read with /usr/bin/security (never logged, never put in an error). With no email or no token
+~/.josh-360/state/jira-email); the token from JOSH360_JIRA_TOKEN, else the macOS keychain item `jira-claude-api-key`
+(whatever its account), read with /usr/bin/security (never logged, never put in an error). With no email or no token
 every read returns None. Python 3.9, standard library only.
 """
 from __future__ import annotations
@@ -25,8 +25,7 @@ from ledger import _repo  # noqa: F401,E402
 from laptop import common  # noqa: E402
 
 SITE_DEFAULT = "https://eventuswh-analytics.atlassian.net"
-KEYCHAIN_SERVICE = "jira-claude-api-key"
-KEYCHAIN_ACCOUNT = "jgilpatrick"
+KEYCHAIN_SERVICE = "jira-claude-api-key"  # found by name alone: the item's account label has changed before
 TIMEOUT_SECONDS = 10
 INITIATIVE_SPACE = "TECH"  # initiatives live here; an epic relates to one (conventions/tickets.md)
 
@@ -44,7 +43,7 @@ def credentials(env: Mapping[str, str], run: Callable = subprocess.run) -> Optio
     token = env.get("JOSH360_JIRA_TOKEN") or ""
     if not token:
         try:
-            result = run(["/usr/bin/security", "find-generic-password", "-s", KEYCHAIN_SERVICE, "-a", KEYCHAIN_ACCOUNT,
+            result = run(["/usr/bin/security", "find-generic-password", "-s", KEYCHAIN_SERVICE,
                           "-w"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True, timeout=5)
             token = result.stdout.strip() if result.returncode == 0 else ""
         except (OSError, subprocess.SubprocessError):
