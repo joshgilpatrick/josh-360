@@ -84,6 +84,27 @@ class RunnerCase(WalkerCase):
         self.assertEqual(self.walker("next", "--run", run)["action"], "done")
         return run
 
+    # -- the fake agent-manager --------------------------------------------------------------------------------
+    def am_calls(self, word):
+        path = self.am_dir / "calls.jsonl"
+        rows = [json.loads(line) for line in path.read_text().splitlines()] if path.is_file() else []
+        return [r for r in rows if r and r[0] == word]
+
+    def am_set(self, session_id, status=None, archived=None):
+        import sqlite3
+        conn = sqlite3.connect(str(self.am_dir / "state.db"))
+        try:
+            if status is not None:
+                conn.execute("UPDATE sessions SET status = ? WHERE id = ?", (status, session_id))
+            if archived is not None:
+                conn.execute("UPDATE sessions SET archived = ? WHERE id = ?", (archived, session_id))
+            conn.commit()
+        finally:
+            conn.close()
+
+    def am_behaviour(self, **doc):
+        (self.am_dir / "behaviour.json").write_text(json.dumps(doc))
+
     def later(self, seconds):
         self.now += seconds
         return self.now
