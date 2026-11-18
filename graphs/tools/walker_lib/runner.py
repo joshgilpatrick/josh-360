@@ -330,6 +330,8 @@ def run_action(run: Run, act: engine.Action, attempt: int) -> Dict[str, object]:
         "allowed_by_josh": bool(act.allowed),
         "result_file": str(runfolder.result_file(run.run_id, step, attempt)),
         "role_folder": str(g.root / "roles" / role),
+        "graph": g.id, "ticket": run.ticket, "access": g.header["access"][step],
+        "work_dir": str(runfolder.work_dir(run.run_id)), "phi": run.phi,
     }
     if out["agent"]:
         out["agent_folder"] = str(g.root / "agents" / out["agent"])
