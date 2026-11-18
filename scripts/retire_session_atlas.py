@@ -19,7 +19,9 @@ how to put it back. In order:
      place, the old removal guard would block every `git worktree remove`, because its service is gone.
      Josh 360's own hook dispatcher now carries the guard and the Jira link hook (hooks/PreToolUse, hooks/PostToolUse).
   4. If ~/.josh-360/state/cache.db does not exist yet, seed it with a consistent copy of the old cost ledger, so cost
-     history, pricing and Jira links carry over. An existing cache.db is kept, unless it holds nothing at all (the Jira
+     history, pricing and Jira links carry over. The copy leaves out the old ledger's catalog tables (artifacts,
+     artifact_locations, artifact_events): the new Atlas builds its own artifact catalog in cache.db, and a leftover
+     `artifacts` table of the old shape stopped it starting (JP-163). They stay in the archived copy. An existing cache.db is kept, unless it holds nothing at all (the Jira
      hook can create it empty before this job runs): that empty file moves into the archive and is seeded.
   5. Move atlas.db and the old cost ledger (each with its -wal and -shm) into the archive. Nothing writes to them
      afterwards: the service is off, and their hooks are out of settings.json.
@@ -153,6 +155,11 @@ def cache_holds_nothing(cache: Path) -> bool:
         conn.close()
 
 
+# The old ledger's own artifact catalog. The new Atlas creates its own `artifacts` table in cache.db with another shape, so these
+# stay in the archived copy of the old ledger and are not carried into the seed. Children first.
+LEGACY_CATALOG_TABLES = ("artifact_events", "artifact_locations", "artifacts")
+
+
 def seed_cache(old_cost: Path, cache: Path, dest: Path, actions: List[str], dry: bool) -> str:
     """A consistent copy of the old cost ledger as the new cache.db. Returns a result word.
 
@@ -179,6 +186,9 @@ def seed_cache(old_cost: Path, cache: Path, dest: Path, actions: List[str], dry:
         dst = sqlite3.connect(str(tmp))
         try:
             src.backup(dst)
+            for table in LEGACY_CATALOG_TABLES:  # only the seed copy; the source file is opened read-only
+                dst.execute('DROP TABLE IF EXISTS "{}"'.format(table))
+            dst.commit()
             ok = dst.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
         finally:
             dst.close()
@@ -222,7 +232,8 @@ switched off on {date}. Nothing was deleted. In this folder:
 - `{plist_name}`: the old launchd job (`{label}`)
 - `atlas-atlas.db` (with `-wal` and `-shm`): the old index, focus text and artifact catalog (`~/.claude/atlas/atlas.db`)
 - `cost-ledger-ledger.db` (with `-wal` and `-shm`): the old cost ledger (`~/.claude/cost-ledger/ledger.db`). Its tables
-  were also copied into `~/.josh-360/state/cache.db`, which the new Atlas keeps up to date.
+  were also copied into `~/.josh-360/state/cache.db`, which the new Atlas keeps up to date. The old artifact catalog
+  tables (`artifacts`, `artifact_locations`, `artifact_events`) were left out of that copy; they are only here.
 - `state-cache.db`: only if an empty `cache.db` had to be replaced by the seed (see above)
 - `settings.json.bak`: `~/.claude/settings.json` as it was before the old Atlas hook entries were taken out (owner
   read only; it can hold credentials, so delete it once you have checked the new settings).

@@ -125,6 +125,32 @@ class RetireSessionAtlasTest(unittest.TestCase):
         self.assertEqual(old.execute("SELECT COUNT(*) FROM sessions").fetchone()[0], 1)
         old.close()
 
+    def test_the_seed_leaves_the_old_catalog_tables_behind(self):
+        """JP-163: the old ledger's artifacts/artifact_locations/artifact_events clash with the new Atlas's own artifacts table."""
+        ledger = self.home / ".claude" / "cost-ledger" / "ledger.db"
+        db = sqlite3.connect(str(ledger))
+        db.executescript(
+            "CREATE TABLE artifacts (artifact_id TEXT PRIMARY KEY, path TEXT);"
+            "CREATE TABLE artifact_locations (id INTEGER PRIMARY KEY, artifact_id TEXT REFERENCES artifacts(artifact_id));"
+            "CREATE TABLE artifact_events (id INTEGER PRIMARY KEY, artifact_id TEXT);"
+            "CREATE INDEX artifacts_path_idx ON artifacts (path);"
+            "INSERT INTO artifacts VALUES ('a-1', '/made/up.md');"
+            "INSERT INTO artifact_locations VALUES (1, 'a-1');"
+            "INSERT INTO artifact_events VALUES (1, 'a-1');")
+        db.commit()
+        db.close()
+        r = self.run_job()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        seeded = sqlite3.connect(str(self.j360 / "state" / "cache.db"))
+        names = {row[0] for row in seeded.execute("SELECT name FROM sqlite_master")}
+        self.assertEqual(seeded.execute("SELECT COUNT(*) FROM pricing_runs").fetchone()[0], 1, "cost rows are carried over")
+        seeded.close()
+        for gone in ("artifacts", "artifact_locations", "artifact_events", "artifacts_path_idx"):
+            self.assertNotIn(gone, names)
+        kept = sqlite3.connect(str(self.archive() / "cost-ledger-ledger.db"))
+        self.assertEqual(kept.execute("SELECT COUNT(*) FROM artifacts").fetchone()[0], 1, "the archived copy keeps the catalog")
+        kept.close()
+
     def test_only_the_old_atlas_hooks_leave_settings_and_a_backup_is_kept(self):
         original = self.settings.read_text()
         r = self.run_job()

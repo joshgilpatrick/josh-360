@@ -3,7 +3,7 @@ import { chmodSync, mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { MIGRATIONS, type Migration } from './migrations.ts'
 import { nowIso } from '../util/time.ts'
-import { createMissingOnly, holdsAtlasTables, inEffect } from './adopt.ts'
+import { setAsideLegacy } from './legacy-names.ts'
 import { assertLedgerPreflight, ledgerGuardApplies, recordPreflightBackup, usageCleanupGuardApplies } from './preflight.ts'
 
 export type AtlasDb = {
@@ -16,25 +16,21 @@ export type AtlasDb = {
 export function migrate(db: AtlasDb, list: Migration[] = MIGRATIONS): number {
   db.raw.exec(`CREATE TABLE IF NOT EXISTS schema_migrations (id INTEGER PRIMARY KEY, name TEXT NOT NULL, applied_at TEXT NOT NULL)`)
   const applied = new Set((db.raw.prepare('SELECT id FROM schema_migrations').all() as Array<{ id: number }>).map(r => r.id))
-  // JP-163: no record at all, but Atlas's tables are there. Adopt what is already in effect instead of replaying it.
-  const adopting = applied.size === 0 && holdsAtlasTables(db)
-  const record = db.raw.prepare('INSERT INTO schema_migrations (id, name, applied_at) VALUES (?, ?, ?)')
   let count = 0
   for (const m of list) {
     if (applied.has(m.id)) continue
-    if (adopting && inEffect(db, m)) {
-      record.run(m.id, m.name, nowIso())
-      continue
-    }
     if (m.noForeignKeys) db.raw.exec('PRAGMA foreign_keys = OFF')
     try {
       db.transaction(() => {
+        // JP-163: a table, index or trigger this migration is about to create cannot be Atlas's own if it already exists.
+        const moved = setAsideLegacy(db, m.sql)
+        if (moved.length > 0) process.stderr.write(`migration ${m.id}: set aside legacy ${moved.join(', ')}\n`)
         // Backup guards (spec 2026-10-06 sections 5 and 7): migration 6 on a database with legacy usage rows, and migration 8
         // (which drops the usage tables) on a database with sessions, run only against a manifest whose fingerprint still
         // matches, verified inside this exclusive transaction.
         const guard = (m.id === 6 && ledgerGuardApplies(db)) || (m.id === 8 && usageCleanupGuardApplies(db))
         const manifest = guard ? assertLedgerPreflight(db) : null
-        db.raw.exec(adopting && m.id === 1 ? createMissingOnly(m.sql) : m.sql)
+        db.raw.exec(m.sql)
         if (m.after) m.after(db)
         // With enforcement off during a migration, verify nothing dangles before the transaction commits.
         if (m.noForeignKeys && (db.raw.prepare('PRAGMA foreign_key_check').all() as unknown[]).length > 0) {
