@@ -67,8 +67,8 @@ class Ticking(RunnerCase):
         self.assertEqual(self.launched, self.runs())
         self.assertEqual(len(self.launched), 1)
 
-    def test_ready_in_the_backlog_launches_nothing(self):
-        self.jira_issue("JP-901", sprint=False)
+    def test_ready_without_the_run_label_launches_nothing(self):
+        self.jira_issue("JP-901", queued=False)
         report = self.tick()
         self.assertEqual(report["watch"]["runner-sample"]["started"], [])
         self.assertEqual((self.launched, self.runs()), ([], []))
