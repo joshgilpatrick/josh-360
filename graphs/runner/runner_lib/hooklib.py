@@ -151,7 +151,9 @@ def _protected(path: str, ent: dict) -> bool:
         return False
     home = _home()
     for prefix in (home / "repo", home / "state"):
-        if _under(real, str(prefix)):
+        # `real` is fully resolved, so the prefix is tried both as written and resolved (a home behind a symlink,
+        # such as macOS's /var -> /private/var, would otherwise slip past)
+        if _under(real, str(prefix)) or _under(real, str(prefix.resolve())):
             return True
     for name in ("settings.json", "settings.local.json"):
         if real == _expand(os.path.join("~", ".claude", name)):
