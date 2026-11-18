@@ -33,7 +33,8 @@ Checks:
      extra laptop rows each have one known verdict and a reason, and the built page is up to date with the
      feature tree and those rows. Needs PyYAML.
  14. JP-114: every graph has an up-to-date JSON copy in graphs/compiled/ (graphs/tools/compile_graphs.py --check),
-     which the walker reads on the laptop; the walker's files parse as Python 3.9.
+     which the walker reads on the laptop; the walker's files parse as Python 3.9, and so do the graph runner's
+     and the bindings' files under graphs/runner/ and graphs/bindings/ (JP-117).
 
  15. JP-153: the per-ticket decision files in docs/decisions/ pass scripts/decisions.py check, and no default-choice
      row is left in the old shared table in docs/decisions.md.
@@ -131,8 +132,10 @@ def laptop_problems() -> list[str]:
     # JP-114: the walker reads a JSON copy of each graph so that it runs here too (graphs/tools/walker*).
     walker_files = sorted((ROOT / "graphs/tools/walker_lib").glob("*.py")) + [ROOT / "graphs/tools/walker.py"] + sorted(
         (ROOT / "graphs/gates/lib").rglob("*.py")) + sorted((ROOT / "graphs/gates").glob("*.py"))
+    # JP-117: the graph runner and its bindings run on the laptop too.
+    runner_files = sorted((ROOT / "graphs/runner").rglob("*.py")) + sorted((ROOT / "graphs/bindings").rglob("*.py"))
     ledger_files = (sorted((ROOT / "ledger").glob("*.py")) + [ROOT / "scripts/conventions.py"] + ledger_hooks
-                    + walker_files)
+                    + walker_files + runner_files)
     for py in (sorted((ROOT / "laptop").glob("*.py")) + sorted((ROOT / "hooks").rglob("*.py")) + jp96
                + ledger_files):
         try:
