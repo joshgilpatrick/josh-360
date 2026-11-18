@@ -12,8 +12,7 @@
     "artifacts": "node --disable-warning=ExperimentalWarning src/cli/artifacts.ts",
     "costledger": "node --disable-warning=ExperimentalWarning src/costledger/cli.ts",
     "start": "node --disable-warning=ExperimentalWarning src/service/main.ts",
-    "backfill": "node --disable-warning=ExperimentalWarning src/transcript/backfill.ts",
-    "recompute-projects": "node --disable-warning=ExperimentalWarning src/transcript/backfill.ts --projects",
+    "recompute-projects": "node --disable-warning=ExperimentalWarning src/cli/recompute-projects.ts",
     "seed": "node --disable-warning=ExperimentalWarning scripts/seed-benchmark.ts",
     "perf": "ATLAS_PERF=1 node --disable-warning=ExperimentalWarning --test --test-concurrency=1 test/perf/*.test.ts"
   },
