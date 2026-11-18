@@ -7,6 +7,7 @@ text: it is never split, expanded or evaluated here, and no pattern is used exce
 
     parse(description, key)  -> the parsed section (a dict, see PARSED below)
     parse_text(body, key)    -> the same for a section's body alone; None is "no section"
+    canonical(text)          -> a proposal's text as a section body (the scenarios fenced)
     route(section)           -> "not_needed", "watch" or "unreadable"
     needs_watch(description) -> True when the section says Needed: yes, whatever else is wrong with it
     split(body)              -> (the field lines without list markers, the gherkin block's text or "")
@@ -87,6 +88,21 @@ def split(body: str) -> Tuple[List[str], str]:
         if line:
             lines.append(line)
     return lines, "\n".join(blocks)
+
+
+def canonical(text: Optional[str]) -> str:
+    """A proposal's Validation text as the section body: the field lines, then the scenarios in a gherkin fence. A
+    proposal may leave the fence out (the Acceptance criteria text of a proposal has none); the scenarios then start
+    at the first line that is a tag, a Feature or a Scenario."""
+    body = (text or "").replace("\r\n", "\n").strip("\n")
+    if find_gherkin_blocks(body):
+        return body
+    lines = body.split("\n")
+    for index, line in enumerate(lines):
+        if re.match(r"^\s*(?:@|Feature\s*:|Scenario\s*:)", line):
+            head = "\n".join(lines[:index]).rstrip("\n")
+            return (head + "\n\n" if head else "") + "```gherkin\n" + "\n".join(lines[index:]).strip("\n") + "\n```"
+    return body
 
 
 def read_starts(value: str) -> Optional[Tuple[str, str]]:
