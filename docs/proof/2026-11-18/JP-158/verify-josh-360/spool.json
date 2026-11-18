@@ -1,0 +1,12 @@
+{
+  "command": [
+    "cat",
+    "/tmp/verify-josh-360/jp158-proof/home/.josh-360/state/ledger-spool/2026-11-18.jsonl"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp158-proof/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp158-proof",
+  "started_at": "2026-11-18T12:29:58Z",
+  "stderr": "",
+  "stdout": "{\"at\":\"2026-11-18T12:29:58Z\",\"cwd\":\"/tmp/verify-josh-360/jp158-proof/work/sample-repo\",\"event\":\"SessionStart\",\"reason\":null,\"session_id\":\"verify-sess-0001\",\"source\":\"startup\",\"started_by\":\"josh\",\"transcript_path\":\"/tmp/verify-josh-360/jp158-proof/home/.claude/projects/-tmp-verify-josh-360-jp158-proof-work-sample-repo/verify-sess-0001.jsonl\"}\n{\"at\":\"2026-11-18T12:29:58Z\",\"cwd\":\"/tmp/verify-josh-360/jp158-proof/work/sample-repo\",\"event\":\"SessionEnd\",\"reason\":\"other\",\"session_id\":\"verify-sess-0001\",\"source\":null,\"started_by\":\"josh\",\"transcript_path\":\"/tmp/verify-josh-360/jp158-proof/home/.claude/projects/-tmp-verify-josh-360-jp158-proof-work-sample-repo/verify-sess-0001.jsonl\"}\n"
+}

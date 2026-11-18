@@ -47,9 +47,10 @@ Every surface Josh works through for his developer experience (DevEx), and where
 | Surface | What it is | Where its configuration lives | Source |
 | --- | --- | --- | --- |
 | Login startup job | One login job that starts every job in a manifest | `launchd/com.jgilpatrick.startup.plist` and `launchd/startup-manifest.txt` in macbook-automations (`josh_projects/macbook_automations`). Six jobs today: automations hub, transcript scrubber, Outlook receipt fetcher, OpenCode agent sync, Idemeum log retention, Agent Manager. | macbook-automations `README.md` |
+| Josh 360 job runner | Follows josh-360's `main` on the laptop and runs the jobs in `jobs.yaml` (the install, the ledger, the doctor, the graph runner) | Launch job `com.jgilpatrick.josh-360-jobs`, loaded by the startup list; it runs `laptop/run_jobs.py` from `~/.josh-360/repo` every 5 minutes. Jobs are entries in josh-360 `jobs.yaml`. State in `~/.josh-360/`. | `laptop/README.md` |
 | action-triage orchestrator | Picks up work, runs sessions and audits pull requests | Launch job `com.eventus.action-agent` (`scripts/install-orchestrator.sh`, values in `scripts/com.eventus.action-agent.plist`). State in `~/Library/Application Support/action-agent/state.json`; log `/tmp/action-agent.log`. | action-triage `AGENTS.md`, "Daemons" |
 | Session Atlas service | Mirrors sessions from the ledger and runs the artifact manager | Launch job `com.josh360.session-atlas` (see the row above) | `apps/session-atlas/README.md` |
-| Claude Code hooks | Scripts that run at fixed moments in every session | Registered in `~/.claude/settings.json`; scripts in `~/.claude/hooks/`. Inventory: `~/.claude/docs/harness/hooks-inventory.md`. | claude-harness `docs/harness/` |
+| Claude Code hooks | Scripts that run at fixed moments in every session | Registered in `~/.claude/settings.json`; scripts in `~/.claude/hooks/`. Inventory: `~/.claude/docs/harness/hooks-inventory.md`. Josh 360's own hooks are files in josh-360 `hooks/<Event>/`, run through one dispatcher entry per event (`hooks/dispatch`, `hooks/README.md`). | claude-harness `docs/harness/` |
 | Status line | The line under the prompt | `statusLine` in `~/.claude/settings.json` (`ccstatusline`) | claude-harness `settings.example.json` |
 
 The vision counts about twenty background jobs in all; the inventory (JP-96) lists each one.

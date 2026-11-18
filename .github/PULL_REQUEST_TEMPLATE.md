@@ -20,6 +20,6 @@ Spec `docs/superpowers/specs/…`, plan `docs/superpowers/plans/…`, boards `do
 
 ## Test plan
 
-- [ ] Fast checks: `python3 scripts/check.py`
+- [ ] Fast checks: `python3 scripts/check.py --fast`
 - [ ] Full suite locally: `python3 scripts/check.py`
 - [ ] Proof shared in the thread (screenshots in a PR comment when there is a screen)

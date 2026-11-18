@@ -164,7 +164,7 @@ AD runs Ready, Design/Planning, In Progress, Code Review, Validation and Done, a
 
 ## Checking the conventions files
 
-`scripts/conventions.py` reads the registry and the priorities file. It needs Python 3 and PyYAML (`requirements.txt`).
+`scripts/conventions.py` reads the registry and the priorities file, and writes their JSON copies. It needs Python 3 and PyYAML (`requirements.txt`).
 
 | Command | What it does |
 | --- | --- |
@@ -172,5 +172,6 @@ AD runs Ready, Design/Planning, In Progress, Code Review, Validation and Done, a
 | `python3 scripts/conventions.py lookup --folder <path>` | The system, area, space, default epic and priority for a folder. The deepest listed folder wins; a folder no system lists is Unassigned. |
 | `python3 scripts/conventions.py lookup --repo <name>` | The same for a repository name, with or without its owner. |
 | `python3 scripts/conventions.py priority --epic <KEY>` | The priority a ticket falls under from its epic, initiative (`--initiative`) or area (`--area`), in that order; anything else is Unassigned. |
+| `python3 scripts/conventions.py export-json` | Writes `conventions/registry.json` and `conventions/priorities.json`, the same data for code with no YAML reader. With `--check` it writes nothing and exits 1 when a copy is stale. |
 
 `python3 scripts/check.py` runs the check as part of the repository suite, and `tests/test_conventions.py` proves the lookups.

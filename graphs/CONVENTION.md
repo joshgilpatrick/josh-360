@@ -37,6 +37,8 @@ graphs/
   gates/<gate>.py|.sh    gate scripts
   contracts/<name>.md    the formats passed between steps
   bindings/<tool>/       everything specific to one runner (Agent Manager first); never read by the checker
+  intake/                the command that starts a ticket creation run (submit.py)
+  runner/                the graph runner: watches Jira, starts runs and Agent Manager sessions
   tools/                 the checker, the walker (walker.py, walker_lib/) and compile_graphs.py
   compiled/              the JSON copy of each graph the walker reads (built by compile_graphs.py)
   tests/                 the checker's tests and sample graphs
@@ -78,7 +80,7 @@ A gate script is a check with no model in it. It lives in `gates/<gate>.py` or `
 
 ### Contracts
 
-A contract is a format passed between steps. Each is described in `contracts/<name>.md`. The first four are the intake record, the spec, the evidence file and the feedback files. A step output names its contract (`contract: spec`), so a reader can find its format.
+A contract is a format passed between steps. Each is described in `contracts/<name>.md`; `contracts/README.md` lists them all. A step output names its contract (`contract: spec`), so a reader can find its format.
 
 ### Tiers
 
@@ -241,7 +243,7 @@ The checker cannot add up loops that share a step, because which loops fire depe
 - **State.** The ledger holds every step (`graph_runs`, `step_runs`, `step_results`, `asks`, `decisions`, `run_ends`, `run_files`); the walker replays them to find its place. The run's input values and step outputs are in `$JOSH360_RUNS/<run id>/run.json` (default `~/.josh-360/runs/`), outside the repository.
 - **The work folder.** `$JOSH360_RUNS/<run id>/work/` exists from the start and holds a run's working files, never a worktree. The walker appends every answered ask, and every step output named `answer`, to `work/answers.md`; at the end of a run it saves `work/hardening.md` and every `work/feedback/*.md` beside the files its steps named. When two steps give an output the same name, the step that finished last wins.
 - **How a role session reports.** The `run` answer carries `result_file`, and (JP-117) `graph`, `ticket` (or null), `access` (the step's `read`, `josh` or `shared`), `work_dir` and `phi`, so a binding can build a prompt and a guard from the answer alone. The session writes `{"outcome": "...", "outputs": {...}}` there, and the binding calls `record --result-file`. The outcome must be one the step declares and every output one it declares.
-- **What a gate script is given.** `GRAPH_INPUT_<NAME>` for each input the step lists (a list as JSON), `GRAPH_INPUT_TARGET_STATUS` (the Jira status of the step's stretch), `JOSH360_TICKET_KEY`, `JOSH360_RUN_ID`, `JOSH360_RUNS`, and the Jira credentials (`JOSH360_JIRA_EMAIL`, `JOSH360_JIRA_TOKEN`, from the keychain item `jira-claude-api-key` when unset). Role sessions never get the credentials. A gate that fails (no outcome, an undeclared outcome, a non-zero exit, a timeout) stops the run; the walker never retries it.
+- **What a gate script is given.** `GRAPH_INPUT_<NAME>` for each input the step lists (a list as JSON), `GRAPH_INPUT_TARGET_STATUS` (the Jira status of the step's stretch), `JOSH360_TICKET_KEY`, `JOSH360_GRAPH` (the graph's id, for the entry gate only), `JOSH360_RUN_ID`, `JOSH360_RUNS`, and the Jira credentials (`JOSH360_JIRA_EMAIL`, `JOSH360_JIRA_TOKEN`, from the keychain item `jira-claude-api-key` when unset). Role sessions never get the credentials. A gate that fails (no outcome, an undeclared outcome, a non-zero exit, a timeout) stops the run; the walker never retries it.
 - **Jira.** The walker moves a ticket to the status of the stretch the next step is in by calling the `move-ticket` gate script. A gate step with `effects: move_ticket` moves the ticket itself and is passed the target. It sets the Jira flag when a question is parked and clears it on the answer (`set-flag`), and posts a typed answer (`post-comment`) after the patient-data screen for outside writes. A failed Jira effect is a warning on the output, never a stop.
 - **Asking Josh.** A parked ask is a record in action-triage's Needs you store (`questions/`, `runner: headless`); no session waits. The ask's text is its `question` plus a step output named `card` from a step above it, when there is one. The category is `<graph>/<step>` plus `;<name>=<value>` for each name in `split`, and the answer is saved as a decision.
 - **Not the walker's job.** Starting sessions and deciding when a run starts (the runner, JP-117), and the content of any role.
