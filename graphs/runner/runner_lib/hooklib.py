@@ -89,14 +89,14 @@ def link(payload: dict, environ: dict, now: float) -> Result:
 # -- the guard -----------------------------------------------------------------------------------------------------
 
 SECRET_NAME = re.compile(r"(^|[/\s'\"=:])\.env(\.[A-Za-z0-9_-]+)?($|[\s'\";|&)])")
-SECRET_PARTS = ("credentials", ".aws/", ".config/gh/hosts.yml", ".netrc", "library/keychains/")
+SECRET_PARTS = ("credentials", ".aws/", ".ssh/", ".config/gh/hosts.yml", ".netrc", "library/keychains/")
 FILE_WORDS = re.compile(r"(?<![\w./-])(tee|rm|mv|cp|ln|touch|mkdir|chmod|truncate|dd|install)(?![\w./-])|\bsed\s+-i\b")
 INTERPRETERS = re.compile(r"(?<![\w./-])(python3?|node|perl|ruby)(?![\w-])")
 HARMLESS_REDIRECTS = re.compile(r"\d*>&\d+|&?>>?\s*/dev/null|\d+>>?\s*/dev/null")
 GIT_WRITES = re.compile(r"\bgit\s+(?:-\S+\s+)*(commit|push|add|merge|rebase|reset|stash|tag|cherry-pick|revert|apply|am)\b")
 GH_READ = re.compile(r"^(?:(?:pr|issue|repo|run|release|workflow)\s+(?:view|list|diff|checks|status|watch)\b|search\b|auth\s+status\b)")
 GH_API_WRITE = re.compile(r"(?:^|\s)(?:-X|--method|-f|-F|--field|--raw-field|--input)(?:\s|=|$)")
-COMMAND_START = r"(?:^|[;&|(\n]|\$\()\s*"
+COMMAND_START = r"(?:^|[;&|(\n]|\$\()\s*(?:(?:env|command|exec)\s+(?:[A-Za-z_]\w*=\S*\s+)*)?"
 JIRA_WORDS = re.compile(r"\b(create|edit|update|transition|comment|assign|delete|link|move|archive|attach)\b")
 JIRA_READ_PREFIXES = ("get", "search", "list", "discover", "executeread", "atlassian")
 
@@ -178,6 +178,8 @@ def _mentions_protected(text: str, ent: dict) -> bool:
     for name in ("settings.json", "settings.local.json"):
         prefixes += [os.path.join("~", ".claude", name), _expand(os.path.join("~", ".claude", name)),
                      os.path.join(os.path.expanduser("~"), ".claude", name)]
+    for spelling in ("~", "$HOME", "${HOME}"):                  # the usual ways to write the default home folder
+        prefixes += [spelling + "/.josh-360/repo", spelling + "/.josh-360/state"]
     if any(p in text for p in prefixes):
         return True
     runs = _runs_dir()
