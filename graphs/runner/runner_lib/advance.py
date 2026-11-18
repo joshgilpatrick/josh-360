@@ -22,6 +22,7 @@ from ledger import db  # noqa: E402
 from walker_lib import runfolder  # noqa: E402
 
 SPAWN_LOCK_WAIT = 30.0
+AMBIGUOUS_SPAWN = ("no-id", "timeout")             # a spawn that may still have made a session
 
 
 def load_binding(runner: str):
@@ -115,6 +116,13 @@ def _step(run_id: str, a: dict, cfg: dict, binding, now: Callable[[], float], ro
         return _spawn(run_id, a, None, cfg, binding, now)
     state = doc.get("state")
     if state == "spawn_failed":
+        try:
+            linked = sessionfile.read_link(run_id, step, attempt)
+        except sessionfile.Unreadable:
+            return "working"
+        if linked:                                        # a refused spawn that linked anyway: that session is the one
+            state = "spawning"
+    if state == "spawn_failed":
         if int(doc.get("spawn_failures") or 0) >= int(cfg["spawn_tries"]):
             return _abandon(run_id, doc, "spawn-refused", now, root, off)
         if off:
@@ -157,6 +165,9 @@ def _spawn(run_id: str, a: dict, doc: Optional[dict], cfg: dict, binding, now: C
     try:
         handle = binding.start(a, step_marker(run_id, step, attempt, doc["key"]), comments_text)
     except binding.SpawnRefused as err:
+        if str(err) in AMBIGUOUS_SPAWN:                    # the session may exist: the link, or the link timeout, decides
+            paths.log("advance {}: spawn of {} gave no answer ({}); waiting for its link".format(run_id, step, err))
+            return "working"
         doc.update(state="spawn_failed", spawn_failures=int(doc.get("spawn_failures") or 0) + 1, reason=str(err))
         sessionfile.write(run_id, step, attempt, doc)
         paths.log("advance {}: spawn of {} refused: {}".format(run_id, step, err))
@@ -167,8 +178,24 @@ def _spawn(run_id: str, a: dict, doc: Optional[dict], cfg: dict, binding, now: C
     return "spawned"
 
 
+def _live_sessions() -> list:
+    """Session files that hold a slot: live, and the attempt the walker still has open (an attempt it ended by
+    another road, `walker abandon` by hand or a crash before the file was rewritten, holds nothing). Unreadable counts."""
+    conn = db.connect(db.ledger_path())
+    try:
+        open_at = {r["run"]: ledgerview.open_step(conn, r["run"]) for r in ledgerview.open_runs(conn, RUNNER)}
+    finally:
+        conn.close()
+    found = []
+    for doc in sessionfile.live(list(open_at)):
+        at = open_at.get(doc.get("run"))
+        if doc.get("state") == "unreadable" or (at and (at["step"], at["attempt"]) == (doc.get("step"), doc.get("attempt"))):
+            found.append(doc)
+    return found
+
+
 def _limit_reached(run_id: str, cfg: dict) -> bool:
-    return len(sessionfile.live(_open_run_ids())) >= int(cfg["session_limit"])
+    return len(_live_sessions()) >= int(cfg["session_limit"])
 
 
 def _spawn_slot(run_id: str, a: dict, doc: Optional[dict], cfg: dict, now: Callable[[], float]) -> bool:
