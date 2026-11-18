@@ -31,7 +31,7 @@ Preconditions:
 - **Find it.** Ask the ledger. Run `$S run --run <id> --name ask-find -- python3 ledger/ask.py find --folder <run>/work/sample-repo`. One row with `"branch": "JP-9001-sample-work"` and `"ticket": "JP-9001"`.
 - **Its home.** Run `$S run --run <id> --name ask-home -- python3 ledger/ask.py home --session verify-sess-0001`. One row with `"ticket_key": "JP-9001"` and `"method": "branch"`.
 - **Stored rows.** Read the rows a second way. Run `$S ledger --run <id> --name ledger-rows "SELECT s.session_uid, s.started_by, e.episode, e.end_reason, e.branch FROM sessions s JOIN session_episodes e ON e.session_uid = s.session_uid"`. One row, `end_reason` `session-end`, branch `JP-9001-sample-work`.
-- **No message text.** Search the ledger file for the seeded text. Run `$S run --run <id> --name no-text -- grep -c "made-up sample answer" <run>/home/.josh-360/state/ledger.db`. Output `0` and exit code `1` (no match).
+- **No message text.** Search every file the ledger keeps for the seeded answer text. Run `$S run --run <id> --name no-text -- grep -rl "made-up sample answer" <run>/home/.josh-360/state`. Empty stdout and exit code `1`: no file holds it.
 - **Twice is once.** Run the recorder again. Run `$S run --run <id> --name record-again -- python3 ledger/record.py`. Exit code `0` and `"sessions": 0, "episodes": 0`: nothing is recorded twice.
 
 ## Gotchas
@@ -40,4 +40,4 @@ Preconditions:
 - The recorder only reads a transcript path it is given in the spool. A transcript written without the hook lines is never recorded.
 - `started_by` comes from the environment by the rules in `ledger/codes.json`; in a cloud session it reads `josh`, which is expected.
 - Do not run `laptop/run_jobs.py` for this feature: it also runs `ledger-summary`, which can try a model call for a thin episode.
-- The `no-text` check's `grep` exit code `1` is the pass. Exit `0` means message text leaked into the ledger.
+- The `no-text` check's `grep` exit code `1` is the pass (and `$S run` then exits 1 too). Exit `0`, with a file named, means message text leaked. Search the whole `state` folder, not only `ledger.db`, so a SQLite journal file is covered.
