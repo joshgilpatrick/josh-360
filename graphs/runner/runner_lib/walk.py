@@ -16,6 +16,9 @@ class WalkerRefused(Exception):
 
 
 def call(*argv: str, root: Optional[Path] = None) -> dict:
+    """Run a walker command. `root` is the graphs folder; JOSH360_GRAPHS_ROOT stands in for it when none is given (tests
+    use another folder, and the detached `advance` the tick starts has to find the same one)."""
+    root = paths.graphs_root(root)
     out = io.StringIO()
     args = (["--root", str(root)] if root else []) + [str(a) for a in argv]
     try:
