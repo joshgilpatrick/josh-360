@@ -102,7 +102,7 @@ def text(snap: dict) -> str:
 
 def _graph(graph_id: str, root: Optional[Path]):
     try:
-        return graphfile.load(graph_id, root=root or graphfile.GRAPHS, live_check=False)
+        return graphfile.load(graph_id, root=paths.graphs_root(root) or graphfile.GRAPHS, live_check=False)
     except Exception:  # noqa: BLE001  (a graph that is gone or damaged only costs the Jira status column)
         return None
 
