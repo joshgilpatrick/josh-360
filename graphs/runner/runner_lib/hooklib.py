@@ -306,8 +306,33 @@ def reflect(payload: dict, environ: dict, now: float) -> Result:
     return (0, json.dumps({"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": text}}) + "\n", "")
 
 
+def stop(payload: dict, environ: dict, now: float) -> Result:
+    """Stop: pass waiting ticket comments on, and nudge once when the step ends without its result. Never blocks twice."""
+    session_id = payload.get("session_id")
+    if not graph_sessions.is_graph_session(session_id):
+        return NOTHING
+    if payload.get("stop_hook_active"):
+        return NOTHING
+    try:
+        ent = entry(session_id)
+    except Unreadable:
+        return NOTHING
+    if ent is None or Path(ent["result_file"]).exists():
+        return NOTHING
+    from ledger import comments
+    text = comments.take_run(ent["run"])
+    if text:
+        return (2, "", text)
+    if ent.get("nudged_at") is None:
+        ent["nudged_at"] = now
+        _write(graph_sessions.entry_path(session_id), ent)
+        return (2, "", "Write your result to {} with one of these outcomes: {}. Use the Write tool, then stop."
+                .format(ent["result_file"], ", ".join(ent["outcomes"])))
+    return NOTHING
+
+
 FUNCTIONS: Dict[str, Callable[[dict, dict, float], Result]] = {"UserPromptSubmit": link, "PreToolUse": guard,
-                                                              "PostToolUse": reflect}
+                                                              "PostToolUse": reflect, "Stop": stop}
 
 
 def main(event: str) -> int:
