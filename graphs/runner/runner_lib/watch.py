@@ -18,11 +18,10 @@ from . import ledgerview, paths, walk
 from ledger import jira_read  # noqa: E402
 from lib import jira_fake  # noqa: E402  (graphs/gates/lib, on sys.path through paths)
 from lib.jira import Jira, JiraError  # noqa: E402
-from lib.triage import SPRINT_FIELD  # noqa: E402
 from lib.triage.port import ROUTE_PROPERTY, SPEC_PROPERTY  # noqa: E402
 
 RULES = paths.HERE / "starts.json"
-FIELDS = ["issuetype", "status", SPRINT_FIELD]
+FIELDS = ["issuetype", "status", "labels"]
 SEARCH_LIMIT = 50
 
 
