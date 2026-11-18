@@ -263,6 +263,18 @@ class JiraRead(unittest.TestCase):
         env = {"JOSH360_JIRA_EMAIL": "a@example.invalid", "JOSH360_JIRA_TOKEN": "made-up-token"}
         self.assertEqual(jira_read.credentials(env, run=boom), ("a@example.invalid", "made-up-token"))
 
+    def test_the_keychain_item_is_found_by_name_whatever_its_account_is(self):
+        asked = []
+
+        def keychain(argv, **kwargs):
+            asked.append(list(argv))
+            return type("Done", (), {"returncode": 0, "stdout": "made-up-token\n"})()
+        found = jira_read.credentials({"JOSH360_JIRA_EMAIL": "a@example.invalid"}, run=keychain)
+        self.assertEqual(found, ("a@example.invalid", "made-up-token"))
+        self.assertEqual(len(asked), 1)
+        self.assertIn("jira-claude-api-key", asked[0])
+        self.assertNotIn("-a", asked[0])
+
     def test_the_fetch_hides_failures_and_never_echoes_the_token(self):
         env = {"JOSH360_JIRA_EMAIL": "a@example.invalid", "JOSH360_JIRA_TOKEN": "made-up-token"}
 
