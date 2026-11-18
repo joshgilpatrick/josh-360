@@ -16,9 +16,33 @@ OTHER = "acct-someone-else"
 CREATED = "2026-11-17T09:00:00.000+0000"
 
 
+VALIDATION_YES = """- Needed: yes
+- Starts: at Deployed
+- Check every: 1 day
+- Complete when: 7 checks in a row pass
+- Give up after: 21 days
+
+```gherkin
+@validate
+Scenario: The install job runs clean
+  When the watch reads job laptop-follow
+  Then last_exit is 0
+  And hours_since_run is at most 2
+
+@validate
+Scenario: The doctor reports no failed check
+  When the watch reads report doctor summary.fail
+  Then value is 0
+```"""
+
+
 def description(**over):
-    """The ADF description a script would write for a complete Story."""
+    """The ADF description a script would write for a complete Story. `validation=` is the text of its Validation
+    section (the default says Needed: no)."""
+    validation = over.pop("validation", None)
     sections = h.section_set(**over.pop("sections", {}))
+    if validation is not None:
+        sections["validation"] = validation
     return adf.ticket_description({"type": over.pop("type", "Story"), "sections": sections,
                                    "repository": over.pop("repository", "josh-360"),
                                    "where_it_runs": over.pop("where_it_runs", "Cloud session")})
