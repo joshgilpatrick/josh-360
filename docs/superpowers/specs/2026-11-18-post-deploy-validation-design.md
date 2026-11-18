@@ -110,7 +110,7 @@ A new required section on every Story, Task and Bug, placed after Acceptance cri
 | Field | What it answers | Allowed values |
 | --- | --- | --- |
 | Needed | Does this ticket need a watch after it ships? | `yes`, or `no.` followed by one sentence saying why |
-| Starts | When does the watch begin? | `at Deployed`, `on 2026-12-01` (a date), or `after JP-170 is Done` (another ticket shipping) |
+| Starts | When does the watch begin? | `at Deployed`, `on 2026-12-01` (a date), or `after JP-170 is Done` (another ticket shipping). [When the watch begins](#how-the-watch-runs) says how each is held |
 | Check every | How often is a reading taken? | `<n> hours` or `<n> days`, from 1 hour to 7 days |
 | Complete when | When is it enough? | `<n> checks in a row pass`, or `after <n> events` |
 | Give up after | How long does it watch before stopping without an answer? | `<n> days`, up to 90 |
@@ -223,7 +223,7 @@ The Ready checklist (`graphs/gates/lib/triage/checklist.py`) gains seven items f
 | --- | --- |
 | V1 | The ticket has a Validation section with a `Needed:` line that says `yes` or `no` |
 | V2 | "Needed: no" carries a reason of at least four words |
-| V3 | "Needed: yes" has Starts, Check every, Complete when and Give up after, each in its allowed form |
+| V3 | "Needed: yes" has Starts, Check every, Complete when and Give up after, each in its allowed form. A Starts date is a real calendar date, and a Starts ticket is not the ticket itself |
 | V4 | "Needed: yes" has at least one `@validate` scenario, and at least one of them is measured (not `@manual`) |
 | V5 | Every measured scenario names a collector on the list, with an argument in that collector's shape |
 | V6 | Every `Then` names a field that collector returns and a comparison on the list |
@@ -268,8 +268,8 @@ Eleven steps. None uses a model, so no step has a tier.
 | Step | Kind | Access | What it does | Outcomes |
 | --- | --- | --- | --- | --- |
 | `read_criteria` | gate `read-validation` | read | Reads the Validation section with the parser above. | `watch`, `not_needed` (says no, or no section), `unreadable` |
-| `start_watch` | gate `start-watch` | josh | Writes this round's plan to the run's work folder and posts the start comment on the ticket. | `started` |
-| `watch` | wait `watch-criteria` | read | Answers "not yet" until a check is due; then takes a reading for each criterion, logs it and grades the log. | `met`, `needs_josh` (measured criteria met, a manual one is left), `not_met`, `no_data`, `left_deployed` (ends the run) |
+| `start_watch` | gate `start-watch` | josh | Writes this round's plan to the run's work folder, with the time the watch begins when the Starts line already fixes it, and posts the start comment on the ticket. | `started` |
+| `watch` | wait `watch-criteria` | read | Answers "not yet" until the watch has begun and a check is due; then takes a reading for each criterion, logs it and grades the log. | `met`, `needs_josh` (measured criteria met, a manual one is left), `not_met`, `no_data`, `left_deployed` (ends the run) |
 | `verdict` | gate `validation-verdict` | read | Adds up the section and the watch into one answer, and writes the evidence table and, when Josh is needed, the card he reads. | `met`, `not_needed`, `not_met`, `undecided` |
 | `close` | gate `close-watch` | josh, moves the ticket | Posts the evidence and moves the ticket to Done. | `closed` |
 | `close_unwatched` | gate `close-watch` | josh, moves the ticket | Says there was nothing to watch and moves the ticket to Done. Ends the run. | `closed` |
@@ -304,18 +304,35 @@ The runner's job already wakes every five minutes and asks the walker to move ea
 3. Adds one line to the check log: the time, each criterion's reading, and pass, fail or unknown for each.
 4. Grades the whole log, as below.
 
-**The first check** is taken one "Check every" after the watch starts, never at the start. A merge takes about ten minutes to install on the laptop, and a reading taken before that would grade the old code.
+**When the watch begins.** A round starts when `start_watch` runs. The watch itself begins at the moment the ticket's Starts line names, and never before the round starts:
+
+| Starts line | The watch begins |
+| --- | --- |
+| `at Deployed` | When the round starts. |
+| `on <date>` | At the start of that day by the laptop's clock, or when the round starts if that is later. |
+| `after <KEY> is Done` | When the watch script first reads that ticket in Done. It looks once an hour, in the same hourly look that confirms the watched ticket is still in Deployed. |
+
+Until the watch has begun, the script answers "not yet": it takes no reading, so nothing can be graded and no Bug can be filed for a change that does not exist yet. "Give up after" is counted from the moment the watch begins, not from the start of the round, so the timetable the Ready check passed (V7) is the timetable the watch gets.
+
+Waiting to begin has its own end, so a watch cannot wait for ever. The watch ends as `no_data`, and Josh is asked, when the named ticket is Cancelled or does not exist, or when 90 days have passed since the round started and the watch has still not begun. A Jira read that fails is unknown, not an answer: the script keeps waiting.
+
+`start_watch` writes the beginning time into the watch file for the first two forms. For the third it leaves it empty, and the watch script records it as the first line of its check log when it sees the other ticket in Done.
+
+**The first check** is taken one "Check every" after the watch begins, never at the beginning. A merge takes about ten minutes to install on the laptop, and a reading taken before that would grade the old code.
 
 **A check passes** when every measured criterion passes. It **fails** when any fails. It is **unknown** when no criterion failed and at least one could not be read. An unknown check does not count toward a run of passes and does not break one.
+
+The section's "Fail after" number travels with the rest of the timetable: `read_criteria` returns it as `fail_after` (3 when the line is left out), `start_watch` writes it to the watch file, and the watch script reads it from there.
 
 **Grading, for "`<n>` checks in a row pass":**
 
 | The log shows | The watch ends as |
 | --- | --- |
 | The last `n` known checks all passed | `met` (or `needs_josh` if the ticket has a manual criterion) |
-| The last 3 known checks all failed (or the number on a "Fail after" line) | `not_met`, early |
+| The last `f` known checks all failed, where `f` is the number on the "Fail after" line, or 3 when the ticket has none | `not_met`, early |
 | "Give up after" has passed, and at least one check failed | `not_met` |
 | "Give up after" has passed, and no check ever failed (too few readings, or none) | `no_data` |
+| The watch never began (see "When the watch begins") | `no_data` |
 | None of these | not yet |
 
 **Grading, for "after `<n>` events":** nothing is graded until every measured criterion's `events` has reached `n`. Then the readings are compared once: all pass is `met`, any fail is `not_met`. If "Give up after" passes first, the watch ends as `no_data`.
@@ -331,7 +348,7 @@ The runner's job already wakes every five minutes and asks the walker to move ea
 1. **The ticket stays in Deployed.** It shipped, and it is not proven.
 2. **One linked Bug is filed**, by a script, from a fixed template: which criteria failed, the counts, and where to look. It lands in Not Started like any drafted ticket, so triage completes it and signs it off, and it starts when Josh gives it the `ready-to-run` label. That label is Josh's lever: the graph tells him the change failed, and he decides when the fix is worth doing. The Bug carries the label `validation-failure`, and its own Validation section says "Needed: no. The watch on JP-<n> proves this fix."
 3. **The run waits for the Bug.** No session, no model, a Jira read at most once an hour.
-4. **When the Bug reaches Done, the watch starts again from the top**: the section is read afresh (so an edit to the criteria counts), a new round begins, and the first check is one interval later.
+4. **When the Bug reaches Done, the watch starts again from the top**: the section is read afresh (so an edit to the criteria counts), a new round begins, and the first check is one interval later. The Starts line is applied again, so a date that has passed or a ticket that is already Done lets the new round begin at once.
 5. **When the Bug is cancelled**, Josh is asked what should happen to the ticket.
 6. **After two fixes have shipped**, Josh is asked before a third round of watching.
 
@@ -339,11 +356,12 @@ If a Bug with the `validation-failure` label is already open and linked to the t
 
 ## When no data arrives, and the one question
 
-The graph has one question for Josh, and five ways to reach it:
+The graph has one question for Josh, and six ways to reach it:
 
 | What happened | What the card says |
 | --- | --- |
 | "Give up after" passed with too few readings | Which criteria had no readings, and why the collector could not read |
+| The watch never began | Which Starts line it was waiting on, and why it cannot begin (the ticket was cancelled or does not exist, or 90 days passed) |
 | The measured criteria are met and a manual criterion is left | Each manual criterion's statement, to confirm |
 | The Validation section cannot be read | Each line the script could not read, and what would pass |
 | The fix for a failed watch was cancelled | Which criteria still fail, and which Bug was cancelled |
@@ -455,6 +473,8 @@ The start comment (`start_watch`):
 
 > Watching this change in production | {n} criteria; a check every {interval}; complete when {complete_when}; gives up after {give_up} | next gate: first check due {time}.
 
+When the Starts line names another ticket, `{time}` reads "one check after {KEY} is Done".
+
 The closing comment when the criteria are met (`close`), followed by the evidence table:
 
 > Validated in production | {complete_when}, reached on check {k} of round {r} | next gate: none.
@@ -487,7 +507,7 @@ The hold comment (`hold`):
 2. A script reads the section. No model reads it, and no model runs on any check.
 3. A collector only reads, never runs text from a ticket, and returns numbers and short codes only.
 4. Unknown is not a pass and not a fail.
-5. The first check is one interval after the watch starts.
+5. The watch begins no earlier than its Starts line says, and takes no reading before then. The first check is one interval after it begins.
 6. A ticket is moved to Done by the validation graph only when its criteria were met, when it has nothing to watch, or on Josh's accept. Each case leaves a comment saying which.
 7. A failed watch leaves the ticket in Deployed and files at most one open Bug.
 8. A flagged ticket in Deployed is never picked up.
@@ -543,6 +563,31 @@ Feature: Post-deploy validation
     Given a watch with no "Fail after" line
     When three checks in a row fail
     Then the watch ends as not_met before "Give up after"
+
+  @auto
+  Scenario: A "Fail after" line changes when a watch ends early
+    Given a watch with "Fail after: 5 checks in a row fail"
+    When three checks in a row fail
+    Then the watch has not ended
+
+  @auto
+  Scenario: A watch that starts on a date takes no reading before it
+    Given a watch with "Starts: on" a date three days away
+    When the watch script runs today
+    Then it answers pending without running any collector
+    And the first check is due one interval after the start of that date
+
+  @auto
+  Scenario: A watch that waits for another ticket begins when that ticket is Done
+    Given a watch with "Starts: after JP-170 is Done" and JP-170 in Code Review
+    When JP-170 reaches Done
+    Then the watch begins and "Give up after" is counted from that moment
+
+  @auto
+  Scenario: A watch whose start can never come ends as no data
+    Given a watch with "Starts: after JP-170 is Done"
+    When JP-170 is Cancelled
+    Then the watch ends as no_data and Josh is asked
 
   @auto
   Scenario: A watch with no readings ends as no data
@@ -651,7 +696,8 @@ Each can be undone. Josh approved the spec with these as written.
 | A ticket in Deployed with no Validation section is moved to Done with a comment, not put to Josh | It keeps action-triage and older tickets working with no backfill, and the comment makes it visible | Ask Josh for each one |
 | A failed watch files its Bug without asking | Everything with a deliverable becomes a ticket first; Josh's `ready-to-run` label still decides when it is worked | Ask before filing |
 | Three failing checks in a row end a watch early | A week of red before a Bug is filed is too slow; one red check is too jumpy | A different number, or the optional "Fail after" line made required |
-| The first check is one interval after the start | The laptop needs about ten minutes to install a merge | A separate "wait before first check" field |
+| The first check is one interval after the watch begins | The laptop needs about ten minutes to install a merge | A separate "wait before first check" field |
+| A watch that has not begun 90 days after its round started ends as `no_data` | The same bound as "Give up after"; a start that never comes should reach Josh, not wait for ever | Another bound, or no "on a date" and "after a ticket" forms at all |
 | Josh is asked after two shipped fixes, not three | Two failed fixes usually means the criteria or the approach is wrong | A limit of 2 |
 | Stop leaves the ticket in Deployed, flagged | The flag is already how a ticket says "needs Josh", and it shows on the board | Move it back to In Progress |
 | "Give up after" is capped at 90 days, "Check every" runs from 1 hour to 7 days | A watch longer than a quarter is a standing measure, not a ticket | Other bounds |
