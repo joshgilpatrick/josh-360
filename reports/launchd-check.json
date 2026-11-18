@@ -1,29 +1,19 @@
 {
-  "differences": [
-    {
-      "detail": "JP-111, job retire-session-atlas and still installed (not loaded)",
-      "kind": "retired but present",
-      "label": "com.eventus.claude-atlas"
-    },
-    {
-      "detail": "JP-119, job retire-leftover-jobs (Josh's answer to question 4, 16 November) and still installed (not loaded)",
-      "kind": "retired but present",
-      "label": "com.omnara.daemon"
-    }
-  ],
+  "differences": [],
   "job": "launchd-check",
   "josh360_jobs": {
-    "last_run_failed": [
-      "retire-session-atlas",
-      "retire-leftover-jobs"
-    ],
-    "listed": 15,
-    "never_run": [
-      "launchd-check"
-    ]
+    "last_run_failed": [],
+    "listed": 17,
+    "never_run": []
   },
-  "known_gaps": [],
-  "ok": false,
+  "known_gaps": [
+    {
+      "detail": "Session Atlas is a long-running service that has to stay up, because the worktree removal guard fails closed when it cannot reach it. Until its definition is on the macbook-automations startup list, the job session-atlas-service installs it. That change to macbook-automations waits for the phase 1 close; docs/phase-1-close-checklist.md lists the two steps that move it and remove the installer. Ends with phase 1 close (JP-120).",
+      "kind": "transitional",
+      "label": "com.josh360.session-atlas"
+    }
+  ],
+  "ok": true,
   "on_list": [
     "com.jgilpatrick.agent-manager",
     "com.jgilpatrick.automations-hub",
@@ -34,6 +24,6 @@
     "com.jgilpatrick.sync-opencode-agents"
   ],
   "startup_repo_found": true,
-  "time": "2026-11-17T21:34:35Z",
+  "time": "2026-11-18T21:41:38Z",
   "unknown": []
 }
