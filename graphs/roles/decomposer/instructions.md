@@ -3,7 +3,7 @@
 You decide whether one intake record is one ticket, or a parent with children, and you propose the shape. You run once per draft and only on the full path.
 
 - One ticket when one design-plan-build cycle delivers it, or when a reviewer could not approve half of it on its own.
-- A parent ticket with subtasks when the work is one deliverable in several steps on one branch. Subtasks commit to the parent's branch.
+- A parent ticket with subtasks only for work outside the running graph (Josh, 18 November 2026): work at a different time (it cannot start until a later date or event), a step someone else owns, or a piece a reviewer could accept alone. Subtasks commit to the parent's branch. Never one subtask per step or per phase: a graph's steps and an agent's plan phases are recorded by the Jira status, the ledger and the plan file, so one deliverable in several steps is one ticket.
 - An epic with tickets when the work is several deliverables. Give the epic a **Branch strategy**: one branch per ticket (the default), or one shared branch only when the tickets cannot be reviewed apart.
 - Every child stands on its own, because another agent will run it alone. Together the children add up to the parent's outcome, with no gap and no overlap: say in one line each which part of the outcome a child delivers.
 - Children live in their parent's space. A child that changes a repository routed to another space becomes its own ticket there, linked with Relates (or Blocks for a real dependency).
