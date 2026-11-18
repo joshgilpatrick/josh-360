@@ -145,3 +145,44 @@ class RunnerCase(WalkerCase):
     def later(self, seconds):
         self.now += seconds
         return self.now
+
+    # -- advancing a run (Task 9) ------------------------------------------------------------------------------
+    def advance(self, run):
+        """One pass of `advance` for the run at the made-up clock; returns the state word."""
+        from runner_lib import advance
+        return advance.advance(run, now=lambda: self.now, root=self.root)["state"]
+
+    def session_doc(self, run, step="design", attempt=1):
+        from runner_lib import sessionfile
+        return sessionfile.read(run, step, attempt)
+
+    def write_session(self, run, state, key="0123456789abcdef", **changes):
+        """A session file in the state a crash could have left it in (the walker has opened the step first)."""
+        from runner_lib import sessionfile
+        a = self.walker("next", "--run", run)
+        doc = {"run": run, "step": a["step"], "attempt": a["attempt"], "graph": a["graph"], "ticket": a["ticket"],
+               "access": a["access"], "tier": a["tier"], "outcomes": a["outcomes"], "result_file": a["result_file"],
+               "work_dir": a["work_dir"], "key": key, "state": state, "intent_at": self.now, "started_at": None,
+               "handle": None, "comments": "", "resting_since": None, "spawn_failures": 0, "ended_at": None,
+               "reason": None, "closed": None}
+        doc.update(changes)
+        sessionfile.write(run, a["step"], a["attempt"], doc)
+        return doc
+
+    def session_ends(self, run, step, outcome, outputs=None, attempt=1):
+        """The step's session writes its result and comes to rest (the fake's status becomes `idle`)."""
+        doc = self.session_doc(run, step, attempt)
+        path = Path(doc["result_file"])
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({"outcome": outcome, "outputs": outputs or {}}))
+        os.utime(str(path), (self.now, self.now))
+        if doc.get("handle"):
+            self.am_set(doc["handle"]["am_session"], status="idle")
+        return path
+
+    def set_entry(self, session_id="cc-1", **changes):
+        from ledger import graph_sessions
+        path = graph_sessions.entry_path(session_id)
+        doc = json.loads(path.read_text())
+        doc.update(changes)
+        path.write_text(json.dumps(doc))
