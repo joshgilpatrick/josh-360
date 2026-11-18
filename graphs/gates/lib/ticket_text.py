@@ -13,8 +13,8 @@ from typing import Dict, List, Optional
 INFERRED_MARKER = "(inferred)"   # a section value the drafter worked out, not one Josh gave (decisions.md, JP-123)
 
 SECTION_NAMES = [
-    "Goal", "First step", "Why", "In scope", "Not in scope", "Acceptance criteria", "Repository", "Where it runs",
-    "Parent or related", "Decisions already made", "Open questions", "Current behaviour", "Question", "Sources",
+    "Goal", "First step", "Why", "In scope", "Not in scope", "Acceptance criteria", "Validation", "Repository",
+    "Where it runs", "Parent or related", "Decisions already made", "Open questions", "Current behaviour", "Question", "Sources",
     "Deliverable format", "Phases", "Done when", "Related work", "Branch strategy",
 ]
 _NAMES = "|".join(re.escape(n) for n in sorted(SECTION_NAMES, key=len, reverse=True))
@@ -51,6 +51,18 @@ def collapse(text: Optional[str]) -> str:
     return re.sub(r"\s+", " ", text or "").strip()
 
 
+def _opening(line: str):
+    """(the section name as written in SECTION_NAMES, the text after it on the line) when the line opens a section."""
+    match = _HEADING.match(line)
+    if not match:
+        return None
+    marked = bool(match.group(1) or match.group(3) or re.match(r"^\s*#", line))
+    rest = match.group(4).strip()
+    if not (marked or not rest):
+        return None
+    return next(n for n in SECTION_NAMES if n.lower() == match.group(2).lower()), rest
+
+
 def parse_sections(description: Optional[str]) -> Dict[str, str]:
     """Each named section's text, keyed by its name as written in SECTION_NAMES. A name that opens no section is absent.
 
@@ -60,22 +72,30 @@ def parse_sections(description: Optional[str]) -> Dict[str, str]:
     sections: Dict[str, List[str]] = {}
     current: Optional[str] = None
     for line in (description or "").splitlines():
-        match = _HEADING.match(line)
-        opens = False
-        if match:
-            marked = bool(match.group(1) or match.group(3) or re.match(r"^\s*#", line))
-            rest = match.group(4).strip()
-            opens = marked or not rest
-        if opens:
-            name = next(n for n in SECTION_NAMES if n.lower() == match.group(2).lower())
-            current = name
-            sections.setdefault(name, [])
-            rest = match.group(4).strip()
-            if rest:
-                sections[name].append(rest)
+        opened = _opening(line)
+        if opened:
+            current = opened[0]
+            sections.setdefault(current, [])
+            if opened[1]:
+                sections[current].append(opened[1])
         elif current is not None:
             sections[current].append(line)
     return {name: "\n".join(lines).strip() for name, lines in sections.items()}
+
+
+def without_section(description: Optional[str], name: str) -> str:
+    """The description with every line of the named section removed, its opening line included. Lines before the
+    first section stay. Read a ticket's Acceptance criteria scenarios through this when the other sections hold
+    scenarios of their own (the Validation block)."""
+    kept: List[str] = []
+    current: Optional[str] = None
+    for line in (description or "").splitlines():
+        opened = _opening(line)
+        if opened:
+            current = opened[0]
+        if current != name:
+            kept.append(line)
+    return "\n".join(kept)
 
 
 def words(text: Optional[str], minimum: int = 4) -> List[str]:
