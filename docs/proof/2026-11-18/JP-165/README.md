@@ -36,4 +36,4 @@ Run on 18 November 2026 in a cloud session, Python 3.13 (the code uses only what
 
 - `graphs/tests`: 806 tests, OK.
 - `python3 scripts/check.py --fast`: `check.py: ok (0 problem(s))`.
-- Full `python3 scripts/check.py`: see the pull request.
+- Full `python3 scripts/check.py`: `check.py: ok (0 problem(s))` (1092 tests in `tests/`, 806 in `graphs/tests/`).
