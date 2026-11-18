@@ -141,6 +141,16 @@ class TheOffer(HookCase):
                          [("offered", "first-commit", "sess-0001")])
         self.assertTrue(self.marker().is_file())
 
+    def test_offer_is_quiet_in_a_graph_session(self):
+        self.make_repo("feature-x")
+        folder = self.home / "state" / "graph-sessions"
+        folder.mkdir(parents=True)
+        (folder / "sess-0001.json").write_text("{}")          # JP-117: the runner's link for a step session
+        result = self.run_hook(self.commit_input())
+        self.assertEqual((result.returncode, result.stdout), (0, ""))
+        self.assertEqual(self.offer_lines(), [])
+        self.assertFalse(self.marker().exists())
+
     def test_a_new_branch_with_no_ticket_key_offers_too(self):
         self.make_repo("main")
         result = self.run_hook(self.commit_input(command="git checkout -b feature-y"))
