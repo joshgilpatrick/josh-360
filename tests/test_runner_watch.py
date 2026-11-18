@@ -142,8 +142,22 @@ class Watching(RunnerCase):
         shipped = watch.load_rules(SHIPPED)
         self.assertEqual([g for g, r in shipped["graphs"].items() if r.get("on")], ["development"])
 
+    def test_credentials_come_from_the_email_file_and_the_keychain_when_the_environment_has_none(self):
+        from types import SimpleNamespace
+        from laptop import common
+        common.state_dir().mkdir(parents=True, exist_ok=True)
+        (common.state_dir() / "jira-email").write_text("josh@example.com\n")
+        keychain = lambda *a, **k: SimpleNamespace(returncode=0, stdout="made-up-token\n")      # noqa: E731
+        client = watch.jira_client({}, run=keychain)
+        self.assertIsNotNone(client)
+        self.assertEqual(client._auth.split()[0], "Basic")
+        nothing = lambda *a, **k: SimpleNamespace(returncode=44, stdout="")                      # noqa: E731
+        self.assertIsNone(watch.jira_client({}, run=nothing))
+
     def test_no_credentials_is_not_a_crash(self):
-        self.assertIsNone(watch.jira_client({}))
+        from types import SimpleNamespace
+        nothing = lambda *a, **k: SimpleNamespace(returncode=44, stdout="")                      # noqa: E731
+        self.assertIsNone(watch.jira_client({}, run=nothing))
         self.assertEqual(self.watch(jira=None), {"runner-sample": {"jira": "no-credentials", "started": [],
                                                                    "skipped": {}}})
 
