@@ -38,6 +38,8 @@ Checks:
 
  15. JP-153: the per-ticket decision files in docs/decisions/ pass scripts/decisions.py check, and no default-choice
      row is left in the old shared table in docs/decisions.md.
+ 17. JP-160: jobs.yaml reads with a standard YAML reader (yaml.safe_load), and gives the same jobs, key by key,
+     as the laptop's own strict reader (laptop/common.py), which must also accept it. Needs PyYAML.
 
 Tickets that add code add their own checks here or beside it. Exit 0 when everything passes, 1 otherwise.
 """
@@ -303,6 +305,52 @@ def conventions_problems() -> list[str]:
     return problems
 
 
+def yaml_jobs(data) -> list:
+    """The jobs a standard YAML reader gives, in the strict reader's form (every value text; true/false for a
+    boolean). Anything else is left as YAML gave it, so a comparison shows the difference."""
+    if not isinstance(data, dict) or list(data) != ["jobs"] or not isinstance(data["jobs"], list):
+        raise ValueError("the file must be one 'jobs:' list")
+    jobs = []
+    for job in data["jobs"]:
+        if not isinstance(job, dict):
+            raise ValueError("every job must be a set of key: value lines")
+        jobs.append({str(k): ("true" if v is True else "false" if v is False else v) for k, v in job.items()})
+    return jobs
+
+
+def jobs_yaml_problems(text: str) -> list[str]:
+    """JP-160: jobs.yaml reads the same with yaml.safe_load as with the laptop's strict reader."""
+    sys.path.insert(0, str(ROOT))
+    from laptop import common
+    try:
+        strict = common.parse_jobs_text(text)
+        common.validate_jobs(strict, ROOT)
+    except common.Unexpected as exc:
+        return [f"jobs.yaml: the laptop's reader refuses it: {exc}"]
+    try:
+        import yaml
+    except ImportError as exc:
+        return [f"cannot check jobs.yaml: {exc} (pip install -r requirements.txt)"]
+    try:
+        loose = yaml_jobs(yaml.safe_load(text))
+    except yaml.YAMLError as exc:
+        where = getattr(exc, "problem_mark", None)
+        line = f" at line {where.line + 1}" if where is not None else ""
+        return [f"jobs.yaml: a standard YAML reader cannot read it{line}: {getattr(exc, 'problem', exc)}; "
+                f"put a value holding \": \" in double quotes"]
+    except ValueError as exc:
+        return [f"jobs.yaml: a standard YAML reader reads a different shape: {exc}"]
+    if len(loose) != len(strict):
+        return [f"jobs.yaml: a standard YAML reader finds {len(loose)} jobs, the laptop's reader {len(strict)}"]
+    problems = []
+    for mine, theirs in zip(strict, loose):
+        for key in sorted(set(mine) | set(theirs)):
+            if mine.get(key) != theirs.get(key):
+                problems.append(f"jobs.yaml: job {mine.get('id')!r}, {key}: the laptop reads {mine.get(key)!r}, "
+                                f"a standard YAML reader {theirs.get(key)!r}; quote it")
+    return problems
+
+
 INVENTORY_VERDICTS = {"keep", "migrate", "build new", "dismantle"}
 
 
@@ -402,6 +450,8 @@ def main() -> int:
             problems.append(f"missing: {rel}")
     problems += conventions_problems()
     problems += laptop_problems()
+    if (ROOT / "jobs.yaml").is_file():
+        problems += jobs_yaml_problems((ROOT / "jobs.yaml").read_text(encoding="utf-8"))
     if "--fast" not in sys.argv[1:]:
         problems += test_problems()
 
