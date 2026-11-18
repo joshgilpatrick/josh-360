@@ -28,7 +28,8 @@ Preconditions:
 - **Copy moved.** Run `$S doctor --run <id>`. `"ok": true` with `"commit"` equal to the new `main`: the copy followed and the install record matches.
 - **Status branch.** Run `$S run --run <id> --name status-show -- python3 laptop/status.py show`. `"result": "passed"`, `"commit"` and `"main"` equal to the new commit, and a `reports:` line naming the jobs' reports. Second view: `git -C <run>/origin.git log --oneline laptop-status` lists `report <job>` commits.
 - **Job list.** Run `$S run --run <id> --name run-jobs-list -- python3 laptop/run_jobs.py --list`. Every job `not due` with `last exit 0`.
-- **Pause.** Run `$S run --run <id> --name pause-on -- python3 laptop/pause.py on`, then `$S advance-main --run <id>` and the runner again. `follow` does not move the copy: `$S doctor` reports the copy behind `main`. Run `laptop/pause.py off` to resume.
+- **Pause.** Run `$S run --run <id> --name pause-on -- python3 laptop/pause.py on` (it prints `paused: ...`), then `$S advance-main --run <id>` and `python3 laptop/follow.py` through `$S run`. The copy does not move: `$S doctor` prints `"ok": false` with `the copy is at ..., not the sandbox's main ...` and `doctor check install.not-paused is fail`.
+- **Resume.** Run `$S run --run <id> --name pause-off -- python3 laptop/pause.py off` (`following: ...`), then `$S run --run <id> --name follow -- python3 laptop/follow.py`. Its last lines are `follow: passed (installed), commit <new main>` and `status: pushed`, and `$S doctor` is `"ok": true` again.
 
 ## Gotchas
 
@@ -36,4 +37,5 @@ Preconditions:
 - `install.py` (without `--dry-run`), `run_jobs.py` and `follow.py` refuse to run anywhere but `$JOSH360_HOME/repo`. That is why the sandbox clones a copy there.
 - A runner pass also runs the one-time jobs (`inventory`, the `retire-*` jobs, `ledger-backfill`). In the sandbox they act on the sandbox `HOME` only; on the laptop they are real.
 - Jobs that need Jira, Azure or launchd report `not-configured`, skip or fail quietly in the sandbox; read their report with `status.py show <job>` rather than trusting `exit 0`.
+- `follow` is due every 10 minutes, so a second runner pass straight after the first skips it. Run `laptop/follow.py` (the job's own script) to follow now.
 - The sandbox drives committed `HEAD`. A working-tree change you forgot to commit is not in the copy.
