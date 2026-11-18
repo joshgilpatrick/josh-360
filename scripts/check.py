@@ -38,6 +38,9 @@ Checks:
 
  15. JP-153: the per-ticket decision files in docs/decisions/ pass scripts/decisions.py check, and no default-choice
      row is left in the old shared table in docs/decisions.md.
+ 16. JP-158: the documentation checks in scripts/docs_check.py: every anchor and relative link in a tracked
+     Markdown file resolves, every top-level folder has a README, the roles and agents READMEs name every
+     folder, and the verify-josh-360 skill and its feature map keep their shape.
 
 Tickets that add code add their own checks here or beside it. Exit 0 when everything passes, 1 otherwise.
 """
@@ -427,6 +430,9 @@ def main() -> int:
     code, output = run_quietly(["scripts/decisions.py", "check"])
     if code != 0:
         problems.append(f"decision files check failed (JP-153):\n{output}")
+    code, output = run_quietly(["scripts/docs_check.py"])
+    if code != 0:
+        problems.append(f"documentation check failed (JP-158):\n{output}")
     if "--fast" not in sys.argv[1:]:
         code, output = run_quietly(["-m", "unittest", "discover", "-s", "graphs/tests"])
         if code != 0:
