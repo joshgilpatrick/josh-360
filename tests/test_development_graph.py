@@ -3,7 +3,7 @@
 The walker, the ledger and `graphs/flows/development.yaml` are real. Each gate script's own `run` is called in-process
 with a fake Jira ticket, a fake GitHub and a real scratch git repository (a gate script run for real needs a Jira
 token and `gh`); a role step is played by the test, which writes the spec, commits files in the worktree and records
-the role's outcome. `ready` and `no-loose-ends` belong to JP-122 and JP-109 and are let through. Made-up data only, no
+the role's outcome. `ready` and `no-loose-ends` are tested in their own tickets (JP-122, JP-161) and are let through here. Made-up data only, no
 network.
 """
 import json
