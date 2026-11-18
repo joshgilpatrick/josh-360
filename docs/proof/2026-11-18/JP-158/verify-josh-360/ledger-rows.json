@@ -1,0 +1,15 @@
+{
+  "database": "/tmp/verify-josh-360/jp158-proof/home/.josh-360/state/ledger.db",
+  "read_at": "2026-11-18T12:29:59Z",
+  "rows": [
+    {
+      "branch": "JP-9001-sample-work",
+      "end_reason": "session-end",
+      "episode": 1,
+      "session_uid": "m-3e09f3b6:claude-code:verify-sess-0001",
+      "started_by": "josh"
+    }
+  ],
+  "run": "jp158-proof",
+  "sql": "SELECT s.session_uid, s.started_by, e.episode, e.end_reason, e.branch FROM sessions s JOIN session_episodes e ON e.session_uid = s.session_uid"
+}

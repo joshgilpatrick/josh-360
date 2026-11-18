@@ -1,0 +1,15 @@
+{
+  "command": [
+    "python3",
+    "ledger/ask.py",
+    "home",
+    "--session",
+    "verify-sess-0001"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp158-proof/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp158-proof",
+  "started_at": "2026-11-18T12:29:59Z",
+  "stderr": "",
+  "stdout": "{\"query\": \"home\", \"rows\": [{\"epic_key\": null, \"method\": \"branch\", \"session_uid\": \"m-3e09f3b6:claude-code:verify-sess-0001\", \"system\": null, \"ticket_key\": \"JP-9001\", \"tracker\": \"jira\"}], \"truncated\": false}\n"
+}

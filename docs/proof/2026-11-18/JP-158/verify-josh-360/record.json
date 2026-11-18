@@ -1,0 +1,12 @@
+{
+  "command": [
+    "python3",
+    "ledger/record.py"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp158-proof/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp158-proof",
+  "started_at": "2026-11-18T12:29:58Z",
+  "stderr": "",
+  "stdout": "{\"costs\": 0, \"episodes\": 1, \"homes\": 1, \"notes\": 0, \"offers\": 0, \"refs\": 3, \"sessions\": 1, \"skipped\": 0}\n"
+}
