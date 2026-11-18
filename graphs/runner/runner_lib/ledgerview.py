@@ -45,10 +45,14 @@ def run_rows(conn: sqlite3.Connection, run: str) -> List[dict]:
     return [dict(zip(keys, row)) for row in cur.fetchall()]
 
 
-def ended_runs(conn: sqlite3.Connection, since: str) -> List[dict]:
-    """Runs that ended at or after `since` (an ISO time), newest first."""
-    cur = conn.execute(
-        "SELECT g.run_id, g.graph_id, g.ticket_key, e.end_name, e.score, e.ended_at FROM graph_runs g JOIN "
-        "current_run_ends e ON e.run_id = g.run_id WHERE e.ended_at >= ? ORDER BY e.ended_at DESC, e.id DESC", (since,))
-    return [{"run": r[0], "graph": r[1], "ticket": r[2], "end": r[3], "score": r[4], "ended_at": r[5]}
+def ended_runs(conn: sqlite3.Connection, since: str, runner: Optional[str] = None) -> List[dict]:
+    """Runs that ended at or after `since` (an ISO time), newest first; only this runner's when `runner` is given."""
+    sql = ("SELECT g.run_id, g.graph_id, g.ticket_key, e.end_name, e.score, e.ended_at, g.started_at FROM graph_runs g "
+           "JOIN current_run_ends e ON e.run_id = g.run_id WHERE e.ended_at >= ?")
+    args = [since]
+    if runner is not None:
+        sql += " AND g.runner = ?"
+        args.append(runner)
+    cur = conn.execute(sql + " ORDER BY e.ended_at DESC, e.id DESC", args)
+    return [{"run": r[0], "graph": r[1], "ticket": r[2], "end": r[3], "score": r[4], "ended_at": r[5], "started_at": r[6]}
             for r in cur.fetchall()]
