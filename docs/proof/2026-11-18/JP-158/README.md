@@ -63,7 +63,7 @@ Every living document was read against the code. These were out of date and are 
 
 New: `docs/architecture.md`, `docs/README.md`, `scripts/README.md`, `tests/README.md`, `scripts/docs_check.py` and the `verify-josh-360` skill. Dated records (specs, plans, inventory, source notes, earlier proof) were left as written (`docs/decisions/JP-158.md`).
 
-Code problems the review found are filed as their own tickets rather than fixed here, as the ticket requires.
+Code problems the review found are filed as their own tickets rather than fixed here, as the ticket requires: JP-159 (Session Atlas's `backfill` and `recompute-projects` point at a missing script), JP-160 (`jobs.yaml` is not readable by a standard YAML reader) and JP-161 (the `no-loose-ends` gate is still a stub, so three graphs cannot finish).
 
 ## Files
 
