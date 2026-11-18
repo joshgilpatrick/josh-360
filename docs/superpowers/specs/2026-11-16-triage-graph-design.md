@@ -530,7 +530,7 @@ Built in JP-122. The graph is `graphs/flows/triage.yaml`; every gate it owns is 
 | The signing session is "the sign-off session" | Read from the ledger's record of the `sign_off` step, never from what the agent says. |
 | C3 | `none` is a valid answer for Repository (C7 and the routing table rule on it). |
 | The sign-off step runs after every check | `check_sign_off` runs only when `sign_off` ran, so a ticket that fails the checklist goes straight to the verdict. |
-| `no-loose-ends` is the exit gate | Still JP-109's stub. A run that reaches its end stops there, with the ticket already Ready. |
+| `no-loose-ends` is the exit gate | Built in JP-161 on JP-109's loose-ends finder: it checks what the run's sessions left, not the run's comment and status (the triage gates already confirm those). It stops the run until the recorder has written the sign-off session, and a retry then finishes it. |
 
 Owed on the laptop (not run in the cloud): the `@e2e` scenario, one run on two made-up JP tickets with the walker bound to Agent Manager, and a check that a real sign-off session's id reaches the ledger through `record --session`.
 
