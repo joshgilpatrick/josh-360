@@ -7,6 +7,7 @@ import re
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from runner_helpers import ROOT, RunnerCase, db, runfolder
 from runner_lib import hooklib
@@ -218,7 +219,8 @@ class Running(RunnerCase):
         (paths.state_dir() / "report.json").write_text("{}")
         os.environ.pop("JOSH360_JIRA_FAKE")
         out = io.StringIO()
-        self.assertEqual(triage_jp116_job.main(out=out), 0)
+        with mock.patch("ledger.jira_read.credentials", return_value=None):       # not this laptop's own keychain
+            self.assertEqual(triage_jp116_job.main(out=out), 0)
         self.assertEqual(json.loads(out.getvalue()), {"status": "waiting", "why": "no jira credentials"})
 
     def test_triage_job_waits_when_the_walker_does_not_admit_the_run(self):
