@@ -127,6 +127,8 @@ class FakeGitHub:
         self.base = "main"
         self.title = ""
         self.body = ""
+        self.default_branch_name = "main"
+        self.run_rows: List[dict] = []     # {"conclusion": str, "created_at": str}, newest first
 
     def _maybe(self, call: str) -> None:
         if call in self.fail_on:
@@ -199,6 +201,16 @@ class FakeGitHub:
     def delete_branch(self, branch):
         self._maybe("delete_branch")
         self.calls.append(("delete_branch", branch))
+
+    def default_branch(self):
+        self._maybe("default_branch")
+        self.calls.append(("default_branch",))
+        return self.default_branch_name
+
+    def workflow_runs(self, workflow, branch, since):
+        self._maybe("workflow_runs")
+        self.calls.append(("workflow_runs", workflow, branch, since))
+        return [dict(row) for row in self.run_rows if row["created_at"] >= since][:100]
 
 
 def make_dev_deps(tmp: Path, ticket=None, github=None, clone: Optional[Path] = None, merges: str = "josh", now=None,
