@@ -7,6 +7,7 @@ text from a run, because the snapshot is pushed to GitHub by the job runner.
 from __future__ import annotations
 
 import calendar
+import re
 import sqlite3
 import time
 from pathlib import Path
@@ -17,7 +18,12 @@ from walker_lib import graphfile, runfolder  # noqa: E402  (graphs/tools, put on
 
 RUNNER = "agent-manager"
 STATES = ("working", "queued", "parked", "waiting", "stopped", "between")
-COLUMNS = ("Step", "Kind", "Attempt", "Loops", "Tier", "Model", "Session", "Outcome", "Jira status", "Started", "Ended")
+COLUMNS = ("Step", "Kind", "Attempt", "Loops", "Tier", "Model", "Session", "Agent Manager session", "Outcome",
+           "Why it ended", "Jira status", "Started", "Ended")
+# The words `advance` writes when it abandons an attempt. Anything else in a session file is shown as "other", so the
+# report never carries text from a run.
+REASONS = ("spawn-refused", "never-started", "bad-result", "time-cap", "session-gone", "rested-without-result")
+_ID = re.compile(r"^[A-Za-z0-9._-]{1,80}$")
 ENDED_LIMIT = 10
 
 
@@ -107,6 +113,31 @@ def _graph(graph_id: str, root: Optional[Path]):
         return None
 
 
+def _id(value) -> Optional[str]:
+    return value if isinstance(value, str) and _ID.match(value) else None
+
+
+def _attempt_sessions(run_id: str, row: dict) -> dict:
+    """A role attempt's Agent Manager session, its Claude Code session when the ledger has none yet (an abandoned
+    attempt never records one), and why the runner abandoned it, from the attempt's session and link files."""
+    found = {"am_session": None, "reason": None}
+    if row["kind"] != "role":
+        return found
+    try:
+        doc = sessionfile.read(run_id, row["step"], row["attempt"]) or {}
+        link = sessionfile.read_link(run_id, row["step"], row["attempt"]) or {}
+    except sessionfile.Unreadable:
+        found["reason"] = "unreadable"
+        return found
+    handle = doc.get("handle") if isinstance(doc.get("handle"), dict) else {}
+    found["am_session"] = _id(handle.get("am_session")) or _id(link.get("am_session"))
+    if doc.get("state") == "abandoned":
+        found["reason"] = doc.get("reason") if doc.get("reason") in REASONS else "other"
+    if row.get("session") is None:
+        found["session"] = _id(link.get("session_id"))
+    return found
+
+
 def run_report(conn: sqlite3.Connection, run_id: str, root: Optional[Path] = None) -> dict:
     head = conn.execute("SELECT g.graph_id, g.ticket_key, g.runner, g.started_at, e.end_name, e.score FROM graph_runs g "
                         "LEFT JOIN current_run_ends e ON e.run_id = g.run_id WHERE g.run_id = ?", (run_id,)).fetchone()
@@ -119,6 +150,7 @@ def run_report(conn: sqlite3.Connection, run_id: str, root: Optional[Path] = Non
         steps.append({"step": row["step"], "kind": row["kind"], "attempt": row["attempt"], "loop_count": row["loop_count"],
                       "tier": row["tier"], "model": row["model"], "session": row["session"], "outcome": row["outcome"],
                       "jira_status": status, "started_at": row["started_at"], "ended_at": row["ended_at"]})
+        steps[-1].update(_attempt_sessions(run_id, steps[-1]))
     return {"run": run_id, "graph": head[0], "ticket": head[1], "runner": head[2], "started_at": head[3], "end": head[4],
             "score": head[5], "steps": steps}
 
@@ -137,8 +169,8 @@ def render(report: dict) -> str:
         return "" if value is None else str(value).replace("|", "/")
 
     ended = "Ended: {} ({})".format(report["end"], report["score"]) if report.get("end") else "Not ended yet"
-    keys = ("step", "kind", "attempt", "loop_count", "tier", "model", "session", "outcome", "jira_status", "started_at",
-            "ended_at")
+    keys = ("step", "kind", "attempt", "loop_count", "tier", "model", "session", "am_session", "outcome", "reason",
+            "jira_status", "started_at", "ended_at")
     lines = ["# {} · {} · {}".format(report.get("ticket") or "no ticket", report["graph"], report["run"]), "", ended,
              "", "| " + " | ".join(COLUMNS) + " |", "|" + " --- |" * len(COLUMNS)]
     lines += ["| " + " | ".join(cell(step.get(k)) for k in keys) + " |" for step in report["steps"]]
