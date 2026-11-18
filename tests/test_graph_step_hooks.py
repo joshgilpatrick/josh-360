@@ -2,6 +2,7 @@
 import json
 import os
 import subprocess
+import sys
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -75,6 +76,21 @@ class Linking(RunnerCase):
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, env=env)
         self.assertEqual((done.returncode, done.stdout), (0, ""), done.stderr)
         self.assertTrue(self.entry_file().is_file())
+
+    def test_guard_file_denies_a_graph_session_when_the_runner_code_cannot_load(self):
+        import shutil
+        self.session_starts(self.run_id, "design")
+        broken = self.tmp / "broken" / "hooks" / "PreToolUse"          # no graphs/runner beside it: the import fails
+        broken.mkdir(parents=True)
+        shutil.copy(str(ROOT / "hooks" / "PreToolUse" / "20-graph-step-guard"), str(broken / "20-graph-step-guard"))
+        results = {}
+        for session in ("cc-1", "cc-other"):
+            payload = json.dumps({"session_id": session, "hook_event_name": "PreToolUse", "tool_name": "Bash",
+                                  "tool_input": {"command": "ls"}})
+            done = subprocess.run([sys.executable, str(broken / "20-graph-step-guard")], input=payload,
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            results[session] = done.returncode
+        self.assertEqual(results, {"cc-1": 2, "cc-other": 0})
 
 
 class Linked(RunnerCase):
