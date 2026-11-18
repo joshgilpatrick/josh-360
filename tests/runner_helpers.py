@@ -56,12 +56,12 @@ class RunnerCase(WalkerCase):
         state.update(changes)
         self.jira_file().write_text(json.dumps(state))
 
-    def jira_issue(self, key, status="Ready", sprint=True, issuetype="Story", route="default", spec=None):
-        """Add a made-up ticket: in an open sprint or the backlog, with a route record (`route=None` for none)."""
+    def jira_issue(self, key, status="Ready", queued=True, issuetype="Story", route="default", spec=None):
+        """Add a made-up ticket: with the label that says it may run, or without it, and a route record (`route=None` for none)."""
         state = json.loads(self.jira_file().read_text())
         state.setdefault("issues", {})[key] = {"key": key, "fields": {
             "status": {"name": status}, "issuetype": {"name": issuetype},
-            "customfield_10020": [{"state": "active"}] if sprint else []}}
+            "labels": ["ready-to-run"] if queued else ["other-label"]}}
         props = state.setdefault("properties", {})
         if route == "default":
             route = {"graph": "runner-sample", "system": "sample", "returned_from": ""}
