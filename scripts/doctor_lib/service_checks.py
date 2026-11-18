@@ -21,7 +21,7 @@ ATLAS_LABEL = "com.josh360.session-atlas"
 OLD_ATLAS_LABEL = "com.eventus.claude-atlas"
 ATLAS_HEALTH = "http://127.0.0.1:8770/api/health"
 AZ_PLACES = ("/opt/homebrew/bin/az", "/usr/local/bin/az")
-KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT = "jira-claude-api-key", "jgilpatrick"
+KEYCHAIN_SERVICE = "jira-claude-api-key"  # asked for by name alone, as the runner and the walker read it
 EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
@@ -205,14 +205,14 @@ def jira_token(ctx: Ctx) -> Result:
     cid = "accounts.jira-token"
     if ctx.env.get("JOSH360_JIRA_TOKEN"):
         return Result(cid, PASS, "a Jira token is in the environment")
-    code, _, _ = ctx.run(["/usr/bin/security", "find-generic-password", "-s", KEYCHAIN_SERVICE, "-a", KEYCHAIN_ACCOUNT], 15)
+    code, _, _ = ctx.run(["/usr/bin/security", "find-generic-password", "-s", KEYCHAIN_SERVICE], 15)
     if code == 0:
         return Result(cid, PASS, "the keychain item {} exists (asked about, not read)".format(KEYCHAIN_SERVICE))
     if code in (124, 127):
         return Result(cid, SKIP, "the keychain cannot be asked here (not a Mac)")
     return Result(cid, FAIL, "no Jira token: the keychain has no item {}".format(KEYCHAIN_SERVICE),
-                  "add the Atlassian API token to the login keychain as generic password {} (account {})".format(
-                      KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT))
+                  "add the Atlassian API token to the login keychain as generic password {} (any account name)".format(
+                      KEYCHAIN_SERVICE))
 
 
 @check("accounts", "jira-live")

@@ -337,6 +337,15 @@ class ServicesAndAccounts(h.DoctorCase):
             self.assertNotIn("-w", c)
             self.assertNotIn("-g", c)
 
+    def test_the_keychain_item_is_asked_for_by_name_whatever_its_account_is(self):
+        self.env.pop("JOSH360_JIRA_TOKEN")
+        self.results()
+        asked = [c for c in self.calls if os.path.basename(c[0]) == "security"]
+        self.assertTrue(asked)
+        for c in asked:
+            self.assertIn("jira-claude-api-key", c)
+            self.assertNotIn("-a", c)
+
     def test_claude_missing_warns(self):
         os.unlink(str(self.user / ".local" / "bin" / "claude"))
         self.env["PATH"] = str(self.stubs)
