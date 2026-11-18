@@ -1,6 +1,6 @@
 # Ready checklist result
 
-What the `ready-check` gate returns as `failures`, and what ticket creation's `ticket-complete` gate reads when it runs the same checklist. The checklist items (C1 to C13 for every type, then B, S and R items for Bug, Story and Research) are defined in `docs/superpowers/specs/2026-11-16-triage-graph-design.md`, "The Ready checklist". Once JP-122 builds `ready-check`, the list in that script is the source and the spec says so.
+What the `ready-check` gate returns as `failures`, and what ticket creation's `ticket-complete` gate reads when it runs the same checklist. The checklist items are C1 to C13 for every type, then B1 and B2 (Bug), S1 (Story) and R1 and R2 (Research). The list in `graphs/gates/lib/triage/checklist.py` is the source; the design is in `docs/superpowers/specs/2026-11-16-triage-graph-design.md`, "The Ready checklist".
 
 `failures` is a list. Each entry:
 
