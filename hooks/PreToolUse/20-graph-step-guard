@@ -11,5 +11,19 @@ try:
     from runner_lib import hooklib
     code = hooklib.main("PreToolUse")
 except Exception:
+    # The runner code could not load (a syntax error under the laptop's Python 3.9, a missing file). A graph session
+    # must not be waved through, so look for its entry with the standard library alone.
     code = 0
+    try:
+        import json
+        import os
+        import re
+        given = json.loads(sys.stdin.read() or "{}").get("session_id")
+        home = os.environ.get("JOSH360_HOME") or os.path.join(os.path.expanduser("~"), ".josh-360")
+        if isinstance(given, str) and re.match(r"^[A-Za-z0-9_-]+$", given) and os.path.exists(
+                os.path.join(home, "state", "graph-sessions", given + ".json")):
+            sys.stderr.write("graph step guard: the runner code could not be loaded, so this step session is stopped\n")
+            code = 2
+    except Exception:
+        pass
 sys.exit(0 if code is None else code)
