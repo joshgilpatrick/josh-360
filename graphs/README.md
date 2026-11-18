@@ -12,6 +12,7 @@ How a graph is stored, and the rules the checker enforces: [CONVENTION.md](CONVE
 | `agents/` | Named agents that fill a role |
 | `gates/` | Gate scripts: inputs in, one outcome printed, no model |
 | `contracts/` | The formats passed between steps |
+| `intake/` | `submit.py`, the one command that starts a ticket creation run from a pointer ([README.md](intake/README.md)) |
 | `bindings/` | Anything specific to one runner (Agent Manager first) |
 | `runner/` | The graph runner (JP-117): watches Jira, starts runs, starts Agent Manager sessions for role steps ([README.md](runner/README.md)) |
 | `tools/` | The checker, the walker (`walker.py`, `walker_lib/`) and `compile_graphs.py` |
