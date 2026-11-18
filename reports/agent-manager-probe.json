@@ -95,8 +95,8 @@
         "archived": 0,
         "created_at": 1794959293931468000,
         "group_name": "",
-        "last_status_at": 1794959293931468000,
-        "status": "starting",
+        "last_status_at": 1794959312338228000,
+        "status": "finished",
         "tool": "claude"
       }
     },
