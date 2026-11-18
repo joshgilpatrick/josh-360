@@ -12,7 +12,7 @@ import re
 from pathlib import Path
 from typing import List, Optional
 
-from lib.ticket_text import collapse
+from lib.ticket_text import collapse, without_section
 
 PHASE_ID = re.compile(r"^[a-z][a-z0-9-]*$")
 DOD_ID = re.compile(r"^DOD-[0-9]+$")
@@ -38,8 +38,9 @@ def load(path: Path) -> dict:
 
 
 def scenario_names(description: Optional[str]) -> List[str]:
-    """Every `Scenario:` or `Scenario Outline:` line of a ticket, whitespace collapsed."""
-    return [collapse(name) for name in _SCENARIO.findall(description or "")]
+    """Every `Scenario:` or `Scenario Outline:` line of a ticket, whitespace collapsed. The Validation section's
+    scenarios are watched after the ticket ships and are not acceptance scenarios: they are left out."""
+    return [collapse(name) for name in _SCENARIO.findall(without_section(description, "Validation"))]
 
 
 def _norm(text: object) -> str:
