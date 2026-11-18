@@ -19,7 +19,7 @@
   "waiting_over_7_days": [],
   "watch": {
     "development": {
-      "jira": "no-credentials",
+      "jira": "ok",
       "skipped": {},
       "started": []
     }
