@@ -10,10 +10,12 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 from pathlib import Path
 from typing import Dict, Optional
 
 from . import ledgerview, paths, walk
+from ledger import jira_read  # noqa: E402
 from lib import jira_fake  # noqa: E402  (graphs/gates/lib, on sys.path through paths)
 from lib.jira import Jira, JiraError  # noqa: E402
 from lib.triage import SPRINT_FIELD  # noqa: E402
@@ -51,13 +53,16 @@ def load_rules(path: Path = RULES) -> dict:
     return doc
 
 
-def jira_client(environ: dict) -> Optional[Jira]:
-    """A Jira client, or None when there are no credentials (never `gate_io.fail`, which would exit)."""
+def jira_client(environ: dict, run=subprocess.run) -> Optional[Jira]:
+    """A Jira client, or None when there are no credentials (never `gate_io.fail`, which would exit). The email and the
+    token are found the way the rest of the laptop finds them: the environment, then the email file and the keychain."""
     if jira_fake.folder_from(environ) is not None:
         return Jira.from_env(environ)
-    if (environ.get("JOSH360_JIRA_EMAIL") or environ.get("ACTION_AGENT_JIRA_EMAIL")) and environ.get("JOSH360_JIRA_TOKEN"):
-        return Jira.from_env(environ)
-    return None
+    found = jira_read.credentials(environ, run)
+    if found is None:
+        return None
+    email, token = found
+    return Jira.from_env(dict(environ, JOSH360_JIRA_EMAIL=email, JOSH360_JIRA_TOKEN=token))
 
 
 def _empty(value: object) -> bool:
