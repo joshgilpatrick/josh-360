@@ -1,0 +1,183 @@
+# DRAFT for JP-164. Design: docs/superpowers/specs/2026-11-18-post-deploy-validation-design.md.
+# Not a live graph: it sits outside graphs/flows/, so the walker and the runner never see it. The build
+# ticket moves it there with its gate scripts.
+convention: 1
+graph: validation
+title: Post-deploy validation
+description: >
+  Takes one ticket in Deployed, whose change has shipped, and ends with it Done once evidence collected
+  from production meets the criteria in the ticket's Validation section. A script reads the section,
+  a wait step collects a reading for each criterion on the section's own timetable with no session
+  open, and a script grades the readings. No step uses a model. Criteria that are not met get a
+  linked Bug, and the watch starts again when its fix ships. Josh is asked only when the watch
+  cannot finish on its own, or when the ticket has a criterion only he can confirm.
+
+header:
+  jira:
+    - status: Deployed
+      steps: [read_criteria, start_watch, watch, verdict, file_bug, await_fix, decide, hold]
+    - { status: Done, steps: [close, close_unwatched, close_accepted] }
+  entry_gate: deployed
+  exit_gate: no-loose-ends
+  asks_josh: [decide]
+  ledger: [run, step, outcome, loop_count, session, tier, ticket, started_at, ended_at, graph_version, model]
+  # finished is a ticket moved to Done because its criteria were met. A refused exit gate ends as
+  # exit_refused (needs-josh, reserved).
+  end_states:
+    finished: success
+    close_unwatched.closed: neutral     # nothing to watch: no Validation section, or "Needed: no"
+    close_accepted.closed: neutral      # Josh closed it on his own judgment
+    watch.left_deployed: neutral        # Josh moved the ticket out of Deployed himself
+    await_fix.left_deployed: neutral
+    hold.held: needs-josh               # Josh chose stop; the ticket stays in Deployed, flagged
+  access:
+    read_criteria: read
+    start_watch: josh
+    watch: read
+    verdict: read
+    close: josh
+    close_unwatched: josh
+    file_bug: josh
+    await_fix: read
+    decide: read
+    close_accepted: josh
+    hold: josh
+
+inputs:
+  ticket_key: { type: string, required: true, description: "Jira key of the ticket in Deployed, e.g. JP-140" }
+
+outputs:
+  result: { type: string, description: "met, not_needed, not_met or undecided: what the last verdict said" }
+
+steps:
+  # ---- Read the ticket's Validation section, with no model ----------------------------------------
+  - id: read_criteria
+    gate: read-validation
+    inputs: [ticket_key]
+    outputs:
+      needed: { type: string, description: "yes, no (the section says no, or there is no section) or unreadable" }
+      criteria: { type: list, description: "One entry per @validate scenario", contract: validation-plan }
+      starts: { type: string, description: "When the watch begins: at Deployed, on a date, or after a ticket reaches Done. The watch takes no reading before then" }
+      check_every_hours: { type: number, description: "Hours between checks" }
+      complete_when: { type: string, description: "'<n> checks in a row pass' or 'after <n> events'" }
+      give_up_days: { type: number, description: "Days after the watch begins at which it ends without being complete" }
+      fail_after: { type: number, description: "Failing checks in a row that end the watch early: the Fail after line, or 3 when it is left out" }
+      section_version: { type: string, description: "Hash of the Validation section, so a later edit is seen" }
+      problems: { type: list, description: "When unreadable: each line the script could not read, and what would pass" }
+    outcomes: [watch, not_needed, unreadable]
+
+  - id: start_watch
+    gate: start-watch
+    needs: [read_criteria]
+    when: { step: read_criteria, outcome: watch }
+    inputs: [ticket_key, criteria, starts, check_every_hours, complete_when, give_up_days, fail_after, section_version]
+    outputs:
+      watch_file: { type: string, description: "This round's plan and check log, in the run's work folder", contract: validation-plan }
+    outcomes: [started]
+
+  # ---- Collect readings on the ticket's own timetable: no session, no model -----------------------
+  # The runner calls this every five minutes. The script answers pending at once, from one small file,
+  # until the watch has begun (the Starts line) and a check is due; then it runs each criterion's
+  # collector, adds one line to the check log and grades the log against "Complete when", "Fail after"
+  # and "Give up after".
+  - id: watch
+    wait: watch-criteria
+    needs: [start_watch]
+    when: { step: read_criteria, outcome: watch }
+    inputs: [ticket_key, watch_file]
+    outputs:
+      watch_result: { type: string, description: "met, needs_josh, not_met or no_data" }
+      tally: { type: list, description: "Per criterion: checks made, passed, failed, unknown, and the last reading", contract: watch-result }
+    # needs_josh: every scripted criterion is met, and the ticket has a criterion tagged @manual.
+    outcomes: [met, needs_josh, not_met, no_data, left_deployed]
+    on:
+      left_deployed: end
+
+  # ---- One script decides what the section and the readings add up to ------------------------------
+  - id: verdict
+    gate: validation-verdict
+    needs: [read_criteria, watch]
+    inputs: [ticket_key, needed, problems, criteria, watch_result, tally]
+    outputs:
+      result: { type: string, description: "met, not_needed, not_met or undecided" }
+      evidence: { type: string, description: "The table the closing comment shows: counts and links only" }
+      failed: { type: list, description: "The criteria that were not met, each with its counts", contract: watch-result }
+      card: { type: string, description: "For Josh, when undecided: what happened, in two or three lines" }
+    outcomes: [met, not_needed, not_met, undecided]
+
+  # ---- Met: the ticket is proven, and goes to Done ------------------------------------------------
+  - id: close
+    gate: close-watch
+    effects: [move_ticket]
+    needs: [verdict]
+    when: { step: verdict, outcome: met }
+    inputs: [ticket_key, result, evidence]
+    outcomes: [closed]
+
+  # ---- Nothing to watch: straight to Done, and say so ---------------------------------------------
+  - id: close_unwatched
+    gate: close-watch
+    effects: [move_ticket]
+    needs: [verdict]
+    when: { step: verdict, outcome: not_needed }
+    inputs: [ticket_key, result, evidence]
+    outcomes: [closed]
+    on:
+      closed: end
+
+  # ---- Not met: a linked Bug, then wait for its fix and watch again -------------------------------
+  - id: file_bug
+    gate: file-validation-bug
+    needs: [verdict]
+    when: { step: verdict, outcome: not_met }
+    inputs: [ticket_key, failed, evidence]
+    outputs:
+      bug_key: { type: string, description: "The linked Bug, new or already open for this ticket" }
+    outcomes: [filed]
+
+  - id: await_fix
+    wait: fix-closed
+    needs: [file_bug]
+    when: { step: file_bug, outcome: filed }
+    inputs: [ticket_key, bug_key]
+    outputs:
+      card: { type: string, description: "For Josh: which fix was cancelled, or how many have shipped" }
+    # shipped: the Bug reached Done. cancelled: the Bug was cancelled, so the question goes to Josh.
+    outcomes: [shipped, cancelled, left_deployed]
+    on:
+      shipped: { goto: read_criteria, max_loops: 1, at_limit: decide }
+      left_deployed: end
+
+  # ---- The one question: the watch cannot finish on its own ---------------------------------------
+  # Reached three ways: the verdict is undecided (no data, a section that cannot be read, or a
+  # criterion only Josh can confirm); the fix for a failed watch was cancelled; or a second fix has
+  # shipped and the loop above is at its limit.
+  - id: decide
+    needs: [await_fix]
+    when: { step: verdict, outcome: [undecided, not_met] }
+    ask:
+      question: "The watch on {{ inputs.ticket_key }} cannot finish on its own. What happened is below, and the evidence so far is on the ticket."
+      choices: [watch_again, accept, stop]
+    on:
+      watch_again: { goto: read_criteria, max_loops: 2, at_limit: decide }
+
+  - id: close_accepted
+    gate: close-watch
+    effects: [move_ticket]
+    needs: [decide]
+    when: { step: decide, outcome: accept }
+    inputs: [ticket_key, result, evidence]
+    outcomes: [closed]
+    on:
+      closed: end
+
+  # Stop leaves the ticket in Deployed with the Jira flag set, so the start rule does not pick it up
+  # again. Clearing the flag starts a fresh watch.
+  - id: hold
+    gate: hold-watch
+    needs: [decide]
+    when: { step: decide, outcome: stop }
+    inputs: [ticket_key]
+    outcomes: [held]
+    on:
+      held: end
