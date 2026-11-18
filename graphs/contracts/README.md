@@ -9,6 +9,7 @@ One `<name>.md` per format passed between steps. See `graphs/CONVENTION.md`, "Co
 | `spec.md` | The development graph's build spec (or a Research ticket's design) |
 | `evidence.md` | What a run produced and what it rests on |
 | `feedback.md` | The defects a reviewer step kept after a script dropped those that do not quote the source |
+| `validation-section.md` | The Validation section of a ticket: its fields, scenario forms, comparisons and the collector table |
 | `ready-checklist.md` | The `failures` the `ready-check` gate returns |
 | `sign-off-defects.md` | The `defects` the sign-off role returns and `check-sign-off` keeps |
 | `send-back.md` | The numbered `gaps` and the comment that returns a ticket to its author |
