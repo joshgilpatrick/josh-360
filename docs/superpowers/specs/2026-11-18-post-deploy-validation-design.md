@@ -30,7 +30,7 @@
 - [Questions for Josh](#questions-for-josh)
 - [Choices made by default](#choices-made-by-default)
 
-Ticket JP-164 (Research). Status: **draft, waiting for Josh's approval** in the thread "JP-164 Design post-deploy validation". Nothing here is built. After approval a build plan is written and the build tickets are filed under JP-94.
+Ticket JP-164 (Research). Status: **approved by Josh on 18 November 2026** ("Approve: I judge them, once", which takes option A under [Questions for Josh](#questions-for-josh)), in the thread "JP-164 Design post-deploy validation". Nothing here is built. A separate session writes the build plan and files the build tickets under JP-94.
 
 Sources: the ticket and its two comments (the Jira facts read back on 18 November 2026); Josh's decisions in the thread on 18 November 2026 (subtasks only for work outside the running graph; a standard set of validation information on the ticket; a Deployed status; validation as its own graph); `conventions/tickets.md`; `docs/WORKFLOW.md` §4 and §5; `graphs/CONVENTION.md` ("Wait steps", "Scoring a run", "The run cap"); `graphs/flows/development.yaml`, `non-development.yaml` and `triage.yaml`; the graph runner design (`2026-11-17-graph-runner-design.md`) and `graphs/runner/runner_lib/watch.py`; the triage design (`2026-11-16-triage-graph-design.md`, "The Ready checklist"); `ledger/loose_ends.py`; `laptop/run_jobs.py` and `laptop/status.py`; action-triage's `CLAUDE.md` ("Jira ticket pickup").
 
@@ -622,7 +622,7 @@ Tickets 1 and 2 do not depend on each other. Ticket 3 needs both, ticket 4 needs
 ## Out of scope
 
 - Building any of it.
-- A model that judges a criterion. See [Questions for Josh](#questions-for-josh).
+- A model that judges a criterion. Josh chose option A under [Questions for Josh](#questions-for-josh); option B can be added later.
 - Validation in the AD and CI spaces, and the named-query collector that would make it useful there.
 - Adding a Validation section to tickets that already exist.
 - A ledger table of individual checks, and any screen showing watches (the phase 3 views).
@@ -635,17 +635,16 @@ Tickets 1 and 2 do not depend on each other. Ticket 3 needs both, ticket 4 needs
 
 Most criteria are numbers: a job's exit code, a count of failures, a Jira search. Some are not, such as "the session summaries read as plain English". The ticket's own decision says a model is used "at most once per criterion that needs judgment", so both answers fit it.
 
-- **A. You do, once, at the end of the watch (recommended, and what the draft graph does).** Scripts watch everything they can measure. If the ticket also has a `@manual` criterion, you get one question when the rest is met. The graph has no model step at all, no text from a production system is handed to a model, and the build is smaller. The sign-off agent keeps manual criteria rare.
+- **A. You do, once, at the end of the watch (recommended, and what the draft graph does). Josh chose this on 18 November 2026.** Scripts watch everything they can measure. If the ticket also has a `@manual` criterion, you get one question when the rest is met. The graph has no model step at all, no text from a production system is handed to a model, and the build is smaller. The sign-off agent keeps manual criteria rare.
 - **B. A model does.** One extra step: a mid-tier agent reads a sample a collector gathered, and a script keeps only a judgment that quotes the sample. You are asked only if it is unsure. This costs one model run per watch that needs it, a new kind of collector that copies text into the run folder, and a patient-data screen on what the judge writes.
 - **C. Nobody: every criterion must be measurable.** The Ready check refuses a manual criterion.
 
 A can become B later without changing a ticket already written: a `@manual` criterion would simply be read by the judge first.
 
-Anything else you would rather see, say it in your own words.
 
 ## Choices made by default
 
-Each can be undone; say so and it changes before the plan is written.
+Each can be undone. Josh approved the spec with these as written.
 
 | Choice | Why | The other way |
 | --- | --- | --- |
