@@ -7,8 +7,8 @@
 # Shape (the reader is strict and stops on anything else):
 #   - id: a lower-case name
 #     run: a .py file in this repo
-#     every: 10m, 1h, 1d, or once (once: runs until it succeeds one time)
-#     timeout: optional, default 15m
+#     every: a number and m, h or d (5m, 1h, 1d), or once (once: runs until it succeeds one time, retried at most hourly)
+#     timeout: optional, same form as every (but not once), default 15m
 #     report: optional, true means the job prints JSON, which goes to laptop-status as reports/<id>.json
 #     description: optional
 #
