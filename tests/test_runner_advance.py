@@ -242,6 +242,41 @@ class Advancing(RunnerCase):
         self.assertIn("key=" + failed["key"], prompt.splitlines()[0])
         self.assertIn("Use the second spec.", prompt)
 
+    def test_a_spawn_with_no_id_in_the_reply_is_not_spawned_again(self):
+        self.am_behaviour(spawn_no_id=True)                  # the session exists; only the reply is unusable
+        self.assertEqual(self.advance(self.run_id), "working")
+        self.assertEqual(self.session_doc(self.run_id)["state"], "spawning")
+        self.session_starts(self.run_id, "design")
+        self.am_behaviour()
+        self.assertEqual(self.advance(self.run_id), "working")
+        self.assertEqual(self.session_doc(self.run_id)["state"], "started")
+        self.assertEqual(self.spawns(), 1)
+
+    def test_a_spawn_with_no_id_and_no_link_is_abandoned_after_the_link_timeout(self):
+        self.am_behaviour(spawn_no_id=True)
+        self.assertEqual(self.advance(self.run_id), "working")
+        self.later(10 * MINUTE)
+        self.am_behaviour()
+        self.assertEqual(self.advance(self.run_id), "spawned")
+        self.assertEqual(self.session_doc(self.run_id)["reason"], "never-started")
+        self.assertEqual(self.spawns(), 2)
+
+    def test_an_attempt_the_walker_ended_does_not_hold_a_session_slot(self):
+        other = self.start("valid", "JP-902", *AM)
+        self.started()
+        self.walker("abandon", "--run", self.run_id)         # by hand, while the session file still says `started`
+        self.assertEqual(self.advance(self.run_id), "spawned")
+        self.assertEqual(self.advance(other), "spawned")     # one live session is no reason to refuse a second
+
+    def test_a_refused_spawn_that_linked_anyway_is_adopted(self):
+        from runner_lib import hooklib
+        doc = self.write_session(self.run_id, "spawning")
+        hooklib.link({"session_id": "cc-9", "prompt": hooklib.marker(self.run_id, "design", 1, doc["key"]) + "\ntask"},
+                     {"AGENT_MANAGER_SESSION_ID": "s-7"}, self.now)
+        sessionfile.write(self.run_id, "design", 1, dict(doc, state="spawn_failed", spawn_failures=1))   # the late write
+        self.assertEqual(self.advance(self.run_id), "working")
+        self.assertEqual((self.session_doc(self.run_id)["state"], self.spawns()), ("started", 0))
+
     def test_no_rails_no_session(self):
         self.write_claude_settings(without="Stop")
         self.assertEqual(self.advance(self.run_id), "no-rails")
