@@ -10,6 +10,7 @@
 | Triage (JP-122) | `triageable` (entry), `ticket-facts`, `ready-check`, `route`, `check-sign-off`, `triage-verdict`, `apply-revision`, `post-question`, `send-back`, `mark-ready` |
 | Non-development (JP-123) | `read-ticket`, `gap-check`, `pick-path`, `check-deliverable`, `check-review`, `sign-off-rule`, `deliver`, `share`, `close-ticket`, `move-ticket`, `return-to-triage` |
 | Development (JP-115) | the gates listed under "The development gates" below |
+| Movers (JP-168) | `validation-rule`: after a merge or a sign-off, `watch` (the ticket goes to Deployed) or `done`; `close-ticket` moves the ticket to the `target_status` the step's stretch names, Done or Deployed |
 | Shared | `ready` (entry gate of the development and non-development graphs), `no-loose-ends` (exit gate of the triage, development and non-development graphs; built in JP-161 on JP-109's loose-ends finder) |
 | Walker effects | `set-flag` and `post-comment`: the walker calls them, no graph step names them |
 
