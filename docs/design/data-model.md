@@ -157,7 +157,7 @@ Notes:
 - `previous_run_id` points at the latest earlier run on the same ticket, of any graph, so a ticket that came back can be counted ("a run that returned later", JP-140).
 - `score` is copied from the `end_states` header of the graph version the run used, so a later change to a score never rewrites old runs (`graphs/CONVENTION.md`, "Scoring a run").
 - A step that started and never ended (its session was killed) has no result. The walker ends it as `_abandoned`, a reserved outcome, before it starts the step again; the new start counts as another attempt under the run cap.
-- The view `step_ledger` gives exactly the eleven fields a graph header's `ledger` list may name: `run`, `step`, `outcome`, `loop_count`, `session`, `tier`, `ticket`, `started_at`, `ended_at`, `graph_version`, `model`. The view `step_costs` joins each step to its session's cost.
+- The view `step_ledger` gives exactly the eleven fields a graph header's `ledger` list may name: `run`, `step`, `outcome`, `loop_count`, `session`, `tier`, `ticket`, `started_at`, `ended_at`, `graph_version`, `model`. The view `step_costs` joins each step to its session's own cost. JP-170 adds, in migration 0002, `session_subagent_roots` (the session each subagent's cost belongs to, following `subagent` links up, never resumes or forks), `session_costs_rolled_up` (a session's own cost, its subagents' cost and the total) and `step_costs_rolled_up` (`step_costs` with the subagents folded in); the measures and the run report read the rolled-up views, and `step_costs` stays as it was.
 - action-triage's PR audit is not a graph yet. Each audit round is recorded as a run with `graph_source` `external`, `graph_id` `pr-audit`, subject the PR, and one step, `audit`, whose outcome is the verdict label. That makes "fix rounds after review" countable without inventing a task.
 
 ### Decisions
@@ -418,9 +418,10 @@ The measures are built as stored queries by JP-112 (`ledger/measures.py`) and sh
 | Share signed off without being sent back; tickets the sign-off agent sent back; fix rounds after review | `run_ends`, `step_results`, `graph_runs.previous_run_id`, `pr-audit` runs |
 | Number and age of loose ends | Computed (JP-109) |
 | Share answered from precedent; suggestions accepted against overruled; lookups that found nothing | `decisions.how`, `decision_events`, `memory_lookups` |
-| Spend and time per ticket, by step | `step_costs`, `current_session_costs`, `step_ledger` times |
+| Spend and time per ticket, by step | `step_costs_rolled_up` (subagents included, JP-170), `current_session_costs`, `step_ledger` times |
+| Every session on a ticket, its step and its cost (`measures.py ticket <KEY>`, JP-170) | `step_costs_rolled_up`, `session_costs_rolled_up`, `current_homes`, `session_subagent_roots` |
 | Size of the instructions a session loads; skills and rules nobody used | `session_facts` (`instruction_bytes_loaded`), `session_usage` |
-| Graph effectiveness and efficiency per graph and version (JP-140) | `run_ends.score` by `graph_runs.graph_id` and `graph_version`, `step_costs` |
+| Graph effectiveness and efficiency per graph and version (JP-140) | `run_ends.score` by `graph_runs.graph_id` and `graph_version`, `step_costs_rolled_up` |
 | Run-cap use (JP-139) | `step_runs.attempt`, `tier`, `allowed_by_josh` |
 
 ## Expected size and retention
