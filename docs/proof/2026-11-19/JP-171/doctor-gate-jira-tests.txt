@@ -1,0 +1,10 @@
+test_gate_jira_passes_when_the_walker_finds_both (test_doctor.ServicesAndAccounts.test_gate_jira_passes_when_the_walker_finds_both) ... ok
+test_gate_jira_with_no_email_anywhere (test_doctor.ServicesAndAccounts.test_gate_jira_with_no_email_anywhere)
+JP-171 Scenario: No email anywhere. ... ok
+test_gate_jira_finds_the_keychain_item_without_reading_it (test_doctor.ServicesAndAccounts.test_gate_jira_finds_the_keychain_item_without_reading_it) ... ok
+test_the_keychain_is_asked_about_never_read (test_doctor.ServicesAndAccounts.test_the_keychain_is_asked_about_never_read) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 3.987s
+
+OK
