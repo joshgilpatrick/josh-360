@@ -245,13 +245,20 @@ class GithubCallsTest(unittest.TestCase):
         self.assertIn("per_page=100", argv)
         self.assertIn("GET", run.calls[0])
 
-    def test_workflow_runs_newest_first_and_at_most_100(self):
+    def test_workflow_runs_newest_first_up_to_100(self):
         rows = [{"conclusion": "success", "created_at": "2026-11-18T{:02d}:{:02d}:00Z".format(i // 60, i % 60)}
-                for i in range(130)]
-        run = self.runner(lambda argv: (0, json.dumps({"workflow_runs": rows})))
+                for i in range(100)]
+        run = self.runner(lambda argv: (0, json.dumps({"total_count": 100, "workflow_runs": rows})))
         got = GitHub("o/r", {}, runner=run).workflow_runs("test.yml", "main", SINCE)
         self.assertEqual(len(got), 100)
         self.assertEqual(got[0]["created_at"], rows[-1]["created_at"])
+
+    def test_workflow_runs_past_100_is_an_error_not_a_floor(self):
+        rows = [{"conclusion": "success", "created_at": "2026-11-18T{:02d}:{:02d}:00Z".format(i // 60, i % 60)}
+                for i in range(100)]
+        run = self.runner(lambda argv: (0, json.dumps({"total_count": 130, "workflow_runs": rows})))
+        with self.assertRaises(GitHubError):
+            GitHub("o/r", {}, runner=run).workflow_runs("test.yml", "main", SINCE)
 
     def test_workflow_runs_failure_raises(self):
         run = self.runner(lambda argv: (1, ""))
