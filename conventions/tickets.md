@@ -212,8 +212,17 @@ Status moves happen at fixed events, by a script or an automation, never by an a
 | Work starts on any other ticket, an answer or other non-development deliverable included | In Progress |
 | Pull request out of draft and labelled `review:needs-agent-audit` | Code Review |
 | Pull request labelled `review:ready-for-human` | Validation |
-| Merged, and every scenario mapped to its proof | Done |
+| Merged or signed off, and the Validation section says `Needed: yes` | Deployed |
+| Merged or signed off, and every scenario mapped to its proof, with no watch needed | Done |
+| The watch's criteria are met, or Josh accepts the result | Done |
 | Dropped | Cancelled (never deleted) |
+
+**Deployed (JP only).** The change has shipped and is being watched in production against the ticket's Validation section. Validation keeps its own meaning (checked, about to ship) and Done means shipped and proven, or shipped with nothing to watch.
+
+- **Choosing Deployed or Done after a merge or a sign-off.** Read the Validation section: `Needed: yes` goes to Deployed (Jira transition `7`), and the comment's next gate is the validation watch. No section, `Needed: no` and any ticket outside JP go to Done. A section with a problem still goes to Deployed: the watch's first step reads it and asks Josh.
+- **Who moves a ticket in.** The development and non-development graphs (steps `validation_rule` and `hand_to_watch`), a thread that merges its own pull request (`docs/WORKFLOW.md` §5.1), or Josh by hand.
+- **Who moves a ticket out.** Only the validation graph (to Done when the criteria are met, nothing is left to watch, or Josh accepts) or Josh by hand. A ticket whose watch failed stays in Deployed with a linked Bug; one Josh told the graph to stop watching stays there with the Jira flag set. A thread never moves a ticket out of Deployed.
+- **Safety net.** Any ticket that lands in Deployed is read by the validation graph within five minutes; one with nothing to watch is moved to Done with a comment saying so.
 
 AD runs Ready, Design/Planning, In Progress, Code Review, Validation and Done, and an AD automation moves a ticket to Code Review from the pull request label. CI has its own workflow; read its transitions live before moving a CI ticket. Every move is read back.
 
