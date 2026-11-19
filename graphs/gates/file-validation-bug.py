@@ -8,7 +8,7 @@ project, and write `watch/bug.json` at once; (4) make sure the Bug is linked to 
 met in production" comment and the evidence table, once. A create Jira did not confirm stops the run without a Bug and
 without the comment, and the retry starts at (1).
 
-Outcomes: filed. Inputs: ticket_key, failed, evidence. Output: bug_key. The criteria come from the newest watch file.
+Outcomes: filed, left_deployed (the ticket is no longer in Deployed: nothing is written). Inputs: ticket_key, failed, evidence. Output: bug_key. The criteria come from the newest watch file.
 Everything written goes through the patient-data screen.
 """
 import json
@@ -91,6 +91,8 @@ def run(inputs, deps):
     issue = deps.jira.get(key)
     if issue is None:
         raise GateError("{} could not be read from Jira".format(key))
+    if issue["status"] != "Deployed":     # a ticket that left Deployed is left alone (the watch may end on its give-up time with no fresh look)
+        return "left_deployed", None, "{} had already left Deployed; nothing was filed".format(key)
     bug_key = _noted(folder / "bug.json", round_no) or _open_failure_bug(deps.jira, issue)
     if bug_key is None:
         bug_key = _create(deps, key, issue, criteria, failed)
