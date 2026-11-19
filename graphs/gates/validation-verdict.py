@@ -18,7 +18,7 @@ from lib import validation_copy as copy, validation_section
 from lib.gate_run import GateError, execute, need
 from lib.ticket_text import as_list
 from lib.triage.ticket import description_text
-from lib.watch import round as watch_round
+from lib.watch import history, round as watch_round
 
 NEVER_BEGAN = ("starts_cancelled", "starts_missing", "never_began")
 
@@ -78,7 +78,7 @@ def run(inputs, deps):
     if result == "met":
         return "met", {"result": "met", "evidence": evidence, "failed": [], "card": ""}, "the criteria were met"
     if result == "not_met":
-        failed = [t for t in tally if isinstance(t, dict) and (t.get("failed") or 0) > 0 and not t.get("streak")]
+        failed = history.failing(tally)
         return "not_met", {"result": "not_met", "evidence": evidence, "failed": failed, "card": ""}, \
             "{} criterion(s) not met".format(len(failed))
     if result == "needs_josh":
