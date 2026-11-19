@@ -1,0 +1,9 @@
+{
+  "branch": "JP-9001-sample-work",
+  "end_payload": "/tmp/verify-josh-360/jp172b/payloads/verify-sess-0172-end.json",
+  "folder": "/tmp/verify-josh-360/jp172b/work/sample-repo",
+  "ok": true,
+  "session": "verify-sess-0172",
+  "start_payload": "/tmp/verify-josh-360/jp172b/payloads/verify-sess-0172-start.json",
+  "transcript": "/tmp/verify-josh-360/jp172b/home/.claude/projects/-tmp-verify-josh-360-jp172b-work-sample-repo/verify-sess-0172.jsonl"
+}

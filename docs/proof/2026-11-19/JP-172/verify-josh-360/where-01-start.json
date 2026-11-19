@@ -1,0 +1,23 @@
+{
+  "command": [
+    "python3",
+    "graphs/tools/walker.py",
+    "start",
+    "--graph",
+    "ticket-creation",
+    "--ticket",
+    "JP-9001",
+    "--runner",
+    "agent-manager",
+    "--input",
+    "source=session",
+    "--input",
+    "source_ref=verify-sess-0172"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp172b/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp172b",
+  "started_at": "2026-11-19T20:09:17Z",
+  "stderr": "",
+  "stdout": "{\"graph\": \"ticket-creation\", \"graph_version\": \"5ea64d544ca556501af95c38af6a3f5227e66114\", \"run\": \"r-8e44e900e49d\", \"started\": true}\n"
+}

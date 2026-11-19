@@ -1,0 +1,15 @@
+{
+  "command": [
+    "python3",
+    "graphs/tools/walker.py",
+    "next",
+    "--run",
+    "r-8e44e900e49d"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp172b/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp172b",
+  "started_at": "2026-11-19T20:09:21Z",
+  "stderr": "",
+  "stdout": "{\"access\": \"read\", \"action\": \"run\", \"agent\": null, \"allowed_by_josh\": false, \"attempt\": 1, \"brief\": \"Source: session, at verify-sess-0172.\", \"graph\": \"ticket-creation\", \"inputs\": {\"source\": \"session\", \"source_ref\": \"verify-sess-0172\"}, \"jira_status\": \"Not Started\", \"kind\": \"role\", \"models\": [{\"effort\": \"medium\", \"model\": \"claude-sonnet-5-5\"}], \"outcomes\": [\"recorded\"], \"phi\": false, \"result_file\": \"/tmp/verify-josh-360/jp172b/home/.josh-360/runs/r-8e44e900e49d/results/read_intake-1.json\", \"role\": \"intake-reader\", \"role_folder\": \"/tmp/verify-josh-360/jp172b/home/.josh-360/repo/graphs/roles/intake-reader\", \"run\": \"r-8e44e900e49d\", \"step\": \"read_intake\", \"ticket\": \"JP-9001\", \"tier\": \"mid\", \"warnings\": [\"the ticket was not moved to Not Started: gate 'move-ticket' failed (1): Jira credentials missing: set JOSH360_JIRA_EMAIL and JOSH360_JIRA_TOKEN\"], \"work_dir\": \"/tmp/verify-josh-360/jp172b/home/.josh-360/runs/r-8e44e900e49d/work\"}\n"
+}
