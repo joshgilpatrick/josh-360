@@ -183,7 +183,7 @@ A graph sometimes has to wait for something outside it, such as a review that ta
 
 - A `wait` names a script in `gates/` and lists `outcomes` like a gate. It may have `needs`, `when`, `inputs`, `outputs` and `on`.
 - The script runs like any gate and answers at once. `{"outcome": "pending"}` means "not yet": the walker records nothing, counts no loop, prints `waiting`, and the runner calls `next` again later. Any declared outcome ends the wait, as a gate's does.
-- No session is open and a wait never changes anything: its access is `read` and it takes no `effects`. `pending` is reserved, so a wait never declares it.
+- No session is open and a wait never changes anything outside the run: its access is `read` and it takes no `effects`. A wait's only writes are its own notes in the run's work folder (a watch's check log, for one), which are run state in the way the walker's `run.json` is. `pending` is reserved, so a wait never declares it.
 - A wait that can last long names its own deadline in its script and answers a declared outcome when it passes. A wait is not a gate for rule 5: a reviewer role still needs a `gate` step.
 
 ## How a graph runs
