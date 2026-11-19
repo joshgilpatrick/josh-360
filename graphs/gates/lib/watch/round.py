@@ -28,7 +28,7 @@ WATCHED = "Deployed"
 
 def next_round(folder: Path) -> Tuple[int, Path]:
     """One more than the number of watch files there, and that file's path."""
-    count = len([p for p in folder.glob("round-*.json") if ROUND_FILE.match(p.name)]) if folder.is_dir() else 0
+    count = len([p for p in folder.glob("round-*.json") if ROUND_FILE.fullmatch(p.name)]) if folder.is_dir() else 0
     return count + 1, folder / "round-{}.json".format(count + 1)
 
 
@@ -44,7 +44,7 @@ def newest(folder: Path) -> Optional[Path]:
     """The highest-numbered watch file in the folder."""
     if not folder.is_dir():
         return None
-    found = [(int(m.group(1)), p) for p in folder.iterdir() for m in [ROUND_FILE.match(p.name)] if m]
+    found = [(int(m.group(1)), p) for p in folder.iterdir() for m in [ROUND_FILE.fullmatch(p.name)] if m]
     return max(found)[1] if found else None
 
 
