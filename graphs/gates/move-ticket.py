@@ -11,7 +11,7 @@ import re
 
 from lib.gate_run import GateError, execute, need
 
-JP_STATUSES = ("Not Started", "Ready", "Design/Planning", "In Progress", "Code Review", "Validation", "Done", "Cancelled")
+JP_STATUSES = ("Not Started", "Ready", "Design/Planning", "In Progress", "Code Review", "Validation", "Deployed", "Done", "Cancelled")
 
 
 def run(inputs, deps):

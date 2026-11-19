@@ -72,9 +72,10 @@ def snapshot(conn: sqlite3.Connection, now: float, root: Optional[Path] = None) 
     for state in STATES:
         counts[state] = sum(1 for r in rows if r["state"] == state)
     flag_after = float(cfg["wait_flag_days"]) * 86400
+    exempt = set(cfg.get("wait_flag_exempt") or [])
     long_waits = []
     for r in rows:
-        if r["state"] != "waiting":
+        if r["state"] != "waiting" or "{}.{}".format(r["graph"], r["step"]) in exempt:
             continue
         since = _epoch(r["since"])
         if since is None or now - since >= flag_after:           # a time that cannot be read is not "recent"

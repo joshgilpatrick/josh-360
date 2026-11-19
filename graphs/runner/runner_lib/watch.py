@@ -44,11 +44,20 @@ def load_rules(path: Path = RULES) -> dict:
             continue
         if not isinstance(rule.get("jql"), str) or not rule["jql"].strip():
             raise ValueError("starts: '{}' is on and has no jql".format(name))
-        if not isinstance(rule.get("route"), str) or not rule["route"]:
-            raise ValueError("starts: '{}' is on and has no route".format(name))
+        no_record = rule.get("route_record") is False
+        if not no_record and (not isinstance(rule.get("route"), str) or not rule["route"]):
+            raise ValueError("starts: '{}' is on and has no route (a rule with no route record says "
+                             "\"route_record\": false)".format(name))
         inputs = rule.get("inputs")
         if not isinstance(inputs, dict) or not all(isinstance(k, str) and isinstance(v, str) for k, v in inputs.items()):
             raise ValueError("starts: '{}' needs inputs as an object of name to source".format(name))
+        if no_record:
+            if "route" in rule:
+                raise ValueError("starts: '{}' reads no route record, so it cannot name a route".format(name))
+            for source in inputs.values():
+                if source.startswith(("route.", "spec.")):
+                    raise ValueError("starts: '{}' reads no route record or spec, so '{}' has nothing to read".format(
+                        name, source))
     return doc
 
 
@@ -136,18 +145,21 @@ def _try_start(conn, jira: Jira, graph: str, rule: dict, issue: dict, root: Opti
     key = issue.get("key")
     if ledgerview.ticket_has_open_run(conn, key):
         return "has an open run"
-    state, route = jira.read_property(key, ROUTE_PROPERTY)
-    if state == "unknown":
-        return "route record unreadable"
-    if state != "set" or not isinstance(route, dict):
-        return "no route record"
-    if route.get("graph") != rule["route"]:
-        return "routed elsewhere"
-    state, spec = jira.read_property(key, SPEC_PROPERTY)
-    if state == "unknown":
-        return "spec unreadable"
-    if state == "set" and not isinstance(spec, dict):
-        return "spec does not parse"
+    if rule.get("route_record") is False:      # the validation rule: the ticket's state alone says it is wanted
+        route, spec, state = {}, None, "none"
+    else:
+        state, route = jira.read_property(key, ROUTE_PROPERTY)
+        if state == "unknown":
+            return "route record unreadable"
+        if state != "set" or not isinstance(route, dict):
+            return "no route record"
+        if route.get("graph") != rule["route"]:
+            return "routed elsewhere"
+        state, spec = jira.read_property(key, SPEC_PROPERTY)
+        if state == "unknown":
+            return "spec unreadable"
+        if state == "set" and not isinstance(spec, dict):
+            return "spec does not parse"
     last = ledgerview.last_ended_run(conn, key, graph) if not _empty(route.get("returned_from")) else None
     try:
         inputs = build_inputs(rule["inputs"], issue, route, spec if state == "set" else None, last)

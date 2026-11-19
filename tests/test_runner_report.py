@@ -114,6 +114,24 @@ class Reporting(RunnerCase):
         flagged = self.snap(now)["waiting_over_7_days"]
         self.assertEqual([(f["run"], f["ticket"], f["step"]) for f in flagged], [(old, "JP-903", "hold")])
 
+    def test_watch_step_is_left_off_the_seven_day_list(self):
+        self.settings(wait_flag_exempt=["waits.hold"])
+        self.plan({"pr-state": [PENDING]})
+        run = self.start("waits", "JP-903", *AM)
+        self.do_role(run, "zeta", "ready", {"note": "n"})
+        self.do_role(run, "alpha", "done", {"note": "n"})
+        self.assertEqual(self.walker("next", "--run", run)["action"], "waiting")
+        now = time.time()
+        doc = runfolder.load(run)
+        doc["waiting"]["since"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(now - 8 * 86400))
+        runfolder.save(run, doc)
+        self.assertEqual(self.snap(now)["waiting_over_7_days"], [])
+        self.settings(wait_flag_exempt=["waits.other"])        # exempt is by graph and step: another step is not spared
+        self.assertEqual([f["run"] for f in self.snap(now)["waiting_over_7_days"]], [run])
+
+    def test_the_shipped_exemption_is_the_validation_watch_and_only_that(self):
+        self.assertEqual(paths.DEFAULTS["wait_flag_exempt"], ["validation.watch"])
+
     def test_run_report_has_every_step(self):
         run = self.finished_run()
         report = self.report(run)
