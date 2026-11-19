@@ -65,6 +65,10 @@ def propose(conn: sqlite3.Connection, item: dict, repo: Optional[loose_ends.Repo
             return _proposal(item, "josh", "merge or close the pull request", "that is Josh's call")
         return _proposal(item, "agent", "check the merged work, then move the ticket to Done",
                          "only when a merged pull request or commits on the default branch prove it")
+    if kind == "closed-pr-branch":
+        return _proposal(item, "josh", "delete the remote branch or mark it kept",
+                         "its pull request was closed without merging, so the branch may be the only copy of that work; "
+                         "deleting a remote branch is permanent")
     if repo is None or not repo.ok:
         return _proposal(item, "josh", "look at it by hand", "git could not be read in that repository")
     if _phi(conn, item):
