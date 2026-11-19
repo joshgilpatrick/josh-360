@@ -13,6 +13,9 @@ Josh's definition of a loose end, checked live against git, GitHub and Jira as t
     leftover-worktree  a worktree a session used that is still there
     orphaned-branch    a branch a session touched that nothing is using (merged and left, or pushed and forgotten),
                        unless Josh marked it kept on purpose
+    closed-pr-branch   a remote ticket branch (`<KEY>-*`) a session touched, with no local copy, whose pull requests
+                       were all closed without merging (the graphs' `close-unmerged` keeps it on purpose, JP-174),
+                       unless Josh marked it kept
 
 The ledger only says which session touched which folder, branch, commit, worktree, pull request and ticket
 (`session_refs`, `current_homes`, `ticket_links`). Nothing here is stored: no table, no file, no reminder, so a
@@ -30,6 +33,7 @@ import argparse
 import datetime
 import json
 import os
+import re
 import sqlite3
 import subprocess
 import sys
@@ -44,9 +48,11 @@ from ledger import ask, db  # noqa: E402
 from ledger.live import Live  # noqa: E402
 from ledger.text import short_text  # noqa: E402
 
-KINDS = ("commits-unhoused", "unpushed-branch", "ticket-not-done", "open-pr", "leftover-worktree", "orphaned-branch")
+KINDS = ("commits-unhoused", "unpushed-branch", "ticket-not-done", "open-pr", "leftover-worktree", "orphaned-branch",
+         "closed-pr-branch")
 BY = "ledger/loose_ends.py"
 WORKTREES_DIR = "/.claude/worktrees/"
+TICKET_BRANCH = re.compile(r"^[A-Z][A-Z0-9]*-[0-9]+[-/].")   # <KEY>-<slug>, or <KEY>/<slug> made by hand
 MAX_TIPS = 100  # more unhoused commits than this in one repository: one item per commit, no grouping
 
 REFS_SQL = """SELECT r.session_uid, r.kind, r.value, e.git_root, e.folder
@@ -308,7 +314,10 @@ class Collector:
 
     def _branches(self, repo: Repo, owners: Dict[str, Set[str]]) -> None:
         for branch, uids in sorted(owners.items()):
-            if branch not in repo.local or repo.is_default(branch) or (repo.root, branch) in self.kept:
+            if repo.is_default(branch) or (repo.root, branch) in self.kept:
+                continue
+            if branch not in repo.local:
+                self._remote_branch(repo, branch, uids)
                 continue
             pushed = repo.pushed(branch)
             merged = repo.merged("refs/heads/" + branch)
@@ -333,6 +342,20 @@ class Collector:
                 continue
             self.add("orphaned-branch", repo.root + ":" + branch, uids,
                      "pushed, not merged, and no open pull request", state_name="pushed", **facts)
+
+    def _remote_branch(self, repo: Repo, branch: str, uids: Set[str]) -> None:
+        """A ticket branch that is only on the remote: loose when its pull requests were all closed without merging."""
+        if branch not in repo.remote or not TICKET_BRANCH.match(branch):
+            return
+        prs = self.live.branch_prs(repo.root, branch)
+        if prs is None:
+            self.skip("GitHub could not be read (gh)", branch)
+            return
+        if not prs or any(p["state"] != "CLOSED" for p in prs):
+            return              # never had a pull request, or one is open or merged: not this kind
+        self.add("closed-pr-branch", repo.root + ":" + branch, uids,
+                 "remote branch of a pull request closed without merging", root=repo.root, branch=branch,
+                 url=prs[0]["url"])
 
     def _worktrees(self, repo: Repo, owners: Dict[str, Set[str]]) -> None:
         for path, uids in sorted(owners.items()):
@@ -431,8 +454,9 @@ def mark(conn: sqlite3.Connection, folder: str, branch: str, kept: bool, note: O
     root = resolve_root(folder)
     if root is None:
         raise ValueError("{} is not inside a git repository".format(folder))
-    if kept and branch not in Repo(root).local:
-        raise ValueError("there is no local branch {} in {}".format(branch, root))
+    repo = Repo(root) if kept else None
+    if repo is not None and branch not in repo.local and branch not in repo.remote:
+        raise ValueError("there is no local or remote branch {} in {}".format(branch, root))
     text, withheld = short_text(note, 200)
     if withheld:
         raise ValueError("the note looks like it holds patient data; say it another way")
