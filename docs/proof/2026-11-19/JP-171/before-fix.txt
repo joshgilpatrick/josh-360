@@ -1,0 +1,3 @@
+AssertionError: 2 != 0 : {"error": "the entry gate 'ready' did not admit the run: gate 'ready' failed (1): Jira credentials missing: set JOSH360_JIRA_EMAIL and JOSH360_JIRA_TOKEN"}
+Ran 1 test in 0.260s
+FAILED (failures=1)

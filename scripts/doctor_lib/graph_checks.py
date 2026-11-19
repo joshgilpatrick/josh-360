@@ -177,3 +177,46 @@ def stale_worktrees(ctx: Ctx) -> Result:
             "run /closeout (python3 ~/.josh-360/repo/ledger/closeout.py) to see what each holds; nothing is removed "
             "without Josh")
     return Result(cid, PASS, "{} graph worktree(s), none left more than 7 days after its run".format(len(trees)))
+
+
+class _Asked:
+    """What `subprocess.run` would return, for a keychain question asked without reading the secret."""
+
+    def __init__(self, code: int):
+        self.returncode = code
+        self.stdout = "present" if code == 0 else ""
+
+
+def _gate_jira_names(ctx: Ctx):
+    """The names the walker would hand a gate, built by the walker's own `jira_env` (JP-171). The keychain is asked
+    whether the item exists (`-w` removed), so the token is never read; the answer stands in for it."""
+    tools = str(Path(__file__).resolve().parent.parent.parent / "graphs" / "tools")
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
+    from walker_lib import gates  # noqa: E402  (the walker's code, so the doctor sees what a gate would get)
+    asked = {}
+
+    def ask(argv, **kwargs):
+        code, _, _ = ctx.run([a for a in argv if a != "-w"], 15)
+        asked["code"] = code
+        return _Asked(code)
+    return set(gates.jira_env(ctx.env, run=ask, state=ctx.state)), asked.get("code")
+
+
+@check("graphs", "gate-jira")
+def gate_jira(ctx: Ctx) -> Result:
+    cid = "graphs.gate-jira"
+    names, keychain = _gate_jira_names(ctx)
+    if "JOSH360_JIRA_EMAIL" not in names:
+        return Result(cid, FAIL, "the walker finds no Jira email to give gate scripts, so every gate that reads Jira "
+                      "stops and runs are not admitted",
+                      "put your Atlassian email on one line in ~/.josh-360/state/jira-email "
+                      "(or: doctor --fix --jira-email you@example.com)", "jira-email")
+    if "JOSH360_JIRA_TOKEN" not in names:
+        if keychain in (124, 127):
+            return Result(cid, SKIP, "the email is found; the keychain cannot be asked here (not a Mac)")
+        return Result(cid, FAIL, "the walker finds no Jira token to give gate scripts, so every gate that reads Jira "
+                      "stops and runs are not admitted",
+                      "add the Atlassian API token to the login keychain as generic password jira-claude-api-key "
+                      "(any account name)")
+    return Result(cid, PASS, "gate scripts get both the Jira email and the token")
