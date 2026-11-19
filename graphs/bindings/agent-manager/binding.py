@@ -64,10 +64,38 @@ def _run(argv: List[str], timeout: int = TIMEOUT) -> Tuple[int, str, str]:
     return done.returncode, done.stdout, done.stderr
 
 
+def step_title(step: str) -> str:
+    return " ".join(w.capitalize() for w in str(step).split("_"))
+
+
 def session_name(answer: dict) -> str:
-    title = " ".join(w.capitalize() for w in str(answer["step"]).split("_"))
+    """The name the runner chose (`JP-116(c) - Build`, JP-173), else the keyless form `<graph> - <Step> (r<run>)`."""
+    if answer.get("session_name"):
+        return str(answer["session_name"])
     who = answer.get("ticket") or answer.get("graph") or "run"
-    return "{} - {} (r{})".format(who, title, str(answer["run"])[2:6])
+    return "{} - {} (r{})".format(who, step_title(answer["step"]), str(answer["run"])[2:6])
+
+
+def letter(n: int) -> str:
+    """The n-th session's letter, counting from 1: a to z, then aa, ab and so on (JP-173)."""
+    if n < 1:
+        raise ValueError("letters count from 1")
+    out = ""
+    while n:
+        n, rest = divmod(n - 1, 26)
+        out = chr(ord("a") + rest) + out
+    return out
+
+
+def ticket_session_name(ticket: str, n: int, step: str) -> str:
+    return "{}({}) - {}".format(ticket, letter(n), step_title(step))
+
+
+def ticket_group(status: Optional[str]) -> Optional[str]:
+    """`josh-360/tickets/<status>`, with `/` in the status as `-` so it is never a nested group; None for no status."""
+    if not status:
+        return None
+    return "{}/{}".format(config().get("ticket_group_root", "josh-360/tickets"), str(status).replace("/", "-").strip())
 
 
 def _directory(answer: dict) -> str:
@@ -111,18 +139,49 @@ def _am() -> str:
     return found
 
 
-def _ensure_group(am: str, group: str) -> None:
+def _groups_file() -> Path:
     home = os.environ.get("JOSH360_HOME") or os.path.join(os.path.expanduser("~"), ".josh-360")
-    marker = Path(home) / "state" / "runner" / "group-ready"
-    if marker.exists():
+    return Path(home) / "state" / "runner" / "groups-ready.json"
+
+
+def _ready_groups() -> List[str]:
+    try:
+        doc = json.loads(_groups_file().read_text(encoding="utf-8"))
+        return [g for g in doc if isinstance(g, str)] if isinstance(doc, list) else []
+    except (OSError, ValueError):
+        return []
+
+
+def _forget_group(group: str) -> None:
+    kept = [g for g in _ready_groups() if g != group]
+    try:
+        _groups_file().write_text(json.dumps(kept), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def _ensure_group(am: str, group: str) -> None:
+    """Create the group and each group above it once; remember the ones made, so later spawns skip the calls."""
+    ready = _ready_groups()
+    if group in ready:
         return
     parts = group.split("/")
     for i in range(1, len(parts) + 1):
         code, out, err = _run([am, "create-group", "/".join(parts[:i])])
         if code != 0 and "already exists" not in (out + err).lower():
             raise SpawnRefused("group")
-    marker.parent.mkdir(parents=True, exist_ok=True)
-    marker.write_text("ok\n", encoding="utf-8")
+    target = _groups_file()
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(sorted(set(ready + [group]))), encoding="utf-8")
+
+
+def ensure_group(group: str) -> bool:
+    """Whether the group exists now (made if it was missing). Never raises."""
+    try:
+        _ensure_group(_am(), group)
+        return True
+    except (SpawnRefused, subprocess.SubprocessError, OSError):
+        return False
 
 
 def start(answer: dict, marker: str, comments: str) -> dict:
@@ -130,18 +189,26 @@ def start(answer: dict, marker: str, comments: str) -> dict:
     cfg = config()
     am = _am()
     try:
-        _ensure_group(am, cfg["group"])
+        group = cfg["group"]
+        wanted = answer.get("am_group")
+        if wanted:
+            try:
+                _ensure_group(am, wanted)
+                group = wanted
+            except SpawnRefused:                       # a status group that cannot be made: the old group, not no session
+                pass
+        _ensure_group(am, group)
         name, directory = session_name(answer), _directory(answer)
         prompt = build_prompt(answer, marker, comments)
         last = "refused"
         for entry in answer["models"]:
             model = cfg.get("models", {}).get(entry["model"], entry["model"])
-            argv = [am, "spawn", "--name", name, "--tool", cfg.get("tool", "claude"), "--group", cfg["group"],
+            argv = [am, "spawn", "--name", name, "--tool", cfg.get("tool", "claude"), "--group", group,
                     "--directory", directory, "--model", model, "--effort", entry["effort"], "--prompt", prompt, "--json"]
             code, out, err = _run(argv)
             text = (out + err).lower()
             if code == 0:
-                return _handle(cfg, out, name, model, entry["effort"], directory)
+                return dict(_handle(cfg, out, name, model, entry["effort"], directory), group=group)
             if "is not installed" in text:
                 raise SpawnRefused("no-cli")
             if "model" not in text and "effort" not in text:
@@ -205,3 +272,36 @@ def close(handle: dict) -> bool:
         return code == 0
     except (SpawnRefused, subprocess.SubprocessError, OSError, KeyError, ValueError):
         return False
+
+
+def move(handle: dict, group: str) -> bool:
+    """File the session under the group (made first if missing): `agent-manager move <id> <group>`. Never raises."""
+    session = (handle or {}).get("am_session")
+    if not session or not ensure_group(group):
+        return False
+    try:
+        code, _, _ = _run([_am(), "move", session, group, "--json"], timeout=60)
+    except (SpawnRefused, subprocess.SubprocessError, OSError):
+        return False
+    if code != 0:
+        _forget_group(group)                           # the group may have been deleted by hand: make it again next time
+    return code == 0
+
+
+def placed(handle: dict) -> Optional[Tuple[Optional[str], bool]]:
+    """(group, archived) for the session from Agent Manager's database, or None when it cannot be read."""
+    session = (handle or {}).get("am_session")
+    if not session:
+        return None
+    try:
+        conn = sqlite3.connect("file:{}?mode=ro".format(_db_path()), uri=True, timeout=10)
+        try:
+            columns = {row[1] for row in conn.execute("PRAGMA table_info(sessions)")}
+            if not {"id", "group_name", "archived"} <= columns:
+                return None
+            row = conn.execute("SELECT group_name, archived FROM sessions WHERE id = ?", (session,)).fetchone()
+        finally:
+            conn.close()
+    except (sqlite3.Error, OSError):
+        return None
+    return None if row is None else (row[0], bool(row[1]))
