@@ -204,7 +204,8 @@ class GitHub:
         return name
 
     def workflow_runs(self, workflow: str, branch: str, since: str) -> List[dict]:
-        """Completed runs of one workflow file on one branch, created at or after `since`, newest first, at most 100,
+        """Completed runs of one workflow file on one branch, created at or after `since`, newest first, at most 100
+        (more than 100 is a GitHubError, never a shortened list),
         each `{"conclusion": str, "created_at": str}` and nothing else (the validation watch counts them, JP-166)."""
         _, out = self._gh("api", "-X", "GET", "repos/{}/actions/workflows/{}/runs".format(self.repo, quote(workflow, safe="")),
                           "-f", "branch=" + branch, "-f", "status=completed", "-f", "created=>=" + since,
@@ -213,6 +214,11 @@ class GitHub:
         rows = body.get("workflow_runs") if isinstance(body, dict) else None
         if not isinstance(rows, list):
             raise GitHubError("the workflow runs were not readable")
+        total = body.get("total_count")
+        if isinstance(total, int) and not isinstance(total, bool) and total > len(rows):
+            # One page only: a count taken from it would be a floor, and a watch that counts events or failures
+            # must not read a floor as a count.
+            raise GitHubError("more than {} workflow runs since then".format(len(rows)))
         runs = [{"conclusion": str(row.get("conclusion") or ""), "created_at": str(row.get("created_at") or "")}
                 for row in rows if isinstance(row, dict)]
         runs.sort(key=lambda run: run["created_at"], reverse=True)
