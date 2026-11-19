@@ -1,0 +1,13 @@
+{
+  "command": [
+    "hooks/dispatch",
+    "PreToolUse"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp174/home/.josh-360/repo",
+  "exit_code": 2,
+  "run": "jp174",
+  "started_at": "2026-11-19T22:11:33Z",
+  "stderr": "a step session does not make a branch: JP-900 has one branch, JP-900-login, and one worktree, /tmp/verify-josh-360/jp174/home/Development/active/josh_360/.claude/worktrees/JP-900-login. Work and commit there; the gates make, push and clean up the branch",
+  "stdin": "{\"session_id\": \"cc-jp174\", \"hook_event_name\": \"PreToolUse\", \"tool_name\": \"Bash\", \"tool_input\": {\"command\": \"git checkout -b JP-900-try2\"}}\n",
+  "stdout": ""
+}
