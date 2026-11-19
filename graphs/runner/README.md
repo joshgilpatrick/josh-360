@@ -7,6 +7,7 @@
 - [Starting and stopping it](#starting-and-stopping-it)
 - [Hosts: job or terminal](#hosts-job-or-terminal)
 - [A run that stopped](#a-run-that-stopped)
+- [Follow-ups and telling the leads](#follow-ups-and-telling-the-leads)
 - [Where the logs and files are](#where-the-logs-and-files-are)
 - [Files in this folder](#files-in-this-folder)
 
@@ -38,21 +39,27 @@ Four hooks (`hooks/*/20-graph-step*`) put rails on those sessions and on no othe
 
 A run stops when the walker says so (a step that ran as often as its tier allows, a gate that failed). The runner notifies once, the stop appears in `status` and the report, and nothing more happens to it until you act. Read the reason in `~/.josh-360/logs/runner/runner.log`. To carry on: `python3 graphs/tools/walker.py retry --run <id>` (the same step again) or `allow --run <id> --step <step>` (let a step run once more than its cap). A run that stops again afterwards is a new stop and is notified again.
 
+## Follow-ups and telling the leads
+
+A step session that finds work outside its ticket writes it in its result as `follow_ups` (JP-175, `graphs/contracts/follow-up.md`). On the next `advance` the walker files each one through intake (a ticket-creation run, so Josh still approves it on a card, and the new ticket carries the label `graph-follow-up`). A follow-up that blocks the ticket links the new ticket as blocking it in Jira, and the run waits: `status` and `where <KEY>` show it as `waiting` on the new key, and it moves on by itself once that ticket is Done or Cancelled, or the follow-up is dropped at the card.
+
+The runner tells the lead, by script and with no session started, when a run stops, parks a question for Josh, files or drops a follow-up, or finishes. The lead is the epic's project manager session when the ticket's epic has one running, else the sprint lead (`runner_lib/leads.py` says how it is found in the sprint skill's state files). A filed follow-up reaches a sprint lead through `sprint.py handoff`; every other message goes by `agent-manager send`. Each message is kept in the run folder's `lead-messages.json`. With no lead running nothing is sent: the message waits there and the next pass sends it once a lead runs. `runner.py messages` (add `--json`) lists every message still unsent.
+
 ## Where the logs and files are
 
 - `~/.josh-360/logs/runner/runner.log`: one line per start, spawn, record, abandon and stop (ids, step names and reasons only).
 - `~/.josh-360/logs/runner/run-<run id>.log`: the output of that run's detached `advance`.
 - `~/.josh-360/state/runner/`: `report.json` (the last pass), `refusals.json` (why the walker refused a start, JP-172), the locks, and the heartbeat (terminal host).
-- `~/.josh-360/runs/<run id>/`: the run folder: `run.json`, `sessions/<step>-<attempt>.json` (one per session; `.link.json` beside it is the link hook's), `results/`, `comments/`, `work/`, and `runner.json` (what has already been told).
+- `~/.josh-360/runs/<run id>/`: the run folder: `run.json`, `sessions/<step>-<attempt>.json` (one per session; `.link.json` beside it is the link hook's), `results/`, `comments/`, `work/`, `follow-ups/` (one file per follow-up a step reported), `lead-messages.json` (what each lead was told, or is still to be told) and `runner.json` (what has already been notified).
 - `~/.josh-360/state/graph-sessions/`: one small file per linked step session; the rails act only on a session that has one.
 
 ## Files in this folder
 
 | Path | What |
 | --- | --- |
-| `runner.py` | `tick`, `advance`, `start`, `status`, `report`, `where`, `loop` |
+| `runner.py` | `tick`, `advance`, `start`, `status`, `report`, `where`, `messages`, `loop` |
 | `tick_job.py` | the `graph-runner` job (always exits 0) |
 | `triage_jp116_job.py` | the temporary job that starts the triage run of JP-116, the proof ticket |
 | `starts.json` | which tickets get a run, per graph, and how many per pass |
 | `settings.json` | every number the runner uses |
-| `runner_lib/` | the Jira watch, the advance loop, the tick, locks, session files, the hook logic, status, `where` and the refusals it shows, and notifications |
+| `runner_lib/` | the Jira watch, the advance loop, the tick, locks, session files, the hook logic, status, `where` and the refusals it shows, notifications and the lead messages (`leads.py`) |
