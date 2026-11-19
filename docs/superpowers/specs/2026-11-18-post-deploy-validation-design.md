@@ -34,7 +34,7 @@ Ticket JP-164 (Research). Status: **approved by Josh on 18 November 2026** ("App
 
 Sources: the ticket and its two comments (the Jira facts read back on 18 November 2026); Josh's decisions in the thread on 18 November 2026 (subtasks only for work outside the running graph; a standard set of validation information on the ticket; a Deployed status; validation as its own graph); `conventions/tickets.md`; `docs/WORKFLOW.md` §4 and §5; `graphs/CONVENTION.md` ("Wait steps", "Scoring a run", "The run cap"); `graphs/flows/development.yaml`, `non-development.yaml` and `triage.yaml`; the graph runner design (`2026-11-17-graph-runner-design.md`) and `graphs/runner/runner_lib/watch.py`; the triage design (`2026-11-16-triage-graph-design.md`, "The Ready checklist"); `ledger/loose_ends.py`; `laptop/run_jobs.py` and `laptop/status.py`; action-triage's `CLAUDE.md` ("Jira ticket pickup").
 
-The draft graph is `2026-11-18-post-deploy-validation-draft/flows/validation.yaml`, beside this file. The graph checker passes it (`python3 graphs/tools/check_graph.py --root docs/superpowers/specs/2026-11-18-post-deploy-validation-draft`).
+The graph began as a draft beside this file and was moved by JP-167 to `graphs/flows/validation.yaml`, with its contracts in `graphs/contracts/`. The graph checker passes it (`python3 graphs/tools/check_graph.py`).
 
 ## Summary
 
