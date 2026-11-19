@@ -9,7 +9,8 @@ Each pass it reads jobs.yaml and runs every job that is due, one at a time, in f
 - `every: 10m` (or `1h`, `1d`) runs again once that long has passed since its last run.
 - `every: once` runs until it succeeds once, retrying at most hourly.
 - `report: true` means the job prints one JSON value. The runner puts it on the laptop-status
-  branch as reports/<id>.json (at most 1 MB). This is how the inventory (JP-96) comes back.
+  branch as reports/<id>.json (at most 1 MB). This is how the inventory (JP-96) comes back. The newest output is
+  also kept on the laptop as state/reports/<id>.json (JP-166), where the validation collectors read it.
 
 Each job's output goes to ~/.josh-360/logs/<id>.log. When the runs happened is kept in
 ~/.josh-360/state/jobs-state.json. A lock stops two passes running at once.
@@ -67,6 +68,13 @@ def run_job(job: Dict[str, object], lane: Lane) -> int:
             if len(out.encode("utf-8")) > REPORT_LIMIT:
                 raise ValueError("report is larger than 1 MB")
             data = json.loads(out)
+            # Keep the newest output here too, before the push: the validation collectors (JP-166) read it from this
+            # folder, and a push that fails must not cost them the reading.
+            try:
+                lane.mkdir(state_dir() / "reports")
+                lane.write_text(state_dir() / "reports" / "{}.json".format(job["id"]), out)
+            except OSError as e:   # a full disk must not stop the pass or cost the job its publish
+                lane.append_text(log, "local report copy not kept: {}\n".format(e))
             print("{}: report {}".format(job["id"], status_branch.publish(None, {str(job["id"]): data})))
         except (ValueError, Unexpected) as e:
             lane.append_text(log, "report not published: {}\n".format(e))

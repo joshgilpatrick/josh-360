@@ -1,0 +1,15 @@
+test_a_copy_that_cannot_be_written_does_not_stop_the_pass (test_follow.LocalReportCopyTest.test_a_copy_that_cannot_be_written_does_not_stop_the_pass)
+A full disk, or reports/ being a file, must not abort the runner or cost the job its publish. ... sample-job: report pushed
+ok
+test_a_job_that_is_not_a_report_keeps_no_copy (test_follow.LocalReportCopyTest.test_a_job_that_is_not_a_report_keeps_no_copy) ... ok
+test_failed_job_leaves_the_earlier_copy (test_follow.LocalReportCopyTest.test_failed_job_leaves_the_earlier_copy) ... sample-job: report pushed
+ok
+test_local_copy_survives_a_failed_publish (test_follow.LocalReportCopyTest.test_local_copy_survives_a_failed_publish) ... ok
+test_output_that_is_not_json_leaves_no_copy (test_follow.LocalReportCopyTest.test_output_that_is_not_json_leaves_no_copy) ... ok
+test_report_job_keeps_a_local_copy (test_follow.LocalReportCopyTest.test_report_job_keeps_a_local_copy) ... sample-job: report pushed
+ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.162s
+
+OK
