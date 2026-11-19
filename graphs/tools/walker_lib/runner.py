@@ -13,7 +13,7 @@ from typing import Dict, List, Optional
 from ledger import db
 from lib import patient_data  # graphs/gates/lib, on sys.path through ledger._repo
 
-from . import engine, gates, ledgerio, questions, runfolder
+from . import engine, follow_up_steps, gates, ledgerio, questions, runfolder
 from .graphfile import SHORT_CODE, Graph
 
 MAX_STEPS_PER_CALL = 200
@@ -344,6 +344,8 @@ def run_action(run: Run, act: engine.Action, attempt: int) -> Dict[str, object]:
 
 def advance(run: Run) -> Dict[str, object]:
     g = run.graph
+    follow_up_steps.file_new(run)          # JP-175: before anything, even the end, so no follow-up is left behind
+    follow_up_steps.sync(run)
     for _ in range(MAX_STEPS_PER_CALL):
         st = run.state
         if st.ended:
@@ -362,6 +364,9 @@ def advance(run: Run) -> Dict[str, object]:
                 continue
             _end(run, row["id"], engine.ABANDONED, "a step that never finished (the process was cut off)")
             continue
+        held = follow_up_steps.waiting(run)  # a follow-up that blocks the ticket holds the next step back
+        if held is not None:
+            return _with_warnings(run, held)
         act = engine.decide(g, st)
         if act.kind == "stopped":
             run.doc["stopped"] = {"step": act.step, "reason": act.reason}
