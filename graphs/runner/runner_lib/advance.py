@@ -15,7 +15,7 @@ import time
 from pathlib import Path
 from typing import Callable, Optional
 
-from . import ledgerview, locks, notify, paths, sessionfile, walk
+from . import amgroups, ledgerview, locks, notify, paths, sessionfile, walk
 from .hooklib import entry as session_entry, marker as step_marker
 from .status import RUNNER
 from ledger import db  # noqa: E402
@@ -36,6 +36,11 @@ def load_binding(runner: str):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)                                    # type: ignore[union-attr]
     return module
+
+
+def binding_name(ticket: str, n: int, step: str) -> str:
+    """`JP-116(c) - Build`: the binding's own rule, so the runner and the binding never disagree on a name."""
+    return load_binding(RUNNER).ticket_session_name(ticket, n, step)
 
 
 def advance(run_id: str, now: Callable[[], float] = time.time, root: Optional[Path] = None) -> dict:
@@ -79,6 +84,7 @@ def _loop(run_id: str, now: Callable[[], float], root: Optional[Path]) -> str:
         if off and not _open_role(run_id):                 # nothing may start, and `next` could run a gate
             return "off"
         answer = walk.call("next", "--run", run_id, root=root)
+        amgroups.sync_run(run_id, binding, now())          # the ticket's kept session follows its status (JP-173)
         action = answer.get("action")
         if action in ("parked", "waiting"):
             return action
@@ -138,6 +144,7 @@ def _step(run_id: str, a: dict, cfg: dict, binding, now: Callable[[], float], ro
         if link:
             doc.update(state="started", started_at=doc.get("intent_at"), handle={"am_session": link.get("am_session")})
             sessionfile.write(run_id, step, attempt, doc)
+            _keep(run_id, doc, binding, now)
             state = "started"
         elif now() - float(doc.get("intent_at") or 0) >= float(cfg["link_timeout_seconds"]):
             return _abandon(run_id, doc, "never-started", now, root, off)
@@ -162,8 +169,11 @@ def _spawn(run_id: str, a: dict, doc: Optional[dict], cfg: dict, binding, now: C
     comments_text = doc.get("comments") or taken
     doc["comments"] = comments_text
     sessionfile.write(run_id, step, attempt, doc)
+    spawn_answer = a
+    if doc.get("n"):                                       # a ticket's session: its letter name and status group (JP-173)
+        spawn_answer = dict(a, session_name=doc["session_name"], am_group=binding.ticket_group(a.get("jira_status")))
     try:
-        handle = binding.start(a, step_marker(run_id, step, attempt, doc["key"]), comments_text)
+        handle = binding.start(spawn_answer, step_marker(run_id, step, attempt, doc["key"]), comments_text)
     except binding.SpawnRefused as err:
         if str(err) in AMBIGUOUS_SPAWN:                    # the session may exist: the link, or the link timeout, decides
             paths.log("advance {}: spawn of {} gave no answer ({}); waiting for its link".format(run_id, step, err))
@@ -174,8 +184,17 @@ def _spawn(run_id: str, a: dict, doc: Optional[dict], cfg: dict, binding, now: C
         return "spawn-failed"
     doc.update(state="started", started_at=now(), handle=handle)
     sessionfile.write(run_id, step, attempt, doc)
+    _keep(run_id, doc, binding, now)
     paths.log("advance {}: started {} attempt {}".format(run_id, step, attempt))
     return "spawned"
+
+
+def _keep(run_id: str, doc: dict, binding, now: Callable[[], float]) -> None:
+    """Note a ticket's new session and archive the ticket's earlier ones (JP-173). Never stops the run."""
+    try:
+        amgroups.keep(doc, binding, now())
+    except Exception as err:  # noqa: BLE001  (the next pass's sync places it)
+        paths.log("advance {}: session of {} not noted: {}".format(run_id, doc.get("step"), type(err).__name__))
 
 
 def _live_sessions() -> list:
@@ -212,6 +231,13 @@ def _spawn_slot(run_id: str, a: dict, doc: Optional[dict], cfg: dict, now: Calla
                     "work_dir": a["work_dir"], "key": secrets.token_hex(8), "started_at": None, "handle": None,
                     "comments": "", "resting_since": None, "spawn_failures": 0, "ended_at": None, "reason": None,
                     "closed": None}
+                if a.get("ticket") and not base.get("n"):
+                    try:
+                        base["n"] = amgroups.allocate(a["ticket"])
+                    except (amgroups.Busy, ValueError) as err:
+                        paths.log("advance {}: no letter for {} yet: {}".format(run_id, a["step"], err))
+                        return False
+                    base["session_name"] = binding_name(a["ticket"], base["n"], a["step"])
                 base.update(state="spawning", intent_at=now())
                 sessionfile.write(run_id, a["step"], a["attempt"], base)
                 return True
@@ -245,7 +271,7 @@ def _started(run_id: str, a: dict, doc: dict, cfg: dict, binding, now: Callable[
             paths.log("advance {}: result of {} refused: {}".format(run_id, step, str(err)[:200]))
             return _abandon(run_id, doc, "bad-result", now, root, off)
         doc.update(state="recorded", ended_at=now())
-        if cfg["archive_finished_sessions"]:
+        if cfg["archive_finished_sessions"] and not doc.get("n"):   # a ticket's session stays in view (JP-173)
             doc["closed"] = binding.close(doc.get("handle") or {})
         sessionfile.write(run_id, step, attempt, doc)
         paths.log("advance {}: recorded {} attempt {}".format(run_id, step, attempt))
