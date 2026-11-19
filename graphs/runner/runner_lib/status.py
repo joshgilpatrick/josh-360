@@ -39,7 +39,7 @@ def _epoch(stamp: object) -> Optional[float]:
         return None
 
 
-def _run_row(conn: sqlite3.Connection, run: dict) -> dict:
+def run_row(conn: sqlite3.Connection, run: dict) -> dict:
     """One open run's row: its state, the step it is at and since when."""
     row = {"run": run["run"], "graph": run["graph"], "ticket": run["ticket"], "step": None, "state": "unreadable",
            "since": run["started_at"], "waiting_on": None}
@@ -69,7 +69,8 @@ def _run_row(conn: sqlite3.Connection, run: dict) -> dict:
 
 def snapshot(conn: sqlite3.Connection, now: float, root: Optional[Path] = None) -> dict:
     cfg = paths.settings()
-    rows = [_run_row(conn, r) for r in ledgerview.open_runs(conn, RUNNER)]
+    opened = ledgerview.open_runs(conn, RUNNER)
+    rows = [run_row(conn, r) for r in opened]
     counts = {"open": len(rows)}
     for state in STATES:
         counts[state] = sum(1 for r in rows if r["state"] == state)
@@ -83,15 +84,19 @@ def snapshot(conn: sqlite3.Connection, now: float, root: Optional[Path] = None) 
         if since is None or now - since >= flag_after:           # a time that cannot be read is not "recent"
             long_waits.append({"run": r["run"], "ticket": r["ticket"], "step": r["step"], "since": r["since"]})
     since_ended = _iso(now - float(cfg["ended_runs_days"]) * 86400)
-    ended = [dict(e, steps=run_report(conn, e["run"], root)["steps"])
-             for e in ledgerview.ended_runs(conn, since_ended, RUNNER)[:ENDED_LIMIT]]
-    return {
+    recent = ledgerview.ended_runs(conn, since_ended, RUNNER)
+    ended = [dict(e, steps=run_report(conn, e["run"], root)["steps"]) for e in recent[:ENDED_LIMIT]]
+    from . import where                                  # where builds on this module, so it is imported here
+    snap = {
         "status": "off" if paths.is_off() else "ok", "host": cfg["host"], "runs": counts,
         "open_runs": [{k: r[k] for k in ("run", "graph", "ticket", "step", "state", "since", "waiting_on")} for r in rows],
         "sessions_live": len(sessionfile.live([r["run"] for r in rows])), "session_limit": cfg["session_limit"],
         "rails": paths.rails_loaded(),
         "stopped": [{"run": r["run"], "ticket": r["ticket"], "step": r["step"]} for r in rows if r["state"] == "stopped"],
         "waiting_over_7_days": long_waits, "ended_runs": ended}
+    snap.update(where.ticket_rows(conn, now, opened, recent, root))     # JP-172: one row per ticket, no cost
+    snap[where.COUNTS_KEY]["cost_fields"] = where.cost_fields(snap)
+    return snap
 
 
 def text(snap: dict) -> str:
@@ -103,6 +108,9 @@ def text(snap: dict) -> str:
                                                    " on " + r["waiting_on"] if r.get("waiting_on") else "", r["since"]))
     for r in snap["stopped"]:
         lines.append("Stopped: {} at {} ({})".format(r["ticket"] or r["run"], r["step"], r["run"]))
+    for row in snap.get("tickets") or []:
+        for item in row.get("refused") or []:
+            lines.append("Refused: {} {} (last seen {}): {}".format(row["ticket"], item["graph"], item["last_at"], item["reason"]))
     if snap["waiting_over_7_days"]:
         lines.append("Waiting more than 7 days")
         for r in snap["waiting_over_7_days"]:

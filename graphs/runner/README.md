@@ -21,6 +21,7 @@ Four hooks (`hooks/*/20-graph-step*`) put rails on those sessions and on no othe
 
 - On the laptop: `python3 ~/.josh-360/repo/graphs/runner/runner.py status` (add `--json`). It lists open runs with their step and state (`working`, `queued`, `parked`, `waiting`, `stopped`, `between`), live sessions against the limit, whether the four hooks are registered (`rails`), stopped runs, and every run that has waited more than seven days, except a wait that is meant to last: `wait_flag_exempt` in `settings.json` names those as `<graph>.<step>` (the shipped one is `validation.watch`, which waits days for a change in production; the `await_fix` wait is still listed).
 - From the cloud: `python3 laptop/status.py show graph-runner`. The report holds counts, ids, step names, outcomes and times only.
+- One ticket, every run on it (JP-172): `runner.py where <KEY>` (add `--json`, or `--from-json <file>` for a published report): graph, step, its Jira status, state, attempt, what it waits on, every step session and its cost, and a total; with no run it says so and exits 0. The published report has a `tickets` list (one row per ticket with an open run, a run that ended in the last 14 days, or a refused start; no cost) and `ticket_counts` (`listed`, `refused`, `refusals_readable`, and `cost_fields`, which counts keys that name a cost and must be 0). When the walker refuses to start a run, the Jira watch keeps its reason (200 characters) in `~/.josh-360/state/runner/refusals.json` until a run of that graph starts on the ticket or 14 days pass. The leads' guide: `docs/leads-guide.md`.
 - One run's step table: `runner.py report --run <id>`, or from a published report: `runner.py report --run <id> --from-json <file>` (`--json` for the data). Each step shows its cost, subagents included (`not priced yet` when its session has no price; a published report has none, JP-170). Each role attempt shows its Claude Code session, its Agent Manager session and, if the runner gave up on it, why (`never-started`, `session-gone`, `time-cap`, ...), so every session a run started is listed, including the ones it abandoned. The published report keeps the runs that ended in the last 14 days.
 
 ## Starting and stopping it
@@ -48,7 +49,7 @@ The runner tells the lead, by script and with no session started, when a run sto
 
 - `~/.josh-360/logs/runner/runner.log`: one line per start, spawn, record, abandon and stop (ids, step names and reasons only).
 - `~/.josh-360/logs/runner/run-<run id>.log`: the output of that run's detached `advance`.
-- `~/.josh-360/state/runner/`: `report.json` (the last pass), the locks, and the heartbeat (terminal host).
+- `~/.josh-360/state/runner/`: `report.json` (the last pass), `refusals.json` (why the walker refused a start, JP-172), the locks, and the heartbeat (terminal host).
 - `~/.josh-360/runs/<run id>/`: the run folder: `run.json`, `sessions/<step>-<attempt>.json` (one per session; `.link.json` beside it is the link hook's), `results/`, `comments/`, `work/`, `follow-ups/` (one file per follow-up a step reported), `lead-messages.json` (what each lead was told, or is still to be told) and `runner.json` (what has already been notified).
 - `~/.josh-360/state/graph-sessions/`: one small file per linked step session; the rails act only on a session that has one.
 
@@ -56,9 +57,9 @@ The runner tells the lead, by script and with no session started, when a run sto
 
 | Path | What |
 | --- | --- |
-| `runner.py` | `tick`, `advance`, `start`, `status`, `report`, `messages`, `loop` |
+| `runner.py` | `tick`, `advance`, `start`, `status`, `report`, `where`, `messages`, `loop` |
 | `tick_job.py` | the `graph-runner` job (always exits 0) |
 | `triage_jp116_job.py` | the temporary job that starts the triage run of JP-116, the proof ticket |
 | `starts.json` | which tickets get a run, per graph, and how many per pass |
 | `settings.json` | every number the runner uses |
-| `runner_lib/` | the Jira watch, the advance loop, the tick, locks, session files, the hook logic, status, notifications and the lead messages (`leads.py`) |
+| `runner_lib/` | the Jira watch, the advance loop, the tick, locks, session files, the hook logic, status, `where` and the refusals it shows, notifications and the lead messages (`leads.py`) |

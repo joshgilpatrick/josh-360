@@ -66,3 +66,13 @@ def run_costs(conn: sqlite3.Connection, run: str) -> dict:
         "subagents_not_fully_priced, subagents_unpriced FROM step_costs_rolled_up WHERE run = ? AND session_uid IS NOT NULL",
         (run,))
     return {(r[0], r[1], r[2]): r[3:] for r in cur.fetchall()}
+
+
+def ticket_runs(conn: sqlite3.Connection, ticket: str) -> List[dict]:
+    """Every run on a ticket, any runner, newest first, with its end when it has one (JP-172)."""
+    cur = conn.execute(
+        "SELECT g.run_id, g.graph_id, g.ticket_key, g.runner, g.started_at, e.end_name, e.score, e.ended_at "
+        "FROM graph_runs g LEFT JOIN current_run_ends e ON e.run_id = g.run_id WHERE g.ticket_key = ? "
+        "ORDER BY g.started_at DESC, g.id DESC", (ticket,))
+    keys = ("run", "graph", "ticket", "runner", "started_at", "end", "score", "ended_at")
+    return [dict(zip(keys, r)) for r in cur.fetchall()]

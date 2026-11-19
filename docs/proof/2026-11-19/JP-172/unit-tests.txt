@@ -1,0 +1,26 @@
+test_a_key_that_is_not_a_ticket_key_is_refused (test_runner_where.Where.test_a_key_that_is_not_a_ticket_key_is_refused) ... ok
+test_a_published_row_holds_no_text_from_the_run (test_runner_where.Where.test_a_published_row_holds_no_text_from_the_run) ... ok
+test_a_refusal_keeps_its_first_time_and_ages_out (test_runner_where.Where.test_a_refusal_keeps_its_first_time_and_ages_out) ... ok
+test_a_refused_start_is_explained_in_the_cloud (test_runner_where.Where.test_a_refused_start_is_explained_in_the_cloud) ... ok
+test_a_run_stopped_at_its_cap_says_so (test_runner_where.Where.test_a_run_stopped_at_its_cap_says_so) ... ok
+test_a_session_on_several_steps_is_counted_once_in_the_total (test_runner_where.Where.test_a_session_on_several_steps_is_counted_once_in_the_total) ... ok
+test_a_ticket_mid_run (test_runner_where.Where.test_a_ticket_mid_run) ... ok
+test_a_ticket_waiting_on_josh (test_runner_where.Where.test_a_ticket_waiting_on_josh) ... ok
+test_a_ticket_with_no_run (test_runner_where.Where.test_a_ticket_with_no_run) ... ok
+test_a_waiting_run_names_what_it_waits_for (test_runner_where.Where.test_a_waiting_run_names_what_it_waits_for) ... ok
+test_an_unreadable_refusals_file_is_unknown_not_empty (test_runner_where.Where.test_an_unreadable_refusals_file_is_unknown_not_empty) ... ok
+test_every_run_is_listed_newest_first (test_runner_where.Where.test_every_run_is_listed_newest_first) ... ok
+test_from_a_published_report_with_no_row (test_runner_where.Where.test_from_a_published_report_with_no_row) ... ok
+test_the_cloud_copy_never_carries_cost (test_runner_where.Where.test_the_cloud_copy_never_carries_cost) ... ok
+test_the_cost_counter_counts_cost_keys (test_runner_where.Where.test_the_cost_counter_counts_cost_keys) ... ok
+test_the_watch_keeps_a_refusal_and_clears_it_when_a_run_starts (test_runner_where.Where.test_the_watch_keeps_a_refusal_and_clears_it_when_a_run_starts) ... ok
+test_a_published_snapshot_has_no_cost_and_the_report_says_so (test_runner_report_cost.ReportCost.test_a_published_snapshot_has_no_cost_and_the_report_says_so) ... ok
+test_a_session_with_no_price_says_not_priced_yet (test_runner_report_cost.ReportCost.test_a_session_with_no_price_says_not_priced_yet) ... ok
+test_a_step_with_no_session_has_no_cost (test_runner_report_cost.ReportCost.test_a_step_with_no_session_has_no_cost) ... ok
+test_each_step_shows_its_cost_with_its_subagents (test_runner_report_cost.ReportCost.test_each_step_shows_its_cost_with_its_subagents) ... ok
+test_the_command_shows_the_cost (test_runner_report_cost.ReportCost.test_the_command_shows_the_cost) ... ok
+test_the_header_has_a_cost_column_after_the_session (test_runner_report_cost.ReportCost.test_the_header_has_a_cost_column_after_the_session) ... ok
+test_the_report_without_cost_asked_for_carries_none (test_runner_report_cost.ReportCost.test_the_report_without_cost_asked_for_carries_none) ... ok
+----------------------------------------------------------------------
+Ran 23 tests in 8.606s
+OK

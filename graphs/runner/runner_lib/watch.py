@@ -14,7 +14,7 @@ import subprocess
 from pathlib import Path
 from typing import Dict, Optional
 
-from . import ledgerview, paths, walk
+from . import ledgerview, paths, refusals, walk
 from ledger import jira_read  # noqa: E402
 from lib import jira_fake  # noqa: E402  (graphs/gates/lib, on sys.path through paths)
 from lib.jira import Jira, JiraError  # noqa: E402
@@ -174,5 +174,7 @@ def _try_start(conn, jira: Jira, graph: str, rule: dict, issue: dict, root: Opti
         walk.call(*argv, root=root)
     except walk.WalkerRefused as err:
         paths.log("start of {} for {} refused: {}".format(graph, key, str(err)[:200]))
+        refusals.record(graph, key, str(err))            # so `where` and the published report can say why (JP-172)
         return "not admitted"
+    refusals.clear(graph, key)
     return None
