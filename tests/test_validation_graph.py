@@ -241,6 +241,12 @@ class TheGraphFile(unittest.TestCase):
         self.assertEqual(sorted(k for k, kind in kinds.items() if kind == "role"), [])
         self.assertEqual(len(steps), 11)
 
+    def test_a_bug_filing_that_finds_the_ticket_moved_ends_the_run(self):
+        step = {s["id"]: s for s in self.compiled()["steps"]}["file_bug"]
+        self.assertEqual(step["outcomes"], ["filed", "left_deployed"])
+        self.assertEqual(step["on"], {"left_deployed": "end"})
+        self.assertEqual(self.compiled()["header"]["end_states"]["file_bug.left_deployed"], "neutral")
+
     def test_declared_collectors_are_the_reader_modules(self):
         folder = ROOT / "graphs" / "gates" / "lib" / "collectors"
         modules = sorted(p.stem for p in folder.glob("*.py") if p.stem not in ("__init__", "reading"))
