@@ -20,9 +20,10 @@ header:
       steps: [build, triage_question, ask_builder, verify, review_plan, cite_check, build_stuck, write_pr, open_pr]
     - status: Code Review
       steps: [queue_audit, await_review, audit_stuck, fix_review, ask_fixer, after_fix, review_stuck]
-    - { status: Validation, steps: [merge_rule, merge, await_merge] }
+    - { status: Validation, steps: [merge_rule, merge, await_merge, clean_up, validation_rule] }
     - { status: Cancelled, steps: [close_unmerged] }
-    - { status: Done, steps: [clean_up, close] }
+    - { status: Deployed, steps: [hand_to_watch] }
+    - { status: Done, steps: [close] }
   entry_gate: ready
   exit_gate: no-loose-ends
   asks_josh: [ask_design, approve_design, design_stuck, ask_builder, build_stuck, audit_stuck, ask_fixer, review_stuck]
@@ -71,6 +72,8 @@ header:
     await_merge: read
     close_unmerged: josh
     clean_up: josh
+    validation_rule: read
+    hand_to_watch: josh
     close: josh
 
 inputs:
@@ -397,16 +400,34 @@ steps:
     on:
       cancelled: end
 
-  # --- Done: clean up only what is safe, and say what happened ------------------------------------------------
+  # --- Clean up only what is safe, then Done, or Deployed when the ticket asks to be watched (JP-168) ----------
   - id: clean_up
     gate: clean-up
     needs: [close_unmerged]
     inputs: [repo, pr_number, worktree, branch, work_dir]
     outcomes: [cleaned]
 
+  # Reads the ticket's Validation section. The ticket is not in Done yet: clean_up and this step sit in the Validation
+  # stretch, so nothing has moved it before the rule is read.
+  - id: validation_rule
+    gate: validation-rule
+    needs: [clean_up]
+    inputs: [ticket_key]
+    outcomes: [done, watch]
+
   - id: close
     gate: close-ticket
     effects: [move_ticket]
-    needs: [clean_up]
+    needs: [validation_rule]
+    when: { step: validation_rule, outcome: done }
+    inputs: [ticket_key, ticket_type, phi, pr_url, spec_path, evidence_path]
+    outcomes: [closed]
+
+  # A ticket that needs a watch goes to Deployed, where the validation graph picks it up within five minutes.
+  - id: hand_to_watch
+    gate: close-ticket
+    effects: [move_ticket]
+    needs: [validation_rule]
+    when: { step: validation_rule, outcome: watch }
     inputs: [ticket_key, ticket_type, phi, pr_url, spec_path, evidence_path]
     outcomes: [closed]

@@ -1,6 +1,6 @@
 ---
 name: ticket-lifecycle
-description: Use for any bug, feature or improvement in josh-360, and for any Jira request about Josh 360 work (file, find, update, close a JP ticket; what's on the board). Every change runs through a JP ticket with Gherkin criteria, moved Not Started → Ready → Design/Planning → In Progress → Code Review → Validation → Done.
+description: Use for any bug, feature or improvement in josh-360, and for any Jira request about Josh 360 work (file, find, update, close a JP ticket; what's on the board). Every change runs through a JP ticket with Gherkin criteria, moved Not Started → Ready → Design/Planning → In Progress → Code Review → Validation → Deployed (only when a watch is needed) → Done.
 ---
 
 # Tickets
@@ -15,7 +15,7 @@ Rules: `docs/WORKFLOW.md` §1. Values, statuses, transition ids and the words fo
 4. **Start** (In Progress, or Design/Planning for design work): rename the thread or session so its title starts with the ticket key ("JP-105 Connect the laptop") if it does not already, cut the branch named after the ticket (`git checkout -b JP-<n>-<slug> origin/main`; a cloud session leaves its `claude/...` branch behind, `docs/WORKFLOW.md` §3.8) and push it, then comment `Branch: <branch> @ <base-sha7>`. If a ticket already names a branch, continue it.
 5. **Build** against the scenarios: each maps to a test named after it. Scope change: edit the description and comment why.
 6. **Review** (Code Review): when the PR opens, comment `PR: <url> (branch <branch>)`. At `review:ready-for-human`, move to Validation.
-7. **Done** (move it yourself on merge): comment `Merged in <sha>.` and one line per scenario: `✔ Scenario: <title> — <test file or proof path>`.
+7. **Done or Deployed** (move it yourself on merge): read the ticket's Validation section. `Needed: yes` moves it to Deployed (transition `7`) with the comment `result | evidence | next gate`, the next gate being the validation watch; anything else (no section, `Needed: no`) moves it to Done. Then comment `Merged in <sha>.` and one line per scenario: `✔ Scenario: <title> — <test file or proof path>`. Never move a ticket out of Deployed: the validation graph does, or Josh.
 8. **Session end** with work left: comment what is done, what is next, and `Branch: <branch> @ <sha>`.
 
 Other comments use `result | evidence (commit, PR, run id) | next gate`. Read every write back. Never delete an issue; cancel it (transition `6`).
@@ -69,7 +69,7 @@ For a bug, add **Current behaviour** (repro steps, actual vs expected, evidence)
 - Find: `searchJiraIssuesUsingJql`. Read one: `getJiraIssue` (view `evidence` shows links). File: `createJiraIssue` with `projectKey: JP`, `issueType`, `parent: JP-94`, `labels`, and a Markdown description. Edit: `editJiraIssue` (labels are replaced, so send the full list). Comment: `addOrEditJiraIssueComment`.
 - Move: `transitionJiraIssue` with the transition id from the config. Every JP transition is open from any status and needs no fields.
 - Blocks: the issue link "Blocks". Use the connector's `discover` to find `createJiraIssueLink`, then `executeWrite`.
-- No GitHub-for-Jira automation moves tickets here; the merging thread transitions to Done.
+- No GitHub-for-Jira automation moves tickets here; the merging thread transitions to Done, or to Deployed when a watch is needed.
 - Description markup: if a description comes back flattened, re-send it as Markdown rather than wiki markup.
 
 ## Writing scenarios

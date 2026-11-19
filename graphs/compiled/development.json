@@ -34,6 +34,7 @@
     "design": "josh",
     "design_stuck": "read",
     "fix_review": "josh",
+    "hand_to_watch": "josh",
     "harden": "read",
     "lint": "read",
     "merge": "josh",
@@ -48,6 +49,7 @@
     "review_stuck": "read",
     "route_question": "read",
     "triage_question": "read",
+    "validation_rule": "read",
     "verify": "josh",
     "write_pr": "read"
    },
@@ -133,7 +135,9 @@
      "steps": [
       "merge_rule",
       "merge",
-      "await_merge"
+      "await_merge",
+      "clean_up",
+      "validation_rule"
      ]
     },
     {
@@ -143,9 +147,14 @@
      ]
     },
     {
+     "status": "Deployed",
+     "steps": [
+      "hand_to_watch"
+     ]
+    },
+    {
      "status": "Done",
      "steps": [
-      "clean_up",
       "close"
      ]
     }
@@ -1124,6 +1133,20 @@
     ]
    },
    {
+    "gate": "validation-rule",
+    "id": "validation_rule",
+    "inputs": [
+     "ticket_key"
+    ],
+    "needs": [
+     "clean_up"
+    ],
+    "outcomes": [
+     "done",
+     "watch"
+    ]
+   },
+   {
     "effects": [
      "move_ticket"
     ],
@@ -1138,11 +1161,40 @@
      "evidence_path"
     ],
     "needs": [
-     "clean_up"
+     "validation_rule"
     ],
     "outcomes": [
      "closed"
-    ]
+    ],
+    "when": {
+     "outcome": "done",
+     "step": "validation_rule"
+    }
+   },
+   {
+    "effects": [
+     "move_ticket"
+    ],
+    "gate": "close-ticket",
+    "id": "hand_to_watch",
+    "inputs": [
+     "ticket_key",
+     "ticket_type",
+     "phi",
+     "pr_url",
+     "spec_path",
+     "evidence_path"
+    ],
+    "needs": [
+     "validation_rule"
+    ],
+    "outcomes": [
+     "closed"
+    ],
+    "when": {
+     "outcome": "watch",
+     "step": "validation_rule"
+    }
    }
   ],
   "title": "Development pipeline"
@@ -1199,7 +1251,7 @@
  "sources": {
   "agents/design-writer/agent.yaml": "c0ef66351e3340e67c1e909836ac524bc4678acfd08d32c31b8e944d4d8b2524",
   "agents/spec-writer/agent.yaml": "4f15619f5c4a3c0353ee32a1c9f97e95615b97fd4e53923896d747892617d31f",
-  "flows/development.yaml": "bbdf0c7f29988f815a457d351aa35f6fd053e52ae70987d8877bc43c2e6b2248",
+  "flows/development.yaml": "dc654c8e48cdd466a0f40b33dc50aed39eb43fdd725b631685d647767a97657e",
   "roles/build-triager/role.yaml": "630b8f6fa3f80719c478804c33847c93d69b0da79346d25559212c093edc450f",
   "roles/builder/role.yaml": "fa78390a921fe08398b871e49fecfa545ddaa2d88e9f0849676c2cab8f8e23de",
   "roles/designer/role.yaml": "3138032c62e6e542ea2d5bc6638d5bffeec8c8113f513e1ce14d7c9d3f076ad1",

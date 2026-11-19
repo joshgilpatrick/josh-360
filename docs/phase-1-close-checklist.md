@@ -5,11 +5,12 @@
 - [How to use this list](#how-to-use-this-list)
 - [Move the Session Atlas service onto the startup list (JP-119)](#move-the-session-atlas-service-onto-the-startup-list-jp-119)
 - [Bring in the skill sync (JP-119)](#bring-in-the-skill-sync-jp-119)
+- [Send only watched tickets to Deployed from action-triage (JP-168)](#send-only-watched-tickets-to-deployed-from-action-triage-jp-168)
 - [After the close](#after-the-close)
 
 ## How to use this list
 
-Changes to Josh's other repositories (macbook-automations, claude-harness, claude-360) wait for the phase 1 close (JP-120), where Josh merges them with the rest. A ticket that has such a change writes the steps here, so the closing thread can do them in order without re-reading the ticket. Permanent deletions go on `docs/phase-1-deletion-list.md`, not here. JP-120 adds the other tickets' steps.
+Changes to Josh's other repositories (macbook-automations, claude-harness, claude-360, action-triage) wait for the phase 1 close (JP-120), where Josh merges them with the rest. A ticket that has such a change writes the steps here, so the closing thread can do them in order without re-reading the ticket. Permanent deletions go on `docs/phase-1-deletion-list.md`, not here. JP-120 adds the other tickets' steps.
 
 ## Move the Session Atlas service onto the startup list (JP-119)
 
@@ -32,6 +33,14 @@ Check afterwards: `python3 laptop/check_jobs.py` on the laptop prints no differe
 ## Bring in the skill sync (JP-119)
 
 `com.jgilpatrick.sync-client-skills` keeps the skill links for OpenCode, Pi and Codex current. It runs when `~/.claude/skills` changes, which needs a `WatchPaths` entry that the Josh 360 job runner does not offer, so JP-119 left it where it is (`laptop/launchd-register.json`, decision `bring-in-at-close`). At the close, in the claude-harness and macbook-automations pull requests: add its plist to macbook-automations `launchd/` and to the startup manifest, keep its script in claude-harness, then move the `elsewhere` row to the startup list by deleting it from the register and archive the copy in `~/Library/LaunchAgents`.
+
+## Send only watched tickets to Deployed from action-triage (JP-168)
+
+Why: action-triage's ticket daemon moves every merged JP ticket to Deployed (`ticketOutcome.ts`, "JP Code Review and Deployed are daemon moves"). Its Jira pickup is off today, so it moves nothing, and the validation graph sweeps any ticket with nothing to watch from Deployed to Done within five minutes, so the gap is harmless while pickup stays off. Before anyone turns pickup on, the daemon should do what the movers in josh-360 do (`graphs/gates/validation-rule.py`): after a merge, a JP ticket whose Validation section says `Needed: yes` goes to Deployed, and every other ticket goes to Done.
+
+1. **action-triage** (pull request, Josh merges it at the close). In the planner that picks a merged JP ticket's end status (`src/core/jira/ticketOutcome.ts`), read the ticket's description for a Validation section whose `Needed:` line says yes (a match on the line, as `needs_watch` in `graphs/gates/lib/validation_section.py` does, not a full parse) and plan Deployed only then; otherwise plan Done. A failed read of the description plans neither (unknown is not a reason to move). Add the tests beside the existing merged-JP-ticket ones, and update the "JP Code Review and Deployed are daemon moves" paragraph of its `CLAUDE.md`.
+
+Check afterwards: with pickup on for a test ticket whose section says `Needed: no`, a merged pull request leaves the ticket in Done and never in Deployed.
 
 ## After the close
 

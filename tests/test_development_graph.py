@@ -30,6 +30,29 @@ WORKING_FILES = ("spec.yaml", "state.json", "evidence.md", "answers.md", "pr-cur
 MARK = "<!-- action-triage-audit:security -->\n"
 GREEN = [Check("suite", "pass", "2026-11-17T11:00:00Z")]
 STATUSES = ["Ready", "Design/Planning", "In Progress", "Code Review", "Validation", "Done"]
+NEEDS_A_WATCH = """
+
+**Validation:**
+
+- Needed: yes
+- Starts: at Deployed
+- Check every: 1 day
+- Complete when: 7 checks in a row pass
+- Give up after: 21 days
+
+```gherkin
+@validate
+Scenario: The widget job runs clean
+  When the watch reads job widget-job
+  Then last_exit is 0
+```
+"""
+NEEDS_NO_WATCH = """
+
+**Validation:**
+
+- Needed: no. The change is a document; nothing runs in production.
+"""
 RESEARCH_DESIGN = """# Design
 
 ## Contents
@@ -238,6 +261,44 @@ class DevelopmentRun(WalkerCase):
         self.assertFalse(self.tree().exists())
         self.assertEqual(dev_git.git(self.clone, "status", "--porcelain"), "")
         self.assertTrue(self.posted()[-1].startswith("Done | merged https://github.com/josh/widgets/pull/7 as"))
+
+    # --- JP-168: the movers -----------------------------------------------------------------------------------
+    def merged_run(self, validation):
+        """A Story whose description ends with `validation`, taken through the audit to the merge and the end."""
+        self.ticket.tickets[KEY] = self.ticket.tickets[KEY]._replace(description=DESCRIPTION + validation)
+        run = self.begin()
+        self.to_review(run)
+        self.audit_ready()
+        return run, self.nxt(run)
+
+    def test_merged_ticket_that_needs_a_watch_ends_in_deployed(self):
+        run, done = self.merged_run(NEEDS_A_WATCH)
+        self.assertEqual((done["action"], done["end"], done["score"]), ("done", "finished", "success"))
+        self.assertEqual(self.ticket.tickets[KEY].status, "Deployed")
+        self.assertEqual(self.statuses(), STATUSES[:-1] + ["Deployed"])
+        self.assertNotIn((KEY, "Done"), self.ticket.moves)
+        self.assertEqual(self.github.state, "MERGED")
+        self.assertTrue(self.posted()[-1].startswith("Merged, now watched in production | merged "), self.posted()[-1])
+        self.assertIn("hand_to_watch", self.rows(run))
+        self.assertNotIn("close", self.rows(run))
+        self.assertFalse(self.tree().exists())                       # the clean-up ran before the hand-over
+
+    def test_merged_ticket_with_needed_no_ends_in_done(self):
+        run, done = self.merged_run(NEEDS_NO_WATCH)
+        self.assertEqual((done["action"], done["end"], done["score"]), ("done", "finished", "success"))
+        self.assertEqual(self.statuses(), STATUSES)
+        self.assertNotIn("Deployed", [status for _, status in self.ticket.moves])
+        self.assertTrue(self.posted()[-1].startswith("Done | merged "), self.posted()[-1])
+        self.assertIn("close", self.rows(run))
+        self.assertNotIn("hand_to_watch", self.rows(run))
+
+    def test_a_ticket_is_not_in_done_while_the_rule_is_read(self):
+        # the clean-up shares the Validation stretch: nothing moves the ticket to Done before `validation_rule` answers
+        run, _ = self.merged_run(NEEDS_A_WATCH)
+        order = self.rows(run)
+        self.assertLess(order.index("clean_up"), order.index("validation_rule"))
+        self.assertLess(order.index("validation_rule"), order.index("hand_to_watch"))
+        self.assertEqual([s for _, s in self.ticket.moves].count("Done"), 0)
 
     def test_bug_elsewhere_waits_for_joshs_merge(self):
         self.merges = "josh"

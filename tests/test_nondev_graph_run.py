@@ -18,6 +18,29 @@ from lib.gate_run import GateError  # noqa: E402
 from walker_lib import gates  # noqa: E402
 
 GRAPHS = ROOT / "graphs"
+NEEDS_A_WATCH = """
+
+**Validation:**
+
+- Needed: yes
+- Starts: at Deployed
+- Check every: 1 day
+- Complete when: 7 checks in a row pass
+- Give up after: 21 days
+
+```gherkin
+@validate
+Scenario: The widget job runs clean
+  When the watch reads job widget-job
+  Then last_exit is 0
+```
+"""
+NEEDS_NO_WATCH = """
+
+**Validation:**
+
+- Needed: no. The change is a document; nothing runs in production.
+"""
 STUBS = ("ready", "no-loose-ends")   # tested in their own tickets (JP-122, JP-161), so the test lets them pass
 
 
@@ -114,6 +137,53 @@ class NonDevelopmentRun(WalkerCase):
         self.assertTrue(any(c.startswith("Deliverable ready | ") for c in self.comments()))
         self.assertEqual(self.deps.mails, [])
         self.assertEqual([s for _, s in self.ticket.moves][-3:], ["In Progress", "Validation", "Done"])
+
+    def test_signed_off_ticket_that_needs_a_watch_ends_in_deployed(self):
+        self.ticket.tickets[KEY] = self.ticket.tickets[KEY]._replace(description=DESCRIPTION + NEEDS_A_WATCH)
+        run = self.begin()
+        self.to_the_work(run)
+        self.do_work(run)
+        self.finish_review(run)
+        self.assertEqual(self.walker("next", "--run", run)["step"], "sign_off")
+        self.answer_in_app(run, "sign_off", "accept")
+        done = self.walker("next", "--run", run)
+        self.assertEqual((done["action"], done["end"], done["score"]), ("done", "finished", "success"))
+        self.assertEqual(self.ticket.tickets[KEY].status, "Deployed")
+        self.assertEqual([s for _, s in self.ticket.moves][-3:], ["In Progress", "Validation", "Deployed"])
+        self.assertNotIn((KEY, "Done"), self.ticket.moves)
+        self.assertTrue(self.comments()[-2].startswith("Resolution: "))
+        self.assertEqual(self.comments()[-1], "Delivered, now watched in production | the resolution is in the comment "
+                                              "above | next gate: the validation watch starts within five minutes")
+        rows = [r[0] for r in self.step_rows(run)]
+        self.assertIn("hand_to_watch", rows)
+        self.assertNotIn("close", rows)
+
+    def test_signed_off_ticket_with_needed_no_ends_in_done(self):
+        self.ticket.tickets[KEY] = self.ticket.tickets[KEY]._replace(description=DESCRIPTION + NEEDS_NO_WATCH)
+        run = self.begin()
+        self.to_the_work(run)
+        self.do_work(run)
+        self.finish_review(run)
+        self.walker("next", "--run", run)
+        self.answer_in_app(run, "sign_off", "accept")
+        done = self.walker("next", "--run", run)
+        self.assertEqual((done["action"], done["end"], done["score"]), ("done", "finished", "success"))
+        self.assertEqual(self.ticket.tickets[KEY].status, "Done")
+        self.assertNotIn("Deployed", [s for _, s in self.ticket.moves])
+        rows = [r[0] for r in self.step_rows(run)]
+        self.assertIn("close", rows)
+        self.assertNotIn("hand_to_watch", rows)
+
+    def test_email_origin_ticket_that_needs_a_watch_still_closes_to_done(self):
+        # an emailed answer is closed by `close_emailed` (JP-123) and its reply reopens it: unchanged by the movers
+        self.ticket.tickets[KEY] = self.ticket.tickets[KEY]._replace(description=DESCRIPTION + NEEDS_A_WATCH)
+        run = self.begin(origin="email", desk_row="42")
+        self.to_the_work(run)
+        self.do_work(run)
+        self.finish_review(run)
+        done = self.walker("next", "--run", run)
+        self.assertEqual((done["end"], done["score"]), ("close_emailed.closed", "success"))
+        self.assertEqual(self.ticket.tickets[KEY].status, "Done")
 
     def test_email_origin_closes_without_sign_off(self):
         run = self.begin(origin="email", desk_row="42")
