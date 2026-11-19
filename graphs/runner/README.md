@@ -18,14 +18,14 @@ Four hooks (`hooks/*/20-graph-step*`) put rails on those sessions and on no othe
 
 ## Seeing what it is doing
 
-- On the laptop: `python3 ~/.josh-360/repo/graphs/runner/runner.py status` (add `--json`). It lists open runs with their step and state (`working`, `queued`, `parked`, `waiting`, `stopped`, `between`), live sessions against the limit, whether the four hooks are registered (`rails`), stopped runs, and every run that has waited more than seven days.
+- On the laptop: `python3 ~/.josh-360/repo/graphs/runner/runner.py status` (add `--json`). It lists open runs with their step and state (`working`, `queued`, `parked`, `waiting`, `stopped`, `between`), live sessions against the limit, whether the four hooks are registered (`rails`), stopped runs, and every run that has waited more than seven days, except a wait that is meant to last: `wait_flag_exempt` in `settings.json` names those as `<graph>.<step>` (the shipped one is `validation.watch`, which waits days for a change in production; the `await_fix` wait is still listed).
 - From the cloud: `python3 laptop/status.py show graph-runner`. The report holds counts, ids, step names, outcomes and times only.
 - One run's step table: `runner.py report --run <id>`, or from a published report: `runner.py report --run <id> --from-json <file>` (`--json` for the data). Each role attempt shows its Claude Code session, its Agent Manager session and, if the runner gave up on it, why (`never-started`, `session-gone`, `time-cap`, ...), so every session a run started is listed, including the ones it abandoned. The published report keeps the runs that ended in the last 14 days.
 
 ## Starting and stopping it
 
 - **Off switch:** `touch ~/.josh-360/state/runner-off` stops the Jira watch and every new session. A session already working finishes its step and is recorded; nothing after it runs. Remove the file to resume. A branch named `laptop-pause` pauses the whole job runner, this included.
-- **One graph's starts off:** set its `"on": false` in `starts.json`. The shipped file has the development graph on and every other graph off.
+- **One graph's starts off:** set its `"on": false` in `starts.json`. The shipped file has the development graph and the validation graph on and every other graph off. The validation rule (JP-167) has `"route_record": false`: it starts a run for any JP ticket in Deployed that is not flagged (`project = JP AND status = Deployed AND Flagged is EMPTY`), reads no route record or spec property, and takes only the ticket key. A rule with no route record may not name a route or an input sourced from `route.` or `spec.`; the file is refused at load if it does. Flagging a ticket in Deployed (the `hold-watch` step does it) keeps the runner from starting another run for it; clearing the flag starts a fresh watch.
 - **Start a run by hand** (a repair, or a one-time job; never needed day to day): `runner.py start --graph <graph> --ticket <KEY> [--input name=value ...]`. It starts no session by itself; the next pass picks the run up, even with the off switch on.
 - **How many at once:** `session_limit` in `settings.json` (2). Every number the runner uses is in that file.
 
