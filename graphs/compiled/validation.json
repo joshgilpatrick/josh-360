@@ -26,6 +26,7 @@
     "await_fix.left_deployed": "neutral",
     "close_accepted.closed": "neutral",
     "close_unwatched.closed": "neutral",
+    "file_bug.left_deployed": "neutral",
     "finished": "success",
     "hold.held": "needs-josh",
     "watch.left_deployed": "neutral"
@@ -300,8 +301,12 @@
     "needs": [
      "verdict"
     ],
+    "on": {
+     "left_deployed": "end"
+    },
     "outcomes": [
-     "filed"
+     "filed",
+     "left_deployed"
     ],
     "outputs": {
      "bug_key": {
@@ -431,7 +436,7 @@
  },
  "roles": {},
  "sources": {
-  "flows/validation.yaml": "9ddb5c2e0c3fdfc9e8447bbddeb1cc3864e3c1fd6e107282de5b2c9de159b45f",
+  "flows/validation.yaml": "d8979f98b54bfde3e471da084d01d115b0672edee8d88939ed5ddf32aaa36805",
   "tiers.yaml": "af81c945dec4862af3be1d3957865dd692e7c77e42df42fa43b35c1fe3a14d44"
  },
  "tiers": {
