@@ -94,7 +94,7 @@ steps:
     role: sign-off
     needs: [route]
     when: { step: route, outcome: [development, non_development] }
-    brief: "Ticket: {{ inputs.ticket_key }}. Judge items J1 to J5 only; the scripts have passed the rest."
+    brief: "Ticket: {{ inputs.ticket_key }}. Judge items J1 to J6 only; the scripts have passed the rest."
     inputs: [ticket_key, graph, version]
     outputs:
       defects: { type: list, description: "Each names a J item and quotes the ticket", contract: sign-off-defects }

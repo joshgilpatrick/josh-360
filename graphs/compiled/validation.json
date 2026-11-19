@@ -1,0 +1,466 @@
+{
+ "agents": {},
+ "compiled": 1,
+ "graph": {
+  "convention": 1,
+  "description": "Takes one ticket in Deployed, whose change has shipped, and ends with it Done once evidence collected from production meets the criteria in the ticket's Validation section. A script reads the section, a wait step collects a reading for each criterion on the section's own timetable with no session open, and a script grades the readings. No step uses a model. Criteria that are not met get a linked Bug, and the watch starts again when its fix ships. Josh is asked only when the watch cannot finish on its own, or when the ticket has a criterion only he can confirm.\n",
+  "graph": "validation",
+  "header": {
+   "access": {
+    "await_fix": "read",
+    "close": "josh",
+    "close_accepted": "josh",
+    "close_unwatched": "josh",
+    "decide": "read",
+    "file_bug": "josh",
+    "hold": "josh",
+    "read_criteria": "read",
+    "start_watch": "josh",
+    "verdict": "read",
+    "watch": "read"
+   },
+   "asks_josh": [
+    "decide"
+   ],
+   "end_states": {
+    "await_fix.left_deployed": "neutral",
+    "close_accepted.closed": "neutral",
+    "close_unwatched.closed": "neutral",
+    "file_bug.left_deployed": "neutral",
+    "finished": "success",
+    "hold.held": "needs-josh",
+    "watch.left_deployed": "neutral"
+   },
+   "entry_gate": "deployed",
+   "exit_gate": "no-loose-ends",
+   "jira": [
+    {
+     "status": "Deployed",
+     "steps": [
+      "read_criteria",
+      "start_watch",
+      "watch",
+      "verdict",
+      "file_bug",
+      "await_fix",
+      "decide",
+      "hold"
+     ]
+    },
+    {
+     "status": "Done",
+     "steps": [
+      "close",
+      "close_unwatched",
+      "close_accepted"
+     ]
+    }
+   ],
+   "ledger": [
+    "run",
+    "step",
+    "outcome",
+    "loop_count",
+    "session",
+    "tier",
+    "ticket",
+    "started_at",
+    "ended_at",
+    "graph_version",
+    "model"
+   ]
+  },
+  "inputs": {
+   "ticket_key": {
+    "description": "Jira key of the ticket in Deployed, e.g. JP-140",
+    "required": true,
+    "type": "string"
+   }
+  },
+  "outputs": {
+   "result": {
+    "description": "met, not_needed, not_met or undecided: what the last verdict said",
+    "type": "string"
+   }
+  },
+  "steps": [
+   {
+    "gate": "read-validation",
+    "id": "read_criteria",
+    "inputs": [
+     "ticket_key"
+    ],
+    "outcomes": [
+     "watch",
+     "not_needed",
+     "unreadable"
+    ],
+    "outputs": {
+     "check_every_hours": {
+      "description": "Hours between checks",
+      "type": "number"
+     },
+     "complete_when": {
+      "description": "'<n> checks in a row pass' or 'after <n> events'",
+      "type": "string"
+     },
+     "criteria": {
+      "contract": "validation-plan",
+      "description": "One entry per @validate scenario",
+      "type": "list"
+     },
+     "fail_after": {
+      "description": "Failing checks in a row that end the watch early: the Fail after line, or 3 when it is left out",
+      "type": "number"
+     },
+     "give_up_days": {
+      "description": "Days after the watch begins at which it ends without being complete",
+      "type": "number"
+     },
+     "needed": {
+      "description": "yes, no (the section says no, or there is no section) or unreadable",
+      "type": "string"
+     },
+     "problems": {
+      "description": "When unreadable: each line the script could not read, and what would pass",
+      "type": "list"
+     },
+     "section_version": {
+      "description": "Hash of the Validation section, so a later edit is seen",
+      "type": "string"
+     },
+     "starts": {
+      "description": "When the watch begins: at Deployed, on a date, or after a ticket reaches Done. The watch takes no reading before then",
+      "type": "string"
+     }
+    }
+   },
+   {
+    "gate": "start-watch",
+    "id": "start_watch",
+    "inputs": [
+     "ticket_key",
+     "criteria",
+     "starts",
+     "check_every_hours",
+     "complete_when",
+     "give_up_days",
+     "fail_after",
+     "section_version"
+    ],
+    "needs": [
+     "read_criteria"
+    ],
+    "outcomes": [
+     "started"
+    ],
+    "outputs": {
+     "watch_file": {
+      "contract": "validation-plan",
+      "description": "This round's plan and check log, in the run's work folder",
+      "type": "string"
+     }
+    },
+    "when": {
+     "outcome": "watch",
+     "step": "read_criteria"
+    }
+   },
+   {
+    "id": "watch",
+    "inputs": [
+     "ticket_key",
+     "watch_file"
+    ],
+    "needs": [
+     "start_watch"
+    ],
+    "on": {
+     "left_deployed": "end"
+    },
+    "outcomes": [
+     "met",
+     "needs_josh",
+     "not_met",
+     "no_data",
+     "left_deployed"
+    ],
+    "outputs": {
+     "tally": {
+      "contract": "watch-result",
+      "description": "Per criterion: checks made, passed, failed, unknown, and the last reading",
+      "type": "list"
+     },
+     "watch_result": {
+      "description": "met, needs_josh, not_met or no_data",
+      "type": "string"
+     }
+    },
+    "wait": "watch-criteria",
+    "when": {
+     "outcome": "watch",
+     "step": "read_criteria"
+    }
+   },
+   {
+    "gate": "validation-verdict",
+    "id": "verdict",
+    "inputs": [
+     "ticket_key",
+     "needed",
+     "problems",
+     "criteria",
+     "watch_result",
+     "tally"
+    ],
+    "needs": [
+     "read_criteria",
+     "watch"
+    ],
+    "outcomes": [
+     "met",
+     "not_needed",
+     "not_met",
+     "undecided"
+    ],
+    "outputs": {
+     "card": {
+      "description": "The path of the card file: what happened, for Josh, in two or three lines, when the result is undecided",
+      "type": "string"
+     },
+     "evidence": {
+      "description": "The table the closing comment shows: counts and links only",
+      "type": "string"
+     },
+     "failed": {
+      "contract": "watch-result",
+      "description": "The criteria that were not met, each with its counts",
+      "type": "list"
+     },
+     "result": {
+      "description": "met, not_needed, not_met or undecided",
+      "type": "string"
+     }
+    }
+   },
+   {
+    "effects": [
+     "move_ticket"
+    ],
+    "gate": "close-watch",
+    "id": "close",
+    "inputs": [
+     "ticket_key",
+     "result",
+     "evidence"
+    ],
+    "needs": [
+     "verdict"
+    ],
+    "outcomes": [
+     "closed"
+    ],
+    "when": {
+     "outcome": "met",
+     "step": "verdict"
+    }
+   },
+   {
+    "effects": [
+     "move_ticket"
+    ],
+    "gate": "close-watch",
+    "id": "close_unwatched",
+    "inputs": [
+     "ticket_key",
+     "result",
+     "evidence"
+    ],
+    "needs": [
+     "verdict"
+    ],
+    "on": {
+     "closed": "end"
+    },
+    "outcomes": [
+     "closed"
+    ],
+    "when": {
+     "outcome": "not_needed",
+     "step": "verdict"
+    }
+   },
+   {
+    "gate": "file-validation-bug",
+    "id": "file_bug",
+    "inputs": [
+     "ticket_key",
+     "failed",
+     "evidence"
+    ],
+    "needs": [
+     "verdict"
+    ],
+    "on": {
+     "left_deployed": "end"
+    },
+    "outcomes": [
+     "filed",
+     "left_deployed"
+    ],
+    "outputs": {
+     "bug_key": {
+      "description": "The linked Bug, new or already open for this ticket",
+      "type": "string"
+     }
+    },
+    "when": {
+     "outcome": "not_met",
+     "step": "verdict"
+    }
+   },
+   {
+    "id": "await_fix",
+    "inputs": [
+     "ticket_key",
+     "bug_key"
+    ],
+    "needs": [
+     "file_bug"
+    ],
+    "on": {
+     "left_deployed": "end",
+     "shipped": {
+      "at_limit": "decide",
+      "goto": "read_criteria",
+      "max_loops": 1
+     }
+    },
+    "outcomes": [
+     "shipped",
+     "cancelled",
+     "left_deployed"
+    ],
+    "outputs": {
+     "card": {
+      "description": "The path of the card file: which fix was cancelled, or how many have shipped, for Josh",
+      "type": "string"
+     }
+    },
+    "wait": "fix-closed",
+    "when": {
+     "outcome": "filed",
+     "step": "file_bug"
+    }
+   },
+   {
+    "ask": {
+     "choices": [
+      "watch_again",
+      "accept",
+      "stop"
+     ],
+     "question": "The watch on {{ inputs.ticket_key }} cannot finish on its own. What happened is below, and the evidence so far is on the ticket."
+    },
+    "id": "decide",
+    "needs": [
+     "await_fix"
+    ],
+    "on": {
+     "watch_again": {
+      "at_limit": "decide",
+      "goto": "read_criteria",
+      "max_loops": 2
+     }
+    },
+    "when": {
+     "outcome": [
+      "undecided",
+      "not_met"
+     ],
+     "step": "verdict"
+    }
+   },
+   {
+    "effects": [
+     "move_ticket"
+    ],
+    "gate": "close-watch",
+    "id": "close_accepted",
+    "inputs": [
+     "ticket_key",
+     "result",
+     "evidence"
+    ],
+    "needs": [
+     "decide"
+    ],
+    "on": {
+     "closed": "end"
+    },
+    "outcomes": [
+     "closed"
+    ],
+    "when": {
+     "outcome": "accept",
+     "step": "decide"
+    }
+   },
+   {
+    "gate": "hold-watch",
+    "id": "hold",
+    "inputs": [
+     "ticket_key"
+    ],
+    "needs": [
+     "decide"
+    ],
+    "on": {
+     "held": "end"
+    },
+    "outcomes": [
+     "held"
+    ],
+    "when": {
+     "outcome": "stop",
+     "step": "decide"
+    }
+   }
+  ],
+  "title": "Post-deploy validation"
+ },
+ "max_runs": {
+  "cheap": 5,
+  "gate": 2,
+  "mid": 3
+ },
+ "roles": {},
+ "sources": {
+  "flows/validation.yaml": "d8979f98b54bfde3e471da084d01d115b0672edee8d88939ed5ddf32aaa36805",
+  "tiers.yaml": "af81c945dec4862af3be1d3957865dd692e7c77e42df42fa43b35c1fe3a14d44"
+ },
+ "tiers": {
+  "cheap": [
+   {
+    "effort": "high",
+    "model": "claude-haiku-5-5"
+   },
+   {
+    "effort": "medium",
+    "model": "claude-sonnet-5-5"
+   }
+  ],
+  "gate": [
+   {
+    "effort": "high",
+    "model": "claude-opus-5-5"
+   }
+  ],
+  "mid": [
+   {
+    "effort": "medium",
+    "model": "claude-sonnet-5-5"
+   }
+  ]
+ }
+}

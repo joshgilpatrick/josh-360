@@ -8,8 +8,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from ledger.live import Live  # noqa: E402
 
 
-def done_issue(category="done", name="Done"):
-    return {"fields": {"status": {"name": name, "statusCategory": {"key": category}}}}
+def done_issue(category="done", name="Done", flagged=False):
+    fields = {"status": {"name": name, "statusCategory": {"key": category}}}
+    if flagged:
+        fields["customfield_10021"] = [{"value": "Impediment"}]
+    return {"fields": fields}
 
 
 class Result:
@@ -20,8 +23,20 @@ class Result:
 class LiveTickets(unittest.TestCase):
     def test_done_and_not_done(self):
         live = Live(fetch=lambda path: done_issue("done") if "JP-901" in path else done_issue("indeterminate", "In Progress"))
-        self.assertEqual(live.ticket("JP-901"), {"status": "Done", "done": True})
-        self.assertEqual(live.ticket("JP-902"), {"status": "In Progress", "done": False})
+        self.assertEqual(live.ticket("JP-901"), {"status": "Done", "done": True, "flagged": False})
+        self.assertEqual(live.ticket("JP-902"), {"status": "In Progress", "done": False, "flagged": False})
+
+    def test_ticket_reads_the_flag(self):
+        paths = []
+
+        def fetch(path):
+            paths.append(path)
+            return done_issue("indeterminate", "Deployed", flagged="JP-902" in path)
+
+        live = Live(fetch=fetch)
+        self.assertEqual(live.ticket("JP-901"), {"status": "Deployed", "done": False, "flagged": False})
+        self.assertEqual(live.ticket("JP-902"), {"status": "Deployed", "done": False, "flagged": True})
+        self.assertTrue(all(p.endswith("?fields=status,customfield_10021") for p in paths), paths)
 
     def test_unreadable_ticket_is_unknown(self):
         self.assertIsNone(Live(fetch=lambda path: None).ticket("JP-901"))

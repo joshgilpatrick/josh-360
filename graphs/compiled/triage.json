@@ -189,7 +189,7 @@
     }
    },
    {
-    "brief": "Ticket: {{ inputs.ticket_key }}. Judge items J1 to J5 only; the scripts have passed the rest.",
+    "brief": "Ticket: {{ inputs.ticket_key }}. Judge items J1 to J6 only; the scripts have passed the rest.",
     "id": "sign_off",
     "inputs": [
      "ticket_key",
@@ -516,7 +516,7 @@
   }
  },
  "sources": {
-  "flows/triage.yaml": "e776d2e7471e1c1f38e735f24d227040134452503351353eeafc153b9bc9af7f",
+  "flows/triage.yaml": "df1ae303ecadc07b45d6ca063b27845f184cdd4a5583605fd957bfd8f8be118f",
   "roles/sign-off/role.yaml": "2c940e901993068ff0bb897db05e74c23597b8a730e28ba2148bf29d47830254",
   "roles/ticket-drafter/role.yaml": "392bcc63415c2ce8d1593dcf345b9ed21cd4d999cdc7571d936d5ed16b7ef44a",
   "tiers.yaml": "af81c945dec4862af3be1d3957865dd692e7c77e42df42fa43b35c1fe3a14d44"

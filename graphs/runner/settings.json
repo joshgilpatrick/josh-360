@@ -14,5 +14,6 @@
   "wait_flag_days": 7,
   "result_settle_seconds": 60,
   "archive_finished_sessions": true,
-  "ended_runs_days": 14
+  "ended_runs_days": 14,
+  "wait_flag_exempt": ["validation.watch"]
 }

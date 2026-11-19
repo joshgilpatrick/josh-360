@@ -376,6 +376,96 @@ class Graphs(h.DoctorCase):
         self.assertEqual(self.results()["graphs.compiled"].status, "fail")
 
 
+class ValidationWatch(h.DoctorCase):
+    """JP-167: the validation rule is on, and no open watch is past its give-up time and a day (the day is for a closed
+    laptop)."""
+    ID = "graphs.validation-watch"
+
+    def starts(self, **rule):
+        path = self.copy / "graphs" / "runner" / "starts.json"
+        doc = json.loads(path.read_text())
+        if rule.get("remove"):
+            doc["graphs"].pop("validation", None)
+        else:
+            doc["graphs"]["validation"].update(rule)
+        path.write_text(json.dumps(doc))
+
+    def open_watch(self, run="r-aaaaaaaaaaaa", ticket="JP-9001", begins="2026-11-17T12:00:00Z", give_up=2, ended=False,
+                   began_line=None, files=True):
+        conn = h.ledger_db.connect(self.home / "state" / "ledger.db")
+        machine = h.ledger_db.machine_id(conn)
+        conn.execute(
+            "INSERT INTO graph_runs (run_id, machine_id, graph_id, graph_source, graph_version, subject_kind, "
+            "subject_ref, tracker, ticket_key, phi, runner, started_at, recorded_by) "
+            "VALUES (?, ?, 'validation', 'graph-file', 'abc123', 'ticket', ?, 'jira', ?, 0, 'agent-manager', ?, 'test')",
+            (run, machine, ticket, ticket, h.STAMP))
+        if ended:
+            conn.execute("INSERT INTO run_ends (run_id, end_name, score, version, ended_at, recorded_by) "
+                         "VALUES (?, 'finished', 'success', 1, ?, 'test')", (run, h.STAMP))
+        conn.commit()
+        conn.close()
+        if files:
+            folder = self.home / "runs" / run / "work" / "watch"
+            folder.mkdir(parents=True)
+            (folder / "round-1.json").write_text(json.dumps(
+                {"ticket_key": ticket, "round": 1, "begins_at": begins, "give_up_days": give_up}))
+            if began_line:
+                (folder / "round-1.checks.jsonl").write_text(json.dumps({"kind": "began", "at": began_line}) + "\n")
+
+    def test_a_healthy_laptop_with_no_watches_passes(self):
+        r = self.results()[self.ID]
+        self.assertEqual((r.status, r.detail), ("pass", "rule on; 0 watches open, none overdue"))
+
+    def test_validation_rule_off_fails(self):
+        self.starts(on=False)
+        r = self.results()[self.ID]
+        self.assertEqual(r.status, "fail")
+        self.assertIn('"on": true', r.fix)
+        self.starts(remove=True)
+        self.assertEqual(self.results()[self.ID].status, "fail")
+
+    def test_overdue_watch_fails_and_names_the_run(self):
+        self.open_watch(begins="2026-11-10T00:00:00Z", give_up=2)       # due 12 Nov, and a day's grace to 13 Nov
+        r = self.results()[self.ID]
+        self.assertEqual(r.status, "fail")
+        self.assertIn("r-aaaaaaaaaaaa", r.detail)
+        self.assertIn("JP-9001", r.detail)
+
+    def test_open_watch_inside_its_timetable_passes(self):
+        self.open_watch(begins="2026-11-17T12:00:00Z", give_up=2)
+        self.open_watch(run="r-bbbbbbbbbbbb", ticket="JP-9002", begins="2026-11-15T12:00:00Z", give_up=2)  # in its grace day
+        r = self.results()[self.ID]
+        self.assertEqual((r.status, r.detail), ("pass", "rule on; 2 watches open, none overdue"))
+
+    def test_watch_that_has_not_begun_passes(self):
+        self.open_watch(begins="")                            # starts after another ticket; no `began` line yet
+        self.assertEqual(self.results()[self.ID].status, "pass")
+        self.open_watch(run="r-bbbbbbbbbbbb", ticket="JP-9002", begins="", began_line="2026-11-01T00:00:00Z", give_up=2)
+        self.assertEqual(self.results()[self.ID].status, "fail")      # it began on 1 Nov and has run far past its time
+
+    def test_a_watch_with_an_end_line_or_a_ended_run_is_not_open(self):
+        self.open_watch(begins="2026-11-01T00:00:00Z", ended=True)
+        self.assertEqual(self.results()[self.ID].detail, "rule on; 0 watches open, none overdue")
+        self.open_watch(run="r-bbbbbbbbbbbb", ticket="JP-9002", begins="2026-11-01T00:00:00Z")
+        folder = self.home / "runs" / "r-bbbbbbbbbbbb" / "work" / "watch"
+        (folder / "round-1.checks.jsonl").write_text(json.dumps({"kind": "end", "at": "2026-11-05T00:00:00Z"}) + "\n")
+        self.assertEqual(self.results()[self.ID].status, "pass")
+
+    def test_a_run_with_no_watch_file_yet_is_not_overdue(self):
+        self.open_watch(files=False)
+        self.assertEqual(self.results()[self.ID].status, "pass")
+
+    def test_unreadable_ledger_skips(self):
+        os.unlink(str(self.home / "state" / "ledger.db"))
+        self.assertEqual(self.results()[self.ID].status, "skip")
+
+    def test_check_writes_nothing(self):
+        self.open_watch(begins="2026-11-10T00:00:00Z")
+        before = h.snapshot(self.home, self.user)
+        self.results()
+        self.assertEqual(h.snapshot(self.home, self.user), before)
+
+
 class Owed(h.DoctorCase):
     def test_the_debrief_form_is_owed_from_1_december(self):
         import datetime

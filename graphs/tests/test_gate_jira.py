@@ -373,6 +373,16 @@ class TheFakeSearch(unittest.TestCase):
             self.assertEqual([i["key"] for i in client.search('status = "In Progress"')], ["JP-3"])
             self.assertEqual([i["key"] for i in client.search("sprint in openSprints() AND status = Ready")], ["JP-1", "JP-4"])
 
+    def test_fake_search_applies_flagged_is_empty(self):
+        with TemporaryDirectory() as tmp:
+            client = self.folder(tmp, apply_jql=True)
+            state = json.loads((Path(tmp) / "fake-jira.json").read_text())
+            state["issues"]["JP-1"]["fields"][jira.FLAG_FIELD] = [{"value": "Impediment"}]
+            state["issues"]["JP-2"]["fields"][jira.FLAG_FIELD] = []
+            (Path(tmp) / "fake-jira.json").write_text(json.dumps(state))
+            found = client.search("project = JP AND status = Ready AND Flagged is EMPTY")
+            self.assertEqual([i["key"] for i in found], ["JP-2", "JP-4"])
+
     def test_fake_search_refuses_a_clause_it_cannot_judge(self):
         with TemporaryDirectory() as tmp:
             client = self.folder(tmp, apply_jql=True)

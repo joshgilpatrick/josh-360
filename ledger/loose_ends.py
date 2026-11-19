@@ -374,6 +374,11 @@ class Collector:
             status = self.live.ticket(key)
             if status is None:
                 self.skip("Jira could not be read", key)
+            elif status["status"] == "Deployed" and not status.get("flagged"):
+                continue        # in production and being watched (JP-167): nothing is waiting on Josh
+            elif status["status"] == "Deployed":
+                self.add("ticket-not-done", key, uids, "{} is Deployed: validation needs you".format(key), ticket=key,
+                         status=status["status"])
             elif not status["done"]:
                 self.add("ticket-not-done", key, uids, "{} is {}".format(key, status["status"]), ticket=key,
                          status=status["status"])

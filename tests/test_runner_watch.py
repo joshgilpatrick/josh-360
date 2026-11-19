@@ -10,14 +10,10 @@ from runner_lib import watch
 
 SHIPPED = ROOT / "graphs" / "runner" / "starts.json"
 RULE = json.loads(SHIPPED.read_text())["graphs"]["development"]
+VALIDATION = json.loads(SHIPPED.read_text())["graphs"]["validation"]
 
 
-class Watching(RunnerCase):
-    def setUp(self):
-        super().setUp()
-        rule = dict(RULE, route="runner-sample")
-        self.rules = {"per_pass": 1, "graphs": {"runner-sample": rule}}
-
+class WatchBase(RunnerCase):
     def conn(self):
         return db.connect(db.ledger_path())
 
@@ -35,6 +31,14 @@ class Watching(RunnerCase):
             return conn.execute("SELECT run_id, runner, phi, ticket_key FROM graph_runs ORDER BY id").fetchall()
         finally:
             conn.close()
+
+
+
+class Watching(WatchBase):
+    def setUp(self):
+        super().setUp()
+        rule = dict(RULE, route="runner-sample")
+        self.rules = {"per_pass": 1, "graphs": {"runner-sample": rule}}
 
     def test_ready_with_the_run_label_starts_a_run(self):
         self.jira_issue("JP-901")
@@ -145,7 +149,7 @@ class Watching(RunnerCase):
             watch.load_rules(bad)
         self.assertIn("development", str(caught.exception))
         shipped = watch.load_rules(SHIPPED)
-        self.assertEqual([g for g, r in shipped["graphs"].items() if r.get("on")], ["development"])
+        self.assertEqual([g for g, r in shipped["graphs"].items() if r.get("on")], ["development", "validation"])
 
     def test_credentials_come_from_the_email_file_and_the_keychain_when_the_environment_has_none(self):
         from types import SimpleNamespace
@@ -165,6 +169,98 @@ class Watching(RunnerCase):
         self.assertIsNone(watch.jira_client({}, run=nothing))
         self.assertEqual(self.watch(jira=None), {"runner-sample": {"jira": "no-credentials", "started": [],
                                                                    "skipped": {}}})
+
+
+class WatchingDeployedTickets(WatchBase):
+    """The validation rule: a ticket in Deployed that is not flagged, with no route record (JP-167). The fixture graph
+    `runner-sample` stands in for the real one, which the whole-run tests use."""
+
+    def setUp(self):
+        super().setUp()
+        rule = dict(VALIDATION, jql="project = JP AND status = Deployed AND Flagged is EMPTY")
+        self.rules = {"per_pass": 1, "graphs": {"runner-sample": rule}}
+
+    def deployed(self, key, flagged=False, route=None):
+        self.jira_issue(key, status="Deployed", route=route)
+        if flagged:
+            state = json.loads(self.jira_file().read_text())
+            state["issues"][key]["fields"]["customfield_10021"] = [{"value": "Impediment"}]
+            self.jira_file().write_text(json.dumps(state))
+
+    def test_deployed_ticket_starts_a_validation_run(self):
+        self.deployed("JP-901")
+        got = self.watch()
+        self.assertEqual(got, {"runner-sample": {"jira": "ok", "started": ["JP-901"], "skipped": {}}})
+        rows = self.runs()
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0][1:], ("agent-manager", 0, "JP-901"))
+        inputs = runfolder.load(rows[0][0])["inputs"]
+        self.assertEqual((inputs["ticket_key"], inputs["system"], inputs["phi"]), ("JP-901", "none", False))
+        self.assertNotIn("josh360.route", " ".join(c["path"] for c in self.jira_calls()))
+
+    def test_flagged_ticket_is_not_picked_up(self):
+        self.deployed("JP-901", flagged=True)
+        self.assertEqual(self.watch()["runner-sample"]["started"], [])
+        self.assertEqual(self.runs(), [])
+
+    def test_ticket_that_is_not_in_deployed_is_not_picked_up(self):
+        self.jira_issue("JP-901", status="In Progress", route=None)
+        self.assertEqual(self.watch()["runner-sample"]["started"], [])
+
+    def test_deployed_ticket_with_an_open_run_is_skipped(self):
+        self.deployed("JP-901")
+        self.start("runner-sample", "JP-901")
+        self.assertEqual(self.watch()["runner-sample"]["skipped"], {"JP-901": "has an open run"})
+
+    def test_a_route_record_that_names_another_graph_does_not_matter(self):
+        self.deployed("JP-901", route={"graph": "development", "system": "sample", "returned_from": ""})
+        self.assertEqual(self.watch()["runner-sample"]["started"], ["JP-901"])
+
+    def test_one_start_per_pass(self):
+        for key in ("JP-901", "JP-902"):
+            self.deployed(key)
+        self.assertEqual(self.watch()["runner-sample"]["started"], ["JP-901"])
+        self.assertEqual(self.watch()["runner-sample"]["started"], ["JP-902"])
+
+    def test_refused_entry_gate_is_not_admitted(self):
+        self.deployed("JP-901")
+        self.plan({"ready": ["no"]})
+        self.assertEqual(self.watch()["runner-sample"]["skipped"], {"JP-901": "not admitted"})
+
+    def test_rule_without_a_route_must_say_so(self):
+        bad = self.tmp / "starts.json"
+        rule = {"on": True, "jql": "project = JP AND status = Deployed", "inputs": {}}
+        bad.write_text(json.dumps({"per_pass": 1, "graphs": {"validation": rule}}))
+        with self.assertRaises(ValueError) as caught:
+            watch.load_rules(bad)
+        self.assertIn("validation", str(caught.exception))
+        bad.write_text(json.dumps({"per_pass": 1, "graphs": {"validation": dict(rule, route_record=False)}}))
+        self.assertIn("validation", watch.load_rules(bad)["graphs"])
+
+    def test_route_source_in_a_rule_with_no_route_record_is_refused(self):
+        bad = self.tmp / "starts.json"
+        for extra in ({"route": "validation"}, {"inputs": {"system": "route.system"}}, {"inputs": {"x": "spec.phi_risk"}}):
+            rule = dict({"on": True, "jql": "project = JP", "route_record": False, "inputs": {}}, **extra)
+            bad.write_text(json.dumps({"per_pass": 1, "graphs": {"validation": rule}}))
+            with self.assertRaises(ValueError) as caught:
+                watch.load_rules(bad)
+            self.assertIn("validation", str(caught.exception))
+
+    def test_a_route_record_rule_still_needs_its_route(self):
+        bad = self.tmp / "starts.json"
+        bad.write_text(json.dumps({"per_pass": 1, "graphs": {"x": {"on": True, "jql": "a", "route_record": True,
+                                                                   "inputs": {}}}}))
+        with self.assertRaises(ValueError):
+            watch.load_rules(bad)
+
+    def test_shipped_rules_load(self):
+        rules = watch.load_rules(SHIPPED)["graphs"]
+        self.assertTrue(rules["development"]["on"] and rules["validation"]["on"])
+        self.assertIs(rules["validation"]["route_record"], False)
+        self.assertEqual(rules["validation"]["jql"], "project = JP AND status = Deployed AND Flagged is EMPTY")
+        graph = yaml.safe_load((ROOT / "graphs" / "flows" / "validation.yaml").read_text()) \
+            if (ROOT / "graphs" / "flows" / "validation.yaml").is_file() else {"inputs": {"ticket_key": {}}}
+        self.assertTrue(set(rules["validation"]["inputs"]) <= set(graph["inputs"]))
 
 
 if __name__ == "__main__":

@@ -1,0 +1,8 @@
+..............................................................................loose_ends: there is no ledger at /tmp/josh360-ledger-zb5z_oez/nope.db
+.loose_ends: there is no local branch typo in /tmp/josh360-ledger-0bw5lp6u/work/josh_360
+loose_ends: the note looks like it holds patient data; say it another way
+........................
+----------------------------------------------------------------------
+Ran 103 tests in 36.038s
+
+OK

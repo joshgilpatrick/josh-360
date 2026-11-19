@@ -5,7 +5,17 @@ import json
 import os
 import unittest
 
-from helpers import PY, LaptopCase, run
+import shutil
+import sys
+import tempfile
+from pathlib import Path
+from unittest import mock
+
+from helpers import PY, REPO, LaptopCase, run
+
+sys.path.insert(0, str(REPO / "laptop"))
+import common  # noqa: E402
+import run_jobs  # noqa: E402
 
 STATUS_KEYS = {"schema", "commit", "main", "time", "result", "reason", "counts"}
 
@@ -150,6 +160,72 @@ class FollowTest(LaptopCase):
         # A preview still works from anywhere.
         self.assertEqual(run([PY, str(other / "laptop" / "install.py"), "--dry-run"], other, self.env,
                              check=False).returncode, 0)
+
+
+class LocalReportCopyTest(unittest.TestCase):
+    """JP-166: a report job keeps its newest output under state/reports/<id>.json, for the validation collectors.
+
+    run_job is called in this process, against a made-up home and made-up job scripts; nothing is published.
+    """
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="josh360-copy-"))
+        self.addCleanup(shutil.rmtree, str(self.tmp), True)
+        self.home = self.tmp / "home"
+        patch = mock.patch.dict(os.environ, {"JOSH360_HOME": str(self.home)})
+        patch.start()
+        self.addCleanup(patch.stop)
+        self.lane = common.Lane()
+        self.lane.mkdir(common.state_dir())
+        self.lane.mkdir(common.logs_dir())
+        self.script = self.tmp / "report_job.py"
+        self.flag = self.tmp / "fail-now"
+
+    def job(self, body):
+        self.script.write_text("import json, os, sys\n" + body)
+        return {"id": "sample-job", "run": str(self.script), "every": 60, "timeout": 30, "report": True}
+
+    def copy_path(self):
+        return common.state_dir() / "reports" / "sample-job.json"
+
+    def test_report_job_keeps_a_local_copy(self):
+        job = self.job("print(json.dumps({'items': 3}))\n")
+        with mock.patch.object(run_jobs.status_branch, "publish", return_value="pushed"):
+            self.assertEqual(run_jobs.run_job(job, self.lane), 0)
+        self.assertEqual(json.loads(self.copy_path().read_text()), {"items": 3})
+
+    def test_local_copy_survives_a_failed_publish(self):
+        job = self.job("print(json.dumps({'items': 4}))\n")
+        with mock.patch.object(run_jobs.status_branch, "publish", side_effect=common.Unexpected("no network")):
+            self.assertEqual(run_jobs.run_job(job, self.lane), 1)
+        self.assertEqual(json.loads(self.copy_path().read_text()), {"items": 4})
+
+    def test_failed_job_leaves_the_earlier_copy(self):
+        job = self.job("if os.path.exists(%r):\n    sys.exit(3)\nprint(json.dumps({'items': 5}))\n" % str(self.flag))
+        with mock.patch.object(run_jobs.status_branch, "publish", return_value="pushed"):
+            self.assertEqual(run_jobs.run_job(job, self.lane), 0)
+            self.flag.write_text("x")
+            self.assertEqual(run_jobs.run_job(job, self.lane), 3)
+        self.assertEqual(json.loads(self.copy_path().read_text()), {"items": 5})
+
+    def test_output_that_is_not_json_leaves_no_copy(self):
+        job = self.job("print('not json')\n")
+        with mock.patch.object(run_jobs.status_branch, "publish", return_value="pushed"):
+            self.assertEqual(run_jobs.run_job(job, self.lane), 1)
+        self.assertFalse(self.copy_path().exists())
+
+    def test_a_copy_that_cannot_be_written_does_not_stop_the_pass(self):
+        """A full disk, or reports/ being a file, must not abort the runner or cost the job its publish."""
+        job = self.job("print(json.dumps({'items': 6}))\n")
+        (common.state_dir() / "reports").write_text("in the way")
+        with mock.patch.object(run_jobs.status_branch, "publish", return_value="pushed") as publish:
+            self.assertEqual(run_jobs.run_job(job, self.lane), 0)
+        publish.assert_called_once()
+
+    def test_a_job_that_is_not_a_report_keeps_no_copy(self):
+        job = dict(self.job("print(json.dumps({'items': 3}))\n"), report=False)
+        self.assertEqual(run_jobs.run_job(job, self.lane), 0)
+        self.assertFalse(self.copy_path().exists())
 
 
 if __name__ == "__main__":

@@ -149,6 +149,28 @@ class Kinds(LaptopCase):
         self.assertEqual(len(ticket["sessions"]), 2)  # one item, both sessions named
         self.assertEqual(ticket["status"], "Code Review")
 
+    def test_deployed_and_not_flagged_is_not_a_loose_end(self):
+        self.seed("sess-0001", ticket="JP-901")
+        result = self.loose(fake_live(tickets={"JP-901": ("Deployed", False, False)}))
+        self.assertEqual(result["items"], [])
+        self.assertEqual(result["unchecked"], [])
+
+    def test_deployed_and_flagged_is_listed_as_needing_josh(self):
+        self.seed("sess-0001", ticket="JP-901")
+        result = self.loose(fake_live(tickets={"JP-901": ("Deployed", False, True)}))
+        self.assertEqual(self.kinds(result), [("ticket-not-done", "JP-901")])
+        item = result["items"][0]
+        self.assertIn("validation needs you", item["detail"])
+        self.assertEqual(item["detail"], "JP-901 is Deployed: validation needs you")
+        self.assertEqual(item["status"], "Deployed")
+
+    def test_in_progress_is_listed_as_before(self):
+        self.seed("sess-0001", ticket="JP-901")
+        result = self.loose(fake_live(tickets={"JP-901": ("In Progress", False, False)}))
+        self.assertEqual(result["items"][0]["detail"], "JP-901 is In Progress")
+        flagged = self.loose(fake_live(tickets={"JP-901": ("In Progress", False, True)}))
+        self.assertEqual(flagged["items"][0]["detail"], "JP-901 is In Progress")
+
     def test_an_unreadable_ticket_is_unchecked(self):
         self.seed("sess-0001", ticket="JP-903")
         result = self.loose(fake_live())
