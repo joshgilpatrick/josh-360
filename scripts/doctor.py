@@ -25,7 +25,7 @@ from typing import Dict, List, Optional, Sequence
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from doctor_lib import core, fixes  # noqa: E402
-from doctor_lib import install_checks, hook_checks, data_checks, service_checks, manual  # noqa: E402,F401,I001  (this order is the report's order)
+from doctor_lib import install_checks, hook_checks, data_checks, service_checks, graph_checks, manual  # noqa: E402,F401,I001  (this order is the report's order)
 
 SCHEMA = 1
 TITLES = {
