@@ -18,6 +18,7 @@ import subprocess
 import sys
 import urllib.parse
 import urllib.request
+from pathlib import Path
 from typing import Callable, Iterable, Mapping, Optional, Tuple
 
 sys.dont_write_bytecode = True
@@ -32,23 +33,36 @@ INITIATIVE_SPACE = "TECH"  # initiatives live here; an epic relates to one (conv
 Fetch = Callable[[str], Optional[dict]]
 
 
+def email(env: Mapping[str, str], state: Optional[Path] = None) -> str:
+    """The account email: JOSH360_JIRA_EMAIL, else ACTION_AGENT_JIRA_EMAIL, else the one-line file
+    <state>/jira-email (default ~/.josh-360/state). "" when none is set. Every Jira reader on the laptop uses this."""
+    found = env.get("JOSH360_JIRA_EMAIL") or env.get("ACTION_AGENT_JIRA_EMAIL") or ""
+    if found:
+        return found
+    try:
+        return ((state or common.state_dir()) / "jira-email").read_text(encoding="utf-8").strip()
+    except (OSError, UnicodeDecodeError):
+        return ""
+
+
+def token(env: Mapping[str, str], run: Callable = subprocess.run, timeout: int = 5) -> str:
+    """The API token: JOSH360_JIRA_TOKEN, else the keychain item (asked for by name alone). "" when there is none."""
+    found = env.get("JOSH360_JIRA_TOKEN") or ""
+    if found:
+        return found
+    try:
+        result = run(["/usr/bin/security", "find-generic-password", "-s", KEYCHAIN_SERVICE, "-w"],
+                     stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True, timeout=timeout)
+        return result.stdout.strip() if result.returncode == 0 else ""
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
 def credentials(env: Mapping[str, str], run: Callable = subprocess.run) -> Optional[Tuple[str, str]]:
     """(email, token) or None when either is missing."""
-    email = env.get("JOSH360_JIRA_EMAIL") or env.get("ACTION_AGENT_JIRA_EMAIL") or ""
-    if not email:
-        try:
-            email = (common.state_dir() / "jira-email").read_text(encoding="utf-8").strip()
-        except OSError:
-            email = ""
-    token = env.get("JOSH360_JIRA_TOKEN") or ""
-    if not token:
-        try:
-            result = run(["/usr/bin/security", "find-generic-password", "-s", KEYCHAIN_SERVICE,
-                          "-w"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True, timeout=5)
-            token = result.stdout.strip() if result.returncode == 0 else ""
-        except (OSError, subprocess.SubprocessError):
-            token = ""
-    return (email, token) if email and token else None
+    found_email = email(env)
+    found_token = token(env, run)
+    return (found_email, found_token) if found_email and found_token else None
 
 
 def make_fetch(env: Optional[Mapping[str, str]] = None, urlopen: Callable = urllib.request.urlopen) -> Optional[Fetch]:
