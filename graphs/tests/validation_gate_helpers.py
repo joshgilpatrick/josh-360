@@ -152,7 +152,7 @@ class Site:
         return sorted(self._state()["issues"])
 
     def comments(self, key: str) -> list:
-        return [c["body"] for c in self._state()["comments"].get(key, [])]
+        return [c["body"] for c in self._state().get("comments", {}).get(key, [])]
 
     def comment_texts(self, key: str) -> list:
         from lib import adf
