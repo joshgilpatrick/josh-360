@@ -12,9 +12,11 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, List, NamedTuple, Optional, Tuple
+from typing import Callable, Dict, List, Mapping, NamedTuple, Optional, Tuple
 
-KEYCHAIN_ITEM = "jira-claude-api-key"
+from ledger import jira_read
+
+KEYCHAIN_TIMEOUT = 20
 GATE_TIMEOUT = int(os.environ.get("JOSH360_GATE_TIMEOUT", "600"))
 EFFECT_TIMEOUT = 120
 
@@ -34,20 +36,18 @@ def find_script(root: Path, name: str) -> Optional[Path]:
     return None
 
 
-def jira_env() -> Dict[str, str]:
-    """Credentials for gate scripts: the environment first, then (on a Mac) the keychain item."""
-    email = os.environ.get("JOSH360_JIRA_EMAIL") or os.environ.get("ACTION_AGENT_JIRA_EMAIL")
-    token = os.environ.get("JOSH360_JIRA_TOKEN")
-    if not token and sys.platform == "darwin":
-        try:
-            out = subprocess.run(["/usr/bin/security", "find-generic-password", "-s", KEYCHAIN_ITEM, "-w"],
-                                 stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True, timeout=20)
-            token = out.stdout.strip() if out.returncode == 0 else None
-        except (OSError, subprocess.SubprocessError):
-            token = None
+def jira_env(environ: Optional[Mapping[str, str]] = None, run: Callable = subprocess.run,
+             state: Optional[Path] = None) -> Dict[str, str]:
+    """Credentials for gate scripts, found the way every Jira reader on the laptop finds them (`ledger/jira_read.py`):
+    the email from the environment, else ~/.josh-360/state/jira-email; the token from the environment, else the
+    keychain item. Whichever half is found is passed on; a gate with only one half stops with "Jira credentials
+    missing" (JP-171: the email used to come from the environment only, so every gate that read Jira stopped)."""
+    env = os.environ if environ is None else environ
     found = {}
+    email = jira_read.email(env, state)
     if email:
         found["JOSH360_JIRA_EMAIL"] = email
+    token = jira_read.token(env, run, KEYCHAIN_TIMEOUT)
     if token:
         found["JOSH360_JIRA_TOKEN"] = token
     return found
