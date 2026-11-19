@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests",
+    "-p",
+    "test_follow_ups.py",
+    "-v"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp175/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp175",
+  "started_at": "2026-11-19T20:13:20Z",
+  "stderr": "test_a_dropped_follow_up_lets_the_run_go_on_and_says_so (test_follow_ups.AFollowUpThatBlocks.test_a_dropped_follow_up_lets_the_run_go_on_and_says_so) ... ok\ntest_the_new_ticket_blocks_the_origin_and_the_run_waits_on_it (test_follow_ups.AFollowUpThatBlocks.test_the_new_ticket_blocks_the_origin_and_the_run_waits_on_it) ... ok\ntest_it_is_filed_through_intake_the_lead_hears_and_the_run_moves_on (test_follow_ups.AFollowUpThatDoesNotBlock.test_it_is_filed_through_intake_the_lead_hears_and_the_run_moves_on) ... ok\ntest_a_comment_on_an_open_match_still_gets_the_blocks_link (test_follow_ups.AnOpenDuplicate.test_a_comment_on_an_open_match_still_gets_the_blocks_link) ... ok\ntest_intake_sees_the_follow_up_file_as_the_item (test_follow_ups.AnOpenDuplicate.test_intake_sees_the_follow_up_file_as_the_item) ... ok\ntest_nothing_is_sent_and_the_message_is_kept_for_the_next_lead (test_follow_ups.NoLeadIsRunning.test_nothing_is_sent_and_the_message_is_kept_for_the_next_lead) ... ok\ntest_filing_and_finishing_send_messages_and_spawn_nothing (test_follow_ups.NoModelCallToTellALead.test_filing_and_finishing_send_messages_and_spawn_nothing) ... ok\ntest_the_epic_lead_gets_the_message_and_the_sprint_lead_does_not (test_follow_ups.TheEpicLeadIsTold.test_the_epic_lead_gets_the_message_and_the_sprint_lead_does_not) ... ok\ntest_with_no_running_epic_lead_the_sprint_lead_is_told (test_follow_ups.TheEpicLeadIsTold.test_with_no_running_epic_lead_the_sprint_lead_is_told) ... ok\ntest_a_bad_follow_up_is_refused_like_an_undeclared_output (test_follow_ups.TheResultShape.test_a_bad_follow_up_is_refused_like_an_undeclared_output) ... ok\ntest_every_role_prompt_says_how_to_report_one (test_follow_ups.TheResultShape.test_every_role_prompt_says_how_to_report_one) ... ok\ntest_no_follow_ups_changes_nothing (test_follow_ups.TheResultShape.test_no_follow_ups_changes_nothing) ... ok\n\n----------------------------------------------------------------------\nRan 12 tests in 6.336s\n\nOK\n",
+  "stdout": ""
+}
