@@ -7,6 +7,7 @@ shells around them. Design: docs/superpowers/specs/2026-11-16-triage-graph-desig
     ticket.py     a ticket as the checklist reads it: sections in order, version hash
     gherkin.py    finding and reading the Gherkin block
     checklist.py  the Ready checklist, C1 to C13, B1, B2, S1, R1, R2
+    validation_items.py  the Validation section's items, V1 to V7 (JP-165)
     route.py      the routing table
     signoff.py    the defect filter and the author check
     verdict.py    combining the results and the return budget

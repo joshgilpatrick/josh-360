@@ -4,6 +4,7 @@
 
 - [What it is](#what-it-is)
 - [Fields](#fields)
+- [The Validation section](#the-validation-section)
 - [Example](#example)
 - [A revision](#a-revision)
 
@@ -23,10 +24,29 @@ JSON, one object in a file (the gates run on the laptop's Python, which has no Y
 | `match` | mapping | `key`, `status` and, for `comment_on_match`, `request` (the request restated in one or two sentences; the script wraps it in the fixed comment text from the design, so the drafter never writes the comment itself). For `create` after a Done or Cancelled match: the old key, linked with Relates. |
 | `shape` | text | `single`, `parent_with_subtasks` or `epic_with_tickets` |
 | `route` | mapping | `space`, `parent` (key or null), `area`, `system`, `labels`, and `rule` (which routing rule decided: named, repository, folder or fallback) |
-| `tickets` | list | One entry per ticket, parent first. Each has `ref` (a local name such as `t1`, since keys do not exist yet), `type`, `summary`, `work_kind`, `sections` (Josh's format for its type, in order), `parent_ref` or `parent`, `links` (a list of `{"kind": "blocked_by" | "blocks" | "relates", "target": <a ref or a key>}`), `repository`, `where_it_runs` |
+| `tickets` | list | One entry per ticket, parent first. Each has `ref` (a local name such as `t1`, since keys do not exist yet), `type`, `summary`, `work_kind`, `sections` (Josh's format for its type, in order; for a Story, Task or Bug it includes `validation`, below), `parent_ref` or `parent`, `links` (a list of `{"kind": "blocked_by" | "blocks" | "relates", "target": <a ref or a key>}`), `repository`, `where_it_runs` |
 | `inferred` | list | Every value the drafter inferred rather than copied, as `<ref>.<field>`, so the card can mark it |
 | `gaps` | list | Open questions for Josh, one sentence each. A proposal with gaps never reaches the approval card. |
 | `authors` | list | Session ids of the steps that wrote this proposal (intake, decompose, draft), for the `josh360.authors` property |
+
+## The Validation section
+
+A Story, Task or Bug carries `sections.validation`, required, directly after `acceptance_criteria`: the section's body as one text, the field lines first and then the scenarios. The scenarios may sit in a ` ```gherkin ` fence or follow the field lines bare (as `acceptance_criteria` does); the rendered ticket always has the fence. The completeness check reads it with `lib/validation_section.py` and reports each problem as `<ref>: Validation <item>: <found>. <needed>` (items V1 to V7). A Research ticket, an Epic and a Subtask have none. The format is `validation-section.md`.
+
+```text
+- Needed: yes
+- Starts: at Deployed
+- Check every: 1 day
+- Complete when: 7 checks in a row pass
+- Give up after: 21 days
+
+@validate
+Scenario: The retirement job runs clean
+  When the watch reads job retire-session-atlas
+  Then last_exit is 0
+```
+
+A ticket that needs no watch: `"validation": "- Needed: no. The change is a document; nothing runs in production."`
 
 ## Example
 
@@ -65,6 +85,7 @@ Made-up data.
           "Changing what an install does"
         ],
         "acceptance_criteria": "Feature: Install dry run\n  @auto\n  Scenario: Nothing changes\n    Given a laptop copy at the last good commit\n    When install.py runs with --dry-run\n    Then it lists each step and the copy is unchanged\n",
+        "validation": "- Needed: no. The change is a script flag; nothing runs in production.",
         "parent_or_related": "Parent: JP-94",
         "decisions_already_made": []
       }
@@ -106,7 +127,8 @@ Triage's `revise` step (JP-103, built in JP-122) writes a proposal with `action:
       "repository": "josh-360",
       "where_it_runs": "Cloud session",
       "sections": {"goal": "...", "first_step": "...", "why": "...", "in_scope": ["..."], "not_in_scope": ["..."],
-                   "acceptance_criteria": "Feature: ...", "parent_or_related": "Parent: JP-94",
+                   "acceptance_criteria": "Feature: ...", "validation": "- Needed: no. A reason of four words or more.",
+                   "parent_or_related": "Parent: JP-94",
                    "decisions_already_made": []}
     }
   ],

@@ -29,12 +29,15 @@ GHERKIN = ("Feature: Install dry run\n  @auto\n  Scenario: Nothing changes\n    
            "commit\n    When install.py runs with --dry-run\n    Then it lists each step and the copy is unchanged")
 
 
+NO_VALIDATION = "- Needed: no. The change is a document; nothing runs."
+
+
 def section_set(**over):
     sections = {"goal": "laptop/install.py --dry-run prints every step it would take and changes nothing.",
                 "first_step": "Read STEPS in laptop/install.py.",
                 "why": "Josh wants to preview an install before it runs.",
                 "in_scope": ["A --dry-run flag on laptop/install.py"], "not_in_scope": ["Changing what an install does"],
-                "acceptance_criteria": GHERKIN, "parent_or_related": "Parent: JP-94", "decisions_already_made": []}
+                "acceptance_criteria": GHERKIN, "validation": NO_VALIDATION, "parent_or_related": "Parent: JP-94", "decisions_already_made": []}
     sections.update(over)
     return sections
 

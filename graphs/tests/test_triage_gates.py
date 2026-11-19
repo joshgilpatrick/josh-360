@@ -135,6 +135,27 @@ class TheReadGates(GateCase):
         with self.assertRaises(GateError):
             self.gate("ready-check", ticket_key="JP-404", ticket_type="Story", version="x")
 
+    def failures_for(self, validation):
+        self.seed([t.issue(desc=t.description(validation=validation)), t.issue("JP-94", type_="Epic", desc=None)])
+        outcome, outputs, _ = self.gate("ready-check", ticket_key=KEY, ticket_type="Story", version=self.version())
+        return outcome, outputs["failures"]
+
+    def test_daily_fails_v3_through_ready_check(self):
+        outcome, failures = self.failures_for(t.VALIDATION_YES.replace("Check every: 1 day", "Check every: daily"))
+        self.assertEqual(outcome, "gaps")
+        self.assertEqual([f["item"] for f in failures], ["V3"])
+        self.assertEqual(failures[0]["where"], "Validation")
+        self.assertIn("<n> hours", failures[0]["needed"])
+
+    def test_unknown_collector_fails_v5_through_ready_check(self):
+        outcome, failures = self.failures_for(t.VALIDATION_YES.replace("job laptop-follow", "weather today"))
+        self.assertEqual(outcome, "gaps")
+        self.assertEqual([f["item"] for f in failures], ["V5"])
+        self.assertEqual(failures[0]["where"], "Validation")
+
+    def test_a_good_validation_section_passes_through_ready_check(self):
+        self.assertEqual(self.failures_for(t.VALIDATION_YES), ("pass", []))
+
 
 class TheSignOffCheck(GateCase):
     def check(self, defects, authors=(), version=None):

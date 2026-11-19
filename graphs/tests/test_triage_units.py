@@ -45,6 +45,74 @@ class TheChecklistPasses(unittest.TestCase):
         self.assertEqual(items(ticket("Task", repository="none", labels=[])), [])
 
 
+class TheValidationItems(unittest.TestCase):
+    """JP-165: V1 to V7 for the Validation section of a Story, Task or Bug (spec 2026-11-18-post-deploy-validation)."""
+
+    def with_validation(self, text, type_="Story"):
+        return ticket(type_, sections={"validation": text})
+
+    def test_story_with_no_validation_section_fails_v1(self):
+        tk = ticket()
+        tk.sections = [s for s in tk.sections if s[0] != "Validation"]
+        self.assertEqual(items(tk), ["V1"])
+        found = checklist.run_checklist(tk, ctx())
+        self.assertFalse([f for f in found if f["item"] == "C2" and f["where"] == "Validation"])
+
+    def test_research_ticket_needs_no_validation_section(self):
+        tk = ticket("Research", sections={"question": "Which table holds this?", "sources": ["ledger"],
+                                          "deliverable_format": "a note"})
+        self.assertFalse([i for i in items(tk) if i.startswith("V")])
+        tk.sections = [s for s in tk.sections if s[0] != "Validation"]
+        self.assertFalse([i for i in items(tk) if i.startswith("V")])
+
+    def test_each_work_type_is_checked(self):
+        for type_ in ("Story", "Task", "Bug"):
+            tk = ticket(type_)
+            tk.sections = [s for s in tk.sections if s[0] != "Validation"]
+            self.assertIn("V1", items(tk), type_)
+
+    def test_validation_reads_after_acceptance_criteria(self):
+        tk = ticket()
+        validation = [s for s in tk.sections if s[0] == "Validation"]
+        tk.sections = [s for s in tk.sections if s[0] != "Validation"]
+        index = [name for name, _ in tk.sections].index("Repository")
+        tk.sections[index + 1:index + 1] = validation
+        self.assertIn("C2", items(tk))
+
+    def test_question_mark_in_a_validation_argument_is_not_c12(self):
+        text = ("- Needed: yes\n- Starts: at Deployed\n- Check every: 1 day\n- Complete when: after 5 events\n"
+                "- Give up after: 30 days\n\n```gherkin\n@validate\nScenario: Few open tickets\n"
+                "  When the watch reads jira-count project = JP AND text ~ \"why?\"\n  Then count is at most 3\n```")
+        self.assertEqual(items(self.with_validation(text)), [])
+
+    def test_validation_scenarios_do_not_fail_c5_or_c6(self):
+        self.assertEqual(items(self.with_validation(t.VALIDATION_YES)), [])
+
+    def test_a_marker_in_a_validation_field_is_c12(self):
+        self.assertIn("C12", items(self.with_validation("- Needed: no. Decide later: TBD for this ticket.")))
+
+    def test_an_empty_validation_section_is_v1_only(self):
+        self.assertEqual(items(self.with_validation("")), ["V1"])
+
+    def test_a_placeholder_validation_section_is_v1_and_c12(self):
+        self.assertEqual(items(self.with_validation("TBD")), ["C12", "V1"])
+
+    def test_the_failure_names_the_line_and_the_form(self):
+        found = checklist.run_checklist(self.with_validation(t.VALIDATION_YES.replace("Check every: 1 day",
+                                                                                      "Check every: daily")), ctx())
+        self.assertEqual([f["item"] for f in found], ["V3"])
+        self.assertEqual(found[0]["where"], "Validation")
+        self.assertIn("Check every: 'daily'", found[0]["found"])
+        self.assertIn("<n> hours", found[0]["needed"])
+
+    def test_sign_off_takes_a_j6_defect(self):
+        defect = {"item": "J6", "quote": "Needed: no.", "problem": "the change runs in production",
+                  "needed": "say Needed: yes and name what to watch"}
+        kept, dropped = signoff.filter_defects([defect], "- Needed: no. The change is a document.")
+        self.assertEqual((len(kept), len(dropped)), (1, 0))
+        self.assertEqual(signoff.JUDGMENTS, ("J1", "J2", "J3", "J4", "J5", "J6"))
+
+
 class OneCasePerItem(unittest.TestCase):
     def test_c1_a_type_that_never_enters_triage(self):
         self.assertEqual(items(ticket("Epic")), ["C1"])
@@ -176,7 +244,7 @@ class TheSignOffFilter(unittest.TestCase):
 
     def test_a_defect_is_dropped_with_its_reason(self):
         cases = [(self.defect(quote="not in the ticket"), "quote not in ticket"),
-                 (self.defect(item="J9"), "item is not J1 to J5"),
+                 (self.defect(item="J9"), "item is not J1 to J6"),
                  (self.defect(needed=" "), "quote, problem or needed is empty"), ("nonsense", "not a defect entry")]
         for defect, reason in cases:
             kept, dropped = signoff.filter_defects([defect], self.TEXT)

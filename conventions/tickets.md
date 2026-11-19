@@ -81,9 +81,17 @@ Parents in Jira work only inside one space, so a default epic is always in its s
 | Task | Technical, operational, documentation or process work. |
 | Bug | Existing behaviour that is wrong. |
 | Research | Work whose deliverable is a spec, a design, a plan or an answer, including every design ticket. |
-| Subtask | A step of one parent ticket. Never a container for unrelated work. |
+| Subtask | Work outside the running graph that belongs to one parent ticket: work at a different time, a step someone else owns, or a piece a reviewer could accept alone. Never a container for unrelated work. |
 
 An improvement is a Story or Task with the label `improvement`. In Linear the `using-linear` types apply (bug, feature, improvement, greenfield).
+
+**The subtask rule** (Josh, 18 November 2026). A subtask exists only for work outside the running graph, in one of three cases:
+
+- **At a different time.** The work cannot happen until a later date or event, for example a check once a flag has been on for a month.
+- **A step someone else owns.** A person or team other than the one running the ticket does it.
+- **A piece a reviewer could accept alone.** Josh could approve it on its own, without the rest of the parent.
+
+A graph's steps and an agent's plan phases never get subtasks: the Jira status, the ledger and the plan file already record them, and one subtask per step adds Jira writes that drift. A ticket whose watch after shipping is the work does not need a subtask either: its Validation section holds the criteria and the ticket waits in Deployed.
 
 ## Required sections
 
@@ -94,21 +102,63 @@ Every Story, Task, Bug and Research ticket uses Josh's format, in this order, wi
 3. **Why:** the problem, who it affects, why now.
 4. **In scope** and **Not in scope**, as bullets.
 5. **Acceptance criteria:** Gherkin in a `gherkin` code block. One behaviour per scenario; Given is a state, When is one action, Then is something observed. In josh-360 each scenario is tagged `@auto`, `@e2e` or `@manual`.
-6. **Repository:** the repository that receives the change, as its label.
-7. **Where it runs:** a cloud session, or Josh's laptop and why.
-8. **Parent or related:** the parent, and Blocks or Relates links.
-9. **Decisions already made**, as bullets.
+6. **Validation:** Story, Task and Bug only. Does the change need watching once it runs in production, and what shows that it works? See [The Validation section](#the-validation-section) below; the format in full is `graphs/contracts/validation-section.md`.
+7. **Repository:** the repository that receives the change, as its label.
+8. **Where it runs:** a cloud session, or Josh's laptop and why.
+9. **Parent or related:** the parent, and Blocks or Relates links.
+10. **Decisions already made**, as bullets.
 
 Each type adds sections:
 
 | Type | Adds |
 | --- | --- |
 | Bug | **Current behaviour**, after Why: steps to reproduce, expected and actual, environment, the affected system. The Gherkin states the correct behaviour. |
-| Research | **Question**, **Sources** (systems and data to use) and **Deliverable format**, after Why. The Gherkin says what the deliverable must contain. |
-| Epic | **Goal**, **Phases**, **Done when**, **Related work** and **Branch strategy** (one branch per ticket, or one shared branch, see [Branches](#branches)). No acceptance criteria of its own. |
-| Subtask | **Goal** and a Gherkin **Done when**. It inherits the rest from its parent. |
+| Research | **Question**, **Sources** (systems and data to use) and **Deliverable format**, after Why. The Gherkin says what the deliverable must contain. It has no Validation section: it ships a document, and the tickets built from it carry their own. |
+| Epic | **Goal**, **Phases**, **Done when**, **Related work** and **Branch strategy** (one branch per ticket, or one shared branch, see [Branches](#branches)). No acceptance criteria and no Validation section of its own. |
+| Subtask | **Goal** and a Gherkin **Done when**. It inherits the rest from its parent, and has no Validation section. |
 
 No patient data in any section. Refer to a file that holds it by its path only.
+
+### The Validation section
+
+JP-165; design `docs/superpowers/specs/2026-11-18-post-deploy-validation-design.md`. The section answers one question: once this ships, what in production shows that it does its job? It sits directly after Acceptance criteria. One example, a Bug whose fix is "the hourly Session Atlas retirement job stops failing":
+
+````markdown
+**Validation:**
+
+- Needed: yes
+- Starts: at Deployed
+- Check every: 1 day
+- Complete when: 7 checks in a row pass
+- Give up after: 21 days
+
+```gherkin
+@validate
+Scenario: The retirement job runs clean
+  When the watch reads job retire-session-atlas
+  Then last_exit is 0
+  And hours_since_run is at most 2
+
+@validate
+Scenario: The doctor reports no failed check
+  When the watch reads report doctor summary.fail
+  Then value is 0
+```
+````
+
+Read aloud: once the ticket is in Deployed, look once a day; when the job's last run exited clean, ran in the last two hours, and the doctor shows no failed check, seven days running, the ticket is proven. If that has not happened in 21 days, stop. The other forms of each line (`on 2026-12-01`, `after JP-170 is Done`, `after 20 events`, an optional `Fail after: 3 checks in a row fail`) and the collectors a criterion may name are in `graphs/contracts/validation-section.md`.
+
+A ticket that needs no watch says so in one line and nothing else:
+
+```markdown
+**Validation:**
+
+- Needed: no. The change is a document; nothing runs in production.
+```
+
+**When is the answer yes?** When the change's effect can only be seen once it runs for real: a background job, a hook, a pipeline, a graph, anything whose proof is "it kept working" or "the numbers moved". The answer is no for a document, a design, a change fully proven by its tests, or a one-time script whose result is already in the pull request's proof.
+
+A criterion only a person can confirm is tagged `@validate @manual` and ends with `Then Josh confirms that <statement>`. Scripts watch the other criteria; when those are met, Josh gets one question listing the manual ones. Use it only where no collector could measure the thing.
 
 ## The Ready rule
 
@@ -118,6 +168,20 @@ A Ready ticket has no open questions for Josh. The one exception is a ticket who
 - A separate agent signs a ticket off as Ready, or sends it back with a comment naming the open question. The author of a ticket never marks it Ready.
 - A ticket that cannot be completed stays in Not Started (Backlog in spaces that have one) with that comment.
 - Agents start only Ready tickets.
+
+Scripts run these items on every Story, Task and Bug before a separate agent signs it off (`lib/triage/validation_items.py`, one parser shared with the validation graph, `lib/validation_section.py`). A failure names the item, the line and what to write:
+
+| Item | Passes when |
+| --- | --- |
+| V1 | The ticket has a Validation section with a `Needed:` line that says `yes` or `no` |
+| V2 | "Needed: no" carries a reason of at least four words, and nothing else |
+| V3 | "Needed: yes" has Starts, Check every, Complete when and Give up after, each in its allowed form. A Starts date is a real calendar date, and a Starts ticket is not the ticket itself |
+| V4 | "Needed: yes" has at least one `@validate` scenario, every scenario in the block is tagged `@validate`, and at least one is measured (not `@manual`) |
+| V5 | Every measured scenario names a collector on the list, with an argument in that collector's shape |
+| V6 | Every `Then` names a field that collector returns and a comparison on the list, with a value that is a number or one word |
+| V7 | The timetable can finish: "Give up after" leaves room for "Complete when", and `after <n> events` is used only with collectors that count events |
+
+The sign-off agent, who already judges every ticket once, judges one more item, **J6 Proves the goal**: if Needed is yes, the criteria would show the Goal happening in production, not merely that something ran; if Needed is no, the reason holds for this ticket. A manual criterion is allowed only where no collector could measure it. A sign-off agent sends a ticket back if a manual criterion could have been a measured one.
 
 ## Labels
 
