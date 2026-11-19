@@ -23,6 +23,10 @@ SEARCH_DIRS = (".local/bin", "bin", ".cargo/bin")
 SYSTEM_DIRS = ("/opt/homebrew/bin", "/usr/local/bin")
 FIXED = ("You are a step in a graph run. Do not ask questions in this session: end with the outcome that says you "
          "need input. Do not write to Jira or GitHub; gate scripts do that.")
+FOLLOW_UPS = ('If you find work outside this ticket, do not do it: report it in the same result file as "follow_ups": '
+              '[{"summary": "<one line>", "why": "<why it is outside this ticket>", "blocks": true|false}] (at most 5; '
+              '"blocks" is true only when this ticket cannot be finished without it). A script files each one as a '
+              "ticket and tells the lead (graphs/contracts/follow-up.md).")
 
 
 class SpawnRefused(Exception):
@@ -93,7 +97,7 @@ def build_prompt(answer: dict, marker: str, comments: str) -> str:
     body += ["End with one of these outcomes: {}.".format(", ".join(answer["outcomes"])),
              'When you are done, use the Write tool to write {{"outcome": "<one of them>", "outputs": {{...}}}} to {}, '
              "then stop.".format(answer["result_file"]),
-             "Work folder: {}".format(answer["work_dir"]), FIXED]
+             FOLLOW_UPS, "Work folder: {}".format(answer["work_dir"]), FIXED]
     text = "\n".join(head + body)
     if len(text.encode("utf-8")) > int(config().get("prompt_max_bytes", 60000)):
         folder = Path(answer["work_dir"]).parent / "prompts"
@@ -204,4 +208,41 @@ def close(handle: dict) -> bool:
         code, _, _ = _run([_am()] + list(config().get("archive", ["archive"])) + [handle["am_session"]], timeout=60)
         return code == 0
     except (SpawnRefused, subprocess.SubprocessError, OSError, KeyError, ValueError):
+        return False
+
+
+# -- telling a lead (JP-175) ----------------------------------------------------------------------------------------
+# A plain `agent-manager send` from a script: no session is spawned and no model is called. The text is fixed wording
+# with keys, step names and outcomes only (graphs/runner/runner_lib/leads.py), never a step's own words.
+
+def running(session_id: str) -> bool:
+    """True only when Agent Manager shows the session working or at rest. Gone or unknown is not running."""
+    return state({"am_session": session_id}) in ("working", "resting")
+
+
+def send(session_id: str, text: str) -> bool:
+    """Send one message to a running session. True when agent-manager accepted it."""
+    try:
+        code, _, _ = _run([_am(), "send", session_id, text, "--json"], timeout=60)
+        return code == 0
+    except (SpawnRefused, subprocess.SubprocessError, OSError):
+        return False
+
+
+def _sprint_script() -> str:
+    return os.environ.get("JOSH360_SPRINT_PY") or os.path.join(
+        os.path.expanduser("~"), ".claude", "skills", "sprint", "scripts", "sprint.py")
+
+
+def handoff(sprint: str, key: str, note: str) -> bool:
+    """Hand a new ticket to a sprint's lead with the sprint skill's own `sprint.py handoff`. True on exit 0."""
+    script = _sprint_script()
+    if not os.path.isfile(script):
+        return False
+    python = os.environ.get("JOSH360_SPRINT_PYTHON") or "python3"
+    try:
+        code, _, _ = _run([python, "-I", script, "handoff", key, "--sprint", sprint, "--note", note, "--json"],
+                          timeout=60)
+        return code == 0
+    except (subprocess.SubprocessError, OSError):
         return False
