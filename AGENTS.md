@@ -61,6 +61,7 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - Graph checker on its own: `python3 graphs/tools/check_graph.py` (rules in `graphs/CONVENTION.md`).
 - Walker (JP-114): `python3 graphs/tools/walker.py <start|next|record|answer|abandon|allow|retry|status> ...`; it reads the JSON copies in `graphs/compiled/`, so run `python3 graphs/tools/compile_graphs.py` after changing a graph, a tier, or a role or agent (`--check` is part of `scripts/check.py`).
 - Graph runner (JP-117, laptop): `python3 graphs/runner/runner.py status` shows open runs; `report --run <id>` prints a run's step table (add `--from-json <file>` for a published report); `start --graph <g> --ticket <KEY>` starts a run by hand. The job `graph-runner` ticks every five minutes; `touch ~/.josh-360/state/runner-off` stops new work. Read it from the cloud with `python3 laptop/status.py show graph-runner`. Reference: `graphs/runner/README.md`.
+- Post-deploy validation (JP-167, laptop): a JP ticket in Deployed that is not flagged gets a `validation` run on its own (rule in `graphs/runner/starts.json`). To read a watch, open the newest `~/.josh-360/runs/<run>/work/watch/round-<n>.json` (what is watched and when) and its `round-<n>.checks.jsonl` (one line per look, check and end), or `python3 graphs/runner/runner.py report --run <id>`. Flag the ticket in Jira to stop a watch; clear the flag to start a fresh one. `python3 scripts/doctor.py --only graphs` says whether the rule is on and no watch is overdue.
 
 ## Layout
 
@@ -68,7 +69,7 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - `apps/`: runnable parts: `apps/session-atlas` (JP-111, headless: artifact catalog, removal guard, cost import; rules in its `AGENTS.md`); action-triage moves in later.
 - `ledger/`: the ledger, the local record of every agent session.
 - `graphs/`: the agent graphs and the walker (`graphs/tools/walker.py`). How a graph is stored, the checker's rules and how a graph runs: `graphs/CONVENTION.md`.
-- `graphs/gates/`, `graphs/intake/`: the gate scripts the walker runs between steps (`graphs/gates/README.md`) and the intake submit script (`graphs/intake/README.md`).
+- `graphs/gates/`, `graphs/intake/`: the gate scripts the walker runs between steps (`graphs/gates/README.md`) and the intake submit script (`graphs/intake/README.md`). `graphs/gates/lib/collectors/` holds the readers a validation watch uses (one module per kind of system it can read, JP-166) and `graphs/gates/lib/watch/` the watch library: rounds, check log, grading, timetable (JP-166, JP-167).
 - `graphs/runner/`, `graphs/bindings/agent-manager/`: the graph runner (JP-117) that starts Agent Manager sessions for role steps, and its binding; `hooks/*/20-graph-step*` are its rails.
 - `conventions/`: ticket conventions (`tickets.md`), the system registry (`registry.yaml`) and the standing priorities (`priorities.yaml`), with JSON copies of both for code that has no YAML reader. Ticket rules for all of Josh's work start here.
 - `docs/surface-map.md`: every surface Josh works through, and where its configuration lives.
