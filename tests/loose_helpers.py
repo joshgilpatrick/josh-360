@@ -24,16 +24,19 @@ def git(cwd, *args):
 
 
 def fake_live(tickets=None, prs=None):
-    """Live with Jira answers {key: (status name, done)} and pull request states {url: state}; a key or url that is
-    not in the dictionary cannot be read."""
+    """Live with Jira answers {key: (status name, done)} or {key: (status name, done, flagged)} and pull request states
+    {url: state}; a key or url that is not in the dictionary cannot be read."""
     tickets, prs = tickets or {}, prs or {}
 
     def fetch(path):
         key = path.split("/issue/")[1].split("?")[0]
         if key not in tickets:
             return None
-        name, done = tickets[key]
-        return {"fields": {"status": {"name": name, "statusCategory": {"key": "done" if done else "indeterminate"}}}}
+        name, done, *flagged = tickets[key]
+        fields = {"status": {"name": name, "statusCategory": {"key": "done" if done else "indeterminate"}}}
+        if flagged and flagged[0]:
+            fields["customfield_10021"] = [{"value": "Impediment"}]
+        return {"fields": fields}
 
     class Result:
         def __init__(self, stdout="", returncode=0):
