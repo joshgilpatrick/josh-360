@@ -9,7 +9,7 @@
 
 ## How a schema change is made
 
-1. Name the file `NNNN-<short-name>.sql`, where `NNNN` is one more than the newest migration here (the first is `0002`; there are no migration files yet, so the ledger is still at version 1). Check the newest on `main` and in other open pull requests before numbering.
+1. Name the file `NNNN-<short-name>.sql`, where `NNNN` is one more than the newest migration here (the first, `0002-step-costs-rolled-up.sql`, is JP-170's; check the newest on `main` before taking the next number). Check the newest on `main` and in other open pull requests before numbering.
 2. Write only SQL. The runner applies the file, the `schema_migrations` row and `PRAGMA user_version` in one transaction; if any statement fails, nothing is applied.
 3. Add a test under `tests/` for the new table or column.
 

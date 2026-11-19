@@ -14,11 +14,12 @@ from pathlib import Path
 from typing import List, Optional
 
 from . import ledgerview, paths, sessionfile
+from ledger import ticket_costs  # noqa: E402  (paths puts the repository root on sys.path)
 from walker_lib import graphfile, runfolder  # noqa: E402  (graphs/tools, put on the path by paths)
 
 RUNNER = "agent-manager"
 STATES = ("working", "queued", "parked", "waiting", "stopped", "between")
-COLUMNS = ("Step", "Kind", "Attempt", "Loops", "Tier", "Model", "Session", "Agent Manager session", "Outcome",
+COLUMNS = ("Step", "Kind", "Attempt", "Loops", "Tier", "Model", "Session", "Cost", "Agent Manager session", "Outcome",
            "Why it ended", "Jira status", "Started", "Ended")
 # The words `advance` writes when it abandons an attempt. Anything else in a session file is shown as "other", so the
 # report never carries text from a run.
@@ -139,7 +140,9 @@ def _attempt_sessions(run_id: str, row: dict) -> dict:
     return found
 
 
-def run_report(conn: sqlite3.Connection, run_id: str, root: Optional[Path] = None) -> dict:
+def run_report(conn: sqlite3.Connection, run_id: str, root: Optional[Path] = None, with_cost: bool = False) -> dict:
+    """One run's step table. `with_cost` adds each step's cost, subagents included (JP-170). The published snapshot
+    never asks for it: cost is for Josh's own command line, and the snapshot is pushed to GitHub where agents read it."""
     head = conn.execute("SELECT g.graph_id, g.ticket_key, g.runner, g.started_at, e.end_name, e.score FROM graph_runs g "
                         "LEFT JOIN current_run_ends e ON e.run_id = g.run_id WHERE g.run_id = ?", (run_id,)).fetchone()
     if head is None:
@@ -152,8 +155,14 @@ def run_report(conn: sqlite3.Connection, run_id: str, root: Optional[Path] = Non
                       "tier": row["tier"], "model": row["model"], "session": row["session"], "outcome": row["outcome"],
                       "jira_status": status, "started_at": row["started_at"], "ended_at": row["ended_at"]})
         steps[-1].update(_attempt_sessions(run_id, steps[-1]))
+    if with_cost:
+        costs = ledgerview.run_costs(conn, run_id)
+        for step in steps:
+            found = costs.get((step["step"], step["attempt"], step["loop_count"]))
+            row = ticket_costs.cost_fields(found) if found else {"cost_usd": None, "cost_pricing": None}
+            step.update(row)
     return {"run": run_id, "graph": head[0], "ticket": head[1], "runner": head[2], "started_at": head[3], "end": head[4],
-            "score": head[5], "steps": steps}
+            "score": head[5], "steps": steps, "with_cost": with_cost}
 
 
 def report_from_snapshot(snap: dict, run_id: str) -> dict:
@@ -161,8 +170,15 @@ def report_from_snapshot(snap: dict, run_id: str) -> dict:
     for item in snap.get("ended_runs") or []:
         if item.get("run") == run_id:
             return {"run": run_id, "graph": item["graph"], "ticket": item["ticket"], "runner": RUNNER,
-                    "started_at": item.get("started_at"), "end": item["end"], "score": item["score"], "steps": item["steps"]}
+                    "started_at": item.get("started_at"), "end": item["end"], "score": item["score"], "steps": item["steps"],
+                    "with_cost": False}
     raise ValueError("run {} is not in that snapshot".format(run_id))
+
+
+def _cost_cell(report: dict, step: dict) -> str:
+    if not report.get("with_cost"):
+        return "-"                                     # a published snapshot carries no cost
+    return ticket_costs.cost_text(step.get("cost_usd"), step.get("cost_pricing")) if step.get("cost_pricing") else ""
 
 
 def render(report: dict) -> str:
@@ -170,9 +186,12 @@ def render(report: dict) -> str:
         return "" if value is None else str(value).replace("|", "/")
 
     ended = "Ended: {} ({})".format(report["end"], report["score"]) if report.get("end") else "Not ended yet"
-    keys = ("step", "kind", "attempt", "loop_count", "tier", "model", "session", "am_session", "outcome", "reason",
+    keys = ("step", "kind", "attempt", "loop_count", "tier", "model", "session", "cost", "am_session", "outcome", "reason",
             "jira_status", "started_at", "ended_at")
     lines = ["# {} · {} · {}".format(report.get("ticket") or "no ticket", report["graph"], report["run"]), "", ended,
              "", "| " + " | ".join(COLUMNS) + " |", "|" + " --- |" * len(COLUMNS)]
-    lines += ["| " + " | ".join(cell(step.get(k)) for k in keys) + " |" for step in report["steps"]]
+    lines += ["| " + " | ".join(cell(_cost_cell(report, step) if k == "cost" else step.get(k)) for k in keys) + " |"
+              for step in report["steps"]]
+    if not report.get("with_cost"):
+        lines += ["", "Cost is not in a published snapshot; run `report --run <id>` on the laptop to see it."]
     return "\n".join(lines) + "\n"

@@ -129,6 +129,11 @@ class Migrating(LedgerDbCase):
             conn.execute("INSERT INTO x DEFAULT VALUES")
             conn.execute("DELETE FROM x")
 
+    def test_a_ledger_built_in_the_same_call_is_not_backed_up_first(self):
+        self.migration("0002-add-x.sql", NEW_TABLE)
+        self.assertEqual(db.ensure(self.path, self.backups, NOW, self.migrations), 2)    # new database, one call
+        self.assertEqual(list(self.backups.iterdir()) if self.backups.exists() else [], [])
+
     def test_two_migrations_apply_in_number_order(self):
         db.ensure(self.path, self.backups, NOW, self.migrations)
         self.migration("0003-y.sql", NEW_TABLE.replace(" x", " y").replace("x_", "y_").replace(": x", ": y"))

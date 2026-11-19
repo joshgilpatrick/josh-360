@@ -56,3 +56,13 @@ def ended_runs(conn: sqlite3.Connection, since: str, runner: Optional[str] = Non
     cur = conn.execute(sql + " ORDER BY e.ended_at DESC, e.id DESC", args)
     return [{"run": r[0], "graph": r[1], "ticket": r[2], "end": r[3], "score": r[4], "ended_at": r[5], "started_at": r[6]}
             for r in cur.fetchall()]
+
+
+def run_costs(conn: sqlite3.Connection, run: str) -> dict:
+    """Each step attempt's cost with its subagents, keyed by (step, attempt, loop count) (JP-170). Only a step that had a
+    session is here; a gate or an ask step costs nothing and is absent."""
+    cur = conn.execute(
+        "SELECT step, attempt, loop_count, own_cost_usd, subagent_cost_usd, cost_usd, own_pricing_status, subagents, "
+        "subagents_not_fully_priced, subagents_unpriced FROM step_costs_rolled_up WHERE run = ? AND session_uid IS NOT NULL",
+        (run,))
+    return {(r[0], r[1], r[2]): r[3:] for r in cur.fetchall()}
