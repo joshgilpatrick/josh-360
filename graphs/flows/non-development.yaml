@@ -17,7 +17,8 @@ header:
     - status: In Progress
       steps: [start_run, find_precedent, judge_precedent, check_gaps, ping_before, do_work, ping_during,
               check_deliverable, pick_path, review_work, check_review, decide_stuck]
-    - { status: Validation, steps: [to_validation, deliver, pick_sign_off, sign_off, share_out] }
+    - { status: Validation, steps: [to_validation, deliver, pick_sign_off, sign_off, share_out, validation_rule] }
+    - { status: Deployed, steps: [hand_to_watch] }
     - { status: Done, steps: [close_emailed, close] }
   entry_gate: ready
   exit_gate: no-loose-ends
@@ -51,6 +52,8 @@ header:
     close_emailed: josh
     sign_off: read
     share_out: shared
+    validation_rule: read
+    hand_to_watch: josh
     close: josh
 
 inputs:
@@ -259,10 +262,28 @@ steps:
     inputs: [ticket_key, phi, deliverable_path, evidence_path]
     outcomes: [shared, refused]
 
-  # --- Done: record the resolution so the next lookup finds it ---------------------------------------------
+  # --- Done, or Deployed when the ticket asks to be watched (JP-168): record the resolution either way -------------
+  # The rule reads the ticket's Validation section while the ticket is still in Validation.
+  - id: validation_rule
+    gate: validation-rule
+    needs: [share_out]
+    inputs: [ticket_key]
+    outcomes: [done, watch]
+
   - id: close
     gate: close-ticket
     effects: [move_ticket]
-    needs: [share_out]
+    needs: [validation_rule]
+    when: { step: validation_rule, outcome: done }
+    inputs: [ticket_key, phi, deliverable_path, evidence_path]
+    outcomes: [closed]
+
+  # Posts the same resolution as `close`, then says the ticket is now watched; the validation graph picks it up
+  # from Deployed within five minutes.
+  - id: hand_to_watch
+    gate: close-ticket
+    effects: [move_ticket]
+    needs: [validation_rule]
+    when: { step: validation_rule, outcome: watch }
     inputs: [ticket_key, phi, deliverable_path, evidence_path]
     outcomes: [closed]
