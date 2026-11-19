@@ -46,6 +46,11 @@ def resolution(question: str, answer: str, refs: List[str], deliverable: str, ph
         q, a, ", ".join(shown) if shown else "none", deliverable)
 
 
+def handed_to_watch() -> str:
+    return ("Delivered, now watched in production | the resolution is in the comment above | "
+            "next gate: the validation watch starts within five minutes")
+
+
 def returned(reason: str) -> str:
     return "Returned to triage | {} | next gate: triage".format(collapse(reason))
 
