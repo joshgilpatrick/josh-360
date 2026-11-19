@@ -150,6 +150,16 @@ class FilingTheBug(Base):
         self.assertIn("| The sample job runs clean | 3 | 0 | 3 |", last)
         self.assertEqual(self.site.status(KEY), "Deployed")
 
+    def test_a_ticket_that_left_deployed_gets_no_bug_and_no_comment(self):
+        """The watch can end not_met on its give-up time with no fresh look at the ticket."""
+        self.site.set_status(KEY, "In Progress")
+        outcome, outputs, summary = self.file()
+        self.assertEqual((outcome, outputs), ("left_deployed", None))
+        self.assertIn("already left Deployed", summary)
+        self.assertEqual(self.site.writes(), [])
+        self.assertEqual(self.issues_of_type("Bug"), [])
+        self.assertFalse((self.folder / "bug.json").exists())
+
     def test_open_linked_bug_is_reused(self):
         first = self.file()[1]["bug_key"]
         self.file()
