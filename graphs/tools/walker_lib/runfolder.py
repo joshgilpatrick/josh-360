@@ -89,7 +89,8 @@ def read_result(path: Path) -> Dict[str, object]:
     outputs = doc.get("outputs") or {}
     if not isinstance(outputs, dict):
         raise ValueError('"outputs" in the result file must be an object')
-    return {"outcome": doc["outcome"], "outputs": outputs}
+    # `follow_ups` (JP-175) is read raw here; the walker's `record` checks it (lib/follow_ups.py).
+    return {"outcome": doc["outcome"], "outputs": outputs, "follow_ups": doc.get("follow_ups")}
 
 
 def values(doc: dict, order: Optional[List[str]] = None) -> Dict[str, object]:
