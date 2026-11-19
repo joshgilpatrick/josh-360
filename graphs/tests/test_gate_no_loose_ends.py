@@ -72,6 +72,20 @@ class Passes(GateCase):
         self.assertIn("1 session", summary)
         self.assertFalse((self.work / "loose-ends.md").exists())
 
+    def test_run_with_no_session_passes(self):
+        self.step("build", None, outcome="_abandoned")
+        outcome, _, _ = self.gate()
+        self.assertEqual(outcome, "pass")
+
+    def test_development_run_whose_ticket_is_in_deployed_passes(self):
+        """JP-167: a ticket in Deployed that is not flagged is waiting for its watch, not loose."""
+        uid = self.seed("sess-0001", ticket="JP-901")
+        self.step("build", uid)
+        self.assertEqual(self.gate(fake_live(tickets={"JP-901": ("Deployed", False, False)}))[0], "pass")
+        flagged = self.gate(fake_live(tickets={"JP-901": ("Deployed", False, True)}))
+        self.assertEqual(flagged[0], "loose")
+        self.assertIn("ticket-not-done 1", flagged[2])
+
     def test_work_of_sessions_outside_the_run_is_not_counted(self):
         self.branch_with_commit("someone-else")
         self.seed("sess-0002", branch="someone-else")   # loose, but not this run's
