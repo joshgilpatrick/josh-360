@@ -1,0 +1,15 @@
+{
+  "command": [
+    "python3",
+    "graphs/tools/walker.py",
+    "next",
+    "--run",
+    "r-8e44e900e49d"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp172b/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp172b",
+  "started_at": "2026-11-19T20:09:28Z",
+  "stderr": "",
+  "stdout": "{\"action\": \"done\", \"end\": \"route.personal\", \"run\": \"r-8e44e900e49d\", \"score\": \"neutral\", \"warnings\": [\"the ticket was not moved to Not Started: gate 'move-ticket' failed (1): Jira credentials missing: set JOSH360_JIRA_EMAIL and JOSH360_JIRA_TOKEN\"]}\n"
+}
