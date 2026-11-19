@@ -2,7 +2,9 @@
   "differences": [],
   "job": "launchd-check",
   "josh360_jobs": {
-    "last_run_failed": [],
+    "last_run_failed": [
+      "ledger-record"
+    ],
     "listed": 17,
     "never_run": []
   },
@@ -24,6 +26,6 @@
     "com.jgilpatrick.sync-opencode-agents"
   ],
   "startup_repo_found": true,
-  "time": "2026-11-18T21:41:38Z",
+  "time": "2026-11-19T22:22:46Z",
   "unknown": []
 }
