@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python3",
+    "graphs/runner/runner.py",
+    "where",
+    "JP-9002"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp172b/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp172b",
+  "started_at": "2026-11-19T20:09:28Z",
+  "stderr": "",
+  "stdout": "No graph has run on JP-9002.\n"
+}

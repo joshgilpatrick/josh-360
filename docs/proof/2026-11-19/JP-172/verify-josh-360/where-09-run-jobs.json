@@ -1,0 +1,12 @@
+{
+  "command": [
+    "python3",
+    "laptop/run_jobs.py"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp172b/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp172b",
+  "started_at": "2026-11-19T20:09:34Z",
+  "stderr": "",
+  "stdout": "follow: exit 0\ninventory: report pushed\ninventory: exit 0\nretire-focus-dashboard: report pushed\nretire-focus-dashboard: exit 0\nledger-record: exit 0\nledger-summary: exit 0\nledger-backup: exit 0\nledger-upload: report pushed\nledger-upload: exit 0\nledger-backfill: report pushed\nledger-backfill: exit 0\nledger-friction-catchup: report pushed\nledger-friction-catchup: exit 0\nticket-comments: report pushed\nticket-comments: exit 0\nretire-session-atlas: report pushed\nretire-session-atlas: exit 0\nsession-atlas-service: report pushed\nsession-atlas-service: exit 0\ndoctor: report pushed\ndoctor: exit 0\nretire-leftover-jobs: report pushed\nretire-leftover-jobs: exit 0\nlaunchd-check: report pushed\nlaunchd-check: exit 0\ngraph-runner: report pushed\ngraph-runner: exit 0\njp-117-triage-jp-116: report pushed\njp-117-triage-jp-116: exit 0\n"
+}

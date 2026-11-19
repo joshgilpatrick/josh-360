@@ -17,6 +17,7 @@ These describe `main` as it is today. When the code changes, the pull request ch
 | [`vision-and-roadmap.md`](vision-and-roadmap.md) | The approved vision and roadmap: the requirements source. |
 | [`WORKFLOW.md`](WORKFLOW.md) | How work on this repository is done, from ticket to merge. |
 | [`surface-map.md`](surface-map.md) | Every surface Josh works through, and where its configuration lives. |
+| [`leads-guide.md`](leads-guide.md) | How the sprint and epic leads answer where a ticket is, what waits on Josh and what a ticket cost. |
 | [`platform-doctor.md`](platform-doctor.md) | Every check the platform doctor makes and how it fixes what it can. |
 | [`decisions.md`](decisions.md) | Josh's decisions from the question rounds. |
 | [`decisions/`](decisions/README.md) | The default choices made while building, one file per ticket. |
