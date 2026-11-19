@@ -7,11 +7,13 @@ One answer per run on the ticket, newest first: its graph, the step it is at (or
 from the graph's `header.jira`, its state, the attempt, what it waits on, and every step session with its attempt, tier
 and model. `where` adds each step's cost and the total (cost is for the laptop: Josh and his leads); the published
 `tickets` rows never carry cost, and carry no text from a run either: a stopped run says whether it hit the cap, not the
-error it stopped on. The one piece of walker text that is published is a refusal reason, cut to 200 characters.
+error it stopped on. A run that ended or stopped with the ticket's worktree still on disk says "Worktree kept" with its
+path and branch, in both (JP-174). The one piece of walker text that is published is a refusal reason, cut to 200 characters.
 """
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -59,6 +61,27 @@ def _stop_reason(run_id: str) -> Optional[str]:
     return " ".join(str(stopped.get("reason") or "").split())[:200] or None
 
 
+def _tilde(path: str) -> str:
+    home = os.path.expanduser("~")
+    return "~" + path[len(home):] if home and (path == home or path.startswith(home + os.sep)) else path
+
+
+def worktree_kept(run_id: str, state: str) -> Optional[dict]:
+    """The ticket's worktree and branch when a run that ended or stopped left the worktree on disk (JP-174), else None.
+    Both come from `prepare-worktree`'s outputs in run.json; the path is shown with `~` for the home folder."""
+    if state not in ("ended", "stopped"):
+        return None
+    try:
+        from walker_lib import runfolder  # noqa: E402  (graphs/tools, on the path through paths)
+        values = runfolder.values(runfolder.load(run_id))
+    except (FileNotFoundError, ValueError, OSError):
+        return None
+    tree, branch = values.get("worktree"), values.get("branch")
+    if not isinstance(tree, str) or not tree or not os.path.isdir(os.path.expanduser(tree)):
+        return None
+    return {"path": _tilde(tree), "branch": branch if isinstance(branch, str) else None}
+
+
 def run_entry(conn: sqlite3.Connection, run: dict, now: float, root: Optional[Path] = None,
               with_cost: bool = False) -> dict:
     """One run's answer. `run` is a `ledgerview.ticket_runs` row."""
@@ -79,6 +102,7 @@ def run_entry(conn: sqlite3.Connection, run: dict, now: float, root: Optional[Pa
              "state": state, "since": since, "attempt": max(attempts) if attempts else None,
              "end": run.get("end"), "score": run.get("score"),
              "waits_on": _waits_on(state, step, since, graph, stop_reason),
+             "worktree_kept": worktree_kept(run["run"], state),
              "sessions": [dict({k: s.get(k) for k in SESSION_KEYS}, kind=s["kind"]) for s in steps]}
     if with_cost:
         for out, s in zip(entry["sessions"], steps):
@@ -197,6 +221,10 @@ def render(answer: dict) -> str:
         waits = run.get("waits_on")
         if waits:
             lines.append("Waiting on {}, since {}.".format(waits["text"], waits.get("since") or "-"))
+        kept = run.get("worktree_kept")
+        if kept:
+            lines.append("Worktree kept: `{}` on branch `{}`. Nothing removes it on its own: `/closeout` lists it, and "
+                         "Josh decides.".format(kept["path"], kept.get("branch") or "-"))
         if run.get("stop_reason"):
             lines.append("Stopped because: {}".format(run["stop_reason"]))
         lines += ["", "| Step | Attempt | Tier | Model | Session | Agent Manager session | Outcome | Cost |",
