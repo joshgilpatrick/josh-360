@@ -1,0 +1,15 @@
+{
+  "command": [
+    "python3",
+    "graphs/tools/walker.py",
+    "next",
+    "--run",
+    "r-be6c276f0b6d"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp175/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp175",
+  "started_at": "2026-11-19T20:13:34Z",
+  "stderr": "",
+  "stdout": "{\"access\": \"read\", \"action\": \"run\", \"agent\": null, \"allowed_by_josh\": false, \"attempt\": 1, \"brief\": \"Source: session, at verify-sess-0175.\", \"graph\": \"ticket-creation\", \"inputs\": {\"source\": \"session\", \"source_ref\": \"verify-sess-0175\"}, \"jira_status\": \"Not Started\", \"kind\": \"role\", \"models\": [{\"effort\": \"medium\", \"model\": \"claude-sonnet-5-5\"}], \"outcomes\": [\"recorded\"], \"phi\": false, \"result_file\": \"/tmp/verify-josh-360/jp175/home/.josh-360/runs/r-be6c276f0b6d/results/read_intake-1.json\", \"role\": \"intake-reader\", \"role_folder\": \"/tmp/verify-josh-360/jp175/home/.josh-360/repo/graphs/roles/intake-reader\", \"run\": \"r-be6c276f0b6d\", \"step\": \"read_intake\", \"ticket\": null, \"tier\": \"mid\", \"work_dir\": \"/tmp/verify-josh-360/jp175/home/.josh-360/runs/r-be6c276f0b6d/work\"}\n"
+}
