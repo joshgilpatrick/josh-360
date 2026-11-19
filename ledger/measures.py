@@ -9,10 +9,15 @@ the measures learn to game them). The database file is not a security boundary; 
     python3 ledger/measures.py spend        [--since D] [--until D]
     python3 ledger/measures.py instructions [--since D] [--until D]
     python3 ledger/measures.py loose-ends
+    python3 ledger/measures.py ticket <KEY> [--json]
     python3 ledger/measures.py all          [same flags as headline]
 
 Dates are YYYY-MM-DD; --until is inclusive. The default is the last 28 days. The ledger is opened read-only and every
 answer is JSON on stdout (exit 0), or exit 2 with a line on stderr for bad input or a missing ledger.
+
+`ticket` (JP-170) lists every session on one ticket, the graph step each did and what it cost, with each session's
+subagents folded in and a total at the bottom. It is the one measure that prints a table; `--json` gives the same rows
+as JSON. See `ledger/ticket_costs.py`.
 
 The headline is two numbers read side by side: Josh's messages per finished ticket, and the share of work signed off
 first time. If the first falls while the second holds, the system is working; if both fall, it is only skipping Josh.
@@ -36,7 +41,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from ledger import _repo  # noqa: E402,F401
 from laptop import common  # noqa: E402
-from ledger import db  # noqa: E402
+from ledger import db, ticket_costs  # noqa: E402
 
 DEFAULT_DAYS = 28
 LIST_LIMIT = 20
@@ -104,7 +109,7 @@ GROUP BY e.session_uid"""
 
 STEP_SPEND_SQL = """
 SELECT g.ticket_key, c.step, COUNT(*), ROUND(COALESCE(SUM(c.cost_usd), 0), 4)
-FROM step_costs c JOIN graph_runs g ON g.run_id = c.run
+FROM step_costs_rolled_up c JOIN graph_runs g ON g.run_id = c.run
 WHERE g.ticket_key IS NOT NULL AND g.started_at >= :since AND g.started_at < :until
 GROUP BY g.ticket_key, c.step ORDER BY g.ticket_key, c.step"""
 
@@ -258,7 +263,9 @@ def _day(text: str, end: bool = False) -> str:
 
 def _parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="measures", description="The ledger's measures. For Josh, not for agents.")
-    p.add_argument("measure", choices=["headline", "first-time", "spend", "instructions", "loose-ends", "all"])
+    p.add_argument("measure", choices=["headline", "first-time", "spend", "instructions", "loose-ends", "ticket", "all"])
+    p.add_argument("key", nargs="?", help="the ticket key, for `ticket` (for example JP-170)")
+    p.add_argument("--json", action="store_true", help="`ticket` prints a table by default; this prints JSON")
     p.add_argument("--since", type=_day)
     p.add_argument("--until", type=lambda t: _day(t, end=True))
     p.add_argument("--finished", help="comma-separated ticket keys already read as Done")
@@ -278,6 +285,10 @@ def run(conn: sqlite3.Connection, args: argparse.Namespace, now: str,
         keys = {row[0] for row in conn.execute(MESSAGES_SQL, _window(since, until)) if row[0]}
         done, unknown = live_finished(fetch, keys - finished)
         finished |= done
+    if args.measure == "ticket":
+        return ticket_costs.ticket_report(conn, ticket_costs.check_key(args.key))
+    if args.key:
+        raise ValueError("only `ticket` takes a ticket key")
     answers = {"headline": lambda: headline(conn, since, until, finished, unknown),
                "first-time": lambda: first_time_signoff(conn, since, until),
                "spend": lambda: spend_per_ticket(conn, since, until),
@@ -313,7 +324,11 @@ def main(argv: Optional[List[str]] = None, out=None, path: Optional[Path] = None
         if args.live and fetch is None:
             from ledger import jira_read
             fetch = jira_read.make_fetch()
-        out.write(json.dumps(run(conn, args, now or common.now_utc(), fetch), sort_keys=True, indent=2) + "\n")
+        answer = run(conn, args, now or common.now_utc(), fetch)
+        if args.measure == "ticket" and not args.json:
+            out.write(ticket_costs.render(answer))
+        else:
+            out.write(json.dumps(answer, sort_keys=True, indent=2) + "\n")
     except ValueError as e:
         print("measures: {}".format(e), file=sys.stderr)
         return 2

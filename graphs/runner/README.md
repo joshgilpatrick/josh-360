@@ -20,7 +20,7 @@ Four hooks (`hooks/*/20-graph-step*`) put rails on those sessions and on no othe
 
 - On the laptop: `python3 ~/.josh-360/repo/graphs/runner/runner.py status` (add `--json`). It lists open runs with their step and state (`working`, `queued`, `parked`, `waiting`, `stopped`, `between`), live sessions against the limit, whether the four hooks are registered (`rails`), stopped runs, and every run that has waited more than seven days.
 - From the cloud: `python3 laptop/status.py show graph-runner`. The report holds counts, ids, step names, outcomes and times only.
-- One run's step table: `runner.py report --run <id>`, or from a published report: `runner.py report --run <id> --from-json <file>` (`--json` for the data). Each role attempt shows its Claude Code session, its Agent Manager session and, if the runner gave up on it, why (`never-started`, `session-gone`, `time-cap`, ...), so every session a run started is listed, including the ones it abandoned. The published report keeps the runs that ended in the last 14 days.
+- One run's step table: `runner.py report --run <id>`, or from a published report: `runner.py report --run <id> --from-json <file>` (`--json` for the data). Each step shows its cost, subagents included (`not priced yet` when its session has no price; a published report has none, JP-170). Each role attempt shows its Claude Code session, its Agent Manager session and, if the runner gave up on it, why (`never-started`, `session-gone`, `time-cap`, ...), so every session a run started is listed, including the ones it abandoned. The published report keeps the runs that ended in the last 14 days.
 
 ## Starting and stopping it
 

@@ -293,7 +293,16 @@ class Commanding(RunnerCase):
             conn.close()
         published = self.tmp / "report.json"
         published.write_text(json.dumps(snapshot))
-        self.assertEqual(self.cli("report", "--run", run, "--from-json", str(published)), direct)
+        # from a published snapshot the report is the same table, with no cost (a dash and a note; JP-170)
+        from_json = self.cli("report", "--run", run, "--from-json", str(published))
+        self.assertIn("Cost is not in a published snapshot", from_json)
+        self.assertEqual(len(from_json.splitlines()) - 2, len(direct.splitlines()))
+        live = json.loads(self.cli("report", "--run", run, "--json"))
+        for step in live["steps"]:
+            self.assertEqual(sorted(k for k in step if k.startswith("cost")), ["cost_pricing", "cost_usd"])
+            step.pop("cost_usd"), step.pop("cost_pricing")
+        live["with_cost"] = False
+        self.assertEqual(json.loads(self.cli("report", "--run", run, "--from-json", str(published), "--json")), live)
         self.assertEqual(json.loads(self.cli("report", "--run", run, "--json"))["run"], run)
         self.cli("report", "--run", "r-000000000000", "--from-json", str(published), code=2)
 

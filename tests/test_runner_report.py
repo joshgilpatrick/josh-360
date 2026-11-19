@@ -187,7 +187,7 @@ class Reporting(RunnerCase):
         self.assertTrue(out.startswith("# JP-905 · valid · " + run))
         header = [l for l in out.splitlines() if l.startswith("| Step")][0]
         self.assertEqual([c.strip() for c in header.strip("|").split("|")],
-                         ["Step", "Kind", "Attempt", "Loops", "Tier", "Model", "Session", "Agent Manager session",
+                         ["Step", "Kind", "Attempt", "Loops", "Tier", "Model", "Session", "Cost", "Agent Manager session",
                           "Outcome", "Why it ended", "Jira status", "Started", "Ended"])
         rows = [l for l in out.splitlines() if l.startswith("| ") and not l.startswith(("| Step", "| ---"))]
         self.assertEqual(len(rows), len(report["steps"]))

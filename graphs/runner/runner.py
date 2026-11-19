@@ -5,7 +5,7 @@
   advance --run <id>                    move one run forward as far as it can go now
   start --graph <g> --ticket <KEY> [--input name=value ...]    start a run by hand (starts no session)
   status [--json]                       what the runner is doing now
-  report --run <id> [--json] [--from-json <file>]    the step table of a run (from the ledger, or from a published snapshot)
+  report --run <id> [--json] [--from-json <file>]    the step table of a run (from the ledger, with each step's cost; or from a published snapshot, which has none)
   loop                                  the terminal host's loop (refuses under the job host)
 
 Each command prints one JSON value (text for `status` and `report`) and exits 0, or exits 2 with {"error": ...}. Every
@@ -79,7 +79,7 @@ def _run(args) -> str:
         else:
             conn = db.connect(db.ledger_path())
             try:
-                report = status.run_report(conn, args.run)
+                report = status.run_report(conn, args.run, with_cost=True)
             finally:
                 conn.close()
         return json.dumps(report, sort_keys=True) if args.json else status.render(report)

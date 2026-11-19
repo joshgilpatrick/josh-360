@@ -148,9 +148,10 @@ def ensure(path: Path, backups: Path, now: str, migrations: Path = MIGRATIONS) -
     """Create the ledger from schema.sql, or apply the migrations it has not had. Returns its version.
 
     A second call changes nothing. A migration is checked first (ValueError, nothing applied), the database is backed
-    up once before the first one, and each is applied in one transaction with its schema_migrations row.
+    up once before the first one (not when this call has just built it), and each is applied in one transaction with its schema_migrations row.
     """
-    if not path.exists():
+    created = not path.exists()
+    if created:
         _create(path, now)
     conn = connect(path)
     try:
@@ -160,8 +161,9 @@ def ensure(path: Path, backups: Path, now: str, migrations: Path = MIGRATIONS) -
             return current
         for _, _, file in todo:  # refuse every file before touching the database
             check_migration(file.read_text(encoding="utf-8"))
-        stamp = now.replace(":", "")
-        backup.copy_to(conn, backups / "pre-migration-{}-{}.db.gz".format(current, stamp))
+        if not created:  # a ledger this call just built holds nothing worth a backup
+            stamp = now.replace(":", "")
+            backup.copy_to(conn, backups / "pre-migration-{}-{}.db.gz".format(current, stamp))
         for number, name, file in todo:
             sql = file.read_text(encoding="utf-8")
             script = "BEGIN;\n{}\nINSERT INTO schema_migrations (version, name, applied_at) VALUES ({}, '{}', '{}');\n" \
