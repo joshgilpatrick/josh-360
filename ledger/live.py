@@ -1,7 +1,7 @@
 """Live reads for the loose-ends check and `ask.py changes --live` (JP-109). Python 3.9, standard library only.
 
-Two questions, asked of the systems that know: is this ticket Done (Jira), and what state is this pull request in
-(GitHub, through the `gh` command on the laptop). Both are read-only. An answer that cannot be had (no credentials,
+Three questions, asked of the systems that know: is this ticket Done (Jira), what state is this pull request in, and
+which pull requests has this branch had (GitHub, through the `gh` command on the laptop). Both are read-only. An answer that cannot be had (no credentials,
 no network, no `gh`, a bad reply) is None, never "Done" and never "open": the caller lists it as unchecked.
 Nothing here writes, and nothing logs a token or a ticket title.
 """
@@ -11,7 +11,7 @@ import json
 import subprocess
 import sys
 import urllib.parse
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, List, Optional
 
 sys.dont_write_bytecode = True
 from ledger import _repo  # noqa: F401,E402
@@ -31,6 +31,7 @@ class Live:
         self._run = run
         self._tickets: Dict[str, Optional[dict]] = {}
         self._prs: Dict[str, Optional[str]] = {}
+        self._branches: Dict[str, Optional[List[dict]]] = {}
 
     def _jira(self) -> Optional[Callable[[str], Optional[dict]]]:
         if self._fetch is None and self._use_jira:
@@ -64,6 +65,33 @@ class Live:
         if url not in self._prs:
             self._prs[url] = self._read_pr(url)
         return self._prs[url]
+
+    def branch_prs(self, root: str, branch: str) -> Optional[List[dict]]:
+        """Every pull request whose head is `branch` in the repository at `root`, as [{"state", "url"}], newest first
+        ([] when there is none), or None when it could not be read (JP-174)."""
+        key = root + "\n" + branch
+        if key not in self._branches:
+            self._branches[key] = self._read_branch_prs(root, branch)
+        return self._branches[key]
+
+    def _read_branch_prs(self, root: str, branch: str) -> Optional[List[dict]]:
+        try:
+            result = self._run(["gh", "pr", "list", "--head", branch, "--state", "all", "--json", "state,url",
+                                "--limit", "20"], cwd=root, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                               universal_newlines=True, timeout=30)
+            if result.returncode != 0:
+                return None
+            rows = json.loads(result.stdout)
+        except (OSError, subprocess.SubprocessError, ValueError, AttributeError):
+            return None
+        if not isinstance(rows, list):
+            return None
+        found = []
+        for row in rows:
+            if not isinstance(row, dict) or row.get("state") not in PR_STATES or not isinstance(row.get("url"), str):
+                return None
+            found.append({"state": row["state"], "url": row["url"]})
+        return found
 
     def _read_pr(self, url: str) -> Optional[str]:
         try:
