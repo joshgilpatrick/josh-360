@@ -1,0 +1,12 @@
+test_a_wrong_name_fails (test_doctor.AgentManagerGroups.test_a_wrong_name_fails) ... ok
+test_an_unknown_session_in_a_ticket_group_fails (test_doctor.AgentManagerGroups.test_an_unknown_session_in_a_ticket_group_fails) ... ok
+test_an_unreadable_runner_file_fails_and_a_missing_database_skips (test_doctor.AgentManagerGroups.test_an_unreadable_runner_file_fails_and_a_missing_database_skips) ... ok
+test_nothing_in_view_is_a_skip (test_doctor.AgentManagerGroups.test_nothing_in_view_is_a_skip) ... ok
+test_one_session_in_its_group_passes (test_doctor.AgentManagerGroups.test_one_session_in_its_group_passes) ... ok
+test_the_wrong_group_fails (test_doctor.AgentManagerGroups.test_the_wrong_group_fails) ... ok
+test_two_sessions_in_view_fail (test_doctor.AgentManagerGroups.test_two_sessions_in_view_fail) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 2.382s
+
+OK
