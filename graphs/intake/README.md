@@ -24,7 +24,7 @@ It starts one `ticket-creation` run through the walker (`graphs/tools/walker.py 
 | --- | --- | --- |
 | `email` | the desk's conversation id | the Email Research Desk's ledger (`DESK_DB`) |
 | `todo` | the to-do or action item id | action-triage's `action-items.json` |
-| `session` | the session id | the ledger |
+| `session` | the session id, or `follow-up:<run id>:<file id>` for work a graph step found outside its ticket (JP-175) | the ledger; for a follow-up, its file in the run folder (`graphs/contracts/follow-up.md`) |
 | `manual` | an id or a path Josh gives | wherever that points |
 
 A pointer is short and has no spaces. The command refuses text, so a request's own words, and anything in it that is patient data, never reach the walker, the run folder or the ledger through this door.
@@ -36,6 +36,7 @@ The graph reads the item, routes it by the registry, looks for a ticket that alr
 ## Who calls it
 
 - The JP-110 ticket offer, when Josh says yes (`--source session`).
+- The walker's `file-follow-ups` gate, for each follow-up a graph step reports (`--source session --ref follow-up:...`, run by the graph runner; JP-175).
 - action-triage's desk watcher, quick capture and `ticket create`, once the phase closes (plan Task 10, a separate pull request in that repository).
 
 ## Rules
