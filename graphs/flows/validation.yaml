@@ -24,6 +24,7 @@ header:
     finished: success
     close_unwatched.closed: neutral     # nothing to watch: no Validation section, or "Needed: no"
     close_accepted.closed: neutral      # Josh closed it on his own judgment
+    file_bug.left_deployed: neutral
     watch.left_deployed: neutral        # Josh moved the ticket out of Deployed himself
     await_fix.left_deployed: neutral
     hold.held: needs-josh               # Josh chose stop; the ticket stays in Deployed, flagged
@@ -130,7 +131,9 @@ steps:
     inputs: [ticket_key, failed, evidence]
     outputs:
       bug_key: { type: string, description: "The linked Bug, new or already open for this ticket" }
-    outcomes: [filed]
+    outcomes: [filed, left_deployed]
+    on:
+      left_deployed: end
 
   - id: await_fix
     wait: fix-closed
