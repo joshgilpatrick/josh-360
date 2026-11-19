@@ -1,5 +1,11 @@
 # Watch result
 
+## Contents
+
+- [The tally](#the-tally)
+
+## The tally
+
 What the `watch-criteria` wait returns as `tally`, and what `validation-verdict` returns as `failed` (the same entries, only those not met).
 
 `tally` is a list, one entry per criterion:
