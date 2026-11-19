@@ -214,6 +214,14 @@ class LocalReportCopyTest(unittest.TestCase):
             self.assertEqual(run_jobs.run_job(job, self.lane), 1)
         self.assertFalse(self.copy_path().exists())
 
+    def test_a_copy_that_cannot_be_written_does_not_stop_the_pass(self):
+        """A full disk, or reports/ being a file, must not abort the runner or cost the job its publish."""
+        job = self.job("print(json.dumps({'items': 6}))\n")
+        (common.state_dir() / "reports").write_text("in the way")
+        with mock.patch.object(run_jobs.status_branch, "publish", return_value="pushed") as publish:
+            self.assertEqual(run_jobs.run_job(job, self.lane), 0)
+        publish.assert_called_once()
+
     def test_a_job_that_is_not_a_report_keeps_no_copy(self):
         job = dict(self.job("print(json.dumps({'items': 3}))\n"), report=False)
         self.assertEqual(run_jobs.run_job(job, self.lane), 0)
