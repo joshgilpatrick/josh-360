@@ -1,6 +1,8 @@
-"""The validation graph's checks (JP-167): the start rule is on, and no watch has run past its give-up time. Reads the
-laptop copy's `graphs/runner/starts.json`, the ledger (read-only) and the run folders' watch files. It writes nothing,
-and what it prints is a run id and a ticket key."""
+"""The graphs' checks. JP-167: the validation start rule is on, and no watch has run past its give-up time. JP-174: no
+graph worktree has outlived its ticket's last run by more than seven days. Reads the laptop copy's
+`graphs/runner/starts.json` and `conventions/registry.json`, the ledger (read-only), the run folders' watch files and the
+registered clones' `.claude/worktrees/` folders. It writes nothing, and what it prints is a run id, a ticket key, a
+worktree's folder name and its clone's path."""
 from __future__ import annotations
 
 import json
@@ -11,7 +13,7 @@ from pathlib import Path
 from typing import List, Optional
 
 sys.dont_write_bytecode = True
-from .core import FAIL, PASS, SKIP, Ctx, Result, check  # noqa: E402
+from .core import FAIL, PASS, SKIP, WARN, Ctx, Result, check  # noqa: E402
 
 GRACE = timedelta(days=1)       # a closed laptop takes no checks, so a watch is late only a day after its time
 ROUND_FILE = re.compile(r"^round-(\d+)\.json$")
@@ -103,3 +105,75 @@ def validation_watch(ctx: Ctx) -> Result:
             "read the run with `python3 ~/.josh-360/repo/graphs/runner/runner.py report --run <id>`; a watch that is "
             "stuck is a bug to report")
     return Result(cid, PASS, "rule on; {} watches open, none overdue".format(len(runs)))
+
+
+# -- JP-174: a graph's worktree left behind -------------------------------------------------------------------------
+
+STALE_AFTER = timedelta(days=7)
+TICKET_TREE = re.compile(r"^([A-Z][A-Z0-9]*-[0-9]+)-.+$")     # .claude/worktrees/<KEY>-<slug>, as prepare-worktree makes
+TICKET_HAS_OPEN_RUN = ("SELECT 1 FROM graph_runs g WHERE g.ticket_key = ? AND NOT EXISTS "
+                       "(SELECT 1 FROM run_ends e WHERE e.run_id = g.run_id) LIMIT 1")
+TICKET_LAST_END = ("SELECT MAX(e.ended_at), COUNT(g.run_id) FROM graph_runs g LEFT JOIN current_run_ends e "
+                   "ON e.run_id = g.run_id WHERE g.ticket_key = ?")
+
+
+def _clones(ctx: Ctx) -> Optional[List[Path]]:
+    """The registered clones that exist (the registry's `folders`, `~` read against the user's home), each once; None
+    when the laptop copy's registry cannot be read."""
+    try:
+        systems = json.loads((ctx.copy / "conventions" / "registry.json").read_text(encoding="utf-8"))["systems"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    found: List[Path] = []
+    for system in systems if isinstance(systems, list) else []:
+        for folder in (system.get("folders") or []) if isinstance(system, dict) else []:
+            if not isinstance(folder, str):
+                continue
+            path = ctx.user_home / folder[2:] if folder.startswith("~/") else Path(folder)
+            if path.is_dir() and path.resolve() not in [p.resolve() for p in found]:
+                found.append(path)
+    return found
+
+
+@check("graphs", "stale-worktrees")
+def stale_worktrees(ctx: Ctx) -> Result:
+    """WARN for each `.claude/worktrees/<KEY>-*` worktree in a registered clone whose ticket has no open run and whose
+    last run ended more than seven days ago. A worktree no graph run made (its ticket never ran) is not the graphs'."""
+    cid = "graphs.stale-worktrees"
+    clones = _clones(ctx)
+    if clones is None:
+        return Result(cid, WARN, "conventions/registry.json cannot be read in the laptop's copy, so worktrees were not "
+                      "looked for", "python3 ~/.josh-360/repo/laptop/follow.py")
+    trees = []
+    for clone in clones:
+        folder = clone / ".claude" / "worktrees"
+        if folder.is_dir():
+            for path in sorted(folder.iterdir()):
+                found = TICKET_TREE.match(path.name)
+                if found and path.is_dir():
+                    trees.append((found.group(1), clone, path))
+    if not trees:
+        return Result(cid, PASS, "no graph worktrees in {} registered clone(s)".format(len(clones)))
+    try:
+        conn = ctx.sqlite_ro(ctx.state / "ledger.db")
+    except Exception as err:  # noqa: BLE001  (a missing or damaged ledger: the runs cannot be read)
+        return Result(cid, WARN, "the ledger cannot be read ({}), so {} worktree(s) were not checked".format(
+            type(err).__name__, len(trees)), "python3 ~/.josh-360/repo/scripts/doctor.py (its ledger checks say why)")
+    stale = []
+    try:
+        for key, clone, path in trees:
+            if conn.execute(TICKET_HAS_OPEN_RUN, (key,)).fetchone():
+                continue                    # a run is still using it, stopped runs included: `where` says so
+            last, runs = conn.execute(TICKET_LAST_END, (key,)).fetchone()
+            ended = _when(last)
+            if not runs or ended is None or ctx.now - ended <= STALE_AFTER:
+                continue
+            stale.append("{} in {} (last run ended {})".format(path.name, ctx.tilde(clone), last[:10]))
+    finally:
+        conn.close()
+    if stale:
+        return Result(cid, WARN, "{} graph worktree(s) outlived their run by more than 7 days: {}".format(
+            len(stale), "; ".join(stale)),
+            "run /closeout (python3 ~/.josh-360/repo/ledger/closeout.py) to see what each holds; nothing is removed "
+            "without Josh")
+    return Result(cid, PASS, "{} graph worktree(s), none left more than 7 days after its run".format(len(trees)))
