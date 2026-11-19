@@ -108,7 +108,7 @@ def main(argv: Optional[Sequence[str]] = None, ctx: Optional[core.Ctx] = None) -
         applied = fixes.apply(ctx, keys, args.jira_email, args.dry_run)
         if applied and not args.dry_run:
             ctx = core.Ctx(home=ctx.home, user_home=ctx.user_home, env=ctx.env, runner=ctx.run, http_get=ctx.http_get,
-                           online=ctx.online, code_root=ctx.code_root, jira_fetch=ctx.jira_fetch)  # forget what was cached
+                           online=ctx.online, code_root=ctx.code_root, jira_fetch=ctx.jira_fetch, now=ctx.now)  # forget what was cached
             results = core.run_checks(ctx, args.only)
     summary = core.summarise(results)
     if args.json:
