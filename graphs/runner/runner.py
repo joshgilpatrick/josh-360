@@ -7,6 +7,7 @@
   status [--json]                       what the runner is doing now
   report --run <id> [--json] [--from-json <file>]    the step table of a run (from the ledger, with each step's cost; or from a published snapshot, which has none)
   loop                                  the terminal host's loop (refuses under the job host)
+  messages [--json]                     lead messages no lead was running to receive (JP-175), oldest first
 
 Each command prints one JSON value (text for `status` and `report`) and exits 0, or exits 2 with {"error": ...}. Every
 command takes --graphs-root, which tests use to point at another graphs folder.
@@ -22,7 +23,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from runner_lib import advance, paths, status, tick, walk  # noqa: E402
+from runner_lib import advance, leads, paths, status, tick, walk  # noqa: E402
 from ledger import db  # noqa: E402
 
 
@@ -49,6 +50,8 @@ def _parser() -> argparse.ArgumentParser:
     s.add_argument("--json", action="store_true")
     s.add_argument("--from-json", type=Path)
     command("loop")
+    s = command("messages")
+    s.add_argument("--json", action="store_true")
     return p
 
 
@@ -83,6 +86,12 @@ def _run(args) -> str:
             finally:
                 conn.close()
         return json.dumps(report, sort_keys=True) if args.json else status.render(report)
+    if args.command == "messages":
+        rows = leads.unsent()
+        if args.json:
+            return json.dumps(rows, sort_keys=True)
+        return "\n".join("{} {}: {} (kept: {})".format(r["run"], r["event"], r["text"], r["kept"]) for r in rows) \
+            or "no unsent lead messages"
     tick.loop()
     return json.dumps({"loop": "ended"})
 
