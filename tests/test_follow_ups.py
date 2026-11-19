@@ -155,7 +155,7 @@ class AFollowUpThatBlocks(FollowUpCase):
     """Scenario: A follow-up that blocks parks the run."""
 
     def test_the_new_ticket_blocks_the_origin_and_the_run_waits_on_it(self):
-        from runner_lib import status
+        from runner_lib import status, where
         from ledger import db
         run = self.start("JP-900")
         state = self.runner_records(run, [{"summary": "Fix the gate's Jira email", "why": "A gate bug, not this ticket.",
@@ -176,6 +176,13 @@ class AFollowUpThatBlocks(FollowUpCase):
         row = [r for r in snap["open_runs"] if r["run"] == run][0]
         self.assertEqual((row["state"], row["waiting_on"]), ("waiting", key))
         self.assertIn("waiting on " + key, status.text(snap))
+        conn = db.connect(db.ledger_path())
+        try:
+            answer = where.where(conn, "JP-900", self.now, self.root)
+        finally:
+            conn.close()
+        mine = [r for r in answer["runs"] if r["run"] == run][0]
+        self.assertEqual((mine["state"], mine["waits_on"]["text"]), ("waiting", "follow-up " + key))   # runner.py where
         self.set_status(key, "Done")
         self.assertEqual(self.advance(run), "parked")             # the blocker is out of the way: on to Josh's go
         self.assertEqual(follow_ups.load(ref)["state"], "resolved")
