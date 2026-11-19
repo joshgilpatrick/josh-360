@@ -1,6 +1,7 @@
 """Made-up laptops for the loose-ends tests (JP-109): real git repositories in a temp folder, a ledger with sessions
 that touched them, and fake Jira and GitHub answers. No real repository, session, ticket or pull request appears here.
 """
+import json
 import os
 import subprocess
 import sys
@@ -23,10 +24,11 @@ def git(cwd, *args):
     return result.stdout.strip()
 
 
-def fake_live(tickets=None, prs=None):
-    """Live with Jira answers {key: (status name, done)} or {key: (status name, done, flagged)} and pull request states
-    {url: state}; a key or url that is not in the dictionary cannot be read."""
-    tickets, prs = tickets or {}, prs or {}
+def fake_live(tickets=None, prs=None, branch_prs=None):
+    """Live with Jira answers {key: (status name, done)} or {key: (status name, done, flagged)}, pull request states
+    {url: state} and a branch's pull requests {branch: [(state, url)]}; a key, url or branch that is not in the
+    dictionary cannot be read."""
+    tickets, prs, branch_prs = tickets or {}, prs or {}, branch_prs or {}
 
     def fetch(path):
         key = path.split("/issue/")[1].split("?")[0]
@@ -43,6 +45,11 @@ def fake_live(tickets=None, prs=None):
             self.stdout, self.returncode = stdout, returncode
 
     def run(cmd, **kwargs):
+        if cmd[:3] == ["gh", "pr", "list"]:
+            rows = branch_prs.get(cmd[cmd.index("--head") + 1])
+            if rows is None:
+                return Result("", 1)
+            return Result(json.dumps([{"state": state, "url": url} for state, url in rows]))
         state = prs.get(cmd[3])
         return Result('{"state": "%s"}' % state) if state else Result("", 1)
 

@@ -1,0 +1,13 @@
+{
+  "command": [
+    "hooks/dispatch",
+    "PreToolUse"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp174/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp174",
+  "started_at": "2026-11-19T22:11:34Z",
+  "stderr": "",
+  "stdin": "{\"session_id\": \"cc-jp174\", \"hook_event_name\": \"PreToolUse\", \"tool_name\": \"Bash\", \"tool_input\": {\"command\": \"git commit -m 'JP-900 add form'\"}}\n",
+  "stdout": ""
+}

@@ -16,7 +16,7 @@ import time
 from pathlib import Path
 from typing import Callable, Dict, Optional, Tuple
 
-from . import paths, sessionfile
+from . import gitrail, paths, sessionfile
 from ledger import graph_sessions, spool  # noqa: E402
 from walker_lib import runfolder  # noqa: E402
 
@@ -228,6 +228,21 @@ def _bash(command: str, ent: dict) -> Optional[Result]:
     return None
 
 
+def _ticket_tree(ent: dict) -> Tuple[Optional[str], Optional[str]]:
+    """The run's branch and worktree, from `prepare-worktree`'s outputs in run.json; (None, None) when it has none."""
+    try:
+        values = runfolder.values(runfolder.load(str(ent["run"])))
+    except (FileNotFoundError, ValueError, OSError):
+        return None, None
+    branch, tree = values.get("branch"), values.get("worktree")
+    return (branch if isinstance(branch, str) else None), (tree if isinstance(tree, str) else None)
+
+
+def _one_tree(what: str, ent: dict) -> Result:
+    branch, tree = _ticket_tree(ent)
+    return _deny(gitrail.message(what, ent.get("ticket"), branch, tree, ent.get("work_dir")))
+
+
 def guard(payload: dict, environ: dict, now: float) -> Result:
     """PreToolUse: deny what a graph step's session must not do. A session with no entry is untouched."""
     session_id = payload.get("session_id")
@@ -249,6 +264,8 @@ def guard(payload: dict, environ: dict, now: float) -> Result:
         return _deny("turn cap reached: use the Write tool to write your result with the outcome that fits, then stop")
     if now - float(ent.get("started_at") or now) >= float(cfg["time_cap_seconds"]):
         return _deny("time cap reached: use the Write tool to write your result with the outcome that fits, then stop")
+    if tool in gitrail.WORKTREE_TOOLS:
+        return _one_tree("a worktree", ent)
     if tool == "AskUserQuestion":
         return _deny("a step session does not ask questions: end with the outcome that says you need input")
     if tool.startswith("mcp__"):
@@ -264,6 +281,9 @@ def guard(payload: dict, environ: dict, now: float) -> Result:
         denied = _bash(command, ent)
         if denied:
             return denied
+        made = gitrail.refused(command)
+        if made:
+            return _one_tree(made, ent)
         if ent.get("access") == "read":
             if GIT_WRITES.search(command):
                 return _reads_only()
