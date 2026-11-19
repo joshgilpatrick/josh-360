@@ -42,7 +42,7 @@ def _epoch(stamp: object) -> Optional[float]:
 def _run_row(conn: sqlite3.Connection, run: dict) -> dict:
     """One open run's row: its state, the step it is at and since when."""
     row = {"run": run["run"], "graph": run["graph"], "ticket": run["ticket"], "step": None, "state": "unreadable",
-           "since": run["started_at"]}
+           "since": run["started_at"], "waiting_on": None}
     try:
         doc = runfolder.load(run["run"])
     except FileNotFoundError:
@@ -52,7 +52,8 @@ def _run_row(conn: sqlite3.Connection, run: dict) -> dict:
     if stopped:
         row.update(state="stopped", step=stopped.get("step"), since=(open_step or {}).get("started_at") or row["since"])
     elif waiting:
-        row.update(state="waiting", step=waiting.get("step"), since=waiting.get("since") or row["since"])
+        row.update(state="waiting", step=waiting.get("step"), since=waiting.get("since") or row["since"],
+                   waiting_on=waiting.get("on"))       # a blocking follow-up's key (JP-175)
     elif open_step is None:
         row["state"] = "between"
     elif open_step["kind"] == "ask":
@@ -86,7 +87,7 @@ def snapshot(conn: sqlite3.Connection, now: float, root: Optional[Path] = None) 
              for e in ledgerview.ended_runs(conn, since_ended, RUNNER)[:ENDED_LIMIT]]
     return {
         "status": "off" if paths.is_off() else "ok", "host": cfg["host"], "runs": counts,
-        "open_runs": [{k: r[k] for k in ("run", "graph", "ticket", "step", "state", "since")} for r in rows],
+        "open_runs": [{k: r[k] for k in ("run", "graph", "ticket", "step", "state", "since", "waiting_on")} for r in rows],
         "sessions_live": len(sessionfile.live([r["run"] for r in rows])), "session_limit": cfg["session_limit"],
         "rails": paths.rails_loaded(),
         "stopped": [{"run": r["run"], "ticket": r["ticket"], "step": r["step"]} for r in rows if r["state"] == "stopped"],
@@ -98,7 +99,8 @@ def text(snap: dict) -> str:
         snap["status"], snap["host"], snap["runs"]["open"], snap["sessions_live"], snap["session_limit"],
         "loaded" if snap["rails"] else "NOT loaded")]
     for r in snap["open_runs"]:
-        lines.append("{} {} {} {} since {}".format(r["ticket"] or r["run"], r["graph"], r["step"] or "-", r["state"], r["since"]))
+        lines.append("{} {} {} {}{} since {}".format(r["ticket"] or r["run"], r["graph"], r["step"] or "-", r["state"],
+                                                   " on " + r["waiting_on"] if r.get("waiting_on") else "", r["since"]))
     for r in snap["stopped"]:
         lines.append("Stopped: {} at {} ({})".format(r["ticket"] or r["run"], r["step"], r["run"]))
     if snap["waiting_over_7_days"]:
