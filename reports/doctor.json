@@ -34,7 +34,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "on main at 7752abf, no local changes",
+      "detail": "on main at 320e05d, no local changes",
       "fix": "",
       "group": "install",
       "id": "install.follows-main",
@@ -42,7 +42,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "the install record matches the copy (7752abf)",
+      "detail": "the install record matches the copy (320e05d)",
       "fix": "",
       "group": "install",
       "id": "install.installed-commit",
@@ -50,11 +50,11 @@
     },
     {
       "auto_fix": null,
-      "detail": "the follow job ran 10 min ago and exited 0",
-      "fix": "",
+      "detail": "the follow job last ran 44 min ago; it runs every 10 minutes",
+      "fix": "check the runner is loaded (install.runner-launchd) and the laptop was awake",
       "group": "install",
       "id": "install.follow-ran",
-      "status": "pass"
+      "status": "warn"
     },
     {
       "auto_fix": null,
@@ -82,15 +82,15 @@
     },
     {
       "auto_fix": null,
-      "detail": "ran 10 min ago, exit 0",
-      "fix": "",
+      "detail": "last run 29s ago exited 124",
+      "fix": "read ~/.josh-360/logs/ledger-record.log",
       "group": "jobs",
       "id": "jobs.ledger-record",
-      "status": "pass"
+      "status": "fail"
     },
     {
       "auto_fix": null,
-      "detail": "ran 10 min ago, exit 0",
+      "detail": "ran 13s ago, exit 0",
       "fix": "",
       "group": "jobs",
       "id": "jobs.ledger-summary",
@@ -98,7 +98,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "ran 5 h ago, exit 0",
+      "detail": "ran 6 h ago, exit 0",
       "fix": "",
       "group": "jobs",
       "id": "jobs.ledger-backup",
@@ -106,7 +106,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "ran 43 min ago, exit 0",
+      "detail": "ran 80 min ago, exit 0",
       "fix": "",
       "group": "jobs",
       "id": "jobs.ledger-upload",
@@ -114,7 +114,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "ran 0s ago, exit 0",
+      "detail": "ran 2s ago, exit 0",
       "fix": "",
       "group": "jobs",
       "id": "jobs.ticket-comments",
@@ -122,7 +122,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "ran 21 min ago, exit 0",
+      "detail": "ran 0s ago, exit 0",
       "fix": "",
       "group": "jobs",
       "id": "jobs.session-atlas-service",
@@ -130,7 +130,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "ran 24 h ago, exit 0",
+      "detail": "ran 25 h ago, exit 0",
       "fix": "",
       "group": "jobs",
       "id": "jobs.launchd-check",
@@ -138,15 +138,15 @@
     },
     {
       "auto_fix": null,
-      "detail": "ran 15 min ago, exit 0",
-      "fix": "",
+      "detail": "last ran 49 min ago; it is due every 5 min",
+      "fix": "check install.runner-launchd and that the laptop was awake",
       "group": "jobs",
       "id": "jobs.graph-runner",
-      "status": "pass"
+      "status": "warn"
     },
     {
       "auto_fix": null,
-      "detail": "ran 20 min ago, exit 0",
+      "detail": "ran 2 h ago, exit 0",
       "fix": "",
       "group": "jobs",
       "id": "jobs.jp-117-triage-jp-116",
@@ -154,7 +154,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "succeeded 2 days ago",
+      "detail": "succeeded 3 days ago",
       "fix": "",
       "group": "backfills",
       "id": "backfills.inventory",
@@ -162,7 +162,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "succeeded 45 h ago",
+      "detail": "succeeded 3 days ago",
       "fix": "",
       "group": "backfills",
       "id": "backfills.retire-focus-dashboard",
@@ -170,7 +170,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "succeeded 29 h ago; 35205 sessions in the ledger",
+      "detail": "succeeded 2 days ago; 35318 sessions in the ledger",
       "fix": "",
       "group": "backfills",
       "id": "backfills.ledger-backfill",
@@ -178,7 +178,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "succeeded 26 h ago; 13388 friction facts in the ledger",
+      "detail": "succeeded 2 days ago; 18851 friction facts in the ledger",
       "fix": "",
       "group": "backfills",
       "id": "backfills.ledger-friction-catchup",
@@ -186,7 +186,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "succeeded 5 h ago; the old Atlas is archived under ~/Archive/josh-360-retired/",
+      "detail": "succeeded 29 h ago; the old Atlas is archived under ~/Archive/josh-360-retired/",
       "fix": "",
       "group": "backfills",
       "id": "backfills.retire-session-atlas",
@@ -194,7 +194,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "succeeded 22 h ago",
+      "detail": "succeeded 47 h ago",
       "fix": "",
       "group": "backfills",
       "id": "backfills.retire-leftover-jobs",
@@ -354,7 +354,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "schema version 1 (current), integrity ok",
+      "detail": "schema version 2 (current), integrity ok",
       "fix": "",
       "group": "data",
       "id": "data.ledger",
@@ -386,7 +386,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "2 backups kept, newest made 5 h ago",
+      "detail": "3 backups kept, newest made 6 h ago",
       "fix": "",
       "group": "data",
       "id": "data.backups",
@@ -394,7 +394,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "35205 sessions and 3482 episodes recorded",
+      "detail": "35318 sessions and 4847 episodes recorded",
       "fix": "",
       "group": "data",
       "id": "data.ledger-content",
@@ -402,7 +402,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "2 ticket offers (JP-110) recorded",
+      "detail": "8 ticket offers (JP-110) recorded",
       "fix": "",
       "group": "evidence",
       "id": "evidence.ticket-offer",
@@ -410,7 +410,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "50 ticket comment deliveries (JP-118) recorded",
+      "detail": "87 ticket comment deliveries (JP-118) recorded",
       "fix": "",
       "group": "evidence",
       "id": "evidence.ticket-comments",
@@ -418,7 +418,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "961 session summaries (JP-108) recorded",
+      "detail": "1520 session summaries (JP-108) recorded",
       "fix": "",
       "group": "evidence",
       "id": "evidence.summaries",
@@ -426,7 +426,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "13388 friction facts (JP-112) recorded",
+      "detail": "18851 friction facts (JP-112) recorded",
       "fix": "",
       "group": "evidence",
       "id": "evidence.friction",
@@ -434,7 +434,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "69 debriefs recorded",
+      "detail": "107 debriefs recorded",
       "fix": "",
       "group": "evidence",
       "id": "evidence.debriefs",
@@ -498,7 +498,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "a redaction is waiting to reach the uploaded copies (last upload 43 min ago)",
+      "detail": "a redaction is waiting to reach the uploaded copies (last upload 80 min ago)",
       "fix": "it finishes on the next daily upload once az login works",
       "group": "accounts",
       "id": "accounts.azure-upload",
@@ -530,7 +530,7 @@
     },
     {
       "auto_fix": null,
-      "detail": "4 graphs, each compiled copy matches its source files",
+      "detail": "5 graphs, each compiled copy matches its source files",
       "fix": "",
       "group": "graphs",
       "id": "graphs.compiled",
@@ -542,6 +542,14 @@
       "fix": "",
       "group": "graphs",
       "id": "graphs.walker",
+      "status": "pass"
+    },
+    {
+      "auto_fix": null,
+      "detail": "rule on; 0 watches open, none overdue",
+      "fix": "",
+      "group": "graphs",
+      "id": "graphs.validation-watch",
       "status": "pass"
     },
     {
@@ -608,10 +616,10 @@
   "ok": false,
   "schema": 1,
   "summary": {
-    "fail": 1,
-    "pass": 66,
+    "fail": 2,
+    "pass": 64,
     "skip": 1,
-    "warn": 1
+    "warn": 3
   },
-  "time": "2026-11-18T21:36:22Z"
+  "time": "2026-11-19T22:22:35Z"
 }
