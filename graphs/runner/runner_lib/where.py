@@ -97,7 +97,8 @@ def _total(rows: List[dict]) -> dict:
             seen.setdefault(r.get("session") or (r.get("step"), r.get("attempt"), r.get("loop_count")), r)
     total = round(sum(r["cost_usd"] or 0.0 for r in seen.values()), 4)
     unpriced = sum(1 for r in seen.values() if r["cost_pricing"] != "priced")
-    return {"cost_usd": total if seen else None, "cost_not_fully_priced": unpriced}
+    priced_any = any(r["cost_usd"] is not None for r in seen.values())
+    return {"cost_usd": total if priced_any else None, "cost_not_fully_priced": unpriced}
 
 
 def where(conn: sqlite3.Connection, ticket: str, now: float, root: Optional[Path] = None) -> dict:
@@ -165,7 +166,7 @@ def from_snapshot(snap: dict, ticket: str) -> dict:
 
 def _money(value: Optional[float], unpriced: int) -> str:
     if value is None:
-        return "not priced yet"
+        return "not priced yet" if unpriced else "nothing yet (no step session has a cost recorded)"
     return "${:.2f}".format(value) + (" ({} session(s) not fully priced yet)".format(unpriced) if unpriced else "")
 
 
@@ -186,6 +187,8 @@ def render(answer: dict) -> str:
         if run["state"] == "ended":
             lines.append("Ended {} ({}) at {}, Jira status {}.".format(run.get("end"), run.get("score"),
                                                                        run.get("step_label") or "-", run.get("jira_status") or "-"))
+        elif not run.get("step"):
+            lines.append("Between steps since {}: the next advance picks the next step.".format(run.get("since") or "-"))
         else:
             lines.append("At {} (`{}`), attempt {}, Jira status {}: {} since {}.".format(
                 run.get("step_label") or "-", run.get("step") or "-", run.get("attempt") or "-",
@@ -202,7 +205,7 @@ def render(answer: dict) -> str:
             if answer.get("with_cost") and s.get("cost_pricing"):
                 cost = ticket_costs.cost_text(s.get("cost_usd"), s["cost_pricing"])
             cells = [s["step"], s.get("attempt"), s.get("tier"), s.get("model"), s.get("session"), s.get("am_session"),
-                     s.get("outcome") or ("(" + s["reason"] + ")" if s.get("reason") else "running"), cost]
+                     s.get("outcome") or ("(" + s["reason"] + ")" if s.get("reason") else "open"), cost]
             lines.append("| " + " | ".join("" if c is None else str(c).replace("|", "/") for c in cells) + " |")
         if answer.get("with_cost"):
             lines += ["", "Cost of this run: {}".format(_money(run.get("cost_usd"), run.get("cost_not_fully_priced") or 0))]
