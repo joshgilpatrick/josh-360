@@ -163,6 +163,12 @@ class RoundFilesTest(WatchCase):
         self.assertEqual(watch_round.newest(self.folder), self.folder / "round-10.json")
         self.assertIsNone(watch_round.newest(self.folder / "nowhere"))
 
+    def test_a_file_name_with_a_trailing_newline_is_not_a_watch_file(self):
+        self.folder.mkdir(parents=True, exist_ok=True)
+        (self.folder / "round-9.json\n").write_text("{}")
+        self.assertEqual(watch_round.next_round(self.folder)[0], 1)
+        self.assertIsNone(watch_round.newest(self.folder))
+
     def test_write_plan_leaves_no_temporary_file(self):
         self.plan()
         self.assertEqual(sorted(p.name for p in self.folder.iterdir()), ["round-1.json"])
