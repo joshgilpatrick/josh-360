@@ -18,6 +18,7 @@ from ledger import _repo  # noqa: F401,E402
 from ledger import jira_read  # noqa: E402
 
 PR_STATES = ("OPEN", "MERGED", "CLOSED")
+FLAG_FIELD = "customfield_10021"  # "Flagged": the same id lib/jira.py reads
 
 
 class Live:
@@ -39,7 +40,7 @@ class Live:
         return self._fetch
 
     def ticket(self, key: str) -> Optional[dict]:
-        """{"status": "In Progress", "done": False} or None when it could not be read."""
+        """{"status": "In Progress", "done": False, "flagged": False} or None when it could not be read."""
         if key not in self._tickets:
             self._tickets[key] = self._read_ticket(key)
         return self._tickets[key]
@@ -48,13 +49,15 @@ class Live:
         fetch = self._jira()
         if fetch is None:
             return None
-        issue = fetch("/rest/api/3/issue/{}?fields=status".format(urllib.parse.quote(key)))
-        status = ((issue or {}).get("fields") or {}).get("status") or {}
+        issue = fetch("/rest/api/3/issue/{}?fields=status,{}".format(
+            urllib.parse.quote(key), FLAG_FIELD))
+        fields = (issue or {}).get("fields") or {}
+        status = fields.get("status") or {}
         name = status.get("name")
         category = (status.get("statusCategory") or {}).get("key")
         if not isinstance(name, str) or not isinstance(category, str):
             return None
-        return {"status": name, "done": category == "done"}
+        return {"status": name, "done": category == "done", "flagged": bool(fields.get(FLAG_FIELD))}
 
     def pr(self, url: str) -> Optional[str]:
         """OPEN, MERGED or CLOSED, or None when it could not be read."""
