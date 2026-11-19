@@ -1,4 +1,4 @@
-"""The development graph's five comments, word for word (design spec, "Exact copy"; JP-115).
+"""The development graph's six comments, word for word (design spec, "Exact copy"; JP-115).
 
 Python 3.9, standard library only. Every comment has the workflow's `result | evidence | next gate` shape. The text
 here is what gets posted, so a change to it is a change to the spec.
@@ -29,6 +29,12 @@ def done_merged(url: str, merge_commit: str, run_id: str, research: bool) -> str
     kept = ("design and plan merged with it, run {}".format(run_id) if research
             else "spec and evidence saved with run {}".format(run_id))
     return "Done | merged {} as {} · {} | next gate: none".format(url, merge_commit, kept)
+
+
+def handed_to_watch(url: str, merge_commit: str, run_id: str) -> str:
+    return ("Merged, now watched in production | merged {} as {} · spec and evidence saved with run {} | "
+            "next gate: the validation watch starts within five minutes; "
+            "the ticket is Done when its criteria are met".format(url, merge_commit, run_id))
 
 
 def cancelled(url: str, run_id: str) -> str:
