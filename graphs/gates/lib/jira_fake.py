@@ -56,7 +56,7 @@ def _judge(issues: list, jql: str) -> Optional[list]:
             found = [i for i in found if any(isinstance(sp, dict) and sp.get("state") == "active"
                                              for sp in (i.get("fields") or {}).get(SPRINT_FIELD) or [])]
             continue
-        if re.match(r"^flagged\s+is\s+empty$", clause, re.I):
+        if re.fullmatch(r"flagged\s+is\s+empty", clause, re.I):
             found = [i for i in found if not (i.get("fields") or {}).get(FLAG_FIELD)]
             continue
         m = re.match(r"^issuetype\s+in\s*\(([^)]*)\)$", clause, re.I)
