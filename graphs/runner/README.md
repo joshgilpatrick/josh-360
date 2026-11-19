@@ -4,6 +4,7 @@
 
 - [What it is](#what-it-is)
 - [Seeing what it is doing](#seeing-what-it-is-doing)
+- [Sessions in Agent Manager](#sessions-in-agent-manager)
 - [Starting and stopping it](#starting-and-stopping-it)
 - [Hosts: job or terminal](#hosts-job-or-terminal)
 - [A run that stopped](#a-run-that-stopped)
@@ -21,6 +22,17 @@ Four hooks (`hooks/*/20-graph-step*`) put rails on those sessions and on no othe
 - On the laptop: `python3 ~/.josh-360/repo/graphs/runner/runner.py status` (add `--json`). It lists open runs with their step and state (`working`, `queued`, `parked`, `waiting`, `stopped`, `between`), live sessions against the limit, whether the four hooks are registered (`rails`), stopped runs, and every run that has waited more than seven days, except a wait that is meant to last: `wait_flag_exempt` in `settings.json` names those as `<graph>.<step>` (the shipped one is `validation.watch`, which waits days for a change in production; the `await_fix` wait is still listed).
 - From the cloud: `python3 laptop/status.py show graph-runner`. The report holds counts, ids, step names, outcomes and times only.
 - One run's step table: `runner.py report --run <id>`, or from a published report: `runner.py report --run <id> --from-json <file>` (`--json` for the data). Each step shows its cost, subagents included (`not priced yet` when its session has no price; a published report has none, JP-170). Each role attempt shows its Claude Code session, its Agent Manager session and, if the runner gave up on it, why (`never-started`, `session-gone`, `time-cap`, ...), so every session a run started is listed, including the ones it abandoned. The published report keeps the runs that ended in the last 14 days.
+
+## Sessions in Agent Manager
+
+JP-173. A ticket's step sessions sit in Agent Manager under `josh-360/tickets/<status>`, the Jira status of the step's stretch in the graph's `header.jira` (a `/` becomes `-`, so Design/Planning is `josh-360/tickets/Design-Planning`). Each is named `<KEY>(<letter>) - <Step>`, for example `JP-116(c) - Build`: the letter counts the ticket's sessions across all its runs and graphs, a to z, then aa, ab. Only sessions started since JP-173 are counted.
+
+- **One in view per ticket.** When a ticket's session starts, its earlier sessions are archived; the newest stays in view after its result is recorded, so the ticket never disappears between steps. Agent Manager's archive lists all of them in letter order.
+- **It follows the status.** After every answer from the walker, and on every tick, the runner reads the status the walker last set on the ticket's newest run (`jira_status` in `run.json`; never Jira) and moves the kept session to that group with `agent-manager move`.
+- **Done leaves after 7 days.** When the ticket's newest run has ended with the ticket in Done, the tick archives the kept session `done_keep_days` (7) after that run ended.
+- **Where it is kept:** `~/.josh-360/state/runner/am-tickets.json` (each ticket's count, status, group and sessions), written only by the runner under `am-tickets.lock`. A file that cannot be read starts no new ticket session (unknown is not empty); fix or remove it to go on. A move or archive that Agent Manager refused is tried again on the next pass.
+- **Sessions with no ticket** (the ticket-creation graph's intake, decomposer and drafter) keep the old name `<graph> - <Step> (r<run>)`, sit in `josh-360/graph-runs`, and are archived when their result is recorded.
+- **Check it:** `python3 ~/.josh-360/repo/scripts/doctor.py --only graphs` runs `graphs.agent-manager-groups`: pass when every ticket in view has one session, named for it, in its status group; skip when no ticket has a session in view.
 
 ## Starting and stopping it
 
@@ -41,7 +53,7 @@ A run stops when the walker says so (a step that ran as often as its tier allows
 
 - `~/.josh-360/logs/runner/runner.log`: one line per start, spawn, record, abandon and stop (ids, step names and reasons only).
 - `~/.josh-360/logs/runner/run-<run id>.log`: the output of that run's detached `advance`.
-- `~/.josh-360/state/runner/`: `report.json` (the last pass), the locks, and the heartbeat (terminal host).
+- `~/.josh-360/state/runner/`: `report.json` (the last pass), the locks, the heartbeat (terminal host), `am-tickets.json` (each ticket's Agent Manager sessions, JP-173) and `groups-ready.json` (the Agent Manager groups already made).
 - `~/.josh-360/runs/<run id>/`: the run folder: `run.json`, `sessions/<step>-<attempt>.json` (one per session; `.link.json` beside it is the link hook's), `results/`, `comments/`, `work/`, and `runner.json` (what has already been told).
 - `~/.josh-360/state/graph-sessions/`: one small file per linked step session; the rails act only on a session that has one.
 
@@ -54,4 +66,4 @@ A run stops when the walker says so (a step that ran as often as its tier allows
 | `triage_jp116_job.py` | the temporary job that starts the triage run of JP-116, the proof ticket |
 | `starts.json` | which tickets get a run, per graph, and how many per pass |
 | `settings.json` | every number the runner uses |
-| `runner_lib/` | the Jira watch, the advance loop, the tick, locks, session files, the hook logic, status and notifications |
+| `runner_lib/` | the Jira watch, the advance loop, the tick, locks, session files, each ticket's Agent Manager sessions (`amgroups.py`), the hook logic, status and notifications |
