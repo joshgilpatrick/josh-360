@@ -328,6 +328,29 @@ class ServicesAndAccounts(h.DoctorCase):
         self.assertEqual((r["accounts.jira-email"].status, r["accounts.jira-email"].fix_key), ("fail", "jira-email"))
         self.assertEqual(r["accounts.jira-token"].status, "fail")
 
+    def test_gate_jira_passes_when_the_walker_finds_both(self):
+        r = self.results()["graphs.gate-jira"]
+        self.assertEqual(r.status, "pass")
+        self.assertNotIn(h.SECRET_EMAIL, r.detail + r.fix)
+        self.assertNotIn(h.SECRET_TOKEN, r.detail + r.fix)
+
+    def test_gate_jira_with_no_email_anywhere(self):
+        """JP-171 Scenario: No email anywhere."""
+        os.unlink(str(self.home / "state" / "jira-email"))
+        r = self.results()["graphs.gate-jira"]
+        self.assertEqual((r.status, r.fix_key), ("fail", "jira-email"))
+        self.assertIn("~/.josh-360/state/jira-email", r.fix)
+
+    def test_gate_jira_finds_the_keychain_item_without_reading_it(self):
+        self.env.pop("JOSH360_JIRA_TOKEN")
+        self.assertEqual(self.results()["graphs.gate-jira"].status, "pass")
+        self.keychain_code = 44
+        r = self.results()["graphs.gate-jira"]
+        self.assertEqual(r.status, "fail")
+        self.assertIn("jira-claude-api-key", r.fix)
+        self.keychain_code = 127
+        self.assertEqual(self.results()["graphs.gate-jira"].status, "skip")
+
     def test_the_keychain_is_asked_about_never_read(self):
         self.env.pop("JOSH360_JIRA_TOKEN")
         self.results()
