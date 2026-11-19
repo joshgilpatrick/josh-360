@@ -27,7 +27,7 @@ STAMP = "2026-11-17T20:58:00Z"
 SECRET_TOKEN = "SECRET-TOKEN-do-not-print"
 SECRET_EMAIL = "made.up.person@example.invalid"
 SECRET_IN_SETTINGS = "SECRET-IN-SETTINGS-do-not-print"
-COPY_PARTS = ["jobs.yaml", "hooks", "laptop", "ledger", "scripts", "graphs"]
+COPY_PARTS = ["jobs.yaml", "hooks", "laptop", "ledger", "scripts", "graphs", "conventions"]
 IGNORE = shutil.ignore_patterns("__pycache__", "*.pyc", "tests", "node_modules", ".git")
 ALL_EVENTS = ["SessionStart", "SessionEnd", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Notification", "Stop",
               "SubagentStop", "PreCompact", "PostCompact"]
