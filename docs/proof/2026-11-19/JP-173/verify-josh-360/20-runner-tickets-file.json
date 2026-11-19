@@ -1,0 +1,20 @@
+{
+  "command": [
+    "env",
+    "JOSH360_GRAPHS_ROOT=/tmp/verify-josh-360/jp173/standin/graphs",
+    "JOSH360_AM_BIN=/tmp/verify-josh-360/jp173/home/.josh-360/repo/tests/fakes/agent-manager",
+    "FAKE_AM_DIR=/tmp/verify-josh-360/jp173/standin/am",
+    "JOSH360_AM_DB=/tmp/verify-josh-360/jp173/standin/am/state.db",
+    "JOSH360_CLAUDE_SETTINGS=/tmp/verify-josh-360/jp173/standin/claude-settings.json",
+    "WALKER_TEST_PLAN=/tmp/verify-josh-360/jp173/standin/plan.json",
+    "JOSH360_NO_NOTIFY=1",
+    "cat",
+    "/tmp/verify-josh-360/jp173/home/.josh-360/state/runner/am-tickets.json"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp173/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp173",
+  "started_at": "2026-11-19T20:21:38Z",
+  "stderr": "",
+  "stdout": "{\n \"tickets\": {\n  \"JP-900\": {\n   \"count\": 4,\n   \"done_at\": null,\n   \"group\": \"josh-360/tickets/Validation\",\n   \"sessions\": [\n    {\n     \"am_session\": \"s-1\",\n     \"archived\": true,\n     \"attempt\": 1,\n     \"group\": \"josh-360/tickets/In Progress\",\n     \"n\": 1,\n     \"name\": \"JP-900(a) - Design\",\n     \"run\": \"r-42ad1fc8206a\",\n     \"step\": \"design\"\n    },\n    {\n     \"am_session\": \"s-2\",\n     \"archived\": true,\n     \"attempt\": 1,\n     \"group\": \"josh-360/tickets/Code Review\",\n     \"n\": 2,\n     \"name\": \"JP-900(b) - Build\",\n     \"run\": \"r-42ad1fc8206a\",\n     \"step\": \"build\"\n    },\n    {\n     \"am_session\": \"s-3\",\n     \"archived\": true,\n     \"attempt\": 1,\n     \"group\": \"josh-360/tickets/Code Review\",\n     \"n\": 3,\n     \"name\": \"JP-900(c) - Review\",\n     \"run\": \"r-42ad1fc8206a\",\n     \"step\": \"review\"\n    },\n    {\n     \"am_session\": \"s-4\",\n     \"archived\": false,\n     \"attempt\": 1,\n     \"group\": \"josh-360/tickets/Validation\",\n     \"n\": 4,\n     \"name\": \"JP-900(d) - Publish\",\n     \"run\": \"r-42ad1fc8206a\",\n     \"step\": \"publish\"\n    }\n   ],\n   \"status\": \"Validation\"\n  }\n }\n}"
+}

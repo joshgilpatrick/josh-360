@@ -1,0 +1,15 @@
+{
+  "command": [
+    "python3",
+    "-I",
+    "/tmp/claude-0/-home-claude/a0d4c2cc-a02f-5167-a1c7-ac4d4ff3cab0/scratchpad/jp173/standin_setup.py",
+    "/tmp/verify-josh-360/jp173/home/.josh-360/repo",
+    "/tmp/verify-josh-360/jp173/standin"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp173/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp173",
+  "started_at": "2026-11-19T20:21:03Z",
+  "stderr": "",
+  "stdout": "compile_graphs: ok (3 graph(s))\n{\"graphs\": \"/tmp/verify-josh-360/jp173/standin/graphs\", \"ok\": true}\n"
+}

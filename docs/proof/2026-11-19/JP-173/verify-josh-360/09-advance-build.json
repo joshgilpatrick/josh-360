@@ -1,0 +1,23 @@
+{
+  "command": [
+    "env",
+    "JOSH360_GRAPHS_ROOT=/tmp/verify-josh-360/jp173/standin/graphs",
+    "JOSH360_AM_BIN=/tmp/verify-josh-360/jp173/home/.josh-360/repo/tests/fakes/agent-manager",
+    "FAKE_AM_DIR=/tmp/verify-josh-360/jp173/standin/am",
+    "JOSH360_AM_DB=/tmp/verify-josh-360/jp173/standin/am/state.db",
+    "JOSH360_CLAUDE_SETTINGS=/tmp/verify-josh-360/jp173/standin/claude-settings.json",
+    "WALKER_TEST_PLAN=/tmp/verify-josh-360/jp173/standin/plan.json",
+    "JOSH360_NO_NOTIFY=1",
+    "python3",
+    "graphs/runner/runner.py",
+    "advance",
+    "--run",
+    "r-42ad1fc8206a"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp173/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp173",
+  "started_at": "2026-11-19T20:21:25Z",
+  "stderr": "",
+  "stdout": "{\"run\": \"r-42ad1fc8206a\", \"state\": \"spawned\"}\n"
+}

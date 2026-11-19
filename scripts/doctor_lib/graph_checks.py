@@ -105,6 +105,67 @@ def validation_watch(ctx: Ctx) -> Result:
     return Result(cid, PASS, "rule on; {} watches open, none overdue".format(len(runs)))
 
 
+TICKET_ROOT = "josh-360/tickets/"
+NAME = re.compile(r"^(?P<key>[A-Z][A-Z0-9]*-\d+)\((?P<letter>[a-z]+)\) - \S.*$")
+
+
+def _am_db(ctx: Ctx) -> Path:
+    named = ctx.env.get("JOSH360_AM_DB")
+    return Path(named) if named else ctx.user_home / "Library" / "Application Support" / "agent-manager" / "state.db"
+
+
+@check("graphs", "agent-manager-groups")
+def agent_manager_groups(ctx: Ctx) -> Result:
+    """JP-173: each ticket's kept session is the only one in view, is named `<KEY>(<letter>) - <Step>`, and sits in the
+    group for the status the runner last saw. Reads the runner's `state/runner/am-tickets.json` and Agent Manager's
+    database, read-only; never Jira, so the offline daily job can pass. Nothing in view is a skip, not a pass."""
+    cid = "graphs.agent-manager-groups"
+    path = ctx.state / "runner" / "am-tickets.json"
+    try:
+        tickets = json.loads(path.read_text(encoding="utf-8"))["tickets"] if path.is_file() else {}
+        if not isinstance(tickets, dict):
+            raise ValueError("tickets is not an object")
+    except (OSError, ValueError, KeyError, TypeError) as err:
+        return Result(cid, FAIL, "the runner's {} cannot be read ({})".format(ctx.tilde(path), type(err).__name__),
+                      "look at the file; the runner rewrites it on its next tick only when it can read it")
+    try:
+        conn = ctx.sqlite_ro(_am_db(ctx))
+        try:
+            rows = conn.execute("SELECT id, name, group_name, archived FROM sessions").fetchall()
+        finally:
+            conn.close()
+    except Exception as err:  # noqa: BLE001  (a missing, locked or changed database is one answer: cannot be read)
+        return Result(cid, SKIP, "Agent Manager's database cannot be read ({})".format(type(err).__name__))
+    by_id = {r[0]: r for r in rows}
+    problems, shown, known = [], 0, set()
+    for key in sorted(tickets):
+        rec = tickets[key] if isinstance(tickets[key], dict) else {}
+        sessions = [s for s in rec.get("sessions") or [] if isinstance(s, dict)]
+        known.update(s.get("am_session") for s in sessions)
+        live = [by_id[s["am_session"]] for s in sessions if s.get("am_session") in by_id and not by_id[s["am_session"]][3]]
+        if not live:
+            continue
+        shown += 1
+        if len(live) > 1:
+            problems.append("{} has {} sessions in view".format(key, len(live)))
+        for row in live:
+            match = NAME.match(row[1] or "")
+            if not match or match.group("key") != key:
+                problems.append("{}'s session {} is not named {}(<letter>) - <Step>".format(key, row[0], key))
+            if rec.get("group") and row[2] != rec["group"]:
+                problems.append("{}'s session {} is in '{}', not '{}'".format(key, row[0], row[2] or "(root)", rec["group"]))
+    for row in rows:
+        if not row[3] and str(row[2] or "").startswith(TICKET_ROOT) and row[0] not in known:
+            problems.append("session {} is in '{}' but the runner has no record of it".format(row[0], row[2]))
+    if problems:
+        return Result(cid, FAIL, "; ".join(problems[:5]) + ("" if len(problems) <= 5 else " (and {} more)".format(
+            len(problems) - 5)), "the runner's next tick moves and archives what it can; read "
+            "~/.josh-360/logs/runner/runner.log for an Agent Manager call that keeps failing")
+    if not shown:
+        return Result(cid, SKIP, "no ticket has a graph session in view, so there is nothing to check")
+    return Result(cid, PASS, "{} ticket(s) in view, each with one session in its status group".format(shown))
+
+
 class _Asked:
     """What `subprocess.run` would return, for a keychain question asked without reading the secret."""
 
