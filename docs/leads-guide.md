@@ -82,9 +82,9 @@ On the laptop only:
 - **State**: `working` (a session is running the step), `queued` (it waits for a session slot), `parked` (a question to Josh), `waiting` (a check), `stopped`, `between` (the next `advance` picks the next step), `ended` (with its end name and score: `success`, `neutral` or `needs-josh`), `unreadable` (the run folder is gone).
 - **Attempt** counts tries of the current step; an abandoned attempt's row says why (`never-started`, `session-gone`, `time-cap`, `rested-without-result`, ...).
 - Every session the run started is listed, including the abandoned ones, with both its Claude Code and its Agent Manager session id.
+- **Worktree kept** (JP-174): a run that ended or stopped while the ticket's worktree is still on disk says `Worktree kept: <path> on branch <branch>`, in `where` and in the published row (`worktree_kept`, with `~` for the home folder). A ticket has one branch and one worktree, which later runs reuse; nothing removes a kept one on its own. `/closeout` lists it, and the daily doctor's `graphs.stale-worktrees` warns once its ticket has had no run for seven days.
 
 ## What this cannot answer yet
 
 - Agent Manager groups by Jira status and session names such as `JP-116(c) - Build` are JP-173.
-- Worktrees and branches a run left behind are JP-174.
 - Stopping a run, sending it back to design, or leaving it a note are JP-177.
