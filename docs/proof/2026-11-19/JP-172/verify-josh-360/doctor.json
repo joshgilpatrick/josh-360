@@ -1,0 +1,653 @@
+{
+  "checked_at": "2026-11-19T20:09:16Z",
+  "commit": "10c9ef40961684cb263871a2450ca76c39afe9ef",
+  "doctor_report": {
+    "checks": [
+      {
+        "auto_fix": null,
+        "detail": "Python 3.13.18 (/usr/local/bin/python3)",
+        "fix": "",
+        "group": "install",
+        "id": "install.python",
+        "status": "pass"
+      },
+      {
+        "auto_fix": null,
+        "detail": "~/.josh-360 has state/ and logs/",
+        "fix": "",
+        "group": "install",
+        "id": "install.home",
+        "status": "pass"
+      },
+      {
+        "auto_fix": null,
+        "detail": "~/.josh-360/repo is a git checkout",
+        "fix": "",
+        "group": "install",
+        "id": "install.copy",
+        "status": "pass"
+      },
+      {
+        "auto_fix": null,
+        "detail": "the doctor runs from the laptop's copy",
+        "fix": "",
+        "group": "install",
+        "id": "install.runs-from-copy",
+        "status": "pass"
+      },
+      {
+        "auto_fix": null,
+        "detail": "on main at 10c9ef4, no local changes",
+        "fix": "",
+        "group": "install",
+        "id": "install.follows-main",
+        "status": "pass"
+      },
+      {
+        "auto_fix": null,
+        "detail": "the install record matches the copy (10c9ef4)",
+        "fix": "",
+        "group": "install",
+        "id": "install.installed-commit",
+        "status": "pass"
+      },
+      {
+        "auto_fix": null,
+        "detail": "the follow job has never run",
+        "fix": "cd ~/Development/active/josh_projects/macbook_automations && git pull && scripts/startup.sh (JP-105 step 2)",
+        "group": "install",
+        "id": "install.follow-ran",
+        "status": "fail"
+      },
+      {
+        "auto_fix": null,
+        "detail": "no PAUSED file",
+        "fix": "",
+        "group": "install",
+        "id": "install.not-paused",
+        "status": "pass"
+      },
+      {
+        "auto_fix": null,
+        "detail": "launchctl is not available here (not a Mac)",
+        "fix": "",
+        "group": "install",
+        "id": "install.runner-launchd",
+        "status": "skip"
+      },
+      {
+        "auto_fix": null,
+        "detail": "jobs.yaml lists 17 jobs",
+        "fix": "",
+        "group": "install",
+        "id": "install.jobs-file",
+        "status": "pass"
+      },
+      {
+        "auto_fix": null,
+        "detail": "has not run yet (runs every 5 min)",
+        "fix": "wait for the next runner pass, or: python3 ~/.josh-360/repo/laptop/run_jobs.py",
+        "group": "jobs",
+        "id": "jobs.ledger-record",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "has not run yet (runs every 5 min)",
+        "fix": "wait for the next runner pass, or: python3 ~/.josh-360/repo/laptop/run_jobs.py",
+        "group": "jobs",
+        "id": "jobs.ledger-summary",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "has not run yet (runs every 1440 min)",
+        "fix": "wait for the next runner pass, or: python3 ~/.josh-360/repo/laptop/run_jobs.py",
+        "group": "jobs",
+        "id": "jobs.ledger-backup",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "has not run yet (runs every 1440 min)",
+        "fix": "wait for the next runner pass, or: python3 ~/.josh-360/repo/laptop/run_jobs.py",
+        "group": "jobs",
+        "id": "jobs.ledger-upload",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "has not run yet (runs every 5 min)",
+        "fix": "wait for the next runner pass, or: python3 ~/.josh-360/repo/laptop/run_jobs.py",
+        "group": "jobs",
+        "id": "jobs.ticket-comments",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "has not run yet (runs every 60 min)",
+        "fix": "wait for the next runner pass, or: python3 ~/.josh-360/repo/laptop/run_jobs.py",
+        "group": "jobs",
+        "id": "jobs.session-atlas-service",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "has not run yet (runs every 1440 min)",
+        "fix": "wait for the next runner pass, or: python3 ~/.josh-360/repo/laptop/run_jobs.py",
+        "group": "jobs",
+        "id": "jobs.launchd-check",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "has not run yet (runs every 5 min)",
+        "fix": "wait for the next runner pass, or: python3 ~/.josh-360/repo/laptop/run_jobs.py",
+        "group": "jobs",
+        "id": "jobs.graph-runner",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "has not run yet (runs every 60 min)",
+        "fix": "wait for the next runner pass, or: python3 ~/.josh-360/repo/laptop/run_jobs.py",
+        "group": "jobs",
+        "id": "jobs.jp-117-triage-jp-116",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "has not run yet",
+        "fix": "wait for the next runner pass, or: python3 ~/.josh-360/repo/laptop/run_jobs.py",
+        "group": "backfills",
+        "id": "backfills.inventory",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "has not run yet",
+        "fix": "wait for the next runner pass, or: python3 ~/.josh-360/repo/laptop/run_jobs.py",
+        "group": "backfills",
+        "id": "backfills.retire-focus-dashboard",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "has not run yet",
+        "fix": "wait for the next runner pass, or: python3 ~/.josh-360/repo/laptop/run_jobs.py",
+        "group": "backfills",
+        "id": "backfills.ledger-backfill",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "has not run yet",
+        "fix": "wait for the next runner pass, or: python3 ~/.josh-360/repo/laptop/run_jobs.py",
+        "group": "backfills",
+        "id": "backfills.ledger-friction-catchup",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "has not run yet (waits for ledger-backfill)",
+        "fix": "wait for the next runner pass, or: python3 ~/.josh-360/repo/laptop/run_jobs.py",
+        "group": "backfills",
+        "id": "backfills.retire-session-atlas",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "has not run yet",
+        "fix": "wait for the next runner pass, or: python3 ~/.josh-360/repo/laptop/run_jobs.py",
+        "group": "backfills",
+        "id": "backfills.retire-leftover-jobs",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "~/.claude/settings.json is readable",
+        "fix": "",
+        "group": "hooks",
+        "id": "hooks.settings",
+        "status": "pass"
+      },
+      {
+        "auto_fix": "hooks",
+        "detail": "no dispatcher entry for SessionStart, so 20-ledger-spool never run",
+        "fix": "python3 ~/.claude/scripts/add-josh-360-hooks.py (or: doctor --fix); it backs up settings.json first",
+        "group": "hooks",
+        "id": "hooks.dispatch-SessionStart",
+        "status": "fail"
+      },
+      {
+        "auto_fix": "hooks",
+        "detail": "no dispatcher entry for SessionEnd, so 20-ledger-spool never run",
+        "fix": "python3 ~/.claude/scripts/add-josh-360-hooks.py (or: doctor --fix); it backs up settings.json first",
+        "group": "hooks",
+        "id": "hooks.dispatch-SessionEnd",
+        "status": "fail"
+      },
+      {
+        "auto_fix": "hooks",
+        "detail": "no dispatcher entry for UserPromptSubmit, so 20-graph-step, 40-ticket-comments never run",
+        "fix": "python3 ~/.claude/scripts/add-josh-360-hooks.py (or: doctor --fix); it backs up settings.json first",
+        "group": "hooks",
+        "id": "hooks.dispatch-UserPromptSubmit",
+        "status": "fail"
+      },
+      {
+        "auto_fix": "hooks",
+        "detail": "no dispatcher entry for PreToolUse, so 10-atlas-removal-guard, 20-graph-step-guard, 30-ticket-offer never run",
+        "fix": "python3 ~/.claude/scripts/add-josh-360-hooks.py (or: doctor --fix); it backs up settings.json first",
+        "group": "hooks",
+        "id": "hooks.dispatch-PreToolUse",
+        "status": "fail"
+      },
+      {
+        "auto_fix": "hooks",
+        "detail": "no dispatcher entry for PostToolUse, so 20-graph-step-reflect, 40-jira-session-link, 40-ticket-comments never run",
+        "fix": "python3 ~/.claude/scripts/add-josh-360-hooks.py (or: doctor --fix); it backs up settings.json first",
+        "group": "hooks",
+        "id": "hooks.dispatch-PostToolUse",
+        "status": "fail"
+      },
+      {
+        "auto_fix": "hooks",
+        "detail": "no dispatcher entry for Notification (no hook files use it yet)",
+        "fix": "python3 ~/.claude/scripts/add-josh-360-hooks.py (or: doctor --fix); it backs up settings.json first",
+        "group": "hooks",
+        "id": "hooks.dispatch-Notification",
+        "status": "warn"
+      },
+      {
+        "auto_fix": "hooks",
+        "detail": "no dispatcher entry for Stop, so 20-graph-step-stop never run",
+        "fix": "python3 ~/.claude/scripts/add-josh-360-hooks.py (or: doctor --fix); it backs up settings.json first",
+        "group": "hooks",
+        "id": "hooks.dispatch-Stop",
+        "status": "fail"
+      },
+      {
+        "auto_fix": "hooks",
+        "detail": "no dispatcher entry for SubagentStop (no hook files use it yet)",
+        "fix": "python3 ~/.claude/scripts/add-josh-360-hooks.py (or: doctor --fix); it backs up settings.json first",
+        "group": "hooks",
+        "id": "hooks.dispatch-SubagentStop",
+        "status": "warn"
+      },
+      {
+        "auto_fix": "hooks",
+        "detail": "no dispatcher entry for PreCompact (no hook files use it yet)",
+        "fix": "python3 ~/.claude/scripts/add-josh-360-hooks.py (or: doctor --fix); it backs up settings.json first",
+        "group": "hooks",
+        "id": "hooks.dispatch-PreCompact",
+        "status": "warn"
+      },
+      {
+        "auto_fix": "hooks",
+        "detail": "no dispatcher entry for PostCompact (no hook files use it yet)",
+        "fix": "python3 ~/.claude/scripts/add-josh-360-hooks.py (or: doctor --fix); it backs up settings.json first",
+        "group": "hooks",
+        "id": "hooks.dispatch-PostCompact",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "hooks/dispatch and every hook file are executable",
+        "fix": "",
+        "group": "hooks",
+        "id": "hooks.files",
+        "status": "pass"
+      },
+      {
+        "auto_fix": "hooks",
+        "detail": "JP-107 hook is installed but SessionEnd/SessionStart has no dispatcher entry",
+        "fix": "python3 ~/.claude/scripts/add-josh-360-hooks.py (or: doctor --fix); it backs up settings.json first",
+        "group": "hooks",
+        "id": "hooks.ledger-spool",
+        "status": "fail"
+      },
+      {
+        "auto_fix": "hooks",
+        "detail": "JP-110 hook is installed but PreToolUse has no dispatcher entry",
+        "fix": "python3 ~/.claude/scripts/add-josh-360-hooks.py (or: doctor --fix); it backs up settings.json first",
+        "group": "hooks",
+        "id": "hooks.ticket-offer",
+        "status": "fail"
+      },
+      {
+        "auto_fix": "hooks",
+        "detail": "JP-118 hook is installed but PostToolUse/UserPromptSubmit has no dispatcher entry",
+        "fix": "python3 ~/.claude/scripts/add-josh-360-hooks.py (or: doctor --fix); it backs up settings.json first",
+        "group": "hooks",
+        "id": "hooks.ticket-comments",
+        "status": "fail"
+      },
+      {
+        "auto_fix": "hooks",
+        "detail": "JP-111 hook is installed but PostToolUse/PreToolUse has no dispatcher entry",
+        "fix": "python3 ~/.claude/scripts/add-josh-360-hooks.py (or: doctor --fix); it backs up settings.json first",
+        "group": "hooks",
+        "id": "hooks.atlas-guard",
+        "status": "fail"
+      },
+      {
+        "auto_fix": "hooks",
+        "detail": "JP-117 hook is installed but PostToolUse/PreToolUse/Stop/UserPromptSubmit has no dispatcher entry",
+        "fix": "python3 ~/.claude/scripts/add-josh-360-hooks.py (or: doctor --fix); it backs up settings.json first",
+        "group": "hooks",
+        "id": "hooks.graph-step",
+        "status": "fail"
+      },
+      {
+        "auto_fix": null,
+        "detail": "no hook entries of the old Session Atlas remain",
+        "fix": "",
+        "group": "hooks",
+        "id": "hooks.old-atlas",
+        "status": "pass"
+      },
+      {
+        "auto_fix": null,
+        "detail": "no hook has failed (no hooks.log yet)",
+        "fix": "",
+        "group": "hooks",
+        "id": "hooks.log",
+        "status": "pass"
+      },
+      {
+        "auto_fix": null,
+        "detail": "schema version 2 (current), integrity ok",
+        "fix": "",
+        "group": "data",
+        "id": "data.ledger",
+        "status": "pass"
+      },
+      {
+        "auto_fix": null,
+        "detail": "all 31 tables and 79 triggers from schema.sql are there",
+        "fix": "",
+        "group": "data",
+        "id": "data.ledger-shape",
+        "status": "pass"
+      },
+      {
+        "auto_fix": null,
+        "detail": "ledger/db.py sets it on every connection and SQLite 3.53.1 honours it",
+        "fix": "",
+        "group": "data",
+        "id": "data.recursive-triggers",
+        "status": "pass"
+      },
+      {
+        "auto_fix": null,
+        "detail": "~/.josh-360/state/cache.db does not exist yet; the headless Session Atlas creates it",
+        "fix": "check backfills.retire-session-atlas and services.atlas-launchd",
+        "group": "data",
+        "id": "data.cache-db",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "no daily ledger backup exists yet in ~/.josh-360/backups",
+        "fix": "the ledger-backup job runs daily; or: python3 ~/.josh-360/repo/ledger/backup.py",
+        "group": "data",
+        "id": "data.backups",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "the ledger holds no sessions: the recorder has recorded nothing",
+        "fix": "check jobs.ledger-record and the SessionStart hook (hooks.ledger-spool); read ~/.josh-360/logs/ledger-record.log",
+        "group": "data",
+        "id": "data.ledger-content",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "no ticket offers (JP-110) yet in the ledger (ticket_offers)",
+        "fix": "not yet seen: the manual check is in the list below (start a session in a throwaway folder, commit)",
+        "group": "evidence",
+        "id": "evidence.ticket-offer",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "no ticket comment deliveries (JP-118) yet in the ledger (comment_deliveries)",
+        "fix": "not yet seen: the manual check is in the list below (comment on a ticket a session is working on)",
+        "group": "evidence",
+        "id": "evidence.ticket-comments",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "no session summaries (JP-108) yet in the ledger (session_summaries)",
+        "fix": "read ~/.josh-360/logs/ledger-summary.log (is `claude` found?)",
+        "group": "evidence",
+        "id": "evidence.summaries",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "no friction facts (JP-112) yet in the ledger (session_facts)",
+        "fix": "check backfills.ledger-friction-catchup",
+        "group": "evidence",
+        "id": "evidence.friction",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "no debriefs yet (JP-113); expected after a day or two of sessions with friction",
+        "fix": "",
+        "group": "evidence",
+        "id": "evidence.debriefs",
+        "status": "skip"
+      },
+      {
+        "auto_fix": null,
+        "detail": "waits for the retire-session-atlas job to succeed (see backfills.retire-session-atlas)",
+        "fix": "",
+        "group": "services",
+        "id": "services.atlas-launchd",
+        "status": "skip"
+      },
+      {
+        "auto_fix": null,
+        "detail": "launchctl is not available here (not a Mac)",
+        "fix": "",
+        "group": "services",
+        "id": "services.old-atlas-gone",
+        "status": "skip"
+      },
+      {
+        "auto_fix": null,
+        "detail": "waits for the retire-session-atlas job to succeed",
+        "fix": "",
+        "group": "services",
+        "id": "services.atlas-health",
+        "status": "skip"
+      },
+      {
+        "auto_fix": null,
+        "detail": "no Atlas log yet",
+        "fix": "",
+        "group": "services",
+        "id": "services.atlas-log",
+        "status": "skip"
+      },
+      {
+        "auto_fix": null,
+        "detail": "Node v22.23.5 at /opt/node22/bin/node",
+        "fix": "",
+        "group": "services",
+        "id": "services.node",
+        "status": "pass"
+      },
+      {
+        "auto_fix": null,
+        "detail": "the Azure backup copy is not configured: no account and container are named (JP-150)",
+        "fix": "write {\"account\": \"<storage account>\", \"container\": \"<container>\"} into ~/.josh-360/state/azure-backup.json",
+        "group": "accounts",
+        "id": "accounts.azure-config",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "the Azure CLI (az) is not installed",
+        "fix": "brew install azure-cli, then az login",
+        "group": "accounts",
+        "id": "accounts.az-login",
+        "status": "warn"
+      },
+      {
+        "auto_fix": null,
+        "detail": "the backup copy is not configured (accounts.azure-config)",
+        "fix": "",
+        "group": "accounts",
+        "id": "accounts.azure-upload",
+        "status": "skip"
+      },
+      {
+        "auto_fix": "jira-email",
+        "detail": "no Jira account email is set: ticket links and comment delivery cannot read Jira",
+        "fix": "put your Atlassian email on one line in ~/.josh-360/state/jira-email (or: doctor --fix --jira-email you@example.com)",
+        "group": "accounts",
+        "id": "accounts.jira-email",
+        "status": "fail"
+      },
+      {
+        "auto_fix": null,
+        "detail": "the keychain cannot be asked here (not a Mac)",
+        "fix": "",
+        "group": "accounts",
+        "id": "accounts.jira-token",
+        "status": "skip"
+      },
+      {
+        "auto_fix": null,
+        "detail": "claude found at /opt/node22/bin/claude",
+        "fix": "",
+        "group": "accounts",
+        "id": "accounts.claude-cli",
+        "status": "pass"
+      },
+      {
+        "auto_fix": null,
+        "detail": "5 graphs, each compiled copy matches its source files",
+        "fix": "",
+        "group": "graphs",
+        "id": "graphs.compiled",
+        "status": "pass"
+      },
+      {
+        "auto_fix": null,
+        "detail": "the walker starts on this Python",
+        "fix": "",
+        "group": "graphs",
+        "id": "graphs.walker",
+        "status": "pass"
+      },
+      {
+        "auto_fix": null,
+        "detail": "rule on; 0 watches open, none overdue",
+        "fix": "",
+        "group": "graphs",
+        "id": "graphs.validation-watch",
+        "status": "pass"
+      },
+      {
+        "auto_fix": null,
+        "detail": "the debrief form is provisional; finalise it on or after 2026-12-01 (two weeks of friction rows, JP-113)",
+        "fix": "",
+        "group": "owed",
+        "id": "owed.debrief-form",
+        "status": "skip"
+      }
+    ],
+    "fixes": [],
+    "laptop_copy": "~/.josh-360/repo",
+    "manual": [
+      {
+        "how": "In a throwaway folder with no ticket, start a Claude Code session, ask it to create a file and make a commit. Its next message should say \"This has become ticket-sized work, want me to open a ticket?\". Then evidence.ticket-offer turns green after the recorder's next pass.",
+        "id": "ticket-offer",
+        "ticket": "JP-110",
+        "what": "A session at its first commit with no ticket is offered one, once, and the commit still goes ahead."
+      },
+      {
+        "how": "Start a session on a branch named after a made-up test ticket, then comment on that ticket in Jira. Within about 10 minutes the session's next tool call should show the comment under \"Josh 360: new comment(s) on a ticket you are working on\". Then evidence.ticket-comments turns green.",
+        "id": "ticket-comments",
+        "ticket": "JP-118",
+        "what": "A new Jira comment reaches the session working on that ticket."
+      },
+      {
+        "how": "In a Claude Code session run `git worktree remove --force /tmp/x`. It should be blocked with a reason.",
+        "id": "removal-guard",
+        "ticket": "JP-111",
+        "what": "Session Atlas's guard blocks a worktree removal that would lose work."
+      },
+      {
+        "how": "Use the laptop normally for a day with Atlas running and watch for slowness; `npm run artifacts -- status` in ~/.josh-360/repo/apps/session-atlas shows the first scan's progress.",
+        "id": "atlas-macos-gates",
+        "ticket": "JP-111",
+        "what": "The moved Atlas behaves on macOS: the FSEvents burst, Finder and foreground-responsiveness gates claude-360 listed."
+      },
+      {
+        "how": "python3 ~/.josh-360/repo/ledger/loose_ends.py --fetch (long at first, about 1,000 before the ledger); then /closeout in a Claude Code session and watch the `by: josh` items it asks about.",
+        "id": "closeout",
+        "ticket": "JP-109",
+        "what": "The loose-ends list is real and the closeout agent's first run is sensible."
+      },
+      {
+        "how": "python3 ~/.josh-360/repo/graphs/gates/set-flag.py --ticket JP-121 --on, then the same with --off.",
+        "id": "jira-flag",
+        "ticket": "JP-121",
+        "what": "The shared Jira library can set and clear the Flagged field on a real ticket."
+      },
+      {
+        "how": "python3 ~/.josh-360/repo/graphs/intake/submit.py --source todo --ref <id> against the JP space, approve the card in the Needs you tab, confirm the ticket in Jira, then cancel it.",
+        "id": "intake-run",
+        "ticket": "JP-121",
+        "what": "A made-up to-do runs through the ticket creation graph to a real Jira ticket, then is cancelled."
+      },
+      {
+        "how": "cd ~/.josh-360/repo/tests && /usr/bin/python3 -B -m unittest test_install test_follow test_hooks (ends with OK).",
+        "id": "laptop-tests",
+        "ticket": "JP-105",
+        "what": "The laptop tests pass on the Mac's own Python 3.9."
+      }
+    ],
+    "ok": false,
+    "schema": 1,
+    "summary": {
+      "fail": 13,
+      "pass": 20,
+      "skip": 9,
+      "warn": 28
+    },
+    "time": "2026-11-19T20:09:16Z"
+  },
+  "doctor_summary": {
+    "fail": 13,
+    "pass": 20,
+    "skip": 9,
+    "warn": 28
+  },
+  "main": "10c9ef40961684cb263871a2450ca76c39afe9ef",
+  "ok": true,
+  "origin": "/tmp/verify-josh-360/jp172b/origin.git",
+  "problems": [],
+  "required_pass": [
+    "install.home",
+    "install.copy",
+    "install.runs-from-copy",
+    "install.installed-commit",
+    "install.jobs-file",
+    "install.not-paused",
+    "hooks.files",
+    "data.ledger",
+    "data.ledger-shape",
+    "graphs.compiled",
+    "graphs.walker"
+  ],
+  "run": "jp172b"
+}

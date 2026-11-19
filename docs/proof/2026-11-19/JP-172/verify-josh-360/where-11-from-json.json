@@ -1,0 +1,16 @@
+{
+  "command": [
+    "python3",
+    "graphs/runner/runner.py",
+    "where",
+    "JP-9001",
+    "--from-json",
+    "/tmp/verify-josh-360/jp172b/graph-runner.json"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp172b/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp172b",
+  "started_at": "2026-11-19T20:09:40Z",
+  "stderr": "",
+  "stdout": "# JP-9001\n\n## ticket-creation run r-8e44e900e49d\n\nEnded route.personal (neutral) at Route, Jira status Not Started.\n\n| Step | Attempt | Tier | Model | Session | Agent Manager session | Outcome | Cost |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| _entry | 1 |  |  |  |  | pass | - |\n| read_intake | 1 | mid | claude-sonnet-5-5 | verify-sess-0172 |  | recorded | - |\n| route | 1 |  |  |  |  | personal | - |\n\nCost is not in a published report; run `where JP-9001` on the laptop to see it.\n"
+}

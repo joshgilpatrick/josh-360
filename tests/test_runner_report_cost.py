@@ -76,7 +76,9 @@ class ReportCost(RunnerCase):
     def test_a_published_snapshot_has_no_cost_and_the_report_says_so(self):
         run = self.priced_run()
         snap = self.snap()
-        self.assertNotIn("cost", json.dumps(snap).lower())            # the published snapshot never carries cost
+        self.assertEqual(snap["ticket_counts"]["cost_fields"], 0)    # JP-172: the counter the validation watch reads
+        bare = dict(snap, ticket_counts={k: v for k, v in snap["ticket_counts"].items() if k != "cost_fields"})
+        self.assertNotIn("cost", json.dumps(bare).lower())            # the published snapshot never carries cost
         self.assertNotIn("4.0", json.dumps(snap))
         # from a snapshot the report has a dash in the column and a line saying why
         snap["ended_runs"] = [dict(e) for e in snap["ended_runs"]]

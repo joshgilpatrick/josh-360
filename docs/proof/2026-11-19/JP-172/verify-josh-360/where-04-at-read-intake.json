@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python3",
+    "graphs/runner/runner.py",
+    "where",
+    "JP-9001"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp172b/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp172b",
+  "started_at": "2026-11-19T20:09:21Z",
+  "stderr": "",
+  "stdout": "# JP-9001\n\n## ticket-creation run r-8e44e900e49d\n\nAt Read intake (`read_intake`), attempt 1, Jira status Not Started: queued since 2026-11-19T20:09:21Z.\nWaiting on a free session slot, since 2026-11-19T20:09:21Z.\n\n| Step | Attempt | Tier | Model | Session | Agent Manager session | Outcome | Cost |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| _entry | 1 |  |  |  |  | pass | - |\n| read_intake | 1 | mid |  |  |  | open | - |\n\nCost of this run: nothing yet (no step session has a cost recorded)\n\nTotal cost on JP-9001: nothing yet (no step session has a cost recorded) (each session counted once)\n"
+}

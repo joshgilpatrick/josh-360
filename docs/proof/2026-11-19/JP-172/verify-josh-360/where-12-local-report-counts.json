@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python3",
+    "-c",
+    "import json,os;d=json.load(open(os.path.expanduser('~/.josh-360/state/reports/graph-runner.json')));print(json.dumps(d['ticket_counts'], sort_keys=True))"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp172b/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp172b",
+  "started_at": "2026-11-19T20:09:52Z",
+  "stderr": "",
+  "stdout": "{\"cost_fields\": 0, \"listed\": 1, \"refusals_readable\": true, \"refused\": 0}\n"
+}
