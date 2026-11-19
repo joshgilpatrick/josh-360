@@ -70,8 +70,11 @@ def run_job(job: Dict[str, object], lane: Lane) -> int:
             data = json.loads(out)
             # Keep the newest output here too, before the push: the validation collectors (JP-166) read it from this
             # folder, and a push that fails must not cost them the reading.
-            lane.mkdir(state_dir() / "reports")
-            lane.write_text(state_dir() / "reports" / "{}.json".format(job["id"]), out)
+            try:
+                lane.mkdir(state_dir() / "reports")
+                lane.write_text(state_dir() / "reports" / "{}.json".format(job["id"]), out)
+            except OSError as e:   # a full disk must not stop the pass or cost the job its publish
+                lane.append_text(log, "local report copy not kept: {}\n".format(e))
             print("{}: report {}".format(job["id"], status_branch.publish(None, {str(job["id"]): data})))
         except (ValueError, Unexpected) as e:
             lane.append_text(log, "report not published: {}\n".format(e))
