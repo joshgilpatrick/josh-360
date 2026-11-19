@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple
 
 SPRINT_FIELD = "customfield_10020"
+FLAG_FIELD = "customfield_10021"      # "Flagged"; the same id as lib.jira.FLAG_FIELD
 MARKER = "fake-jira.json"
 CALLS = "calls.jsonl"
 
@@ -31,7 +32,7 @@ def folder_from(environ: dict) -> Optional[Path]:
 def _judge(issues: list, jql: str) -> Optional[list]:
     """The small JQL subset a test can ask for (JP-117): ORDER BY is dropped, then each ` AND ` clause is one of
     `project = X`, `status = X` (quoted or bare), `labels = X` (quoted or bare), `sprint in openSprints()` and
-    `issuetype in (A, B)`. Any other clause
+    `issuetype in (A, B)` and `Flagged is EMPTY`. Any other clause
     returns None (the fake answers 400), so a test can never pass on a rule the fake did not judge."""
     text = re.split(r"\s+ORDER\s+BY\s+", jql, flags=re.I)[0]
     found = list(issues)
@@ -54,6 +55,9 @@ def _judge(issues: list, jql: str) -> Optional[list]:
         if re.match(r"^sprint\s+in\s+openSprints\(\)$", clause, re.I):
             found = [i for i in found if any(isinstance(sp, dict) and sp.get("state") == "active"
                                              for sp in (i.get("fields") or {}).get(SPRINT_FIELD) or [])]
+            continue
+        if re.match(r"^flagged\s+is\s+empty$", clause, re.I):
+            found = [i for i in found if not (i.get("fields") or {}).get(FLAG_FIELD)]
             continue
         m = re.match(r"^issuetype\s+in\s*\(([^)]*)\)$", clause, re.I)
         if m:
