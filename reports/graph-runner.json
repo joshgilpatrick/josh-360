@@ -26,7 +26,10 @@
     "validation": {
       "jira": "ok",
       "skipped": {
-        "JP-167": "not admitted"
+        "JP-167": "not admitted",
+        "JP-171": "not admitted",
+        "JP-172": "not admitted",
+        "JP-175": "not admitted"
       },
       "started": []
     }
