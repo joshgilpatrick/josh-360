@@ -98,9 +98,8 @@ class Running(RunnerCase):
         self.assertEqual(end, "finished")
         names = self.spawn_names()
         self.assertEqual(len(names), 3)
-        for name, title in zip(names, ("Draft", "Make", "Look")):
-            self.assertRegex(name, r"^JP-901 - {} \(r[0-9a-z]{{4}}\)$".format(title))
-        self.assertEqual(len(self.am_calls("archive")), 3)
+        self.assertEqual(names, ["JP-901(a) - Draft", "JP-901(b) - Make", "JP-901(c) - Look"])
+        self.assertEqual(self.am_calls("archive"), [["archive", "s-1"], ["archive", "s-2"]])   # (c) stays in view
         conn = db.connect(db.ledger_path())
         try:
             self.assertEqual(conn.execute("SELECT runner FROM graph_runs WHERE run_id = ?", (run,)).fetchone()[0],
