@@ -130,7 +130,8 @@ def ticket_rows(conn: sqlite3.Connection, now: float, open_rows: List[dict], end
     rows = []
     for key in sorted(set(newest) | set(by_ticket)):
         run = newest.get(key)
-        row = run_entry(conn, run, now, root) if run else {"ticket": key, "run": None, "state": "not started"}
+        row = run_entry(conn, dict(run, runner=status.RUNNER), now, root) if run else {"ticket": key, "run": None,
+                                                                                    "state": "not started"}
         row.update(runs=counts.get(key, 0), refused=by_ticket.get(key, []))
         rows.append(row)
     tally = {"listed": len(rows), "refused": sum(1 for r in rows if r["refused"]),
