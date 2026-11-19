@@ -19,6 +19,8 @@ The runner (`graphs/runner/`) loads the binding by the run's `runner` value, as 
 - `state(handle)` answers `working`, `resting`, `gone` or `unknown`. Unknown (a missing database, column or status word) changes nothing.
 - `close(handle)` archives the session and says whether that worked. It never raises.
 - `build_prompt` and `session_name` are what `start` uses; the first line of every prompt is the runner's marker.
+- `move(handle, group)` files the session under another group (made first if missing) and `ensure_group(group)` makes a group; neither raises. `placed(handle)` reads the session's group and archived flag from Agent Manager's database.
+- JP-173: `ticket_session_name(key, n, step)` (`JP-116(c) - Build`), `letter(n)` (a to z, then aa, ab) and `ticket_group(status)` (`josh-360/tickets/<status>`, `/` as `-`). The runner passes the chosen name and group to `start` as `session_name` and `am_group`; a group that cannot be made falls back to `binding.json`'s `group`, so a spawn never fails for it, and the runner moves the session on a later pass. A session with no ticket key keeps the old name, `<graph> - <Step> (r<run>)`.
 
 Every `agent-manager` call runs with the folder of Claude Code first on the PATH (`JOSH360_CLAUDE_BIN`'s folder, else where `claude` is found), because a laptop job's PATH has no `~/.local/bin` and Agent Manager refuses a spawn with "claude is not installed" without it.
 
@@ -28,6 +30,6 @@ Everything specific to Agent Manager that is not code: the group (`josh-360/grap
 
 ## Setup notes
 
-- The group and its parent are made once per laptop (`create-group josh-360`, then `josh-360/graph-runs`); the marker file `~/.josh-360/state/runner/group-ready` records it. This uses Josh's standing approval for group changes and nothing wider.
-- Archiving a finished session uses Agent Manager's own `archive` command. An abandoned session is never archived, so it stays visible.
+- Each group, and every group above it, is made the first time it is needed (`create-group josh-360`, then `josh-360/tickets`, then `josh-360/tickets/In Progress`); `~/.josh-360/state/runner/groups-ready.json` lists the ones made, and a `move` that fails takes its group off the list so it is made again. This uses Josh's standing approval for group changes and nothing wider.
+- Archiving uses Agent Manager's own `archive` command. Since JP-173 a ticket's session is not archived when its result is recorded: the runner keeps the ticket's newest session in view and archives the earlier ones (`graphs/runner/README.md`, "Sessions in Agent Manager"). A keyless session is still archived on its result.
 - The probe on 17 November 2026 found: a job can run `agent-manager sessions --json` and `spawn` (with Claude Code's folder on the PATH); Agent Manager's database has `sessions` with `id`, `status`, `archived` and `agent_session_id`; the status words are `dead`, `finished`, `idle`, `starting`, `waiting`, `working`; the spawn reply has an `id` field. A session that has replied and stopped reads `finished`, which is filed under resting.

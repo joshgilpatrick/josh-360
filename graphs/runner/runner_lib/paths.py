@@ -25,7 +25,7 @@ DEFAULTS = {
     "time_cap_seconds": 10800, "time_cap_grace_seconds": 900, "link_timeout_seconds": 600,
     "rest_timeout_seconds": 600, "advance_limit_seconds": 7200, "spawn_tries": 3,
     "tick_seconds": 300, "heartbeat_stale_seconds": 600, "wait_flag_days": 7,
-    "result_settle_seconds": 60, "archive_finished_sessions": True, "ended_runs_days": 14,
+    "result_settle_seconds": 60, "archive_finished_sessions": True, "ended_runs_days": 14, "done_keep_days": 7,
     "wait_flag_exempt": ["validation.watch"],   # "<graph>.<step>" waits that are meant to last: never listed as stuck
 }
 EVENTS = ("UserPromptSubmit", "PreToolUse", "PostToolUse", "Stop")

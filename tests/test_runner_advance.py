@@ -61,9 +61,9 @@ class Advancing(RunnerCase):
         self.assertEqual((design["outcome"], design["session"], design["model"]), ("ready", "cc-1", model))
         self.assertIn("lint-spec", [l.get("gate") for l in self.log()])
         doc = self.session_doc(self.run_id)
-        self.assertEqual((doc["state"], doc["closed"]), ("recorded", True))
+        self.assertEqual((doc["state"], doc["closed"]), ("recorded", None))
         self.assertEqual(doc["ended_at"], self.now)
-        self.assertEqual(self.am_calls("archive"), [["archive", "s-1"]])
+        self.assertEqual(self.am_calls("archive"), [])          # a ticket's newest session stays in view (JP-173)
 
     def test_archive_can_be_switched_off(self):
         self.settings(archive_finished_sessions=False)
@@ -137,7 +137,7 @@ class Advancing(RunnerCase):
         self.assertEqual(self.advance(self.run_id), "spawned")
         doc = self.session_doc(self.run_id)
         self.assertEqual((doc["state"], doc["reason"]), ("abandoned", "rested-without-result"))
-        self.assertEqual(self.am_calls("archive"), [])
+        self.assertEqual(self.am_calls("archive"), [["archive", "s-1"]])   # the retry's session replaces it (JP-173)
 
     def test_resting_with_no_nudge_uses_first_seen_resting(self):
         self.rest(None)

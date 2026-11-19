@@ -2,7 +2,8 @@
 """A fake `agent-manager` for the runner's tests (JP-117). Nothing real: it logs every call and keeps a made-up
 sessions table. $FAKE_AM_DIR holds calls.jsonl, state.db, groups.json and an optional behaviour.json:
 {"spawn_fails": "<text>"}, {"refuse_model": "<model>"}, {"spawn_hangs": true}, {"needs_claude": true},
-{"spawn_no_id": true} (the session is made but the reply has no id)."""
+{"spawn_no_id": true} (the session is made but the reply has no id), {"move_fails": true}, {"create_group_fails": "<group prefix>"},
+{"send_fails": true}."""
 import json
 import os
 import sqlite3
@@ -68,6 +69,9 @@ if command == "spawn":
     conn.commit()
     print("{}" if behaviour.get("spawn_no_id") else json.dumps({"id": sid}))
 elif command == "create-group":
+    if behaviour.get("create_group_fails") and argv[1].startswith(behaviour["create_group_fails"]):
+        sys.stderr.write("cannot create group\n")
+        sys.exit(1)
     path = os.path.join(folder, "groups.json")
     groups = json.load(open(path)) if os.path.exists(path) else []
     if argv[1] in groups:
@@ -75,6 +79,19 @@ elif command == "create-group":
         sys.exit(1)
     groups.append(argv[1])
     json.dump(groups, open(path, "w"))
+elif command == "move":
+    if behaviour.get("move_fails"):
+        sys.stderr.write("move refused\n")
+        sys.exit(1)
+    path = os.path.join(folder, "groups.json")
+    groups = json.load(open(path)) if os.path.exists(path) else []
+    if argv[2] not in groups:
+        sys.stderr.write("no such group {}\n".format(argv[2]))
+        sys.exit(1)
+    conn = db()
+    conn.execute("UPDATE sessions SET group_name = ? WHERE id = ?", (argv[2], argv[1]))
+    conn.commit()
+    print(json.dumps({"id": argv[1], "group": argv[2]}))
 elif command == "send":                        # JP-175: a plain message to a session; never a spawn
     if behaviour.get("send_fails"):
         sys.stderr.write("send refused\n")

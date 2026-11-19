@@ -399,6 +399,85 @@ class Graphs(h.DoctorCase):
         self.assertEqual(self.results()["graphs.compiled"].status, "fail")
 
 
+class AgentManagerGroups(h.DoctorCase):
+    """JP-173: each ticket's kept session is the only one in view, named for the ticket, in its status group. Made-up
+    runner file and Agent Manager database; nothing in view is a skip."""
+    ID = "graphs.agent-manager-groups"
+    GROUP = "josh-360/tickets/In Progress"
+
+    def setUp(self):
+        super().setUp()
+        self.am_db = self.tmp / "am-state.db"
+        self.env["JOSH360_AM_DB"] = str(self.am_db)
+        conn = sqlite3.connect(str(self.am_db))
+        conn.execute("CREATE TABLE sessions (id TEXT, name TEXT, group_name TEXT, archived INTEGER)")
+        conn.commit()
+        conn.close()
+
+    def am(self, *rows):
+        conn = sqlite3.connect(str(self.am_db))
+        conn.executemany("INSERT INTO sessions VALUES (?, ?, ?, ?)", rows)
+        conn.commit()
+        conn.close()
+
+    def tickets(self, sessions, group=GROUP, key="JP-900"):
+        path = self.home / "state" / "runner" / "am-tickets.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({"tickets": {key: {"count": len(sessions), "status": "In Progress", "group": group,
+                                                       "done_at": None, "sessions": sessions}}}))
+
+    def session(self, n, am):
+        return {"n": n, "am_session": am, "group": self.GROUP, "archived": False}
+
+    def test_nothing_in_view_is_a_skip(self):
+        self.assertEqual(self.results()[self.ID].status, "skip")
+        self.tickets([self.session(1, "s-1")])
+        self.am(("s-1", "JP-900(a) - Design", "josh-360/tickets/Design-Planning", 1))
+        self.assertEqual(self.results()[self.ID].status, "skip")
+
+    def test_one_session_in_its_group_passes(self):
+        self.tickets([self.session(1, "s-1"), self.session(2, "s-2")])
+        self.am(("s-1", "JP-900(a) - Design", "josh-360/tickets/Design-Planning", 1),
+                ("s-2", "JP-900(b) - Build", self.GROUP, 0))
+        r = self.results()[self.ID]
+        self.assertEqual(r.status, "pass", r.detail)
+
+    def test_two_sessions_in_view_fail(self):
+        self.tickets([self.session(1, "s-1"), self.session(2, "s-2")])
+        self.am(("s-1", "JP-900(a) - Design", self.GROUP, 0), ("s-2", "JP-900(b) - Build", self.GROUP, 0))
+        r = self.results()[self.ID]
+        self.assertEqual(r.status, "fail")
+        self.assertIn("JP-900 has 2 sessions in view", r.detail)
+
+    def test_the_wrong_group_fails(self):
+        self.tickets([self.session(1, "s-1")])
+        self.am(("s-1", "JP-900(a) - Build", "josh-360/tickets/Design-Planning", 0))
+        r = self.results()[self.ID]
+        self.assertEqual(r.status, "fail")
+        self.assertIn("not '{}'".format(self.GROUP), r.detail)
+
+    def test_a_wrong_name_fails(self):
+        self.tickets([self.session(1, "s-1")])
+        self.am(("s-1", "JP-900 - Build (r1a2b)", self.GROUP, 0))
+        self.assertEqual(self.results()[self.ID].status, "fail")
+
+    def test_an_unknown_session_in_a_ticket_group_fails(self):
+        self.tickets([self.session(1, "s-1")])
+        self.am(("s-1", "JP-900(a) - Build", self.GROUP, 0), ("s-9", "JP-901(a) - Build", self.GROUP, 0))
+        r = self.results()[self.ID]
+        self.assertEqual(r.status, "fail")
+        self.assertIn("s-9", r.detail)
+
+    def test_an_unreadable_runner_file_fails_and_a_missing_database_skips(self):
+        path = self.home / "state" / "runner" / "am-tickets.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("{not json")
+        self.assertEqual(self.results()[self.ID].status, "fail")
+        path.unlink()
+        self.am_db.unlink()
+        self.assertEqual(self.results()[self.ID].status, "skip")
+
+
 class ValidationWatch(h.DoctorCase):
     """JP-167: the validation rule is on, and no open watch is past its give-up time and a day (the day is for a closed
     laptop)."""
