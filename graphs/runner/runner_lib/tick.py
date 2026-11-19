@@ -14,7 +14,7 @@ import time
 from pathlib import Path
 from typing import Callable, List, Optional
 
-from . import ledgerview, locks, notify, paths, status, walk, watch
+from . import amgroups, ledgerview, locks, notify, paths, status, walk, watch
 from ledger import db  # noqa: E402
 from walker_lib import questions, runfolder  # noqa: E402
 
@@ -99,6 +99,11 @@ def _tick(now, launcher, jira, root) -> dict:
                     launcher(run["run"])
                 except Exception as err:  # noqa: BLE001  (one run that cannot be launched must not stop the others)
                     paths.log("tick: could not launch advance for {}: {}".format(run["run"], type(err).__name__))
+        try:
+            from .advance import load_binding
+            amgroups.sync(conn, load_binding(RUNNER), now())       # kept sessions follow status; Done leaves after 7 days
+        except Exception as err:  # noqa: BLE001  (placing sessions must never stop the tick)
+            paths.log("tick: sessions not placed: {}".format(type(err).__name__))
         report = status.snapshot(conn, now(), root)
     finally:
         conn.close()
