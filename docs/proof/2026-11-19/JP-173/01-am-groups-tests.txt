@@ -1,0 +1,23 @@
+test_a_failed_move_is_tried_again (test_runner_am_groups.Groups.test_a_failed_move_is_tried_again) ... ok
+test_a_recorded_result_keeps_the_session_in_view (test_runner_am_groups.Groups.test_a_recorded_result_keeps_the_session_in_view) ... ok
+test_a_retry_gets_its_own_letter (test_runner_am_groups.Groups.test_a_retry_gets_its_own_letter)
+Scenario: A retry gets its own letter, and the attempt it replaces is archived. ... ok
+test_a_status_group_that_cannot_be_made_falls_back_to_the_old_group (test_runner_am_groups.Groups.test_a_status_group_that_cannot_be_made_falls_back_to_the_old_group) ... ok
+test_an_unreadable_tickets_file_starts_no_session (test_runner_am_groups.Groups.test_an_unreadable_tickets_file_starts_no_session) ... ok
+test_done_tickets_leave_after_7_days (test_runner_am_groups.Groups.test_done_tickets_leave_after_7_days)
+Scenario: Done tickets leave after 7 days; one that reached Done 6 days ago keeps its session. ... ok
+test_letters_count_across_runs (test_runner_am_groups.Groups.test_letters_count_across_runs)
+Scenario: Letters count across runs (3 sessions in an earlier run, 1 in this one, then the build step). ... ok
+test_the_first_session_of_a_ticket (test_runner_am_groups.Groups.test_the_first_session_of_a_ticket)
+Scenario: The first session of a ticket. ... ok
+test_the_newest_session_follows_the_status (test_runner_am_groups.Groups.test_the_newest_session_follows_the_status)
+Scenario: The newest session follows the status, and stays in view. ... ok
+test_the_tick_places_sessions (test_runner_am_groups.Groups.test_the_tick_places_sessions) ... ok
+test_a_keyless_session_keeps_the_old_name (test_runner_am_groups.Names.test_a_keyless_session_keeps_the_old_name) ... ok
+test_letters (test_runner_am_groups.Names.test_letters) ... ok
+test_ticket_names_and_groups (test_runner_am_groups.Names.test_ticket_names_and_groups) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 4.431s
+
+OK
