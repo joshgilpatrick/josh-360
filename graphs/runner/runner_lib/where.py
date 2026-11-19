@@ -35,9 +35,12 @@ def label(step: Optional[str]) -> Optional[str]:
     return step.replace("_", " ").capitalize() if step else None
 
 
-def _waits_on(state: str, step: Optional[str], since: Optional[str], graph, stop_reason) -> Optional[dict]:
+def _waits_on(state: str, step: Optional[str], since: Optional[str], graph, stop_reason,
+              on: Optional[str] = None) -> Optional[dict]:
     if state == "parked":
         return {"kind": "question", "text": "a question to Josh", "since": since}
+    if state == "waiting" and on:                 # a follow-up that blocks the ticket (JP-175): its key, or its id
+        return {"kind": "follow-up", "text": on if on.startswith("follow-up") else "follow-up {}".format(on), "since": since}
     if state == "waiting":
         script = (graph.steps.get(step) or {}).get("wait") if graph is not None and step else None
         text = WAIT_WORDS.get(script) or ("the {} check".format(script) if script else "a check")
@@ -89,10 +92,10 @@ def run_entry(conn: sqlite3.Connection, run: dict, now: float, root: Optional[Pa
     steps = report["steps"]
     if run.get("end"):
         named = [s["step"] for s in steps if not str(s["step"]).startswith("_")]   # not the entry and exit gates
-        state, step, since = "ended", (named[-1] if named else None), run.get("ended_at")
+        state, step, since, on = "ended", (named[-1] if named else None), run.get("ended_at"), None
     else:
         row = status.run_row(conn, run)
-        state, step, since = row["state"], row["step"], row["since"]
+        state, step, since, on = row["state"], row["step"], row["since"], row.get("waiting_on")
     graph = status._graph(run["graph"], root)
     jira = graph.stretch_status(step) if graph is not None and step in graph.steps else None
     attempts = [s["attempt"] for s in steps if s["step"] == step]
@@ -101,7 +104,7 @@ def run_entry(conn: sqlite3.Connection, run: dict, now: float, root: Optional[Pa
              "started_at": run["started_at"], "step": step, "step_label": label(step), "jira_status": jira,
              "state": state, "since": since, "attempt": max(attempts) if attempts else None,
              "end": run.get("end"), "score": run.get("score"),
-             "waits_on": _waits_on(state, step, since, graph, stop_reason),
+             "waits_on": _waits_on(state, step, since, graph, stop_reason, on),
              "worktree_kept": worktree_kept(run["run"], state),
              "sessions": [dict({k: s.get(k) for k in SESSION_KEYS}, kind=s["kind"]) for s in steps]}
     if with_cost:

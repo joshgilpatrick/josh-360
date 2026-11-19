@@ -10,6 +10,9 @@ Python 3.9, standard library only. Every path comes from the environment so test
     source_text(source, source_ref) -> str   the item's own words, for the patient-data copy check; "" if unknown
     link(source, source_ref, keys)           record the first key on the source item; True when it reads back
 
+A `session` pointer of the form `follow-up:<run id>:<file id>` names a graph step's follow-up (JP-175,
+lib/follow_ups.py): its file is its store, and the new key is written back into it.
+
 The input's text is never copied anywhere by this module: callers receive it only to compare against.
 """
 from __future__ import annotations
@@ -20,6 +23,8 @@ import re
 import sqlite3
 from pathlib import Path
 from typing import List, Optional
+
+from lib import follow_ups
 
 FIRST_WAVE = ("email", "todo", "session", "manual")
 WITH_STORE = ("email", "todo", "notion")      # a session or a hand-typed request has no store that can carry a key
@@ -137,6 +142,10 @@ def item_state(source: str, source_ref: str) -> dict:
         state["known"] = thread is not None
         if thread:
             state.update(exists=True, ticket_key=thread.get("jira_key") or None)
+    elif source == "session" and source_ref.startswith(follow_ups.PREFIX):  # a graph step's follow-up (JP-175)
+        doc = follow_ups.load(source_ref)          # None for a pointer that does not parse: no such item
+        if doc:
+            state.update(exists=True, dismissed=doc.get("state") == "dropped", ticket_key=doc.get("key") or None)
     else:  # a session or a hand-typed request names no store of its own; the pointer is the only record
         state["exists"] = bool(source_ref.strip())
     run = has_open_run(source, source_ref)
@@ -153,6 +162,9 @@ def source_text(source: str, source_ref: str) -> str:
         data = _read_items(action_items_path())
         item = _find_item(data, source_ref) if isinstance(data, dict) else None
         return str(item.get("text") or "") if item else ""
+    if source == "session" and follow_ups.parse_ref(source_ref):
+        doc = follow_ups.load(source_ref) or {}
+        return "{}\n{}".format(doc.get("summary") or "", doc.get("why") or "").strip()
     return ""
 
 
@@ -165,6 +177,8 @@ def link(source: str, source_ref: str, keys: List[str]) -> bool:
         return _link_item(source_ref, key)
     if source == "email":
         return _link_desk(source_ref, key)
+    if source == "session" and follow_ups.parse_ref(source_ref):
+        return follow_ups.update(source_ref, key=key, state="filed")
     return True  # a session or a hand-typed request: the key is recorded in the run's own output and the ledger
 
 

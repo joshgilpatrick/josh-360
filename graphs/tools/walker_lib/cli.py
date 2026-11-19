@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from ledger import db
+from lib import follow_ups  # graphs/gates/lib, on sys.path through ledger._repo
 
 from . import engine, gates, graphfile, ledgerio, questions, runfolder, runner
 from .graphfile import Refused
@@ -121,9 +122,11 @@ def cmd_record(conn, root: Path, args) -> dict:
     open_step = run.state.open_step
     if open_step != args.step or run.rows[-1]["kind"] != "role":
         raise Refused("step '{}' is not the role step this run is waiting on".format(args.step))
+    raw_follow_ups = None
     if args.result_file:
         result = runfolder.read_result(Path(args.result_file))
         outcome, outputs = result["outcome"], result["outputs"]
+        raw_follow_ups = result.get("follow_ups")
         if args.outcome and args.outcome != outcome:
             raise Refused("--outcome and the result file disagree")
     elif args.outcome:
@@ -137,6 +140,10 @@ def cmd_record(conn, root: Path, args) -> dict:
     unknown = [k for k in outputs if k not in declared]
     if unknown:
         raise Refused("step '{}' does not declare the output '{}'".format(args.step, unknown[0]))
+    try:
+        found = follow_ups.check(raw_follow_ups)
+    except follow_ups.Invalid as exc:
+        raise Refused(str(exc))
     session_uid = None
     if args.session:
         session_uid = ledgerio.ensure_session(conn, args.tool, args.session, ledgerio.now())
@@ -144,8 +151,13 @@ def cmd_record(conn, root: Path, args) -> dict:
     run.save()
     if isinstance(outputs.get("answer"), str) and outputs["answer"].strip():
         runfolder.append_answer(args.run, args.step, outputs["answer"], ledgerio.now())
+    refs = follow_ups.save(args.run, args.step, int(run.rows[-1]["attempt"]), run.ticket, found, ledgerio.now()) \
+        if found else []
     ledgerio.end_step(conn, run.rows[-1]["id"], outcome, ledgerio.now(), args.model, session_uid, None)
-    return {"recorded": True, "run": args.run, "step": args.step, "outcome": outcome}
+    out = {"recorded": True, "run": args.run, "step": args.step, "outcome": outcome}
+    if refs:
+        out["follow_ups"] = refs
+    return out
 
 
 def cmd_answer(conn, root: Path, args) -> dict:

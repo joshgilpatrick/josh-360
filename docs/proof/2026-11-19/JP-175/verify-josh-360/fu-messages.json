@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python3",
+    "graphs/runner/runner.py",
+    "messages",
+    "--json"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp175/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp175",
+  "started_at": "2026-11-19T20:13:55Z",
+  "stderr": "",
+  "stdout": "[]\n"
+}

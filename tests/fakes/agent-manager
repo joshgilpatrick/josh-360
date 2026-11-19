@@ -75,6 +75,14 @@ elif command == "create-group":
         sys.exit(1)
     groups.append(argv[1])
     json.dump(groups, open(path, "w"))
+elif command == "send":                        # JP-175: a plain message to a session; never a spawn
+    if behaviour.get("send_fails"):
+        sys.stderr.write("send refused\n")
+        sys.exit(1)
+    path = os.path.join(folder, "sent.jsonl")
+    with open(path, "a") as out:
+        out.write(json.dumps({"to": argv[1], "text": argv[2]}) + "\n")
+    print(json.dumps({"message_id": sum(1 for _ in open(path))}))
 elif command == "archive":
     conn = db()
     conn.execute("UPDATE sessions SET archived = 1 WHERE id = ?", (argv[1],))

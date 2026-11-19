@@ -12,6 +12,10 @@ the same parent for a child) and uses that ticket if it is there: that is what m
 `partial` safe, and what answers a create Jira did not confirm. A search that cannot answer stops that ticket, so
 nothing is created blind.
 
+A follow-up a graph step reported (source `session`, pointer `follow-up:...`, JP-175) gets two things no model
+chooses: the label `graph-follow-up` on every ticket written, and, when the follow-up blocks its ticket, a Blocks link
+from the first ticket (or the open match commented on) to the ticket the step was working.
+
 Built in JP-121 from the design in docs/design/ticket-creation-graph.md.
 """
 import datetime
@@ -20,7 +24,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib import adf, card  # noqa: E402
+from lib import adf, card, follow_ups  # noqa: E402
 from lib.contracts import ContractError, load_proposal  # noqa: E402
 from lib.gate_io import fail, finish, read_inputs  # noqa: E402
 from lib.jira import Jira, JiraError  # noqa: E402
@@ -148,14 +152,37 @@ def comment_on_match(jira, proposal, source, source_ref, today, match_key):
     return jira.comment(key, text)
 
 
+def follow_up_of(source, source_ref):
+    """The follow-up file behind this intake item, or None for any other source."""
+    if source != "session" or follow_ups.parse_ref(source_ref or "") is None:
+        return None
+    return follow_ups.load(source_ref) or None
+
+
+def block_origin(jira, follow, blocker, missing):
+    origin = (follow or {}).get("origin")
+    if follow and follow.get("blocks") and origin and blocker and not jira.link("Blocks", blocker, origin):
+        missing.append("follow-up:link")
+
+
 def run(jira, proposal, source, source_ref, match_key, today=None):
     """(outcome, outputs). Pure of the environment: the tests hand in a fake Jira."""
     today = today or datetime.date.today().isoformat()
+    follow = follow_up_of(source, source_ref)
     if proposal["action"] == "comment_on_match":
         done = comment_on_match(jira, proposal, source, source_ref, today, match_key)
-        return ("commented", {"ticket_keys": [], "missing": []}) if done else \
-            ("partial", {"ticket_keys": [], "missing": [proposal["match"]["key"]]})
+        missing = [] if done else [proposal["match"]["key"]]
+        if done:
+            block_origin(jira, follow, proposal["match"]["key"], missing)
+        return ("commented" if not missing else "partial"), {"ticket_keys": [], "missing": missing}
+    if follow:
+        route = dict(proposal["route"])
+        route["labels"] = list(route.get("labels") or []) + ([follow_ups.LABEL]
+                                                             if follow_ups.LABEL not in (route.get("labels") or []) else [])
+        proposal = dict(proposal, route=route)
     keys, missing = create_all(jira, proposal)
+    if keys:
+        block_origin(jira, follow, keys[0], missing)
     return ("created" if not missing else "partial"), {"ticket_keys": keys, "missing": missing}
 
 

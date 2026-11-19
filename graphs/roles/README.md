@@ -2,6 +2,8 @@
 
 One folder per role: `role.yaml` (`title`, `may_change`, `tier`, optional `reviewer`) and `instructions.md`. See `graphs/CONVENTION.md`, "Roles".
 
+**Work outside the ticket (every role, JP-175).** A step session that finds work its ticket does not cover does not do it. It reports it in its result file as `follow_ups` (`contracts/follow-up.md`): a one-line summary, why it is outside the ticket, and whether it blocks the ticket. A script files each one through intake and tells the sprint or epic lead. The binding's prompt says this to every role session, so no role's own instructions repeat it.
+
 | Role | Used by | What it does |
 | --- | --- | --- |
 | `intake-reader` | ticket-creation | Turns one loose input into an intake record (`contracts/intake-record.md`). |
