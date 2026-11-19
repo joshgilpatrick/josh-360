@@ -1,0 +1,17 @@
+{
+  "command": [
+    "env",
+    "JOSH360_JIRA_FAKE=/tmp/verify-josh-360/jp175/fake-jira",
+    "python3",
+    "graphs/tools/walker.py",
+    "next",
+    "--run",
+    "r-be6c276f0b6d"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp175/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp175",
+  "started_at": "2026-11-19T20:13:49Z",
+  "stderr": "",
+  "stdout": "{\"action\": \"done\", \"end\": \"route.personal\", \"run\": \"r-be6c276f0b6d\", \"score\": \"neutral\"}\n"
+}

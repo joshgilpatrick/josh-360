@@ -15,7 +15,7 @@ import time
 from pathlib import Path
 from typing import Callable, Optional
 
-from . import amgroups, ledgerview, locks, notify, paths, sessionfile, walk
+from . import amgroups, leads, ledgerview, locks, notify, paths, sessionfile, walk
 from .hooklib import entry as session_entry, marker as step_marker
 from .status import RUNNER
 from ledger import db  # noqa: E402
@@ -70,11 +70,35 @@ def _open_run_ids() -> list:
         conn.close()
 
 
+def _epic_of(ticket: str) -> Optional[str]:
+    """The ticket's epic for lead messages: its parent, the ticket itself for an epic, "" for none, None unknown."""
+    from . import watch
+    try:
+        client = watch.jira_client(dict(os.environ))
+        found = client.get(ticket, ["parent", "issuetype"]) if client is not None else None
+    except Exception:  # noqa: BLE001  (unknown: the sprint files are asked instead)
+        return None
+    if found is None:
+        return None
+    return ticket if found.get("issuetype") == "Epic" else (found.get("parent") or "")
+
+
+def _safely(what: str, run_id: str, fn, *args, **kwargs):
+    """A lead message must never stop a run: any failure is one log line."""
+    try:
+        return fn(*args, **kwargs)
+    except Exception as err:  # noqa: BLE001
+        paths.log("advance {}: {} failed: {}".format(run_id, what, type(err).__name__))
+        return None
+
+
 def _loop(run_id: str, now: Callable[[], float], root: Optional[Path]) -> str:
     cfg = paths.settings()
     binding = load_binding(RUNNER)
     if not runfolder.load(run_id).get("stopped"):
         notify.forget_stops(run_id)
+    teller = leads.Teller(binding, _epic_of, now)
+    _safely("sending kept lead messages", run_id, teller.flush, run_id)
     began = now()
     while True:
         if now() - began >= float(cfg["advance_limit_seconds"]):
@@ -86,14 +110,25 @@ def _loop(run_id: str, now: Callable[[], float], root: Optional[Path]) -> str:
         answer = walk.call("next", "--run", run_id, root=root)
         amgroups.sync_run(run_id, binding, now())          # the ticket's kept session follows its status (JP-173)
         action = answer.get("action")
-        if action in ("parked", "waiting"):
+        _safely("telling the lead about follow-ups", run_id, teller.follow_up_events, run_id)
+        if action == "parked":
+            _safely("telling the lead", run_id, teller.tell, run_id, "parked",
+                    "parked:{}".format(answer.get("question_id") or answer.get("step")), {"step": answer.get("step")})
+            return action
+        if action == "waiting":
             return action
         if action == "stopped":
-            notify.note_once(run_id, "stopped:" + str(answer.get("step")))
+            if notify.note_once(run_id, "stopped:" + str(answer.get("step"))):
+                _safely("telling the lead", run_id, teller.tell, run_id, "stopped", "stopped:" + str(answer.get("step")),
+                        {"step": answer.get("step")}, repeat=True)
             paths.log("advance {}: stopped at {}: {}".format(run_id, answer.get("step"), str(answer.get("reason"))[:200]))
             return "stopped"
         if action == "done":
-            notify.note_once(run_id, "done")
+            if notify.note_once(run_id, "done"):
+                _safely("telling the lead", run_id, teller.tell, run_id, "done", "done", {"end": answer.get("end")})
+            origin = leads.origin_run(run_id)          # an intake run that filed a follow-up: tell the origin's lead
+            if origin:
+                _safely("telling the lead about follow-ups", origin, teller.follow_up_events, origin)
             return "done"
         if action != "run":
             paths.log("advance {}: the walker said '{}', which this runner does not handle".format(run_id, action))

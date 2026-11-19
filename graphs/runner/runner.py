@@ -10,6 +10,7 @@
                                         waits on, its sessions and their cost (or, from a published snapshot, the newest
                                         run and no cost) (JP-172)
   loop                                  the terminal host's loop (refuses under the job host)
+  messages [--json]                     lead messages no lead was running to receive (JP-175), oldest first
 
 Each command prints one JSON value (text for `status` and `report`) and exits 0, or exits 2 with {"error": ...}. Every
 command takes --graphs-root, which tests use to point at another graphs folder.
@@ -25,7 +26,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from runner_lib import advance, paths, status, tick, walk, where  # noqa: E402
+from runner_lib import advance, leads, paths, status, tick, walk, where  # noqa: E402
 from ledger import db  # noqa: E402
 
 
@@ -56,6 +57,8 @@ def _parser() -> argparse.ArgumentParser:
     s.add_argument("--json", action="store_true")
     s.add_argument("--from-json", type=Path)
     command("loop")
+    s = command("messages")
+    s.add_argument("--json", action="store_true")
     return p
 
 
@@ -90,6 +93,12 @@ def _run(args) -> str:
             finally:
                 conn.close()
         return json.dumps(report, sort_keys=True) if args.json else status.render(report)
+    if args.command == "messages":
+        rows = leads.unsent()
+        if args.json:
+            return json.dumps(rows, sort_keys=True)
+        return "\n".join("{} {}: {} (kept: {})".format(r["run"], r["event"], r["text"], r["kept"]) for r in rows) \
+            or "no unsent lead messages"
     if args.command == "where":
         if args.from_json:
             answer = where.from_snapshot(json.loads(args.from_json.read_text(encoding="utf-8")), args.key)

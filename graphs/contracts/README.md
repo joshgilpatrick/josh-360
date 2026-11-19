@@ -13,4 +13,5 @@ One `<name>.md` per format passed between steps. See `graphs/CONVENTION.md`, "Co
 | `ready-checklist.md` | The `failures` the `ready-check` gate returns |
 | `sign-off-defects.md` | The `defects` the sign-off role returns and `check-sign-off` keeps |
 | `send-back.md` | The numbered `gaps` and the comment that returns a ticket to its author |
+| `follow-up.md` | Work a role step found outside its ticket: `follow_ups` in its result file, and the file the walker keeps for each (JP-175) |
 | `route-record.md` | The `josh360.route` property that `mark-ready` writes and the `ready` gate reads |
