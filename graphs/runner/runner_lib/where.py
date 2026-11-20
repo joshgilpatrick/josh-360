@@ -26,7 +26,7 @@ WAIT_WORDS = {"review-state": "a review", "pr-merged": "the pull request to merg
               "watch-criteria": "the validation watch", "fix-closed": "the fix ticket to close"}
 CAP_WORDS = "as often as its tier allows"
 SESSION_KEYS = ("step", "attempt", "loop_count", "tier", "model", "session", "am_session", "outcome", "reason",
-                "started_at", "ended_at")
+                "started_at", "ended_at", "failure_kind", "earlier_am_sessions")
 COUNTS_KEY = "ticket_counts"
 
 
@@ -36,7 +36,7 @@ def label(step: Optional[str]) -> Optional[str]:
 
 
 def _waits_on(state: str, step: Optional[str], since: Optional[str], graph, stop_reason,
-              on: Optional[str] = None) -> Optional[dict]:
+              on: Optional[str] = None, stop_kind: Optional[dict] = None) -> Optional[dict]:
     if state == "parked":
         return {"kind": "question", "text": "a question to Josh", "since": since}
     if state == "waiting" and on:                 # a follow-up that blocks the ticket (JP-175): its key, or its id
@@ -46,6 +46,13 @@ def _waits_on(state: str, step: Optional[str], since: Optional[str], graph, stop
         text = WAIT_WORDS.get(script) or ("the {} check".format(script) if script else "a check")
         return {"kind": "check", "text": text, "since": since}
     if state == "stopped":
+        kind, code = (stop_kind or {}).get("kind"), (stop_kind or {}).get("code")
+        if kind == "needs-fix":                     # JP-183: fixed words and a reason code only, never the message
+            return {"kind": "fix", "text": "Josh: it needs a fix ({}); the run goes on by itself once the fix reaches the "
+                    "laptop".format(code), "since": since}
+        if kind == "may-clear":
+            return {"kind": "stuck", "text": "Josh: it is stuck ({}); resume it once that clears".format(code),
+                    "since": since}
         if CAP_WORDS in str(stop_reason or ""):
             return {"kind": "cap", "text": "Josh: the step ran as often as its tier allows (allow or retry it)",
                     "since": since}
@@ -104,7 +111,8 @@ def run_entry(conn: sqlite3.Connection, run: dict, now: float, root: Optional[Pa
              "started_at": run["started_at"], "step": step, "step_label": label(step), "jira_status": jira,
              "state": state, "since": since, "attempt": max(attempts) if attempts else None,
              "end": run.get("end"), "score": run.get("score"),
-             "waits_on": _waits_on(state, step, since, graph, stop_reason, on),
+             "waits_on": _waits_on(state, step, since, graph, stop_reason, on,
+                                   status._stop_kind(run["run"]) if state == "stopped" else None),
              "worktree_kept": worktree_kept(run["run"], state),
              "sessions": [dict({k: s.get(k) for k in SESSION_KEYS}, kind=s["kind"]) for s in steps]}
     if with_cost:

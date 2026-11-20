@@ -67,10 +67,23 @@ def note_once(run_id: str, what: str) -> bool:
     except FileNotFoundError:
         pass
     if what.startswith("stopped:"):
-        notify(TITLE, "{}: the {} run stopped at {}.".format(name, graph, what[len("stopped:"):]))
+        parts = what.split(":")
+        why = ""
+        if len(parts) >= 4:                            # a runner stop (JP-183): its kind and code
+            why = " It needs a fix ({}).".format(parts[3]) if parts[2] == "needs-fix" else " It is stuck ({}).".format(parts[3])
+        notify(TITLE, "{}: the {} run stopped at {}.{}".format(name, graph, parts[1], why))
     elif what == "done":
         notify(TITLE, "{}: the {} run ended.".format(name, graph))
     return True
+
+
+def stop_key(stopped: dict) -> str:
+    """The note for a stop: `stopped:<step>`, and for a runner stop (JP-183) its kind and code too, so a run that stops
+    again for another reason is told about again."""
+    key = "stopped:{}".format(stopped.get("step"))
+    if stopped.get("kind") and stopped.get("code"):
+        key += ":{}:{}".format(stopped["kind"], stopped["code"])
+    return key
 
 
 def forget_stops(run_id: str) -> None:

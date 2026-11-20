@@ -6,6 +6,7 @@ The repository's own tools: the checks CI runs, the platform doctor, and the scr
 
 - [Checks and reference files](#checks-and-reference-files)
 - [The platform doctor](#the-platform-doctor)
+- [Hook blocks](#hook-blocks)
 - [Laptop jobs and their helpers](#laptop-jobs-and-their-helpers)
 
 ## Checks and reference files
@@ -17,11 +18,16 @@ The repository's own tools: the checks CI runs, the platform doctor, and the scr
 | `conventions.py` | Checks and reads `conventions/registry.yaml` and `priorities.yaml` (`check`, `lookup --folder <path>` or `--repo <name>`, `priority`, `export-json`). |
 | `decisions.py` | The per-ticket decision files in `docs/decisions/` (`list [--ticket JP-n]`, `check`). |
 | `feature_tree.py` | The JP-143 feature tree: `check`, and `build` the review page after editing `docs/design/feature-tree/tree.yaml`. |
+| `jira_snapshot.py` | Reads JP's real workflow from Jira, read-only, into `graphs/gates/jira-snapshot/JP.json`, the file that makes the fake Jira strict (JP-187). |
 | `architecture_page.py` | The JP-144 architecture page: `check`, and `build` after editing the feature tree or `docs/design/architecture/`. |
 
 ## The platform doctor
 
 `doctor.py` (JP-152) checks every part of Josh 360 on the laptop and prints the one step that fixes each problem; `doctor_lib/` holds the checks by group and the safe fixes; `doctor_job.py` runs it daily as the `doctor` job. Reference: `docs/platform-doctor.md`.
+
+## Hook blocks
+
+`hook_blocks.py` (JP-182) reads the stored Claude Code transcripts on the laptop and writes one review file listing every time any hook blocked something, with a summary of every hook on the laptop (blocking or not). `hook_blocks_lib/` holds its parts: the hook list (`inventory.py`), the transcript reader (`transcripts.py`), what the agent did next (`follow.py`), which hook it was (`attribute.py`) and the file itself (`report.py`). The `review-hook-blocks` skill reads the file and gives each blocking hook a verdict.
 
 ## Laptop jobs and their helpers
 

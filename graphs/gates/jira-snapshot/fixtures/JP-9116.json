@@ -1,0 +1,44 @@
+{
+ "about": "A made-up JP ticket for end-to-end runs against the strict fake Jira (JP-187). Never a real ticket.",
+ "key": "JP-9116",
+ "fields": {
+  "summary": "Add a made-up chores page",
+  "status": {
+   "name": "Ready"
+  },
+  "issuetype": {
+   "name": "Task"
+  },
+  "project": {
+   "key": "JP"
+  },
+  "parent": {
+   "key": "JP-94"
+  },
+  "labels": [
+   "josh-360",
+   "ready-to-run"
+  ],
+  "description": "**Goal:** a made-up chores page lists the chores due this week.\n\n**First step:** read this made-up ticket; nothing in it is real.\n\n**Why:** a fixture for end-to-end runs of the graph runner in the cloud (JP-187). No real ticket text.\n\n**In scope:**\n\n- A page that lists made-up chores\n\n**Not in scope:**\n\n- Anything real\n\n**Acceptance criteria:**\n\n```gherkin\nFeature: The made-up chores page\n\n  @auto\n  Scenario: The page lists this week's chores\n    Given two made-up chores are due this week\n    When the page opens\n    Then it lists both\n```\n\n**Validation:**\n\n- Needed: no. A made-up ticket for tests; nothing runs in production.\n\n**Repository:** josh-360\n\n**Where it runs:** Cloud session.\n\n**Parent or related:** Parent: JP-94.\n\n**Decisions already made:**\n\n- None.\n",
+  "issuelinks": [],
+  "customfield_10021": [],
+  "created": "2026-11-20T09:00:00.000+0000"
+ },
+ "properties": {
+  "josh360.route": {
+   "graph": "development",
+   "system": "josh-360",
+   "space": "JP",
+   "version": "made-up-version",
+   "run": "made-up-run",
+   "signed_by": "made-up-session",
+   "returns": 0,
+   "returns_seen": 0,
+   "returned_from": ""
+  },
+  "action-triage.spec": {
+   "type": "code",
+   "phi_risk": false
+  }
+ }
+}

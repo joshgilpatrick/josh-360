@@ -321,6 +321,49 @@ def completed_step_sessions(ctx: Ctx) -> Result:
     return Result(cid, PASS, "{} finished step session(s), each killed or archived".format(judged))
 
 
+@check("graphs", "tier-models")
+def tier_models(ctx: Ctx) -> Result:
+    """JP-183: every model and effort the tiers name is one Agent Manager accepts, after the binding's `models` map, so a
+    bad name is caught before a run spends a try on it. Reads the laptop copy's compiled graphs and binding.json."""
+    cid = "graphs.tier-models"
+    binding = ctx.copy / "graphs" / "bindings" / "agent-manager" / "binding.json"
+    try:
+        cfg = json.loads(binding.read_text(encoding="utf-8"))
+        accepts = cfg["accepts"]
+        models, efforts, mapping = set(accepts["models"]), set(accepts["efforts"]), dict(cfg.get("models") or {})
+    except (OSError, ValueError, KeyError, TypeError) as err:
+        return Result(cid, FAIL, "{} cannot be read or has no `accepts` list ({})".format(ctx.tilde(binding),
+                      type(err).__name__), "restore it from main: the follow job does that on its next pass")
+    named = []                                        # (tier, entry) from every compiled graph: each carries the tiers
+    for path in sorted((ctx.copy / "graphs" / "compiled").glob("*.json")):
+        try:
+            tiers = json.loads(path.read_text(encoding="utf-8")).get("tiers") or {}
+            named += [(tier, entry) for tier in sorted(tiers) for entry in tiers[tier] or []]
+        except (OSError, ValueError, AttributeError, TypeError):
+            return Result(cid, FAIL, "{} cannot be read".format(ctx.tilde(path)),
+                          "rerun python3 graphs/tools/compile_graphs.py in a pull request")
+    if not named:
+        return Result(cid, SKIP, "no compiled graph names a tier")
+    problems: List[str] = []
+    for tier, entry in named:
+        model, effort = str(entry.get("model")), str(entry.get("effort"))
+        sent = mapping.get(model, model)
+        found = []
+        if sent not in models:
+            found.append("tier {} names model {}{}, which Agent Manager does not list".format(
+                tier, model, "" if sent == model else " (sent as {})".format(sent)))
+        if effort not in efforts:
+            found.append("tier {} names effort {}, which Agent Manager does not list".format(tier, effort))
+        problems += [p for p in found if p not in problems]
+    if problems:
+        return Result(cid, FAIL, "; ".join(problems[:4]) + ("" if len(problems) <= 4 else " (and {} more)".format(
+            len(problems) - 4)), "fix graphs/tiers.yaml or the `models` map in "
+            "graphs/bindings/agent-manager/binding.json (Agent Manager lists {}), then rerun "
+            "graphs/tools/compile_graphs.py".format(", ".join(sorted(models))))
+    return Result(cid, PASS, "every tier's models and efforts are ones Agent Manager lists ({} entries)".format(
+        len({(t, json.dumps(e, sort_keys=True)) for t, e in named})))
+
+
 class _Asked:
     """What `subprocess.run` would return, for a keychain question asked without reading the secret."""
 

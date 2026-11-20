@@ -23,7 +23,8 @@ from laptop import common  # noqa: E402
 DEFAULTS = {
     "host": "job", "session_limit": 2, "turn_cap": 200, "reflect_every": 40,
     "time_cap_seconds": 10800, "time_cap_grace_seconds": 900, "link_timeout_seconds": 600,
-    "rest_timeout_seconds": 600, "advance_limit_seconds": 7200, "spawn_tries": 3,
+    "rest_timeout_seconds": 600, "advance_limit_seconds": 7200, "spawn_tries": 5,
+    "spawn_gaps_seconds": [300, 900, 1800, 3600],   # JP-183: the waits between tries of a spawn that may clear
     "tick_seconds": 300, "heartbeat_stale_seconds": 600, "wait_flag_days": 7,
     "result_settle_seconds": 60, "archive_finished_sessions": True, "ended_runs_days": 14, "done_keep_days": 7,
     "kill_grace_seconds": 1800, "completed_keep_days": 7,   # JP-191: a finished step's session is killed, then filed away

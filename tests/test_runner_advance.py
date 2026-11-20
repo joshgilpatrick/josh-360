@@ -112,17 +112,22 @@ class Advancing(RunnerCase):
         self.assertEqual(self.session_doc(self.run_id)["state"], "recorded")
         self.assertEqual(self.design_attempts()[0]["outcome"], "ready")
 
-    def test_crash_before_spawn_is_abandoned_after_the_link_timeout(self):
+    def test_crash_before_spawn_is_tried_again_in_the_same_attempt_after_the_link_timeout(self):
+        """JP-183: a session that never linked ran no model, so the attempt is kept and the spawn is tried again."""
         self.write_session(self.run_id, "spawning")
         self.later(9 * MINUTE)
         self.assertEqual(self.advance(self.run_id), "working")
         self.assertEqual(self.spawns(), 0)
         self.later(MINUTE)
-        self.assertEqual(self.advance(self.run_id), "spawned")
+        self.assertEqual(self.advance(self.run_id), "spawn-failed")
         first = self.session_doc(self.run_id)
-        self.assertEqual((first["state"], first["reason"]), ("abandoned", "never-started"))
-        self.assertEqual(self.session_doc(self.run_id, attempt=2)["state"], "started")
-        self.assertEqual([d["attempt"] for d in self.design_attempts()], [1, 2])
+        self.assertEqual((first["state"], first["reason"], first["failure"]["kind"]),
+                         ("spawn_failed", "never-started", "may-clear"))
+        self.assertNotEqual(first["key"], "0123456789abcdef")          # the old session can never link to it now
+        self.later(5 * MINUTE)
+        self.assertEqual(self.advance(self.run_id), "spawned")
+        self.assertEqual(self.session_doc(self.run_id)["state"], "started")
+        self.assertEqual([d["attempt"] for d in self.design_attempts()], [1])
         self.assertEqual(self.spawns(), 1)
 
     def rest(self, nudged):
@@ -226,16 +231,21 @@ class Advancing(RunnerCase):
         self.assertEqual(self.spawns(), 3)
         self.assertEqual([c.args for c in noted.call_args_list], [(self.run_id, "stopped:design")])
 
-    def test_spawn_refused_three_times_abandons_the_attempt(self):
+    def test_spawn_refused_with_no_explanation_ends_stuck_not_abandoned(self):
+        """JP-183: an unexplained refusal may clear by itself: tried after growing gaps, then the run is stuck."""
         self.am_behaviour(spawn_fails="boom")
-        for failures in (1, 2, 3):
+        for failures, gap in ((1, 5), (2, 15), (3, 30), (4, 60)):
             self.assertEqual(self.advance(self.run_id), "spawn-failed")
             doc = self.session_doc(self.run_id)
-            self.assertEqual((doc["state"], doc["spawn_failures"]), ("spawn_failed", failures))
-        self.advance(self.run_id)
-        first = self.session_doc(self.run_id)
-        self.assertEqual((first["state"], first["reason"]), ("abandoned", "spawn-refused"))
-        self.assertEqual(self.session_doc(self.run_id, attempt=2)["state"], "spawn_failed")
+            self.assertEqual((doc["state"], doc["spawn_failures"], doc["reason"]), ("spawn_failed", failures, "refused"))
+            self.later(gap * MINUTE - 1)
+            self.assertEqual(self.advance(self.run_id), "retry-later")
+            self.later(1)
+        self.assertEqual(self.advance(self.run_id), "stopped")
+        doc = self.session_doc(self.run_id)
+        self.assertEqual((doc["state"], doc["spawn_failures"]), ("stopped", 5))
+        self.assertEqual([d["outcome"] for d in self.design_attempts()], [None])   # not abandoned: the attempt is open
+        self.assertEqual(self.spawns(), 5)
 
     def test_a_refused_spawn_is_retried_with_the_same_key_and_comments(self):
         folder = runfolder.folder(self.run_id) / "comments"
@@ -247,6 +257,7 @@ class Advancing(RunnerCase):
         failed = self.session_doc(self.run_id)
         self.assertIn("Use the second spec.", failed["comments"])
         self.am_behaviour()
+        self.later(5 * MINUTE)
         self.assertEqual(self.advance(self.run_id), "spawned")
         prompt = self.logged_prompt(self.run_id, "design")
         self.assertIn("key=" + failed["key"], prompt.splitlines()[0])
@@ -262,14 +273,17 @@ class Advancing(RunnerCase):
         self.assertEqual(self.session_doc(self.run_id)["state"], "started")
         self.assertEqual(self.spawns(), 1)
 
-    def test_a_spawn_with_no_id_and_no_link_is_abandoned_after_the_link_timeout(self):
+    def test_a_spawn_with_no_id_and_no_link_is_tried_again_after_the_link_timeout(self):
         self.am_behaviour(spawn_no_id=True)
         self.assertEqual(self.advance(self.run_id), "working")
         self.later(10 * MINUTE)
         self.am_behaviour()
-        self.assertEqual(self.advance(self.run_id), "spawned")
+        self.assertEqual(self.advance(self.run_id), "spawn-failed")
         self.assertEqual(self.session_doc(self.run_id)["reason"], "never-started")
+        self.later(5 * MINUTE)
+        self.assertEqual(self.advance(self.run_id), "spawned")
         self.assertEqual(self.spawns(), 2)
+        self.assertEqual([d["attempt"] for d in self.design_attempts()], [1])
 
     def test_an_attempt_the_walker_ended_does_not_hold_a_session_slot(self):
         other = self.start("valid", "JP-902", *AM)

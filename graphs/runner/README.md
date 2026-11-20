@@ -23,6 +23,7 @@ Four hooks (`hooks/*/20-graph-step*`) put rails on those sessions and on no othe
 - On the laptop: `python3 ~/.josh-360/repo/graphs/runner/runner.py status` (add `--json`). It lists open runs with their step and state (`working`, `queued`, `parked`, `waiting`, `stopped`, `between`), live sessions against the limit, whether the four hooks are registered (`rails`), stopped runs, and every run that has waited more than seven days, except a wait that is meant to last: `wait_flag_exempt` in `settings.json` names those as `<graph>.<step>` (the shipped one is `validation.watch`, which waits days for a change in production; the `await_fix` wait is still listed).
 - From the cloud: `python3 laptop/status.py show graph-runner`. The report holds counts, ids, step names, outcomes and times only.
 - One ticket, every run on it (JP-172): `runner.py where <KEY>` (add `--json`, or `--from-json <file>` for a published report): graph, step, its Jira status, state, attempt, what it waits on, every step session and its cost, and a total; with no run it says so and exits 0. The published report has a `tickets` list (one row per ticket with an open run, a run that ended in the last 14 days, or a refused start; no cost) and `ticket_counts` (`listed`, `refused`, `refusals_readable`, and `cost_fields`, which counts keys that name a cost and must be 0). When the walker refuses to start a run, the Jira watch keeps its reason (200 characters) in `~/.josh-360/state/runner/refusals.json` until a run of that graph starts on the ticket or 14 days pass. The leads' guide: `docs/leads-guide.md`.
+- A stop that started no model (JP-183): `status` prints `needs a fix: <code>` or `stuck: <code>` beside it, and `where <KEY>` says what Josh does next.
 - One run's step table: `runner.py report --run <id>`, or from a published report: `runner.py report --run <id> --from-json <file>` (`--json` for the data). Each step shows its cost, subagents included (`not priced yet` when its session has no price; a published report has none, JP-170). Each role attempt shows its Claude Code session, its Agent Manager session and, if the runner gave up on it, why (`never-started`, `session-gone`, `time-cap`, ...), so every session a run started is listed, including the ones it abandoned. The published report keeps the runs that ended in the last 14 days.
 
 ## Sessions in Agent Manager
@@ -51,7 +52,15 @@ JP-173. A ticket's step sessions sit in Agent Manager under `josh-360/tickets/<s
 
 ## A run that stopped
 
-A run stops when the walker says so (a step that ran as often as its tier allows, a gate that failed). The runner notifies once, the stop appears in `status` and the report, and nothing more happens to it until you act. Read the reason in `~/.josh-360/logs/runner/runner.log`. To carry on: `python3 graphs/tools/walker.py retry --run <id>` (the same step again) or `allow --run <id> --step <step>` (let a step run once more than its cap). A run that stops again afterwards is a new stop and is notified again.
+A run stops when the walker says so (a step that ran as often as its tier allows, a gate that failed), or when the runner stops it for a failure that started no model (JP-183). The runner notifies once, the stop appears in `status` and the report, and nothing more happens to it until you act or what it needed changes. Read the reason in `~/.josh-360/logs/runner/runner.log`. To carry on: `python3 graphs/runner/runner.py resume --run <id>` (the same step again; the same as `walker.py retry`) or `walker.py allow --run <id> --step <step>` (let a step run once more than its cap). A run that stops again afterwards for another reason is a new stop and is notified again.
+
+**Which failures use a try or a run** (the table is in `graphs/CONVENTION.md`, "The run cap"; the codes are in `laptop/failure_kinds.py`):
+
+- **Needs a fix** (`bad-model`, `bad-effort`, `no-cli`, `no-folder`): the spawn is tried once, then the run stops with the reason, Agent Manager's own message and the fix. The attempt stays open, so the step's run count does not move. The next pass carries on by itself once the fix reaches the laptop (a merge moves the commit; a change to `binding.json`, the compiled graph or where `agent-manager` and `claude` are found does too); `resume` carries on at once.
+- **May clear** (`not-running`, `timeout`, `rate-limited`, `network`, `group`, `refused`, and a session that never linked to its run: `never-started`, `gone-before-start`): tried again in the same attempt after 5, 15, 30 and 60 minutes (`spawn_gaps_seconds`), `spawn_tries` (5) tries in all, then the run is stuck. A session that never linked is kept in the session file's `earlier` list and the attempt gets a new key, so it can never link later. `resume` gives it a fresh set of tries.
+- **The model ran** (`bad-result`, `time-cap`, `session-gone`, `rested-without-result`): the attempt is abandoned and uses one run of the tier's cap, as before.
+
+Every refused spawn is one `runner.log` line with its code, kind, try number and Agent Manager's message, shortened to 200 characters and screened for patient data (a message the screen flags is held back and the line names what it found). The report's "Why it ended" column shows the code and kind, and the Agent Manager session column lists any earlier sessions of the attempt.
 
 ## Follow-ups and telling the leads
 
@@ -71,9 +80,9 @@ The runner tells the lead, by script and with no session started, when a run sto
 
 | Path | What |
 | --- | --- |
-| `runner.py` | `tick`, `advance`, `start`, `status`, `report`, `where`, `messages`, `loop` |
+| `runner.py` | `tick`, `advance`, `start`, `status`, `report`, `where`, `resume`, `messages`, `loop` |
 | `tick_job.py` | the `graph-runner` job (always exits 0) |
 | `triage_jp116_job.py` | the temporary job that starts the triage run of JP-116, the proof ticket |
 | `starts.json` | which tickets get a run, per graph, and how many per pass |
 | `settings.json` | every number the runner uses |
-| `runner_lib/` | the Jira watch, the advance loop, the tick, locks, session files, each ticket's Agent Manager sessions (`amgroups.py`), the hook logic, status, `where` and the refusals it shows, notifications and the lead messages (`leads.py`) |
+| `runner_lib/` | the Jira watch, the advance loop, the tick, locks, session files, each ticket's Agent Manager sessions (`amgroups.py`), the hook logic, status, `where` and the refusals it shows, notifications and the lead messages (`leads.py`), and how a failure that started no model is stopped and taken up again (`failures.py`, JP-183) |

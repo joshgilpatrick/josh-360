@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """A fake `agent-manager` for the runner's tests (JP-117). Nothing real: it logs every call and keeps a made-up
 sessions table. $FAKE_AM_DIR holds calls.jsonl, state.db, groups.json and an optional behaviour.json:
-{"spawn_fails": "<text>"}, {"refuse_model": "<model>"}, {"spawn_hangs": true}, {"needs_claude": true},
+{"spawn_fails": "<text>"}, {"refuse_model": "<model>"} (Agent Manager's own words for a model it does not list),
+{"refuse_effort": "<effort>"}, {"spawn_hangs": true}, {"needs_claude": true},
 {"spawn_no_id": true} (the session is made but the reply has no id), {"move_fails": true}, {"create_group_fails": "<group prefix>"},
 {"send_fails": true}, {"kill_fails": true}."""
 import json
@@ -56,7 +57,12 @@ if command == "spawn":
     if behaviour.get("spawn_hangs"):
         time.sleep(300)
     if behaviour.get("refuse_model") and f.get("model") == behaviour["refuse_model"]:
-        sys.stderr.write("unknown model {}\n".format(f.get("model")))
+        sys.stderr.write('agent-manager: model "{}" is not one claude lists; it lists default, opus, fable, sonnet, '
+                         'haiku\n'.format(f.get("model")))
+        sys.exit(1)
+    if behaviour.get("refuse_effort") and f.get("effort") == behaviour["refuse_effort"]:
+        sys.stderr.write('agent-manager: effort "{}" is not one claude lists; it lists low, medium, high\n'.format(
+            f.get("effort")))
         sys.exit(1)
     if behaviour.get("spawn_fails"):
         sys.stderr.write(behaviour["spawn_fails"] + "\n")
