@@ -20,6 +20,7 @@ The repository's tests, standard library `unittest` only, run by `python3 script
 - `*_helpers.py`, `helpers.py`: shared builders for the made-up laptop, ledger, walker and runner (`helpers.py` makes the bare repo and the laptop home).
 - `ledger_transcripts.py`: made-up Claude Code transcripts with no real conversation.
 - `azure_fake.py`, `fakes/`: stand-ins for the Azure CLI and the `agent-manager` command.
+- `e2e/` (JP-186): the real Agent Manager at the laptop's version, run with no screen, and a stand-in for Claude Code that calls no model (`e2e/README.md`). `test_e2e_agent_manager.py` drives the real binding through it and is skipped until `python3 tests/e2e/agent_manager.py install` has run; `test_e2e_standin.py` tests the stand-in on its own.
 
 ## Other test suites
 
