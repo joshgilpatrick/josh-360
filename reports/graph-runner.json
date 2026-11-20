@@ -1313,7 +1313,7 @@
   "waiting_over_7_days": [],
   "watch": {
     "development": {
-      "jira": "unknown",
+      "jira": "ok",
       "skipped": {},
       "started": []
     },
