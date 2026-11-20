@@ -1,0 +1,11 @@
+{
+  "_about": "What Claude Code on Josh's laptop answers Agent Manager's model probe with (JP-186). The names and their order are the laptop's (Claude Code 2.1.329, read 20 November 2026: default, opus, fable, sonnet, haiku). The efforts (low, medium, high) are the ones the laptop's Agent Manager listed when it refused a spawn, as `binding.json`'s `accepts` records them (JP-183). Refresh this file from the laptop when its Claude Code changes.",
+  "claude_version": "2.1.329",
+  "models": [
+    {"value": "default", "displayName": "Default (recommended)", "supportedEffortLevels": ["low", "medium", "high"]},
+    {"value": "opus", "displayName": "Opus", "supportedEffortLevels": ["low", "medium", "high"]},
+    {"value": "fable", "displayName": "Fable", "supportedEffortLevels": ["low", "medium", "high"]},
+    {"value": "sonnet", "displayName": "Sonnet", "supportedEffortLevels": ["low", "medium", "high"]},
+    {"value": "haiku", "displayName": "Haiku", "supportedEffortLevels": ["low", "medium", "high"]}
+  ]
+}

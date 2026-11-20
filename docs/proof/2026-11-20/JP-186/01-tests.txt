@@ -1,0 +1,40 @@
+$ python3 tests/e2e/agent_manager.py install
+{
+  "binary": "/root/.cache/josh360-e2e/agent-manager-0.47.1/agent-manager",
+  "ok": true,
+  "version": "0.47.1"
+}
+
+$ JOSH360_E2E_AM=1 python3 -m unittest discover -s tests -t tests -p 'test_e2e_*.py' -v
+test_status_stays_starting_and_the_harness_says_why (test_e2e_agent_manager.ManagerDown.test_status_stays_starting_and_the_harness_says_why) ... ok
+test_the_session_gets_a_graph_sessions_entry_linking_it_to_its_run (test_e2e_agent_manager.Rails.test_the_session_gets_a_graph_sessions_entry_linking_it_to_its_run) ... ok
+test_an_effort_the_model_does_not_take_is_refused (test_e2e_agent_manager.RefusedModel.test_an_effort_the_model_does_not_take_is_refused) ... ok
+test_empty_models_map_is_refused_with_agent_managers_message (test_e2e_agent_manager.RefusedModel.test_empty_models_map_is_refused_with_agent_managers_message) ... ok
+test_move_and_close_change_the_group_and_archived_flag (test_e2e_agent_manager.StepSession.test_move_and_close_change_the_group_and_archived_flag) ... ok
+test_state_reads_working_then_resting_within_30_seconds (test_e2e_agent_manager.StepSession.test_state_reads_working_then_resting_within_30_seconds) ... ok
+test_a_blocked_prompt_ends_the_turn (test_e2e_standin.StandIn.test_a_blocked_prompt_ends_the_turn) ... ok
+test_a_blocked_stop_runs_again_with_stop_hook_active (test_e2e_standin.StandIn.test_a_blocked_stop_runs_again_with_stop_hook_active) ... ok
+test_a_blocked_write_writes_nothing (test_e2e_standin.StandIn.test_a_blocked_write_writes_nothing) ... ok
+test_a_json_block_decision_counts_as_blocking (test_e2e_standin.StandIn.test_a_json_block_decision_counts_as_blocking) ... ok
+test_a_long_prompt_reads_its_task_file (test_e2e_standin.StandIn.test_a_long_prompt_reads_its_task_file) ... ok
+test_a_scenario_can_name_its_own_outcome_and_outputs_per_step (test_e2e_standin.StandIn.test_a_scenario_can_name_its_own_outcome_and_outputs_per_step) ... ok
+test_a_scenario_that_obeys_the_stop_nudge_writes_its_result (test_e2e_standin.StandIn.test_a_scenario_that_obeys_the_stop_nudge_writes_its_result) ... ok
+test_a_typed_line_at_rest_is_a_new_turn (test_e2e_standin.StandIn.test_a_typed_line_at_rest_is_a_new_turn) ... ok
+test_every_scenario_file_names_a_known_kind_and_says_what_it_does (test_e2e_standin.StandIn.test_every_scenario_file_names_a_known_kind_and_says_what_it_does) ... ok
+test_example_takes_the_roles_example_result (test_e2e_standin.StandIn.test_example_takes_the_roles_example_result) ... ok
+test_fires_claude_codes_hooks_in_order_from_both_settings_files (test_e2e_standin.StandIn.test_fires_claude_codes_hooks_in_order_from_both_settings_files) ... ok
+test_follow_ups_ride_in_the_result (test_e2e_standin.StandIn.test_follow_ups_ride_in_the_result) ... ok
+test_hang_never_stops_and_ends_on_sighup (test_e2e_standin.StandIn.test_hang_never_stops_and_ends_on_sighup) ... ok
+test_matchers_pick_the_tool (test_e2e_standin.StandIn.test_matchers_pick_the_tool) ... ok
+test_probe_answers_initialize_with_the_laptops_models (test_e2e_standin.StandIn.test_probe_answers_initialize_with_the_laptops_models) ... ok
+test_question_asks_and_waits_at_the_dialog (test_e2e_standin.StandIn.test_question_asks_and_waits_at_the_dialog) ... ok
+test_silent_writes_nothing_and_stops (test_e2e_standin.StandIn.test_silent_writes_nothing_and_stops) ... ok
+test_the_laptop_list_matches_what_the_binding_says_agent_manager_accepts (test_e2e_standin.StandIn.test_the_laptop_list_matches_what_the_binding_says_agent_manager_accepts) ... ok
+test_the_stand_in_parses_as_python_39 (test_e2e_standin.StandIn.test_the_stand_in_parses_as_python_39) ... ok
+test_version (test_e2e_standin.StandIn.test_version) ... ok
+test_wrong_shape (test_e2e_standin.StandIn.test_wrong_shape) ... ok
+
+----------------------------------------------------------------------
+Ran 27 tests in 36.152s
+
+OK

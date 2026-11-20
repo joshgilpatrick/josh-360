@@ -1,0 +1,1 @@
+{"_about": "The step writes a result file in the wrong shape: no outcome, and its fields not under outputs (the JP-184 kind of mistake).", "kind": "wrong-shape", "think": 1}

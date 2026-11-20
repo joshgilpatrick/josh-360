@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+"""Runs the real `agent-manager` and logs each call with its exit code and output (JP-186). Python 3.9, stdlib.
+
+The binding finds Agent Manager through `JOSH360_AM_BIN`; a cloud test points that at this file, so every call the
+binding makes lands in `$JOSH360_E2E_AM_LOG` as one JSON line: `{"argv", "code", "stdout", "stderr", "at"}`. That is
+how a test reads Agent Manager's own words (a refused model, say) when the binding keeps only a short reason. The real
+binary is `$JOSH360_E2E_REAL_AM`. Output is passed on unchanged.
+"""
+import json
+import os
+import subprocess
+import sys
+import time
+
+real = os.environ.get("JOSH360_E2E_REAL_AM")
+if not real or not os.access(real, os.X_OK):
+    sys.stderr.write("am-record: JOSH360_E2E_REAL_AM does not name an executable agent-manager\n")
+    sys.exit(127)
+done = subprocess.run([real] + sys.argv[1:], stdin=sys.stdin, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                      universal_newlines=True)
+target = os.environ.get("JOSH360_E2E_AM_LOG")
+if target:
+    try:
+        with open(target, "a", encoding="utf-8") as handle:
+            handle.write(json.dumps({"argv": sys.argv[1:], "code": done.returncode, "stdout": done.stdout,
+                                     "stderr": done.stderr, "at": time.time()}) + "\n")
+    except OSError:
+        pass
+sys.stdout.write(done.stdout)
+sys.stderr.write(done.stderr)
+sys.exit(done.returncode)

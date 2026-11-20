@@ -1,0 +1,19 @@
+# With no Agent Manager installed (an empty cache folder), the real-Agent-Manager tests skip and say how to install it:
+$ JOSH360_E2E_CACHE=/tmp/empty-cache python3 -m unittest discover -s tests -t tests -p 'test_e2e_agent_manager.py' -v
+test_status_stays_starting_and_the_harness_says_why (test_e2e_agent_manager.ManagerDown.test_status_stays_starting_and_the_harness_says_why) ... skipped 'the real Agent Manager 0.47.1 is not here (not installed): python3 tests/e2e/agent_manager.py install'
+test_the_session_gets_a_graph_sessions_entry_linking_it_to_its_run (test_e2e_agent_manager.Rails.test_the_session_gets_a_graph_sessions_entry_linking_it_to_its_run) ... skipped 'the real Agent Manager 0.47.1 is not here (not installed): python3 tests/e2e/agent_manager.py install'
+test_an_effort_the_model_does_not_take_is_refused (test_e2e_agent_manager.RefusedModel.test_an_effort_the_model_does_not_take_is_refused) ... skipped 'the real Agent Manager 0.47.1 is not here (not installed): python3 tests/e2e/agent_manager.py install'
+test_empty_models_map_is_refused_with_agent_managers_message (test_e2e_agent_manager.RefusedModel.test_empty_models_map_is_refused_with_agent_managers_message) ... skipped 'the real Agent Manager 0.47.1 is not here (not installed): python3 tests/e2e/agent_manager.py install'
+test_move_and_close_change_the_group_and_archived_flag (test_e2e_agent_manager.StepSession.test_move_and_close_change_the_group_and_archived_flag) ... skipped 'the real Agent Manager 0.47.1 is not here (not installed): python3 tests/e2e/agent_manager.py install'
+test_state_reads_working_then_resting_within_30_seconds (test_e2e_agent_manager.StepSession.test_state_reads_working_then_resting_within_30_seconds) ... skipped 'the real Agent Manager 0.47.1 is not here (not installed): python3 tests/e2e/agent_manager.py install'
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.000s
+
+OK (skipped=6)
+
+# And with JOSH360_E2E_AM=1 that is a failure, not a skip:
+FAIL: test_status_stays_starting_and_the_harness_says_why (test_e2e_agent_manager.ManagerDown.test_status_stays_starting_and_the_harness_says_why)
+AssertionError: the real Agent Manager 0.47.1 is not here (not installed): python3 tests/e2e/agent_manager.py install
+FAIL: test_the_session_gets_a_graph_sessions_entry_linking_it_to_its_run (test_e2e_agent_manager.Rails.test_the_session_gets_a_graph_sessions_entry_linking_it_to_its_run)
+AssertionError: the real Agent Manager 0.47.1 is not here (not installed): python3 tests/e2e/agent_manager.py install

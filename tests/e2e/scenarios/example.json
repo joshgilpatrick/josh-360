@@ -1,0 +1,1 @@
+{"_about": "The step does what its role asks: it writes the example result from the role's instructions (else the first outcome with no outputs) and stops.", "kind": "example", "think": 6}
