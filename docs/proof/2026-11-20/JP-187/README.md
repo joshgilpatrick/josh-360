@@ -11,7 +11,7 @@
 
 A fake Jira folder made with `jira_strict.install` holds a snapshot of JP's real workflow and answers 400 for any transition, field, option value, issue type or JQL value JP's real Jira would refuse. Without the snapshot it is the same lenient fake as before. The snapshot was read from real Jira on 20 November 2026, read-only, through the Atlassian connector; the ticket used is made up (`JP-9116`, "Add a made-up chores page"). Run in a cloud session.
 
-Unit test output: [`unit-tests.txt`](unit-tests.txt) (`python3 -m unittest -v test_jira_strict` in `graphs/tests`, 31 tests, all ok).
+Unit test output: [`unit-tests.txt`](unit-tests.txt) (`python3 -m unittest -v test_jira_strict` in `graphs/tests`, 32 tests, all ok).
 
 ## Scenarios
 
