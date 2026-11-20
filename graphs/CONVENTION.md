@@ -228,7 +228,7 @@ The steps a loop runs again are the target and every step that depends on it (`n
 **What the walker holds** (JP-114 built this; this section is its rule):
 
 1. Count every run of every role step, whichever loop sent the run back to it, in one counter for each step in one run of the graph. The first run counts as run 1.
-2. Before starting a role step again, compare the count with the cap of the step's tier. When the next run would pass the cap, do not start it: send the run to that loop's `at_limit` ask step.
+2. Before starting a role step again, compare the count with the cap of the step's tier. When the next run would pass the cap, do not start it: send the run to the `at_limit` ask step of the loop that sent the run back through it. The cap is held at the step, not at the loop (JP-194): a loop whose target leads to a capped step is still taken, because that step may not run on this pass (triage's drafter runs only when the verdict says revise). The run goes to the ask only when the capped step is the next step to start.
 3. Each yes from Josh at that ask allows exactly one more run of that step, no more. The extra run is counted like any other, so the next time the cap is reached Josh is asked again. A *yes* is a choice whose `on` is a `goto`, taken at an ask the run was sent to by a limit; that `goto` is Josh's own decision, so its own `max_loops` is not enforced by the walker (the checker still requires it), and it allows one extra run of each role step it sends the run back through that is at its cap. Any other choice moves on or ends, and no extra run is allowed.
 4. Record the tier, and whether the run was one Josh allowed, in the ledger for the step (`tier` is already a ledger field).
 

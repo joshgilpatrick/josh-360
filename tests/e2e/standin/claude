@@ -20,7 +20,8 @@ real Agent Manager drives this script as it would drive Claude Code. It does thr
   scenario names, else the step's example result in the role's instructions, `json result step=<step>` (JP-189), else
   the first outcome with no outputs), `wrong-shape`, `silent`, `hang`, `question` and `follow-ups`. Which scenario a
   step plays is chosen by the plan file, `$JOSH360_STANDIN_PLAN` or `~/.josh360-standin/plan.json`: `{"default": "<scenario>", "steps": {"<step>":
-  "<scenario>"}}`; a scenario is a name in `scenarios/` or a path to a JSON file. With no plan, `example`. A scenario's
+  "<scenario>"}}`; a scenario is a name in `scenarios/` or a path to a JSON file, and a list of them is one per attempt of
+  the step, the last playing every later attempt (JP-194). With no plan, `example`. A scenario's
   `think` is how many seconds the turn works before it writes; `$JOSH360_STANDIN_THINK` overrides it.
 
 Every action is logged as one JSON line to `$JOSH360_STANDIN_LOG` or `~/.josh360-standin/log.jsonl`: the arguments,
@@ -214,9 +215,11 @@ class Hooks:
 
 # -- scenarios ------------------------------------------------------------------------------------------------------
 
-def scenario_for(step: Optional[str]) -> dict:
+def scenario_for(step: Optional[str], attempt: int = 1) -> dict:
     plan = read_json(Path(os.environ.get("JOSH360_STANDIN_PLAN") or (standin_dir() / "plan.json"))) or {}
     chosen = (plan.get("steps") or {}).get(step) if step else None
+    if isinstance(chosen, list):        # one scenario per attempt of the step; the last one plays every later attempt
+        chosen = chosen[min(max(attempt, 1), len(chosen)) - 1] if chosen else None
     chosen = chosen or plan.get("default") or "example"
     if isinstance(chosen, dict):
         return chosen
@@ -406,7 +409,8 @@ class Session:
             return
         text = task_text(prompt)
         step = MARKER.search(text)
-        scenario = scenario if scenario is not None else scenario_for(step.group(2) if step else None)
+        scenario = scenario if scenario is not None else scenario_for(step.group(2) if step else None,
+                                                                     int(step.group(3)) if step else 1)
         log("turn", step=step.group(2) if step else None, scenario=scenario, model=self.model, effort=self.effort)
         time.sleep(float(os.environ.get("JOSH360_STANDIN_THINK") or scenario.get("think", 0)))
         kind = scenario.get("kind", "example")

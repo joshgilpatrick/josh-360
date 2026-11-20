@@ -1,0 +1,59 @@
+{
+ "about": "JP-194, the JP-116 run of 20 November: the fixture lacks its Validation section, so triage sends it to the ticket drafter. The drafter's first two attempts write a result in the wrong shape (the model ran, so each uses a run of revise's mid cap of 3), and the third revises. apply_revision applies it and loops back to read_ticket while revise is at its cap. The drafter does not run again (the ready check passes), so the run must not stop at ask_at_limit: it goes on through route and sign-off and the ticket reaches Ready.",
+ "graph": "triage",
+ "ticket": "JP-9116",
+ "fixture": {
+  "status": "Not Started",
+  "creator": {
+   "accountId": "acct-josh"
+  },
+  "description": "**Goal:** a made-up chores page lists the chores due this week.\n\n**First step:** read this made-up ticket; nothing in it is real.\n\n**Why:** a fixture for end-to-end runs of the graph runner in the cloud (JP-187). No real ticket text.\n\n**In scope:**\n\n- A page that lists made-up chores\n\n**Not in scope:**\n\n- Anything real\n\n**Acceptance criteria:**\n\n```gherkin\nFeature: The made-up chores page\n\n  @auto\n  Scenario: The page lists this week's chores\n    Given two made-up chores are due this week\n    When the page opens\n    Then it lists both\n```\n\n**Repository:** josh-360\n\n**Where it runs:** Cloud session.\n\n**Parent or related:** Parent: JP-94.\n\n**Decisions already made:**\n\n- None.\n"
+ },
+ "issues": {
+  "JP-94": {
+   "summary": "A made-up stand-in for the epic",
+   "issuetype": "Epic",
+   "status": "Not Started",
+   "project": {
+    "key": "JP"
+   },
+   "labels": [
+    "josh-360"
+   ]
+  }
+ },
+ "starts": {
+  "per_pass": 1,
+  "graphs": {
+   "triage": {
+    "on": true,
+    "jql": "project = JP AND status = \"Not Started\" AND labels = \"ready-to-run\"",
+    "route_record": false,
+    "inputs": {}
+   }
+  }
+ },
+ "plan": {
+  "default": "example",
+  "steps": {
+   "revise": [
+    "wrong-shape",
+    "wrong-shape",
+    "revise-example.json"
+   ]
+  }
+ },
+ "limit_minutes": 120,
+ "expect": {
+  "end": "finished",
+  "jira_status": "Ready",
+  "step_outcomes": {
+   "revise": "revised",
+   "apply_revision": "applied"
+  },
+  "cap_used": {
+   "revise": 3
+  },
+  "admitted": true
+ }
+}

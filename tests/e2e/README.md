@@ -58,7 +58,7 @@ An instance folder holds `home/` (with `home/.claude/settings.json`, which `Inst
 
 ## Scenarios
 
-The plan file maps steps to scenarios: `{"default": "example", "steps": {"build": "silent"}}`. A scenario is a name below or a path to a JSON file of the same shape.
+The plan file maps steps to scenarios: `{"default": "example", "steps": {"build": "silent"}}`. A scenario is a name below or a path to a JSON file of the same shape. A list plays one scenario per attempt of the step and the last one for every later attempt, for example `{"revise": ["wrong-shape", "revise-example.json"]}` (JP-194).
 
 | Scenario | What the session does |
 | --- | --- |
@@ -85,6 +85,7 @@ A scenario's `think` is how long the turn works before writing; `$JOSH360_STANDI
 | `bad-model-map` | `binding.json`'s `models` map is empty (`binding` in the scenario): the run stops at `sign_off` after one spawn, `runner.log` carries Agent Manager's own message naming `claude-sonnet-5-5`, and two more passes spawn nothing. |
 | `permanent-refusal` | The laptop's Claude Code no longer lists `opus` (`claude_lists`), the model sign-off's tier maps to: the run stops at `sign_off` after one spawn, says it needs a fix, and the step's one attempt stays open, so the walker counts no run of it against the cap. |
 | `triage-revise` | The fixture lacks its Validation section, so triage sends it to `revise`; the stand-in plays `revise-example.json`; the walker records `revise` with `revised`, the revision is applied and the ticket reaches Ready. |
+| `triage-revise-at-cap` | JP-116's run of 20 November (JP-194): the drafter's first two attempts write the wrong shape, each spending a run of its cap of 3, and the third revises. The loop from `apply_revision` back to `read_ticket` goes ahead although `revise` is at its cap, the ready check passes and the ticket reaches Ready with no question to Josh. The plan gives `revise` one scenario per attempt. |
 | `ledger-record-pace` | The recorder has a backlog of 700 made-up sessions (`backlog`) and its Jira answers each read after 0.5 s: ledger-record uses (nearly) its whole 150-second budget in each of two passes (`passes: 2`, checked as at least 145 s), and `graph-runner` still starts within 300 s of each pass starting. |
 
 Every run is laptop-like in the ways the laptop has bitten (JP-190): the Jira email is only in `~/.josh-360/state/jira-email`, and the fake Jira holds `credentials.json`, so a gate or the runner that does not find it the laptop's way is refused with Jira's 401 (the token stands in for the keychain as `JOSH360_JIRA_TOKEN`); the stand-in is only at `~/.local/bin/claude`, with no `JOSH360_CLAUDE_BIN`, so the binding must find it under a job's `PATH`; and the ledger recorder reads a local stand-in for Jira's REST API, never the real site. Every verdict checks that no Jira call was refused.
@@ -115,6 +116,7 @@ Each failure Josh found on the laptop in the week of 16 November 2026, and the r
 | `ledger-record` held up the five-minute jobs (JP-181) | `ledger-record-pace` |
 | Gate scripts did not find the Jira email when it was only in `state/jira-email` (JP-171) | `triage-happy`, `triage-revise` (and every run's Jira check) |
 | "claude is not installed" under a job's PATH | `triage-happy` (and every run that spawns) |
+| The run cap stopped the loop back to a re-read after the drafter's last run, so the revised ticket was never checked (JP-194, run r-4400caa5965b) | `triage-revise-at-cap` |
 
 ## The clock
 
