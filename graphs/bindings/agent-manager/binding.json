@@ -5,6 +5,8 @@
   "id_fields": ["id", "session_id"],
   "status": {"working": ["working", "starting"], "resting": ["idle", "waiting", "finished"], "gone": ["dead"]},
   "archive": ["archive"],
+  "kill": ["kill"],
+  "completed_group": "josh-360/completed-steps",
   "models": {
     "claude-haiku-5-5": "sonnet",
     "claude-sonnet-5-5": "opus",
