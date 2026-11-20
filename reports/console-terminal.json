@@ -1,0 +1,7 @@
+{
+  "heartbeat_age_seconds": null,
+  "heartbeat_fresh": 0,
+  "reason": "terminal list: exit 1: agent-manager: not inside an Agent Manager session or terminal (this process does not run in a pane Agent Manager runs, and AGENT_MANAGER_SESSION_ID is ",
+  "status": "unknown",
+  "terminal": null
+}
