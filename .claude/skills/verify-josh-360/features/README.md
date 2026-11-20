@@ -51,6 +51,7 @@ Each feature file starts with an H1 title and one paragraph describing the behav
 - [Graph walker](./graph-walker.md) covers starting a ticket creation run from intake, playing a role step, the walker running a gate and ending the run, and the run's record in the ledger.
 - [Platform doctor](./platform-doctor.md) covers the health check in text and JSON, the safe `--fix` that registers the hook dispatcher, and reading the daily report from the cloud.
 - [Laptop follow and jobs](./laptop-follow.md) covers the job runner, the `follow` job moving the copy to a new `main` and reinstalling, the `laptop-status` branch, and the pause switch.
+- [Live console](./console.md) covers the console following the ledger, the job and runner logs, hook blocks and the spool in one colored stream, and the `console-terminal` job's report. Proved on 20 November 2026 (`docs/proof/2026-11-20/JP-185/`).
 
 ## Not mapped yet
 

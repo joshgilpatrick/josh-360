@@ -1,0 +1,16 @@
+{
+  "command": [
+    "python3",
+    "graphs/intake/submit.py",
+    "--source",
+    "session",
+    "--ref",
+    "verify-sess-0001"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp185b/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp185b",
+  "started_at": "2026-11-20T14:59:50Z",
+  "stderr": "",
+  "stdout": "r-7e1ad0e2d9ab\n"
+}

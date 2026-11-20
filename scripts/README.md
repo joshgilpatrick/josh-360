@@ -40,4 +40,6 @@ Each `*_job.py` is the script a `jobs.yaml` entry runs; the others are run by ha
 | `launchd_check_job.py` | Runs `laptop/check_jobs.py` daily as the `launchd-check` job (JP-119). |
 | `retire_focus_dashboard.py`, `retire_session_atlas.py`, `retire_leftover_jobs.py` | One-time jobs that switch an old launchd job off and archive it (JP-100, JP-111, JP-119). |
 | `restore_retired_job.py` | Puts a job switched off by `retire-leftover-jobs` back, from its archive folder. |
+| `console.py`, `console_lib/` | The live console (JP-185): what Josh 360 is doing, read from the ledger and the logs, in one colored stream. `--once` prints and exits. |
+| `console_terminal_job.py` | Keeps one Agent Manager terminal named `console` running the console, as the `console-terminal` job (JP-185). |
 | `atlas_service.py` | Keeps the headless Session Atlas running, as the hourly `session-atlas-service` job (JP-111). It is the one launchd installer Josh 360 ships, until the phase 1 close (`docs/phase-1-close-checklist.md`). |

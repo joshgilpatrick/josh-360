@@ -1,0 +1,13 @@
+{
+  "command": [
+    "hooks/dispatch",
+    "PreToolUse"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp185b/home/.josh-360/repo",
+  "exit_code": 2,
+  "run": "jp185b",
+  "started_at": "2026-11-20T15:00:11Z",
+  "stderr": "made-up block for the JP-185 proof\n",
+  "stdin": "{\"session_id\":\"verify-sess-0001\",\"hook_event_name\":\"PreToolUse\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"ls\"},\"cwd\":\"/tmp/verify-josh-360/jp185b/work/sample-repo\"}\n",
+  "stdout": ""
+}

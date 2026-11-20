@@ -1,0 +1,28 @@
+test_one_screen_line (tests.test_console.Classing.test_one_screen_line) ... ok
+test_words (tests.test_console.Classing.test_words) ... ok
+test_heartbeat_written_when_asked (tests.test_console.Following.test_heartbeat_written_when_asked) ... ok
+test_new_lines_and_new_run_logs_show (tests.test_console.Following.test_new_lines_and_new_run_logs_show) ... ok
+test_replaced_log_is_read_from_its_start (tests.test_console.Following.test_replaced_log_is_read_from_its_start) ... ok
+test_a_damaged_ledger_does_not_stop_it (tests.test_console.MissingSources.test_a_damaged_ledger_does_not_stop_it) ... ok
+test_missing_sources_are_named_once_and_the_rest_shows (tests.test_console.MissingSources.test_missing_sources_are_named_once_and_the_rest_shows) ... ok
+test_clean_job_output_stays_in_its_log (tests.test_console.OneStream.test_clean_job_output_stays_in_its_log) ... ok
+test_every_source_in_time_order (tests.test_console.OneStream.test_every_source_in_time_order) ... ok
+test_important_lines_stand_out (tests.test_console.OneStream.test_important_lines_stand_out) ... ok
+test_no_color (tests.test_console.OneStream.test_no_color) ... ok
+test_no_color_when_piped (tests.test_console.OneStream.test_no_color_when_piped) ... ok
+test_runner_lines_get_the_run_ticket (tests.test_console.OneStream.test_runner_lines_get_the_run_ticket) ... ok
+test_since_cuts_older_lines (tests.test_console.OneStream.test_since_cuts_older_lines) ... ok
+test_source_filter (tests.test_console.OneStream.test_source_filter) ... ok
+test_adopts_a_terminal_named_console (tests.test_console_terminal_job.JobCase.test_adopts_a_terminal_named_console) ... ok
+test_creates_one_terminal_and_sends_the_console (tests.test_console_terminal_job.JobCase.test_creates_one_terminal_and_sends_the_console) ... ok
+test_fresh_heartbeat_means_no_agent_manager_call (tests.test_console_terminal_job.JobCase.test_fresh_heartbeat_means_no_agent_manager_call) ... ok
+test_gone_terminal_is_replaced (tests.test_console_terminal_job.JobCase.test_gone_terminal_is_replaced) ... ok
+test_listed_terminal_with_a_stale_heartbeat_gets_the_command_again (tests.test_console_terminal_job.JobCase.test_listed_terminal_with_a_stale_heartbeat_gets_the_command_again) ... ok
+test_no_agent_manager_is_a_report_not_a_crash (tests.test_console_terminal_job.JobCase.test_no_agent_manager_is_a_report_not_a_crash) ... ok
+test_off_switch (tests.test_console_terminal_job.JobCase.test_off_switch) ... ok
+test_unreadable_list_creates_nothing (tests.test_console_terminal_job.JobCase.test_unreadable_list_creates_nothing) ... ok
+
+----------------------------------------------------------------------
+Ran 23 tests in 1.884s
+
+OK
