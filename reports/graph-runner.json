@@ -257,8 +257,8 @@
       "graph": "triage",
       "run": "r-4400caa5965b",
       "since": "2026-11-20T01:49:51Z",
-      "state": "stopped",
-      "step": "revise",
+      "state": "between",
+      "step": null,
       "ticket": "JP-116",
       "waiting_on": null
     },
@@ -292,24 +292,18 @@
   ],
   "rails": true,
   "runs": {
-    "between": 0,
+    "between": 1,
     "open": 6,
     "parked": 0,
     "queued": 0,
-    "stopped": 1,
+    "stopped": 0,
     "waiting": 5,
     "working": 0
   },
   "session_limit": 2,
   "sessions_live": 0,
   "status": "ok",
-  "stopped": [
-    {
-      "run": "r-4400caa5965b",
-      "step": "revise",
-      "ticket": "JP-116"
-    }
-  ],
+  "stopped": [],
   "ticket_counts": {
     "cost_fields": 0,
     "listed": 8,
@@ -318,10 +312,10 @@
   },
   "tickets": [
     {
-      "attempt": 3,
+      "attempt": null,
       "end": null,
       "graph": "triage",
-      "jira_status": "Not Started",
+      "jira_status": null,
       "refused": [],
       "run": "r-4400caa5965b",
       "runner": "agent-manager",
@@ -429,15 +423,11 @@
       ],
       "since": "2026-11-20T01:49:51Z",
       "started_at": "2026-11-20T01:49:51Z",
-      "state": "stopped",
-      "step": "revise",
-      "step_label": "Revise",
+      "state": "between",
+      "step": null,
+      "step_label": null,
       "ticket": "JP-116",
-      "waits_on": {
-        "kind": "cap",
-        "since": "2026-11-20T01:49:51Z",
-        "text": "Josh: the step ran as often as its tier allows (allow or retry it)"
-      },
+      "waits_on": null,
       "worktree_kept": null
     },
     {
