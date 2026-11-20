@@ -17,9 +17,9 @@ real Agent Manager drives this script as it would drive Claude Code. It does thr
   the prompt like Claude Code: each line typed into the pane (Agent Manager's `send`) is a new turn that only stops.
   On SIGHUP or SIGTERM it fires `SessionEnd` and exits.
 * **What it writes** comes from a scenario (`tests/e2e/scenarios/<name>.json`): `example` (the outcome and outputs the
-  scenario names, else the example result in the role's instructions, else the first outcome with no outputs),
-  `wrong-shape`, `silent`, `hang`, `question` and `follow-ups`. Which scenario a step plays is chosen by the plan
-  file, `$JOSH360_STANDIN_PLAN` or `~/.josh360-standin/plan.json`: `{"default": "<scenario>", "steps": {"<step>":
+  scenario names, else the step's example result in the role's instructions, `json result step=<step>` (JP-189), else
+  the first outcome with no outputs), `wrong-shape`, `silent`, `hang`, `question` and `follow-ups`. Which scenario a
+  step plays is chosen by the plan file, `$JOSH360_STANDIN_PLAN` or `~/.josh360-standin/plan.json`: `{"default": "<scenario>", "steps": {"<step>":
   "<scenario>"}}`; a scenario is a name in `scenarios/` or a path to a JSON file. With no plan, `example`. A scenario's
   `think` is how many seconds the turn works before it writes; `$JOSH360_STANDIN_THINK` overrides it.
 
@@ -237,8 +237,24 @@ def task_text(prompt: str) -> str:
     return prompt
 
 
-def role_example(text: str) -> Optional[dict]:
-    """The first ```json block in the role's instructions that holds an `outcome`."""
+def _examples_module():
+    """graphs/tools/role_examples.py from this checkout: the same reader as the role-example check (JP-189)."""
+    import importlib.util
+    path = E2E.parent.parent / "graphs" / "tools" / "role_examples.py"
+    spec = importlib.util.spec_from_file_location("josh360_role_examples", str(path))
+    if spec is None or spec.loader is None:
+        return None
+    module = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(module)  # type: ignore[union-attr]
+    except (OSError, SyntaxError):
+        return None
+    return module
+
+
+def role_example(text: str, step: Optional[str]) -> Optional[dict]:
+    """The step's first example result in the role's instructions (```json result step=<step>, JP-189), read by the
+    same code as `graphs/tools/role_examples.py check`; else the first untagged ```json block holding an `outcome`."""
     found = ROLE.search(text)
     if not found:
         return None
@@ -246,13 +262,14 @@ def role_example(text: str) -> Optional[dict]:
         instructions = (Path(found.group(1)) / "instructions.md").read_text(encoding="utf-8")
     except OSError:
         return None
-    for block in re.findall(r"```json\s*\n(.*?)```", instructions, re.S):
-        try:
-            doc = json.loads(block)
-        except ValueError:
-            continue
-        if isinstance(doc, dict) and "outcome" in doc:
-            return doc
+    module = _examples_module()
+    if module is None:
+        return None
+    examples = module.examples_in(instructions)
+    for wanted in ([step] if step else []) + [None]:
+        for example in examples:
+            if example.step == wanted and example.doc is not None:
+                return dict(example.doc)
     return None
 
 
@@ -267,7 +284,9 @@ def result_for(scenario: dict, text: str) -> Optional[Tuple[str, dict]]:
         return path, scenario.get("document") or {"result": "done", "fields": {"note": "not under outputs"}}
     outcomes = OUTCOMES.search(text)
     listed = [o.strip() for o in outcomes.group(1).split(",")] if outcomes else []
-    example = role_example(text) if "outputs" not in scenario and "outcome" not in scenario else None
+    step = MARKER.search(text)
+    wanted = step.group(2) if step else None
+    example = role_example(text, wanted) if "outputs" not in scenario and "outcome" not in scenario else None
     if example:
         doc = dict(example)
     else:
