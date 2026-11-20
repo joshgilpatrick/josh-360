@@ -256,8 +256,8 @@
     {
       "graph": "triage",
       "run": "r-4400caa5965b",
-      "since": "2026-11-20T14:26:46Z",
-      "state": "working",
+      "since": "2026-11-20T01:49:51Z",
+      "state": "stopped",
       "step": "revise",
       "ticket": "JP-116",
       "waiting_on": null
@@ -296,14 +296,20 @@
     "open": 6,
     "parked": 0,
     "queued": 0,
-    "stopped": 0,
+    "stopped": 1,
     "waiting": 5,
-    "working": 1
+    "working": 0
   },
   "session_limit": 2,
-  "sessions_live": 1,
+  "sessions_live": 0,
   "status": "ok",
-  "stopped": [],
+  "stopped": [
+    {
+      "run": "r-4400caa5965b",
+      "step": "revise",
+      "ticket": "JP-116"
+    }
+  ],
   "ticket_counts": {
     "cost_fields": 0,
     "listed": 8,
@@ -423,25 +429,29 @@
         {
           "am_session": "5ad6d4ec",
           "attempt": 4,
-          "ended_at": null,
+          "ended_at": "2026-11-20T14:32:14Z",
           "kind": "role",
           "loop_count": 3,
           "model": null,
-          "outcome": null,
-          "reason": null,
+          "outcome": "_abandoned",
+          "reason": "bad-result",
           "session": "8df77674-fa2a-404b-a28c-46c5971826aa",
           "started_at": "2026-11-20T14:26:46Z",
           "step": "revise",
           "tier": "mid"
         }
       ],
-      "since": "2026-11-20T14:26:46Z",
+      "since": "2026-11-20T01:49:51Z",
       "started_at": "2026-11-20T01:49:51Z",
-      "state": "working",
+      "state": "stopped",
       "step": "revise",
       "step_label": "Revise",
       "ticket": "JP-116",
-      "waits_on": null,
+      "waits_on": {
+        "kind": "cap",
+        "since": "2026-11-20T01:49:51Z",
+        "text": "Josh: the step ran as often as its tier allows (allow or retry it)"
+      },
       "worktree_kept": null
     },
     {
