@@ -2,6 +2,122 @@
   "ended_runs": [
     {
       "end": "finished",
+      "ended_at": "2026-11-20T13:26:40Z",
+      "graph": "validation",
+      "run": "r-b4946bd3ea8f",
+      "score": "success",
+      "started_at": "2026-11-20T07:18:07Z",
+      "steps": [
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T07:18:07Z",
+          "jira_status": null,
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "pass",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T07:18:07Z",
+          "step": "_entry",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T07:18:08Z",
+          "jira_status": "Deployed",
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "watch",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T07:18:08Z",
+          "step": "read_criteria",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T07:18:10Z",
+          "jira_status": "Deployed",
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "started",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T07:18:08Z",
+          "step": "start_watch",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T13:26:35Z",
+          "jira_status": "Deployed",
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "met",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T13:26:35Z",
+          "step": "watch",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T13:26:35Z",
+          "jira_status": "Deployed",
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "met",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T13:26:35Z",
+          "step": "verdict",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T13:26:39Z",
+          "jira_status": "Done",
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "closed",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T13:26:35Z",
+          "step": "close",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T13:26:40Z",
+          "jira_status": null,
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "pass",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T13:26:39Z",
+          "step": "_exit",
+          "tier": null
+        }
+      ],
+      "ticket": "JP-181"
+    },
+    {
+      "end": "finished",
       "ended_at": "2026-11-20T04:58:23Z",
       "graph": "validation",
       "run": "r-1e4ba9ad7579",
@@ -172,25 +288,16 @@
       "step": "watch",
       "ticket": "JP-175",
       "waiting_on": null
-    },
-    {
-      "graph": "validation",
-      "run": "r-b4946bd3ea8f",
-      "since": "2026-11-20T07:18:10Z",
-      "state": "waiting",
-      "step": "watch",
-      "ticket": "JP-181",
-      "waiting_on": null
     }
   ],
   "rails": true,
   "runs": {
     "between": 0,
-    "open": 7,
+    "open": 6,
     "parked": 0,
     "queued": 0,
     "stopped": 1,
-    "waiting": 6,
+    "waiting": 5,
     "working": 0
   },
   "session_limit": 2,
@@ -788,15 +895,15 @@
       "worktree_kept": null
     },
     {
-      "attempt": null,
-      "end": null,
+      "attempt": 1,
+      "end": "finished",
       "graph": "validation",
-      "jira_status": "Deployed",
+      "jira_status": "Done",
       "refused": [],
       "run": "r-b4946bd3ea8f",
       "runner": "agent-manager",
       "runs": 1,
-      "score": null,
+      "score": "success",
       "sessions": [
         {
           "am_session": null,
@@ -839,19 +946,71 @@
           "started_at": "2026-11-20T07:18:08Z",
           "step": "start_watch",
           "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T13:26:35Z",
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "met",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T13:26:35Z",
+          "step": "watch",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T13:26:35Z",
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "met",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T13:26:35Z",
+          "step": "verdict",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T13:26:39Z",
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "closed",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T13:26:35Z",
+          "step": "close",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T13:26:40Z",
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "pass",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T13:26:39Z",
+          "step": "_exit",
+          "tier": null
         }
       ],
-      "since": "2026-11-20T07:18:10Z",
+      "since": "2026-11-20T13:26:40Z",
       "started_at": "2026-11-20T07:18:07Z",
-      "state": "waiting",
-      "step": "watch",
-      "step_label": "Watch",
+      "state": "ended",
+      "step": "close",
+      "step_label": "Close",
       "ticket": "JP-181",
-      "waits_on": {
-        "kind": "check",
-        "since": "2026-11-20T07:18:10Z",
-        "text": "the validation watch"
-      },
+      "waits_on": null,
       "worktree_kept": null
     }
   ],
@@ -869,8 +1028,7 @@
         "JP-172": "has an open run",
         "JP-173": "has an open run",
         "JP-174": "has an open run",
-        "JP-175": "has an open run",
-        "JP-181": "has an open run"
+        "JP-175": "has an open run"
       },
       "started": []
     }
