@@ -33,7 +33,7 @@ if code and sys.argv[1] == "user":
 
 class StandIn(unittest.TestCase):
     def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="josh360-standin-"))
+        self.tmp = Path(tempfile.mkdtemp(prefix="josh360-standin-")).resolve()   # macOS: /var is /private/var
         self.addCleanup(shutil.rmtree, str(self.tmp), True)
         self.home = self.tmp / "home"
         (self.home / ".claude").mkdir(parents=True)
