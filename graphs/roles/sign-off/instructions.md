@@ -14,3 +14,19 @@ Judge only these six items, and only against the ticket's own text:
 Raise a defect only when it would make the worker guess or fail. Each defect names its item (J1 to J6), quotes the ticket's words exactly, says what is wrong, and says what the author must add. A defect that does not do all four is deleted by a script before anyone sees it.
 
 Never read priorities, ranks or the Jira priority field, and never judge a ticket you helped write. Return `ready` with no defects, or `defects` with the list.
+
+## Your result file
+
+Write the result file in one of these shapes. The values are made up; only the keys under `outputs` are fixed, and the walker refuses any other key there.
+
+Ready (outcome `ready`):
+
+```json result step=sign_off
+{"outcome": "ready", "outputs": {"defects": []}}
+```
+
+Defects (outcome `defects`), each in the `sign-off-defects` contract's fields:
+
+```json result step=sign_off
+{"outcome": "defects", "outputs": {"defects": [{"item": "J2", "quote": "the page feels fast", "problem": "No test or person can observe \"feels fast\".", "needed": "State a time the page loads within."}]}}
+```
