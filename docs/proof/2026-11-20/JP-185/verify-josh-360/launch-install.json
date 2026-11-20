@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/usr/local/bin/python3",
+    "laptop/install.py",
+    "--json"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp185/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp185",
+  "started_at": "2026-11-20T14:58:01Z",
+  "stderr": "",
+  "stdout": "changed   create folder /tmp/verify-josh-360/jp185/home/.josh-360/state\nchanged   create folder /tmp/verify-josh-360/jp185/home/.josh-360/logs\nchanged   create or migrate the ledger\nunchanged jobs file\nunchanged hooks\nchanged   record installed commit 04f80b25a417\ninstall: passed (changed: 3, unchanged: 2, problems: 0)\n{\"result\": \"passed\", \"changed\": 3, \"unchanged\": 2, \"problems\": 0}\n"
+}

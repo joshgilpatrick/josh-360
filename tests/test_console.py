@@ -66,6 +66,16 @@ class OneStream(Base):
         self.assertNotIn("report output", joined)
         self.assertIn("\u2026 more in logs/doctor.log", joined)
 
+    def test_clean_job_output_stays_in_its_log(self):
+        (self.home / "logs" / "ticket-comments.log").write_text(
+            '=== 2026-11-20T14:12:00Z exit 0\nunchanged hooks\n{"failed": 0, "passed": 3}\n'
+            'could not write a comment file\n', encoding="utf-8")
+        out = self.run_console("--once", "--since", "all", "--no-color", "--source", "job")
+        self.assertIn("ticket-comments ran, exit 0", out)
+        self.assertNotIn("unchanged hooks", out)
+        self.assertNotIn('"failed": 0', out)
+        self.assertIn("could not write a comment file", out)       # a problem under a clean run still shows
+
     def test_runner_lines_get_the_run_ticket(self):
         out = self.run_console("--once", "--since", "all", "--no-color", "--source", "runner")
         self.assertTrue(all("JP-901" in line for line in out.splitlines()))

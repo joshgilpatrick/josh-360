@@ -217,12 +217,13 @@ def hooks_parser(line: str, state: dict) -> Iterable[ev.Event]:
 
 
 def job_parser(line: str, state: dict) -> Iterable[ev.Event]:
-    """`=== <time> exit <n>` opens one job run; up to four output lines follow it; stamped lines stand alone."""
+    """`=== <time> exit <n>` opens one job run. Under a failed run up to four output lines follow; under a clean run
+    only the lines that look like an error, a stop, a start or a question. A line with its own time stands alone."""
     job = state["path"].stem
     header = JOB_HEADER.match(line)
     if header:
         stamp, code = ev.normalise(header.group(1)), int(header.group(2))
-        state["stamp"], state["shown"] = stamp, 0
+        state["stamp"], state["shown"], state["code"] = stamp, 0, code
         if code == 0:
             yield ev.make(stamp, "job", "quiet", "{} ran, exit 0".format(job))
         elif code == 124:
@@ -236,11 +237,15 @@ def job_parser(line: str, state: dict) -> Iterable[ev.Event]:
     if stamp:
         yield ev.make(stamp, "job", ev.classify(rest, "info"), "{}: {}".format(job, rest))
         return
+    at = state.get("stamp") or state.get("mtime")
+    # A job's JSON summary is counts ("failed": 0), whose words mean nothing here.
+    kind = "quiet" if rest.lstrip().startswith(("{", "[")) else ev.classify(rest, "quiet")
+    if state.get("code") == 0 and kind in ("quiet", "info", "ok"):
+        return                                         # a clean run's routine output stays in its own log
     shown = state.get("shown", 0)
     state["shown"] = shown + 1
-    at = state.get("stamp") or state.get("mtime")
     if shown < JOB_OUTPUT_LINES:
-        yield ev.make(at, "job", ev.classify(rest, "quiet"), "{}: │ {}".format(job, rest))
+        yield ev.make(at, "job", kind, "{}: │ {}".format(job, rest))
     elif shown == JOB_OUTPUT_LINES:
         yield ev.make(at, "job", "quiet", "{}: │ … more in logs/{}".format(job, state["path"].name))
 

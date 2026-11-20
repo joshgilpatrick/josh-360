@@ -94,6 +94,7 @@ class Console:
             except Exception:  # noqa: BLE001
                 continue
         self.first = False
+        found = [e._replace(order=i) for i, e in enumerate(found)]   # read order breaks ties: a file's lines stay together
         if self.only:
             found = [e for e in found if e.source in self.only]
         tickets = self.ledger.run_tickets
