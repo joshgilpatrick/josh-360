@@ -1,0 +1,48 @@
+test_a_completed_steps_session_is_archived_after_7_days (test_runner_close_sessions.CloseSessions.test_a_completed_steps_session_is_archived_after_7_days)
+Scenario: filed 7 days and 1 hour ago is archived; filed 6 days ago is not. ... ok
+test_a_failed_close_out_is_tried_again (test_runner_close_sessions.CloseSessions.test_a_failed_close_out_is_tried_again) ... ok
+test_a_finished_steps_session_is_filed_and_killed (test_runner_close_sessions.CloseSessions.test_a_finished_steps_session_is_filed_and_killed)
+Scenario: A finished step's session is filed and killed (the ticket is not finished). ... ok
+test_a_keyless_session_is_archived_on_its_result_as_before (test_runner_close_sessions.CloseSessions.test_a_keyless_session_is_archived_on_its_result_as_before)
+Scenario: A keyless session is archived on its result as before (never killed or filed). ... ok
+test_a_recorded_session_the_finish_missed_is_closed_by_the_sync (test_runner_close_sessions.CloseSessions.test_a_recorded_session_the_finish_missed_is_closed_by_the_sync)
+`finish` could not take the file's lock: the next sync reads the session file and closes it. ... ok
+test_a_refused_kill_is_tried_again (test_runner_close_sessions.CloseSessions.test_a_refused_kill_is_tried_again) ... ok
+test_a_running_steps_session_is_left_alone (test_runner_close_sessions.CloseSessions.test_a_running_steps_session_is_left_alone)
+Scenario: A running step's session is left alone. ... ok
+test_a_session_from_before_jp_191_is_not_closed (test_runner_close_sessions.CloseSessions.test_a_session_from_before_jp_191_is_not_closed)
+Not in scope: a session recorded before this shipped (its session file has no `closes`) is left as it is. ... ok
+test_a_session_still_at_work_is_killed_only_after_the_grace (test_runner_close_sessions.CloseSessions.test_a_session_still_at_work_is_killed_only_after_the_grace)
+A result recorded while the agent is still finishing its turn: filed at once, killed after 30 minutes. ... ok
+test_a_ticket_in_deployed_has_no_last_session (test_runner_close_sessions.CloseSessions.test_a_ticket_in_deployed_has_no_last_session)
+The run ended with the ticket in Deployed: its validation is not complete, so the session waits in ... ok
+test_the_close_out_leaves_a_done_ticket_alone (test_runner_close_sessions.CloseSessions.test_the_close_out_leaves_a_done_ticket_alone) ... ok
+test_the_close_out_never_moves_a_deployed_ticket (test_runner_close_sessions.CloseSessions.test_the_close_out_never_moves_a_deployed_ticket)
+A ticket in Deployed is being watched: the validation graph moves it, never this gate. ... ok
+test_the_last_session_leaves_7_days_after_done (test_runner_close_sessions.CloseSessions.test_the_last_session_leaves_7_days_after_done) ... ok
+test_the_last_session_of_a_finished_ticket_moves_it_to_done (test_runner_close_sessions.CloseSessions.test_the_last_session_of_a_finished_ticket_moves_it_to_done)
+Scenario: The last session of a finished ticket moves it to Done (through the close-out gate). ... ok
+test_a_failed_move_is_tried_again (test_runner_am_groups.Groups.test_a_failed_move_is_tried_again) ... ok
+test_a_recorded_result_files_the_session_away_unarchived (test_runner_am_groups.Groups.test_a_recorded_result_files_the_session_away_unarchived)
+JP-191 replaces JP-173's "stays in view": the row stays (not archived) but leaves the status group. ... ok
+test_a_retry_gets_its_own_letter (test_runner_am_groups.Groups.test_a_retry_gets_its_own_letter)
+Scenario: A retry gets its own letter, and the attempt it replaces is archived. ... ok
+test_a_status_group_that_cannot_be_made_falls_back_to_the_old_group (test_runner_am_groups.Groups.test_a_status_group_that_cannot_be_made_falls_back_to_the_old_group) ... ok
+test_an_unreadable_tickets_file_starts_no_session (test_runner_am_groups.Groups.test_an_unreadable_tickets_file_starts_no_session) ... ok
+test_done_tickets_leave_after_7_days (test_runner_am_groups.Groups.test_done_tickets_leave_after_7_days)
+Scenario: Done tickets leave after 7 days; one that reached Done 6 days ago keeps its session. ... ok
+test_letters_count_across_runs (test_runner_am_groups.Groups.test_letters_count_across_runs)
+Scenario: Letters count across runs (3 sessions in an earlier run, 1 in this one, then the build step). ... ok
+test_the_first_session_of_a_ticket (test_runner_am_groups.Groups.test_the_first_session_of_a_ticket)
+Scenario: The first session of a ticket. ... ok
+test_the_newest_session_follows_the_status (test_runner_am_groups.Groups.test_the_newest_session_follows_the_status)
+Scenario: The newest session follows the status, and stays in view. ... ok
+test_the_tick_places_sessions (test_runner_am_groups.Groups.test_the_tick_places_sessions) ... ok
+test_a_keyless_session_keeps_the_old_name (test_runner_am_groups.Names.test_a_keyless_session_keeps_the_old_name) ... ok
+test_letters (test_runner_am_groups.Names.test_letters) ... ok
+test_ticket_names_and_groups (test_runner_am_groups.Names.test_ticket_names_and_groups) ... ok
+
+----------------------------------------------------------------------
+Ran 27 tests in 18.393s
+
+OK
