@@ -313,7 +313,9 @@ def completed_step_sessions(ctx: Ctx) -> Result:
     if problems:
         return Result(cid, FAIL, "; ".join(problems[:5]) + ("" if len(problems) <= 5 else " (and {} more)".format(
             len(problems) - 5)), "the runner's next tick kills and files what it can; read "
-            "~/.josh-360/logs/runner/runner.log for an Agent Manager kill or move that keeps failing")
+            "~/.josh-360/logs/runner/runner.log for an Agent Manager kill or move that keeps failing. The runner never "
+            "kills a session twice, so one revived by hand stays open: archive it when you are done with it "
+            "(agent-manager archive <id>)")
     if not judged:
         return Result(cid, PASS, "no finished step's session is old enough to judge, so none is left open")
     return Result(cid, PASS, "{} finished step session(s), each killed or archived".format(judged))
