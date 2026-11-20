@@ -329,18 +329,18 @@
     {
       "graph": "validation",
       "run": "r-d74e84a46cc7",
-      "since": "2026-11-20T16:25:02Z",
-      "state": "between",
-      "step": null,
+      "since": "2026-11-20T16:25:04Z",
+      "state": "parked",
+      "step": "decide",
       "ticket": "JP-191",
       "waiting_on": null
     }
   ],
   "rails": true,
   "runs": {
-    "between": 1,
+    "between": 0,
     "open": 8,
-    "parked": 0,
+    "parked": 1,
     "queued": 0,
     "stopped": 1,
     "waiting": 6,
@@ -1221,10 +1221,10 @@
       "worktree_kept": null
     },
     {
-      "attempt": null,
+      "attempt": 1,
       "end": null,
       "graph": "validation",
-      "jira_status": null,
+      "jira_status": "Deployed",
       "refused": [],
       "run": "r-d74e84a46cc7",
       "runner": "agent-manager",
@@ -1246,22 +1246,74 @@
           "started_at": "2026-11-20T16:25:02Z",
           "step": "_entry",
           "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "earlier_am_sessions": [],
+          "ended_at": "2026-11-20T16:25:04Z",
+          "failure_kind": null,
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "unreadable",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T16:25:03Z",
+          "step": "read_criteria",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "earlier_am_sessions": [],
+          "ended_at": "2026-11-20T16:25:04Z",
+          "failure_kind": null,
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "undecided",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T16:25:04Z",
+          "step": "verdict",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "earlier_am_sessions": [],
+          "ended_at": null,
+          "failure_kind": null,
+          "kind": "ask",
+          "loop_count": 0,
+          "model": null,
+          "outcome": null,
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T16:25:04Z",
+          "step": "decide",
+          "tier": null
         }
       ],
-      "since": "2026-11-20T16:25:02Z",
+      "since": "2026-11-20T16:25:04Z",
       "started_at": "2026-11-20T16:25:02Z",
-      "state": "between",
-      "step": null,
-      "step_label": null,
+      "state": "parked",
+      "step": "decide",
+      "step_label": "Decide",
       "ticket": "JP-191",
-      "waits_on": null,
+      "waits_on": {
+        "kind": "question",
+        "since": "2026-11-20T16:25:04Z",
+        "text": "a question to Josh"
+      },
       "worktree_kept": null
     }
   ],
   "waiting_over_7_days": [],
   "watch": {
     "development": {
-      "jira": "ok",
+      "jira": "unknown",
       "skipped": {},
       "started": []
     },
@@ -1275,9 +1327,7 @@
         "JP-175": "has an open run",
         "JP-185": "has an open run"
       },
-      "started": [
-        "JP-191"
-      ]
+      "started": []
     }
   }
 }
