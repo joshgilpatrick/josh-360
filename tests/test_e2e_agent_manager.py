@@ -122,7 +122,8 @@ class RefusedModel(RealAgentManagerCase):
         a = self.answer()
         with self.assertRaises(binding.SpawnRefused) as caught:
             binding.start(a, self.marker(a), "")
-        self.assertEqual(str(caught.exception), "refused")             # all the binding keeps (JP-183's subject)
+        self.assertEqual(str(caught.exception), "bad-model")           # JP-183's reason code
+        self.assertIn(LAPTOP_REFUSAL, caught.exception.detail)         # and Agent Manager's own words
         spawns = self.am.calls("spawn")
         self.assertEqual(len(spawns), 1)
         self.assertNotEqual(spawns[0]["code"], 0)
@@ -131,8 +132,9 @@ class RefusedModel(RealAgentManagerCase):
 
     def test_an_effort_the_model_does_not_take_is_refused(self):
         a = self.answer(effort="turbo")
-        with self.assertRaises(binding.SpawnRefused):
+        with self.assertRaises(binding.SpawnRefused) as caught:
             binding.start(a, self.marker(a), "")
+        self.assertEqual(str(caught.exception), "bad-effort")
         self.assertIn('effort "turbo" is not one opus takes', self.am.calls("spawn")[0]["stderr"])
 
 
