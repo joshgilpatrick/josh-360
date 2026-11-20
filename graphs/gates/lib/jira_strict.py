@@ -189,7 +189,7 @@ class Rules:
             field, raw = match.group(1).lower(), match.group(3)
             values = raw[1:-1].split(",") if raw.startswith("(") else [raw]
             for value in (v.strip().strip("\"'") for v in values):
-                if not value or value.lower() in _JQL_WORDS or value.endswith(")"):
+                if not value or value.lower() in _JQL_WORDS or "(" in value or value.endswith(")"):
                     continue
                 if value.casefold() not in known[field]:
                     return refusal(messages=["The value '{}' does not exist for the field '{}'.".format(value, field)])
