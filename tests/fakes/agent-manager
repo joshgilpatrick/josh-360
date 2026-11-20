@@ -3,7 +3,7 @@
 sessions table. $FAKE_AM_DIR holds calls.jsonl, state.db, groups.json and an optional behaviour.json:
 {"spawn_fails": "<text>"}, {"refuse_model": "<model>"}, {"spawn_hangs": true}, {"needs_claude": true},
 {"spawn_no_id": true} (the session is made but the reply has no id), {"move_fails": true}, {"create_group_fails": "<group prefix>"},
-{"send_fails": true}."""
+{"send_fails": true}, {"kill_fails": true}."""
 import json
 import os
 import sqlite3
@@ -100,6 +100,14 @@ elif command == "send":                        # JP-175: a plain message to a se
     with open(path, "a") as out:
         out.write(json.dumps({"to": argv[1], "text": argv[2]}) + "\n")
     print(json.dumps({"message_id": sum(1 for _ in open(path))}))
+elif command == "kill":                        # JP-191: the agent stops; the row stays, status dead
+    if behaviour.get("kill_fails"):
+        sys.stderr.write("kill refused\n")
+        sys.exit(1)
+    conn = db()
+    conn.execute("UPDATE sessions SET status = 'dead' WHERE id = ?", (argv[1],))
+    conn.commit()
+    print(json.dumps({"id": argv[1], "status": "dead"}))
 elif command == "archive":
     conn = db()
     conn.execute("UPDATE sessions SET archived = 1 WHERE id = ?", (argv[1],))
