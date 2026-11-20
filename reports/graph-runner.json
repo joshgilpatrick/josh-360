@@ -32,7 +32,7 @@
     {
       "graph": "triage",
       "run": "r-4400caa5965b",
-      "since": "2026-11-20T02:52:20Z",
+      "since": "2026-11-20T03:39:18Z",
       "state": "queued",
       "step": "revise",
       "ticket": "JP-116",
@@ -88,7 +88,7 @@
   },
   "tickets": [
     {
-      "attempt": 2,
+      "attempt": 3,
       "end": null,
       "graph": "triage",
       "jira_status": "Not Started",
@@ -171,19 +171,33 @@
         {
           "am_session": null,
           "attempt": 2,
-          "ended_at": null,
+          "ended_at": "2026-11-20T03:39:18Z",
           "kind": "role",
           "loop_count": 1,
           "model": null,
-          "outcome": null,
-          "reason": null,
+          "outcome": "_abandoned",
+          "reason": "spawn-refused",
           "session": null,
           "started_at": "2026-11-20T02:52:20Z",
           "step": "revise",
           "tier": "mid"
+        },
+        {
+          "am_session": null,
+          "attempt": 3,
+          "ended_at": null,
+          "kind": "role",
+          "loop_count": 2,
+          "model": null,
+          "outcome": null,
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T03:39:18Z",
+          "step": "revise",
+          "tier": "mid"
         }
       ],
-      "since": "2026-11-20T02:52:20Z",
+      "since": "2026-11-20T03:39:18Z",
       "started_at": "2026-11-20T01:49:51Z",
       "state": "queued",
       "step": "revise",
@@ -191,7 +205,7 @@
       "ticket": "JP-116",
       "waits_on": {
         "kind": "session",
-        "since": "2026-11-20T02:52:20Z",
+        "since": "2026-11-20T03:39:18Z",
         "text": "a free session slot"
       },
       "worktree_kept": null
