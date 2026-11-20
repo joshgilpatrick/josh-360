@@ -1,0 +1,3 @@
+2026-11-20T18:26:50Z advance r-1fd87c73e638: spawn of sign_off attempt 1 refused (bad-model, needs-fix, try 1): agent-manager: model "opus" is not one claude lists; it lists default, fable, sonnet, haiku
+2026-11-20T18:26:50Z advance r-1fd87c73e638: stopped at sign_off: needs a fix (bad-model): agent-manager: model "opus" is not one claude lists; it lists default, fable, sonnet, haiku. Fix: name a model Agent Manager lists: fix graphs/tiers.yaml or the `models` map in graphs/bindings/agent-manager/binding.json, then rerun graphs/tools/compile_graphs.py. The run goe
+2026-11-20T18:26:51Z triage_jp116_job: the walker did not admit the run: the entry gate 'triageable' did not admit the run: gate 'triageable' failed (1): JP-116 could not be read from Jira

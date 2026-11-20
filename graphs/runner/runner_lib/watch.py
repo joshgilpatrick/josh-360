@@ -64,7 +64,8 @@ def load_rules(path: Path = RULES) -> dict:
 def jira_client(environ: dict, run=subprocess.run) -> Optional[Jira]:
     """A Jira client, or None when there are no credentials (never `gate_io.fail`, which would exit). The email and the
     token are found the way the rest of the laptop finds them: the environment, then the email file and the keychain."""
-    if jira_fake.folder_from(environ) is not None:
+    fake = jira_fake.folder_from(environ)
+    if fake is not None and jira_fake.credentials(fake) is None:     # a test's fake that asks for no credentials
         return Jira.from_env(environ)
     found = jira_read.credentials(environ, run)
     if found is None:

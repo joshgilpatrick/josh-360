@@ -1,0 +1,58 @@
+{
+ "about": "The laptop's Claude Code stops listing opus, the model sign-off's tier (mid: claude-sonnet-5-5) maps to, so Agent Manager refuses the spawn for its model, a refusal that cannot pass until something is fixed. The run must stop at sign_off with no run of the step's cap spent (its one attempt stays open, so the walker counts none against the cap), and stay stopped (JP-183).",
+ "graph": "triage",
+ "ticket": "JP-9116",
+ "fixture": {
+  "status": "Not Started",
+  "creator": {
+   "accountId": "acct-josh"
+  }
+ },
+ "issues": {
+  "JP-94": {
+   "summary": "A made-up stand-in for the epic",
+   "issuetype": "Epic",
+   "status": "Not Started",
+   "project": {
+    "key": "JP"
+   },
+   "labels": [
+    "josh-360"
+   ]
+  }
+ },
+ "starts": {
+  "per_pass": 1,
+  "graphs": {
+   "triage": {
+    "on": true,
+    "jql": "project = JP AND status = \"Not Started\" AND labels = \"ready-to-run\"",
+    "route_record": false,
+    "inputs": {}
+   }
+  }
+ },
+ "claude_lists": [
+  "default",
+  "fable",
+  "sonnet",
+  "haiku"
+ ],
+ "plan": {
+  "default": "example"
+ },
+ "limit_minutes": 60,
+ "after_stop_passes": 2,
+ "expect": {
+  "stopped_at": "sign_off",
+  "within_minutes": 10,
+  "spawns": 1,
+  "runner_log_names": [
+   "\"opus\" is not one claude lists",
+   "needs a fix"
+  ],
+  "cap_used": {
+   "sign_off": 0
+  }
+ }
+}

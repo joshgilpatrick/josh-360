@@ -1,0 +1,138 @@
+{
+ "about": "The laptop's Claude Code stops listing opus, the model sign-off's tier (mid: claude-sonnet-5-5) maps to, so Agent Manager refuses the spawn for its model, a refusal that cannot pass until something is fixed. The run must stop at sign_off with no run of the step's cap spent (its one attempt stays open, so the walker counts none against the cap), and stay stopped (JP-183).",
+ "agent_manager": "0.47.1",
+ "checks": [
+  {
+   "check": "a run started for the ticket",
+   "detail": "r-3d856d48fe9b",
+   "ok": true
+  },
+  {
+   "check": "the run stopped at the step",
+   "detail": {
+    "ended": null,
+    "stopped": {
+     "reason": "step 'sign_off' has run as often as its tier allows (3 runs) and no question leads to a decision; use `allow` to allow one more",
+     "step": "sign_off"
+    }
+   },
+   "ok": true
+  },
+  {
+   "check": "it stopped within 10 minutes of e2e time",
+   "detail": {
+    "e2e_minutes": 50.0,
+    "why_the_drive_stopped": "stopped"
+   },
+   "ok": false
+  },
+  {
+   "check": "runner.log names what was refused, in the tool's own words",
+   "detail": {
+    "log": "/tmp/verify-josh-360/e2e-permanent-refusal-20261120T175215Z/home/.josh-360/logs/runner/runner.log",
+    "missing": [
+     "\"opus\" is not one claude lists",
+     "needs a fix"
+    ]
+   },
+   "ok": false
+  },
+  {
+   "check": "every Jira call carried the credentials found the laptop's way (email only in state/jira-email)",
+   "detail": {
+    "calls": 33,
+    "refused_401": []
+   },
+   "ok": true
+  },
+  {
+   "check": "Agent Manager was asked to spawn exactly 1 time(s)",
+   "detail": {
+    "spawns": [
+     {
+      "code": 1,
+      "stderr": "agent-manager: model \"opus\" is not one claude lists; it lists default, fable, sonnet, haiku\n"
+     },
+     {
+      "code": 1,
+      "stderr": "agent-manager: model \"opus\" is not one claude lists; it lists default, fable, sonnet, haiku\n"
+     },
+     {
+      "code": 1,
+      "stderr": "agent-manager: model \"opus\" is not one claude lists; it lists default, fable, sonnet, haiku\n"
+     },
+     {
+      "code": 1,
+      "stderr": "agent-manager: model \"opus\" is not one claude lists; it lists default, fable, sonnet, haiku\n"
+     },
+     {
+      "code": 1,
+      "stderr": "agent-manager: model \"opus\" is not one claude lists; it lists default, fable, sonnet, haiku\n"
+     },
+     {
+      "code": 1,
+      "stderr": "agent-manager: model \"opus\" is not one claude lists; it lists default, fable, sonnet, haiku\n"
+     },
+     {
+      "code": 1,
+      "stderr": "agent-manager: model \"opus\" is not one claude lists; it lists default, fable, sonnet, haiku\n"
+     },
+     {
+      "code": 1,
+      "stderr": "agent-manager: model \"opus\" is not one claude lists; it lists default, fable, sonnet, haiku\n"
+     },
+     {
+      "code": 1,
+      "stderr": "agent-manager: model \"opus\" is not one claude lists; it lists default, fable, sonnet, haiku\n"
+     }
+    ]
+   },
+   "ok": false
+  },
+  {
+   "check": "the walker counts 0 run(s) of sign_off against its cap (attempts that ended)",
+   "detail": {
+    "attempts": [
+     {
+      "allowed": false,
+      "attempt": 1,
+      "outcome": "_abandoned",
+      "step": "sign_off"
+     },
+     {
+      "allowed": false,
+      "attempt": 2,
+      "outcome": "_abandoned",
+      "step": "sign_off"
+     },
+     {
+      "allowed": false,
+      "attempt": 3,
+      "outcome": "_abandoned",
+      "step": "sign_off"
+     }
+    ],
+    "runs": 3,
+    "stopped": {
+     "reason": "step 'sign_off' has run as often as its tier allows (3 runs) and no question leads to a decision; use `allow` to allow one more",
+     "step": "sign_off"
+    }
+   },
+   "ok": false
+  }
+ ],
+ "commit": "4abd7d07c4940fd6d968e5d8fb931c75d703ab97",
+ "drive": {
+  "e2e_minutes": 60.0,
+  "passes": 12,
+  "real_seconds": 27.5,
+  "stopped_e2e_minutes": 50.0,
+  "why": "stopped"
+ },
+ "evidence": "/tmp/claude-0/e2e/proof/jp183b-permanent-refusal",
+ "ok": false,
+ "python": "/root/.local/bin/python3.9",
+ "run": "r-3d856d48fe9b",
+ "sandbox": "/tmp/verify-josh-360/e2e-permanent-refusal-20261120T175215Z",
+ "scenario": "permanent-refusal"
+}

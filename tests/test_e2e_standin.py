@@ -211,6 +211,45 @@ class StandIn(unittest.TestCase):
         self.play(self.prompt(role=role))
         self.assertEqual(json.loads(self.result.read_text()), example)
 
+    def drafter(self):
+        """A made-up role whose instructions carry two examples, as the ticket drafter's do (JP-184)."""
+        role = self.tmp / "roles" / "drafter"
+        role.mkdir(parents=True)
+        first = {"outcome": "drafted", "outputs": {"proposal": "<work folder>/draft-1-proposal.json"}}
+        second = {"outcome": "revised", "outputs": {"proposal": "<work folder>/revise-1-proposal.json"}}
+        (role / "instructions.md").write_text("Made-up role.\n\n```json\n{}\n```\n\nand\n\n```json\n{}\n```\n".format(
+            json.dumps(first), json.dumps(second)))
+        return role
+
+    def test_example_outcome_takes_that_outcomes_example_and_writes_its_companion_first(self):
+        """JP-190: the revise step plays the role's own example for `revised`, with its file put in the work folder."""
+        role, work = self.drafter(), self.tmp / "work-folder"
+        custom = self.tmp / "revise.json"
+        custom.write_text(json.dumps({"kind": "example", "example_outcome": "revised",
+                                      "companions": {"proposal": {"action": "revise", "authors": ["<your session id>"]}}}))
+        self.plan("example", revise=str(custom))
+        self.result = self.work / "revise-3.json"
+        prompt = self.prompt(step="revise", outcomes="revised, needs_josh", role=role) + "\nWork folder: {}".format(work)
+        self.play(prompt)
+        doc = json.loads(self.result.read_text())
+        self.assertEqual(doc, {"outcome": "revised", "outputs": {"proposal": str(work / "revise-3-proposal.json")}})
+        self.assertEqual(json.loads((work / "revise-3-proposal.json").read_text()),
+                         {"action": "revise", "authors": ["sess-0001"]})
+        wrote = [r["path"] for r in self.log("wrote")]
+        self.assertEqual(wrote, [str(work / "revise-3-proposal.json"), str(self.result)])
+
+    def test_example_outcome_with_no_such_example_writes_nothing(self):
+        """Before JP-184 the drafter's instructions had no `revised` example: the session rests with no result."""
+        role = self.tmp / "roles" / "old"
+        role.mkdir(parents=True)
+        (role / "instructions.md").write_text('```json\n{"outcome": "drafted", "outputs": {}}\n```\n')
+        custom = self.tmp / "revise.json"
+        custom.write_text(json.dumps({"kind": "example", "example_outcome": "revised"}))
+        self.plan("example", revise=str(custom))
+        self.play(self.prompt(step="revise", outcomes="revised, needs_josh", role=role))
+        self.assertFalse(self.result.exists())
+        self.assertEqual([r["outcome"] for r in self.log("no-example")], ["revised"])
+
     def test_a_scenario_can_name_its_own_outcome_and_outputs_per_step(self):
         custom = self.tmp / "custom.json"
         custom.write_text(json.dumps({"kind": "example", "outcome": "needs_input", "outputs": {"why": "made up"}}))

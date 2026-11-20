@@ -1,0 +1,99 @@
+{
+ "about": "binding.json's models map is empty, as it was until 6b03062, so the binding hands Agent Manager the tier's own name (claude-sonnet-5-5 for sign-off, a mid-tier step), which the laptop's Claude Code does not list. The run must stop after one spawn, say Agent Manager's own words in runner.log, and spawn nothing more in the passes after (JP-183).",
+ "agent_manager": "0.47.1",
+ "checks": [
+  {
+   "check": "a run started for the ticket",
+   "detail": "r-aebd0a2610cb",
+   "ok": true
+  },
+  {
+   "check": "the run stopped at the step",
+   "detail": {
+    "ended": null,
+    "stopped": {
+     "by": "runner",
+     "code": "bad-model",
+     "fingerprint": "59fe489b1d06e507",
+     "kind": "needs-fix",
+     "reason": "needs a fix (bad-model): agent-manager: model \"claude-sonnet-5-5\" is not one claude lists; it lists default, opus, fable, sonnet, haiku. Fix: name a model Agent Manager lists: fix graphs/tiers.yaml or the `models` map in graphs/bindings/agent-manager/binding.json, then rerun graphs/tools/compile_graphs.py. The run goes on by itself once the fix reaches the laptop, or resume it with runner.py resume --run r-aebd0a2610cb. It used no run of the step's cap.",
+     "step": "sign_off"
+    }
+   },
+   "ok": true
+  },
+  {
+   "check": "it stopped within 10 minutes of e2e time",
+   "detail": {
+    "e2e_minutes": 5.0,
+    "why_the_drive_stopped": "stopped"
+   },
+   "ok": true
+  },
+  {
+   "check": "runner.log names what was refused, in the tool's own words",
+   "detail": {
+    "log": "/tmp/verify-josh-360/e2e-bad-model-map-20261120T181618Z/home/.josh-360/logs/runner/runner.log",
+    "missing": []
+   },
+   "ok": true
+  },
+  {
+   "check": "every Jira call carried the credentials found the laptop's way (email only in state/jira-email)",
+   "detail": {
+    "calls": 24,
+    "refused_401": []
+   },
+   "ok": true
+  },
+  {
+   "check": "Agent Manager was asked to spawn exactly 1 time(s)",
+   "detail": {
+    "spawns": [
+     {
+      "code": 1,
+      "stderr": "agent-manager: model \"claude-sonnet-5-5\" is not one claude lists; it lists default, opus, fable, sonnet, haiku\n"
+     }
+    ]
+   },
+   "ok": true
+  },
+  {
+   "check": "the walker counts 0 run(s) of sign_off against its cap (attempts that ended)",
+   "detail": {
+    "attempts": [
+     {
+      "allowed": false,
+      "attempt": 1,
+      "outcome": null,
+      "step": "sign_off"
+     }
+    ],
+    "runs": 1,
+    "stopped": {
+     "by": "runner",
+     "code": "bad-model",
+     "fingerprint": "59fe489b1d06e507",
+     "kind": "needs-fix",
+     "reason": "needs a fix (bad-model): agent-manager: model \"claude-sonnet-5-5\" is not one claude lists; it lists default, opus, fable, sonnet, haiku. Fix: name a model Agent Manager lists: fix graphs/tiers.yaml or the `models` map in graphs/bindings/agent-manager/binding.json, then rerun graphs/tools/compile_graphs.py. The run goes on by itself once the fix reaches the laptop, or resume it with runner.py resume --run r-aebd0a2610cb. It used no run of the step's cap.",
+     "step": "sign_off"
+    }
+   },
+   "ok": true
+  }
+ ],
+ "commit": "6101ee28eabd6722ef6d2db4993d7d5e3007e604",
+ "drive": {
+  "e2e_minutes": 15.0,
+  "passes": 3,
+  "real_seconds": 9.3,
+  "stopped_e2e_minutes": 5.0,
+  "why": "stopped"
+ },
+ "evidence": "/tmp/claude-0/e2e/all/bad-model-map",
+ "ok": true,
+ "python": "/root/.local/bin/python3.9",
+ "run": "r-aebd0a2610cb",
+ "sandbox": "/tmp/verify-josh-360/e2e-bad-model-map-20261120T181618Z",
+ "scenario": "bad-model-map"
+}

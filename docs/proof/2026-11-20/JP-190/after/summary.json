@@ -1,0 +1,35 @@
+{
+ "ok": true,
+ "scenarios": {
+  "bad-model-map": {
+   "evidence": "/tmp/claude-0/e2e/all/bad-model-map",
+   "failed": [],
+   "ok": true
+  },
+  "ledger-record-pace": {
+   "evidence": "/tmp/claude-0/e2e/all/ledger-record-pace",
+   "failed": [],
+   "ok": true
+  },
+  "permanent-refusal": {
+   "evidence": "/tmp/claude-0/e2e/all/permanent-refusal",
+   "failed": [],
+   "ok": true
+  },
+  "triage-happy": {
+   "evidence": "/tmp/claude-0/e2e/all/triage-happy",
+   "failed": [],
+   "ok": true
+  },
+  "triage-revise": {
+   "evidence": "/tmp/claude-0/e2e/all/triage-revise",
+   "failed": [],
+   "ok": true
+  },
+  "undeclared-output": {
+   "evidence": "/tmp/claude-0/e2e/all/undeclared-output",
+   "failed": [],
+   "ok": true
+  }
+ }
+}
