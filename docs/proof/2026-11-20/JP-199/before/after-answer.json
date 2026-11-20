@@ -1,0 +1,12 @@
+{
+  "chose": "answered",
+  "next": {
+    "action": "run",
+    "step": "revise",
+    "attempt": 2
+  },
+  "answers_md": "## ask_josh \u00b7 2026-11-20T22:56:28Z\n\nanswered\n\n",
+  "ticket_comments": [
+    "{\"type\": \"doc\", \"version\": 1, \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Triage: one question for Josh | run r-a62acf660c0b | next gate: your answer in Needs you\"}, {\"type\": \"hardBreak\"}, {\"type\": \"text\", \"text\": \"Which file holds the first step?\"}, {\"type\": \"hardBreak\"}, {\"type\": \"text\", \"text\": \"Recommended: laptop/install.py, because it holds STEPS.\"}]}]}"
+  ]
+}

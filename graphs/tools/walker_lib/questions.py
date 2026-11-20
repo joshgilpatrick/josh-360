@@ -11,7 +11,7 @@ import datetime
 import json
 import os
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 # A headless question has no deadline: the turn is paused, not polling. action-triage writes this value for it
 # (src/core/askHookDecision.ts, HEADLESS_WAIT_UNTIL), and its answerFromUi refuses an answer once now >= waitUntil.
@@ -48,9 +48,10 @@ def _iso(now: str) -> str:
     return datetime.datetime.strptime(now, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
 
-def create(qid: str, run_id: str, ticket_key: Optional[str], cwd: str, header: str, text: str, choices: List[str],
-           now: str) -> None:
-    """Add the question if it is not there yet (parking twice must not reset an answer)."""
+def create(qid: str, run_id: str, ticket_key: Optional[str], cwd: str, header: str, text: str,
+           choices: List[Union[str, Dict[str, str]]], now: str) -> None:
+    """Add the question if it is not there yet (parking twice must not reset an answer). A choice is a label, or a
+    {label, description} the card shows under it (JP-199)."""
     path = questions_dir() / (qid + ".json")
     if path.is_file():
         return
@@ -59,7 +60,7 @@ def create(qid: str, run_id: str, ticket_key: Optional[str], cwd: str, header: s
         "id": qid, "sessionId": "walker-" + run_id, "toolUseId": qid, "runner": "headless", "cwd": cwd,
         "agentManagerSessionId": None, "ticketKey": ticket_key,
         "questions": [{"question": text, "header": header[:12], "multiSelect": False,
-                       "options": [{"label": c} for c in choices]}],
+                       "options": [dict(c) if isinstance(c, dict) else {"label": c} for c in choices]}],
         "askedAt": asked, "waitUntil": HEADLESS_WAIT_UNTIL, "state": "open"})
 
 

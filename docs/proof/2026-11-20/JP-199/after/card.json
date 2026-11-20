@@ -1,0 +1,14 @@
+{
+  "question": "JP-9001 needs one answer from you before it can be Ready.\n\nWhich file holds the first step?\n\nRecommended: laptop/install.py, because it holds STEPS.",
+  "header": "ask_josh",
+  "multiSelect": false,
+  "options": [
+    {
+      "label": "laptop/install.py",
+      "description": "Recommended, because it holds STEPS."
+    },
+    {
+      "label": "park"
+    }
+  ]
+}

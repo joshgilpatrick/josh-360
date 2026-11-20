@@ -201,6 +201,40 @@ def _ancestors_card(run: Run, step: str) -> Optional[str]:
         return card[:4000]
 
 
+def _ancestors_options(run: Run, step: str) -> List[Dict[str, str]]:
+    """Answers a step above the ask offers for its card (JP-199): an output named `options`, a list of
+    {label, description}. Each needs a short, non-empty label that is not already one of the ask's choices."""
+    g = run.graph
+    found: object = None
+    for sid in g.order:
+        if step in g.descendants(sid) and "options" in (run.doc.get("outputs", {}).get(sid) or {}):
+            found = run.doc["outputs"][sid]["options"]
+    choices = list(g.steps[step]["ask"]["choices"])
+    if "answered" not in choices:          # a chosen option is the outcome `answered`; without it the answer is refused
+        return []
+    out: List[Dict[str, str]] = []
+    for item in found if isinstance(found, list) else []:
+        label = item.get("label") if isinstance(item, dict) else item
+        if not isinstance(label, str) or not label.strip() or label.strip() in choices:
+            continue
+        option = {"label": label.strip()[:300]}
+        if isinstance(item, dict) and isinstance(item.get("description"), str) and item["description"].strip():
+            option["description"] = item["description"].strip()[:500]
+        if option["label"] not in [o["label"] for o in out]:
+            out.append(option)
+    return out
+
+
+def card_options(run: Run, step: str) -> List[Dict[str, str]]:
+    """The card's answers: what a step above offered, then the ask's choices. When something was offered, the bare
+    `answered` choice is left off, since choosing an offered answer or typing one is how Josh answers (JP-199)."""
+    offered = _ancestors_options(run, step)
+    choices = list(run.graph.steps[step]["ask"]["choices"])
+    if offered:
+        choices = [c for c in choices if c != "answered"]
+    return offered + [{"label": c} for c in choices]
+
+
 def category_of(run: Run, step: str):
     """`<graph>/<step>` plus `;<name>=<value>` for each name in the ask's split. Second value: precedent allowed."""
     split = run.graph.steps[step]["ask"].get("split") or []
@@ -267,7 +301,7 @@ def _ask_text(run: Run, step: str) -> str:
 def _ensure_question(run: Run, step: str, attempt: int) -> str:
     qid = questions.question_id(run.run_id, step, attempt)
     questions.create(qid, run.run_id, run.ticket, str(run.cwd()), step, _ask_text(run, step),
-                     list(run.graph.steps[step]["ask"]["choices"]), ledgerio.now())
+                     card_options(run, step), ledgerio.now())
     set_flag(run, True)
     return qid
 
@@ -292,7 +326,7 @@ def park(run: Run, step: str) -> None:
         run.conn, ask_id="ask-{}-{}-{}".format(run.run_id, step, attempt), run_id=run.run_id, step_run_id=row_id,
         category=category, question_key="{}/{}".format(g.id, step), system=system, work_type=work_type,
         ticket_key=run.ticket, question=None if run.phi else _ask_text(run, step)[:500],
-        choices=None if run.phi else list(g.steps[step]["ask"]["choices"]), stage=stage, suggested=suggested,
+        choices=None if run.phi else [o["label"] for o in card_options(run, step)], stage=stage, suggested=suggested,
         precedent_id=precedent_id, channel="needs-you", now=ledgerio.now())
     _ensure_question(run, step, attempt)
 
