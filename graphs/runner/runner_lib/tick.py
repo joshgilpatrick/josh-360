@@ -52,7 +52,16 @@ def needs_advance(conn, run: dict) -> bool:
     stopped = doc.get("stopped")
     if stopped:
         noted = (_read_json(runfolder.folder(run_id) / "runner.json") or {}).get("noted") or []
-        return "stopped:{}".format(stopped.get("step")) not in noted
+        if notify.stop_key(stopped) not in noted:
+            return True
+        if stopped.get("fingerprint"):                 # JP-183: a stop that needs a fix goes on once its inputs change
+            from .advance import load_binding
+            from . import failures
+            try:
+                return failures.changed_since(stopped, run_id, load_binding(RUNNER))
+            except ValueError:
+                return False
+        return False
     if step is not None and step["kind"] == "ask":
         record = questions.read(questions.question_id(run_id, step["step"], step["attempt"]))
         if record is not None and record.get("state") == "open":
