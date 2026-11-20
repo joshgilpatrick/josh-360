@@ -138,7 +138,9 @@ steps:
       one question.
     inputs: [ticket_key, gaps]
     outputs:
-      proposal: { type: string, contract: ticket-proposal }
+      # JP-184: the path is the one output. The proposal's own fields (action, tickets, closes, authors, needs_josh)
+      # go in the file, never straight under the result's "outputs", or the walker refuses the result.
+      proposal: { type: string, description: "Path to the revision, a JSON file in the work folder", contract: ticket-proposal }
     outcomes: [revised, needs_josh]
 
   - id: apply_revision
