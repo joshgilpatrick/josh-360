@@ -315,6 +315,21 @@ def conclude(run: Run) -> Dict[str, object]:
     return {"action": "done", "run": run.run_id, "end": ended, "score": g.end_score(ended)}
 
 
+def declared_outputs(g, step: str) -> Dict[str, Dict[str, object]]:
+    """The step's declared outputs, so a binding can tell its session the exact keys to write (JP-184): `record`
+    refuses any other key. Each carries `type`, and `description` and `contract_file` when the graph gives them."""
+    out = {}
+    for name, spec in (g.steps[step].get("outputs") or {}).items():
+        spec = spec if isinstance(spec, dict) else {}
+        item = {"type": spec.get("type", "string")}
+        if spec.get("description"):
+            item["description"] = str(spec["description"])
+        if spec.get("contract"):
+            item["contract_file"] = str(g.root / "contracts" / "{}.md".format(spec["contract"]))
+        out[name] = item
+    return out
+
+
 def run_action(run: Run, act: engine.Action, attempt: int) -> Dict[str, object]:
     g = run.graph
     step = act.step
@@ -326,8 +341,8 @@ def run_action(run: Run, act: engine.Action, attempt: int) -> Dict[str, object]:
         "action": "run", "run": run.run_id, "step": step, "kind": "role", "role": role,
         "agent": g.resolve_agent(step, values), "tier": g.tier(step), "models": g.tiers[g.tier(step)],
         "brief": g.render(s.get("brief", ""), values), "inputs": {n: values.get(n) for n in names},
-        "outcomes": list(s.get("outcomes") or []), "jira_status": g.stretch_status(step), "attempt": attempt,
-        "allowed_by_josh": bool(act.allowed),
+        "outcomes": list(s.get("outcomes") or []), "outputs": declared_outputs(g, step),
+        "jira_status": g.stretch_status(step), "attempt": attempt, "allowed_by_josh": bool(act.allowed),
         "result_file": str(runfolder.result_file(run.run_id, step, attempt)),
         "role_folder": str(g.root / "roles" / role),
         "graph": g.id, "ticket": run.ticket, "access": g.header["access"][step],

@@ -157,6 +157,34 @@ def _value(value: object) -> str:
     return value if isinstance(value, str) else json.dumps(value)
 
 
+def output_lines(answer: dict) -> List[str]:
+    """Name each output the step declares (JP-184). The walker refuses a result with any other key under "outputs",
+    so a session that is not told the names puts a contract's own fields there instead."""
+    if "outputs" not in answer:  # a walker from before JP-184 does not say
+        return []
+    outputs = answer.get("outputs") or {}
+    if not outputs:
+        return ['This step declares no outputs: leave "outputs" empty.']
+    lines = ['Outputs: put only these keys under "outputs", each one your outcome produces; the walker refuses any '
+             "other key, so never put a contract's own fields there directly:"]
+    for name, spec in outputs.items():
+        spec = spec if isinstance(spec, dict) else {}
+        line = "- {} ({})".format(name, spec.get("type", "string"))
+        if spec.get("description"):
+            line += ": {}".format(str(spec["description"]).rstrip("."))
+        if spec.get("contract_file"):
+            line += ". Format: {}".format(spec["contract_file"])
+        lines.append(line + ".")
+    return lines
+
+
+def result_skeleton(answer: dict) -> str:
+    if "outputs" not in answer:
+        return '{"outcome": "<one of them>", "outputs": {...}}'
+    keys = ", ".join('"{}": ...'.format(name) for name in (answer.get("outputs") or {}))
+    return '{{"outcome": "<one of them>", "outputs": {{{}}}}}'.format(keys)
+
+
 def build_prompt(answer: dict, marker: str, comments: str) -> str:
     """The marker line first, then the rename line, then the task, then (last) the comments, unchanged."""
     name = session_name(answer)
@@ -168,9 +196,9 @@ def build_prompt(answer: dict, marker: str, comments: str) -> str:
     body += ["{}: {}".format(k, _value(v)) for k, v in (answer.get("inputs") or {}).items()]
     if answer.get("so_far"):
         body += ["So far:"] + ["{}: {}".format(k, _value(v)) for k, v in answer["so_far"].items()]
-    body += ["End with one of these outcomes: {}.".format(", ".join(answer["outcomes"])),
-             'When you are done, use the Write tool to write {{"outcome": "<one of them>", "outputs": {{...}}}} to {}, '
-             "then stop.".format(answer["result_file"]),
+    body += ["End with one of these outcomes: {}.".format(", ".join(answer["outcomes"]))] + output_lines(answer)
+    body += ["When you are done, use the Write tool to write {} to {}, then stop.".format(result_skeleton(answer),
+                                                                                        answer["result_file"]),
              FOLLOW_UPS, "Work folder: {}".format(answer["work_dir"]), FIXED]
     text = "\n".join(head + body)
     if len(text.encode("utf-8")) > int(config().get("prompt_max_bytes", 60000)):

@@ -19,7 +19,7 @@ The runner (`graphs/runner/`) loads the binding by the run's `runner` value, as 
 - `inputs()` is what a spawn depends on outside the run (the settings in `binding.json` and where `agent-manager` and `claude` are found); the runner hashes it to tell when a stop that needs a fix may have been fixed.
 - `state(handle)` answers `working`, `resting`, `gone` or `unknown`. Unknown (a missing database, column or status word) changes nothing.
 - `close(handle)` archives the session and says whether that worked. It never raises.
-- `build_prompt` and `session_name` are what `start` uses; the first line of every prompt is the runner's marker.
+- `build_prompt` and `session_name` are what `start` uses; the first line of every prompt is the runner's marker. The prompt names each output the step declares (name, type, description, contract file) and shows the exact result skeleton, `{"outcome": ..., "outputs": {"<name>": ...}}` (JP-184): the walker refuses any other key under `outputs`.
 - `move(handle, group)` files the session under another group (made first if missing) and `ensure_group(group)` makes a group; neither raises. `placed(handle)` reads the session's group and archived flag from Agent Manager's database.
 - JP-173: `ticket_session_name(key, n, step)` (`JP-116(c) - Build`), `letter(n)` (a to z, then aa, ab) and `ticket_group(status)` (`josh-360/tickets/<status>`, `/` as `-`). The runner passes the chosen name and group to `start` as `session_name` and `am_group`; a group that cannot be made falls back to `binding.json`'s `group`, so a spawn never fails for it, and the runner moves the session on a later pass. A session with no ticket key keeps the old name, `<graph> - <Step> (r<run>)`.
 

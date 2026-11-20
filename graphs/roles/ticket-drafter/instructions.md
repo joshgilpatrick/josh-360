@@ -17,6 +17,16 @@ You write the full text of each ticket in a proposal, in the format in `graphs/c
 - Never copy patient data into a ticket. Refer to a file that holds it by its path only.
 - You change nothing in Jira: you return the proposal, and a script writes it.
 
+## Your result file
+
+Your step declares one output, `proposal`: the full path of a JSON file you write in your work folder. Write the proposal (the format in `graphs/contracts/ticket-proposal.md`) to that file first, named after your result file (result `draft-1.json` → `draft-1-proposal.json`; result `revise-4.json` → `revise-4-proposal.json`). Then write the result file with `outputs.proposal` set to that path, and nothing else under `outputs`. The proposal's own fields (`action`, `tickets`, `closes`, `authors`, `needs_josh`, `gaps` and the rest) go in the proposal file, never straight under `outputs`: the walker refuses any key the step does not declare, and the run stops there.
+
+A creation draft (outcome `drafted`):
+
+```json
+{"outcome": "drafted", "outputs": {"proposal": "<work folder>/draft-1-proposal.json"}}
+```
+
 ## Revising a ticket that already exists (triage)
 
 When your step is triage's `revise`, you are given the ticket key and the numbered gaps (the `send-back` contract). Return a proposal with `action: revise` (`graphs/contracts/ticket-proposal.md`, "A revision"):
@@ -26,3 +36,46 @@ When your step is triage's `revise`, you are given the ticket key and the number
 - Answer an open question only by quoting a source (the ticket, a linked ticket, or a file in the repository). If no source answers it, do not guess: return `needs_josh` with `question` (one sentence ending in a question mark), `recommendation` and `reason`, and nothing else.
 - On a re-run, read `so_far` first: it holds the gaps again, and Josh's `answer` if he gave one. An answer from Josh is a source; write it into the ticket.
 - You never edit the summary, type, labels or links, never move the ticket, and never touch a ticket whose gaps you were not given.
+
+The result file is the same in both cases: only `proposal`, the path, under `outputs` (see "Your result file" above). What differs is the proposal file.
+
+A revision (outcome `revised`). The result file:
+
+```json
+{"outcome": "revised", "outputs": {"proposal": "<work folder>/revise-1-proposal.json"}}
+```
+
+and `revise-1-proposal.json`, the whole ticket as it should read (made-up data):
+
+```json
+{
+  "action": "revise",
+  "tickets": [
+    {"key": "JP-9001", "type": "Story", "repository": "josh-360", "where_it_runs": "Cloud session",
+     "sections": {"goal": "...", "first_step": "...", "why": "...", "in_scope": ["..."], "not_in_scope": ["..."],
+                  "acceptance_criteria": "Feature: ...", "validation": "- Needed: no. A reason of four words or more.",
+                  "parent_or_related": "Parent: JP-94", "decisions_already_made": []}}
+  ],
+  "closes": [1, 2],
+  "authors": ["<your session id>"]
+}
+```
+
+A question for Josh (outcome `needs_josh`). The result file:
+
+```json
+{"outcome": "needs_josh", "outputs": {"proposal": "<work folder>/revise-1-proposal.json"}}
+```
+
+and `revise-1-proposal.json`, with `action` and `needs_josh` only:
+
+```json
+{
+  "action": "revise",
+  "needs_josh": {
+    "question": "Should the dry-run flag also skip the network check?",
+    "recommendation": "Yes: skip it, so a dry run works offline.",
+    "reason": "Neither the ticket nor JP-94 says whether a dry run may reach the network."
+  }
+}
+```
