@@ -12,7 +12,7 @@ In a cloud session on 20 November 2026, on the branch's committed `HEAD` (no `--
 
 Each scenario's folder holds `verdict.json` (the checks and what each saw), `passes.jsonl` (one line per pass: e2e minutes, run, Jira status, sessions, what each job did), `logs/` (with `runner/runner.log`), `run/`, `report.txt`, `jira/calls.jsonl`, `agent-manager/` and `sandbox/`.
 
-`python3 scripts/check.py` (the full suite: 1,423 tests, with Agent Manager installed) passed after the changes below; the driver's own tests are `tests/test_e2e_driver.py`.
+`python3 scripts/check.py` (the full suite, with Agent Manager installed) passed with 0 problems after the changes below; the driver's own tests are `tests/test_e2e_driver.py`.
 
 ## Scenario to proof
 
