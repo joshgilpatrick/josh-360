@@ -139,7 +139,8 @@ def cmd_record(conn, root: Path, args) -> dict:
     declared = g.steps[args.step].get("outputs") or {}
     unknown = [k for k in outputs if k not in declared]
     if unknown:
-        raise Refused("step '{}' does not declare the output '{}'".format(args.step, unknown[0]))
+        raise Refused("step '{}' does not declare the output '{}' (it declares {}; each goes under \"outputs\" by "
+                      "that name)".format(args.step, unknown[0], ", ".join(declared) or "none"))
     try:
         found = follow_ups.check(raw_follow_ups)
     except follow_ups.Invalid as exc:
