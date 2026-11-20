@@ -256,9 +256,9 @@
     {
       "graph": "triage",
       "run": "r-4400caa5965b",
-      "since": "2026-11-20T01:49:51Z",
-      "state": "between",
-      "step": null,
+      "since": "2026-11-20T14:26:46Z",
+      "state": "working",
+      "step": "revise",
       "ticket": "JP-116",
       "waiting_on": null
     },
@@ -292,16 +292,16 @@
   ],
   "rails": true,
   "runs": {
-    "between": 1,
+    "between": 0,
     "open": 6,
     "parked": 0,
     "queued": 0,
     "stopped": 0,
     "waiting": 5,
-    "working": 0
+    "working": 1
   },
   "session_limit": 2,
-  "sessions_live": 0,
+  "sessions_live": 1,
   "status": "ok",
   "stopped": [],
   "ticket_counts": {
@@ -312,10 +312,10 @@
   },
   "tickets": [
     {
-      "attempt": null,
+      "attempt": 4,
       "end": null,
       "graph": "triage",
-      "jira_status": null,
+      "jira_status": "Not Started",
       "refused": [],
       "run": "r-4400caa5965b",
       "runner": "agent-manager",
@@ -419,13 +419,27 @@
           "started_at": "2026-11-20T03:39:18Z",
           "step": "revise",
           "tier": "mid"
+        },
+        {
+          "am_session": "5ad6d4ec",
+          "attempt": 4,
+          "ended_at": null,
+          "kind": "role",
+          "loop_count": 3,
+          "model": null,
+          "outcome": null,
+          "reason": null,
+          "session": "8df77674-fa2a-404b-a28c-46c5971826aa",
+          "started_at": "2026-11-20T14:26:46Z",
+          "step": "revise",
+          "tier": "mid"
         }
       ],
-      "since": "2026-11-20T01:49:51Z",
+      "since": "2026-11-20T14:26:46Z",
       "started_at": "2026-11-20T01:49:51Z",
-      "state": "between",
-      "step": null,
-      "step_label": null,
+      "state": "working",
+      "step": "revise",
+      "step_label": "Revise",
       "ticket": "JP-116",
       "waits_on": null,
       "worktree_kept": null
