@@ -232,6 +232,15 @@ def _keep(run_id: str, doc: dict, binding, now: Callable[[], float]) -> None:
         paths.log("advance {}: session of {} not noted: {}".format(run_id, doc.get("step"), type(err).__name__))
 
 
+def _finish(run_id: str, doc: dict, binding, now: Callable[[], float]) -> None:
+    """Close a ticket's session once its result is recorded (JP-191). Never stops the run: the next pass's sync
+    finishes what this could not."""
+    try:
+        amgroups.finish(doc, binding, now())
+    except Exception as err:  # noqa: BLE001
+        paths.log("advance {}: session of {} not closed: {}".format(run_id, doc.get("step"), type(err).__name__))
+
+
 def _live_sessions() -> list:
     """Session files that hold a slot: live, and the attempt the walker still has open (an attempt it ended by
     another road, `walker abandon` by hand or a crash before the file was rewritten, holds nothing). Unreadable counts."""
@@ -306,9 +315,13 @@ def _started(run_id: str, a: dict, doc: dict, cfg: dict, binding, now: Callable[
             paths.log("advance {}: result of {} refused: {}".format(run_id, step, str(err)[:200]))
             return _abandon(run_id, doc, "bad-result", now, root, off)
         doc.update(state="recorded", ended_at=now())
-        if cfg["archive_finished_sessions"] and not doc.get("n"):   # a ticket's session stays in view (JP-173)
+        if doc.get("n"):
+            doc["closes"] = True                           # JP-191: the sync closes it if `_finish` cannot
+        if cfg["archive_finished_sessions"] and not doc.get("n"):   # a keyless session is archived on its result
             doc["closed"] = binding.close(doc.get("handle") or {})
         sessionfile.write(run_id, step, attempt, doc)
+        if doc.get("n"):                                   # a ticket's: killed and filed in completed-steps (JP-191)
+            _finish(run_id, doc, binding, now)
         paths.log("advance {}: recorded {} attempt {}".format(run_id, step, attempt))
         return "off" if off else None
     began = float(doc.get("started_at") or doc.get("intent_at") or 0)
