@@ -140,4 +140,4 @@ jobs:
     every: 5m
     timeout: 3m
     report: true
-    description: JP-185. Keeps one Agent Manager terminal named console, in group josh-360, running scripts/console.py (Josh 360's live activity in one colored stream). Does nothing while the console's heartbeat is fresh; never opens a second terminal when it cannot read the terminal list. touch ~/.josh-360/state/console-off stops it. The report is the status, the terminal id and the heartbeat's age only.
+    description: JP-185. Keeps one Agent Manager terminal named console, in group josh-360, running scripts/console.py (Josh 360's live activity in one colored stream). Does nothing while the console's heartbeat is fresh; never opens a second terminal when it cannot read Agent Manager's snapshot (JP-196, since `terminal list` refuses a launchd job). touch ~/.josh-360/state/console-off stops it. The report is the status, the terminal id and the heartbeat's age only.

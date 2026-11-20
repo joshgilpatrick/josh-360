@@ -188,6 +188,26 @@ class MissingParts(h.DoctorCase):
         self.assertIn("ledger-record.log", r["jobs.ledger-record"].fix)
         self.assertEqual(r["jobs.ledger-backup"].status, "warn")
 
+    def test_a_job_that_exits_0_but_reports_it_did_not_do_its_work_fails(self):
+        # JP-196: console-terminal exited 0 every five minutes on the laptop while its report said unknown.
+        reports = self.home / "state" / "reports"
+        reports.mkdir(parents=True, exist_ok=True)
+        (reports / "console-terminal.json").write_text(json.dumps({
+            "status": "unknown", "reason": "terminal list: exit 1: not inside an Agent Manager session"}))
+        (reports / "ledger-upload.json").write_text(json.dumps({"status": "failed", "error": "container unreachable"}))
+        (reports / "graph-runner.json").write_text(json.dumps({"status": "ok"}))
+        r = self.results()
+        self.assertEqual(r["jobs.console-terminal"].status, "fail")
+        self.assertIn("status unknown (terminal list: exit 1", r["jobs.console-terminal"].detail)
+        self.assertIn("reports/console-terminal.json", r["jobs.console-terminal"].fix)
+        self.assertEqual(r["jobs.ledger-upload"].status, "fail")
+        self.assertIn("status failed (container unreachable)", r["jobs.ledger-upload"].detail)
+        self.assertEqual(r["jobs.graph-runner"].status, "pass")
+        (reports / "console-terminal.json").write_text(json.dumps({"status": "running", "heartbeat_fresh": 1}))
+        (reports / "ledger-upload.json").write_text("not json")
+        r = self.results()
+        self.assertEqual((r["jobs.console-terminal"].status, r["jobs.ledger-upload"].status), ("pass", "pass"))
+
     def test_once_jobs_that_never_ran_or_wait_are_not_failures_but_failed_ones_are(self):
         path = self.home / "state" / "jobs-state.json"
         state = json.loads(path.read_text())
