@@ -277,6 +277,9 @@ class ACheckThatFailsGoesToTheDrafterAndBack(RunCase):
         self.assertEqual((out["action"], out["step"]), ("parked", "ask_at_limit"), out)
         notes = [c for c in map(json.dumps, self.state()["comments"][KEY]) if "revised by the ticket drafter" in c]
         self.assertEqual(len(notes), 2)                      # exactly two rounds were written, never a third
+        text = json.dumps(questions.read(out["question_id"]))          # JP-195: the question says why
+        self.assertIn("ended with `exhausted`", text)
+        self.assertNotIn("gaps are on the ticket", text)
 
     def test_one_more_round_runs_the_drafter_once_more_and_then_asks_again(self):
         self.incomplete()

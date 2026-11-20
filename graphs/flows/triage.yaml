@@ -189,7 +189,7 @@ steps:
     needs: [verdict]
     when: { step: verdict, outcome: exhausted }
     ask:
-      question: "{{ inputs.ticket_key }} is still not Ready after the rounds allowed. Its remaining gaps are on the ticket."
+      question: "{{ inputs.ticket_key }} is not Ready yet, and triage has reached one of its limits. The reason is below."
       choices: [one_more_round, park]
     on:
       # One more round re-reads and re-checks the ticket. The drafter runs again only if the

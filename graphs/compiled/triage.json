@@ -422,7 +422,7 @@
       "one_more_round",
       "park"
      ],
-     "question": "{{ inputs.ticket_key }} is still not Ready after the rounds allowed. Its remaining gaps are on the ticket."
+     "question": "{{ inputs.ticket_key }} is not Ready yet, and triage has reached one of its limits. The reason is below."
     },
     "id": "ask_at_limit",
     "needs": [
@@ -517,7 +517,7 @@
   }
  },
  "sources": {
-  "flows/triage.yaml": "14994d25b8ff2693861584eb1271cd779f0fc8e33f9697f7b752dfb829f01dad",
+  "flows/triage.yaml": "5c9add3472caa5013ca32ac00e063fe665ea394984a0b257ba94e956068a471b",
   "roles/sign-off/role.yaml": "2c940e901993068ff0bb897db05e74c23597b8a730e28ba2148bf29d47830254",
   "roles/ticket-drafter/role.yaml": "392bcc63415c2ce8d1593dcf345b9ed21cd4d999cdc7571d936d5ed16b7ef44a",
   "tiers.yaml": "af81c945dec4862af3be1d3957865dd692e7c77e42df42fa43b35c1fe3a14d44"
