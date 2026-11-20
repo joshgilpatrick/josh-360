@@ -151,6 +151,17 @@ def _azure_configured(ctx: Ctx) -> bool:
         return True
 
 
+def _redactions_waiting(pending: Path) -> bool:
+    """True when the pending file lists a redaction. The upload leaves `[]` behind once it has caught up, so an empty list is
+    not waiting; a file that cannot be read is, since unknown is not empty."""
+    if not pending.is_file():
+        return False
+    try:
+        return bool(json.loads(pending.read_text(encoding="utf-8")))
+    except (OSError, ValueError):
+        return True
+
+
 @check("accounts", "azure-upload")
 def azure_upload(ctx: Ctx) -> Result:
     cid = "accounts.azure-upload"
@@ -171,7 +182,7 @@ def azure_upload(ctx: Ctx) -> Result:
         age = ctx.age_seconds(when.timestamp())
     except ValueError:
         return Result(cid, WARN, "azure-upload.json has a last_success that is not a time", "read ~/.josh-360/logs/ledger-upload.log")
-    if pending.is_file():
+    if _redactions_waiting(pending):
         return Result(cid, WARN, "a redaction is waiting to reach the uploaded copies (last upload {})".format(ago(age)),
                       "it finishes on the next daily upload once az login works")
     if age > 3 * 86400:
