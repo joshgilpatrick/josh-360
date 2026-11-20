@@ -29,11 +29,12 @@ test_matchers_pick_the_tool (test_e2e_standin.StandIn.test_matchers_pick_the_too
 test_probe_answers_initialize_with_the_laptops_models (test_e2e_standin.StandIn.test_probe_answers_initialize_with_the_laptops_models) ... ok
 test_question_asks_and_waits_at_the_dialog (test_e2e_standin.StandIn.test_question_asks_and_waits_at_the_dialog) ... ok
 test_silent_writes_nothing_and_stops (test_e2e_standin.StandIn.test_silent_writes_nothing_and_stops) ... ok
+test_the_laptop_list_matches_what_the_binding_says_agent_manager_accepts (test_e2e_standin.StandIn.test_the_laptop_list_matches_what_the_binding_says_agent_manager_accepts) ... ok
 test_the_stand_in_parses_as_python_39 (test_e2e_standin.StandIn.test_the_stand_in_parses_as_python_39) ... ok
 test_version (test_e2e_standin.StandIn.test_version) ... ok
 test_wrong_shape (test_e2e_standin.StandIn.test_wrong_shape) ... ok
 
 ----------------------------------------------------------------------
-Ran 26 tests in 35.086s
+Ran 27 tests in 36.152s
 
 OK
