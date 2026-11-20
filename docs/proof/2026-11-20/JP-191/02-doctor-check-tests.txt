@@ -1,0 +1,28 @@
+test_a_finished_session_is_left_to_the_completed_steps_check (test_doctor.ClosedSessionsInGroups.test_a_finished_session_is_left_to_the_completed_steps_check) ... ok
+test_a_killed_session_is_not_in_view (test_doctor.ClosedSessionsInGroups.test_a_killed_session_is_not_in_view) ... ok
+test_a_killed_unknown_session_in_a_ticket_group_is_not_a_problem (test_doctor.ClosedSessionsInGroups.test_a_killed_unknown_session_in_a_ticket_group_is_not_a_problem) ... ok
+test_a_wrong_name_fails (test_doctor.ClosedSessionsInGroups.test_a_wrong_name_fails) ... ok
+test_an_unknown_session_in_a_ticket_group_fails (test_doctor.ClosedSessionsInGroups.test_an_unknown_session_in_a_ticket_group_fails) ... ok
+test_an_unreadable_runner_file_fails_and_a_missing_database_skips (test_doctor.ClosedSessionsInGroups.test_an_unreadable_runner_file_fails_and_a_missing_database_skips) ... ok
+test_nothing_in_view_is_a_skip (test_doctor.ClosedSessionsInGroups.test_nothing_in_view_is_a_skip) ... ok
+test_one_session_in_its_group_passes (test_doctor.ClosedSessionsInGroups.test_one_session_in_its_group_passes) ... ok
+test_the_wrong_group_fails (test_doctor.ClosedSessionsInGroups.test_the_wrong_group_fails) ... ok
+test_two_sessions_in_view_fail (test_doctor.ClosedSessionsInGroups.test_two_sessions_in_view_fail) ... ok
+test_a_finished_session_still_running_fails (test_doctor.CompletedStepSessions.test_a_finished_session_still_running_fails) ... ok
+test_a_killed_session_outside_completed_steps_fails (test_doctor.CompletedStepSessions.test_a_killed_session_outside_completed_steps_fails) ... ok
+test_a_session_inside_its_kill_wait_is_not_judged (test_doctor.CompletedStepSessions.test_a_session_inside_its_kill_wait_is_not_judged) ... ok
+test_an_unreadable_runner_file_fails_and_a_missing_database_skips (test_doctor.CompletedStepSessions.test_an_unreadable_runner_file_fails_and_a_missing_database_skips) ... ok
+test_killed_in_completed_steps_or_archived_passes (test_doctor.CompletedStepSessions.test_killed_in_completed_steps_or_archived_passes) ... ok
+test_nothing_finished_passes (test_doctor.CompletedStepSessions.test_nothing_finished_passes) ... ok
+test_a_wrong_name_fails (test_doctor.AgentManagerGroups.test_a_wrong_name_fails) ... ok
+test_an_unknown_session_in_a_ticket_group_fails (test_doctor.AgentManagerGroups.test_an_unknown_session_in_a_ticket_group_fails) ... ok
+test_an_unreadable_runner_file_fails_and_a_missing_database_skips (test_doctor.AgentManagerGroups.test_an_unreadable_runner_file_fails_and_a_missing_database_skips) ... ok
+test_nothing_in_view_is_a_skip (test_doctor.AgentManagerGroups.test_nothing_in_view_is_a_skip) ... ok
+test_one_session_in_its_group_passes (test_doctor.AgentManagerGroups.test_one_session_in_its_group_passes) ... ok
+test_the_wrong_group_fails (test_doctor.AgentManagerGroups.test_the_wrong_group_fails) ... ok
+test_two_sessions_in_view_fail (test_doctor.AgentManagerGroups.test_two_sessions_in_view_fail) ... ok
+
+----------------------------------------------------------------------
+Ran 23 tests in 13.363s
+
+OK
