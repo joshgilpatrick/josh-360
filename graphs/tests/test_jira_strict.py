@@ -229,6 +229,11 @@ class Searching(StrictCase):
             if graph.get("jql"):
                 self.assertIsNone(rules.check_jql(graph["jql"]), name)
 
+    def test_a_jql_function_is_not_read_as_a_value(self):
+        rules = jira_strict.Rules(SNAP)
+        self.assertIsNone(rules.check_jql("project = JP AND issuetype in standardIssueTypes()"))
+        self.assertIsNone(rules.check_jql("project in projectsLeadByUser() AND status = Ready"))
+
     def test_found_tickets_carry_their_real_status_ids(self):
         rows = self.jira.search("project = JP", ["status"])
         self.assertEqual(rows[0]["fields"]["status"]["id"], "10508")
