@@ -1,9 +1,9 @@
 {
-  "delivered": 0,
+  "delivered": 2,
   "read_failed": 0,
   "skipped": 2,
   "status": "ok",
   "system": 0,
-  "targets": 34,
-  "tickets": 32
+  "targets": 35,
+  "tickets": 33
 }
