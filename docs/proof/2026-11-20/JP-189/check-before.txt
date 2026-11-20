@@ -1,0 +1,22 @@
+$ python3 graphs/tools/role_examples.py check   # the check against the roles on main (dc12d16), before any example was added
+step 'triage_question' (development graph, role build-triager): no example result in graphs/roles/build-triager/instructions.md (add a ```json result step=triage_question block)
+step 'build' (development graph, role builder): no example result in graphs/roles/builder/instructions.md (add a ```json result step=build block)
+step 'decompose' (ticket-creation graph, role decomposer): no example result in graphs/roles/decomposer/instructions.md (add a ```json result step=decompose block)
+step 'design' (development graph, role designer): no example result in graphs/roles/designer/instructions.md (add a ```json result step=design block)
+step 'harden' (development graph, role hardener): no example result in graphs/roles/hardener/instructions.md (add a ```json result step=harden block)
+step 'read_intake' (ticket-creation graph, role intake-reader): no example result in graphs/roles/intake-reader/instructions.md (add a ```json result step=read_intake block)
+step 'find_precedent' (non-development graph, role jira-searcher): no example result in graphs/roles/jira-searcher/instructions.md (add a ```json result step=find_precedent block)
+step 'find_duplicates' (ticket-creation graph, role jira-searcher): no example result in graphs/roles/jira-searcher/instructions.md (add a ```json result step=find_duplicates block)
+step 'review_plan' (development graph, role plan-reviewer): no example result in graphs/roles/plan-reviewer/instructions.md (add a ```json result step=review_plan block)
+step 'write_pr' (development graph, role pr-writer): no example result in graphs/roles/pr-writer/instructions.md (add a ```json result step=write_pr block)
+step 'judge_precedent' (non-development graph, role precedent-judge): no example result in graphs/roles/precedent-judge/instructions.md (add a ```json result step=judge_precedent block)
+step 'do_work' (non-development graph, role researcher): no example result in graphs/roles/researcher/instructions.md (add a ```json result step=do_work block)
+step 'fix_review' (development graph, role review-fixer): no example result in graphs/roles/review-fixer/instructions.md (add a ```json result step=fix_review block)
+step 'sign_off' (triage graph, role sign-off): no example result in graphs/roles/sign-off/instructions.md (add a ```json result step=sign_off block)
+step 'draft' (ticket-creation graph, role ticket-drafter): no example result in graphs/roles/ticket-drafter/instructions.md (add a ```json result step=draft block)
+step 'revise' (triage graph, role ticket-drafter): no example result in graphs/roles/ticket-drafter/instructions.md (add a ```json result step=revise block)
+role ticket-drafter: the ```json block at graphs/roles/ticket-drafter/instructions.md:26 holds an outcome but names no step; tag it ```json result step=<step>
+role ticket-drafter: the ```json block at graphs/roles/ticket-drafter/instructions.md:44 holds an outcome but names no step; tag it ```json result step=<step>
+role ticket-drafter: the ```json block at graphs/roles/ticket-drafter/instructions.md:66 holds an outcome but names no step; tag it ```json result step=<step>
+step 'review_work' (non-development graph, role work-checker): no example result in graphs/roles/work-checker/instructions.md (add a ```json result step=review_work block)
+exit 1
