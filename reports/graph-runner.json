@@ -338,21 +338,21 @@
     {
       "graph": "validation",
       "run": "r-f520b3706f73",
-      "since": "2026-11-20T17:16:30Z",
-      "state": "between",
-      "step": null,
+      "since": "2026-11-20T17:16:34Z",
+      "state": "waiting",
+      "step": "watch",
       "ticket": "JP-184",
       "waiting_on": null
     }
   ],
   "rails": true,
   "runs": {
-    "between": 1,
+    "between": 0,
     "open": 9,
     "parked": 1,
     "queued": 0,
     "stopped": 1,
-    "waiting": 6,
+    "waiting": 7,
     "working": 0
   },
   "session_limit": 2,
@@ -1160,7 +1160,7 @@
       "attempt": null,
       "end": null,
       "graph": "validation",
-      "jira_status": null,
+      "jira_status": "Deployed",
       "refused": [],
       "run": "r-f520b3706f73",
       "runner": "agent-manager",
@@ -1182,15 +1182,51 @@
           "started_at": "2026-11-20T17:16:30Z",
           "step": "_entry",
           "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "earlier_am_sessions": [],
+          "ended_at": "2026-11-20T17:16:32Z",
+          "failure_kind": null,
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "watch",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T17:16:31Z",
+          "step": "read_criteria",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "earlier_am_sessions": [],
+          "ended_at": "2026-11-20T17:16:34Z",
+          "failure_kind": null,
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "started",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T17:16:32Z",
+          "step": "start_watch",
+          "tier": null
         }
       ],
-      "since": "2026-11-20T17:16:30Z",
+      "since": "2026-11-20T17:16:34Z",
       "started_at": "2026-11-20T17:16:30Z",
-      "state": "between",
-      "step": null,
-      "step_label": null,
+      "state": "waiting",
+      "step": "watch",
+      "step_label": "Watch",
       "ticket": "JP-184",
-      "waits_on": null,
+      "waits_on": {
+        "kind": "check",
+        "since": "2026-11-20T17:16:34Z",
+        "text": "the validation watch"
+      },
       "worktree_kept": null
     },
     {
@@ -1370,11 +1406,11 @@
         "JP-172": "has an open run",
         "JP-173": "has an open run",
         "JP-174": "has an open run",
-        "JP-175": "has an open run"
+        "JP-175": "has an open run",
+        "JP-184": "has an open run",
+        "JP-185": "has an open run"
       },
-      "started": [
-        "JP-184"
-      ]
+      "started": []
     }
   }
 }
