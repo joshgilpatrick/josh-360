@@ -14,16 +14,18 @@ from pathlib import Path
 from typing import List, Optional
 
 from . import ledgerview, paths, sessionfile
-from ledger import ticket_costs  # noqa: E402  (paths puts the repository root on sys.path)
+from laptop import failure_kinds as kinds  # noqa: E402  (paths puts the repository root on sys.path)
+from ledger import ticket_costs  # noqa: E402
 from walker_lib import graphfile, runfolder  # noqa: E402  (graphs/tools, put on the path by paths)
 
 RUNNER = "agent-manager"
 STATES = ("working", "queued", "parked", "waiting", "stopped", "between")
 COLUMNS = ("Step", "Kind", "Attempt", "Loops", "Tier", "Model", "Session", "Cost", "Agent Manager session", "Outcome",
            "Why it ended", "Jira status", "Started", "Ended")
-# The words `advance` writes when it abandons an attempt. Anything else in a session file is shown as "other", so the
-# report never carries text from a run.
-REASONS = ("spawn-refused", "never-started", "bad-result", "time-cap", "session-gone", "rested-without-result")
+# The reason codes `advance` writes when it abandons, retries or stops an attempt (JP-183: the shared table, plus the
+# pre-JP-183 `spawn-refused`). Anything else in a session file is shown as "other", so the report never carries text from
+# a run.
+REASONS = tuple(sorted(set(kinds.REASONS) | {"spawn-refused"}))
 _ID = re.compile(r"^[A-Za-z0-9._-]{1,80}$")
 ENDED_LIMIT = 10
 
@@ -92,7 +94,8 @@ def snapshot(conn: sqlite3.Connection, now: float, root: Optional[Path] = None) 
         "open_runs": [{k: r[k] for k in ("run", "graph", "ticket", "step", "state", "since", "waiting_on")} for r in rows],
         "sessions_live": len(sessionfile.live([r["run"] for r in rows])), "session_limit": cfg["session_limit"],
         "rails": paths.rails_loaded(),
-        "stopped": [{"run": r["run"], "ticket": r["ticket"], "step": r["step"]} for r in rows if r["state"] == "stopped"],
+        "stopped": [dict({"run": r["run"], "ticket": r["ticket"], "step": r["step"]}, **_stop_kind(r["run"]))
+                    for r in rows if r["state"] == "stopped"],
         "waiting_over_7_days": long_waits, "ended_runs": ended}
     snap.update(where.ticket_rows(conn, now, opened, recent, root))     # JP-172: one row per ticket, no cost
     snap[where.COUNTS_KEY]["cost_fields"] = where.cost_fields(snap)
@@ -107,7 +110,12 @@ def text(snap: dict) -> str:
         lines.append("{} {} {} {}{} since {}".format(r["ticket"] or r["run"], r["graph"], r["step"] or "-", r["state"],
                                                    " on " + r["waiting_on"] if r.get("waiting_on") else "", r["since"]))
     for r in snap["stopped"]:
-        lines.append("Stopped: {} at {} ({})".format(r["ticket"] or r["run"], r["step"], r["run"]))
+        why = ""
+        if r.get("kind") == kinds.NEEDS_FIX:
+            why = ", needs a fix: {}".format(r.get("code"))
+        elif r.get("kind") == kinds.MAY_CLEAR:
+            why = ", stuck: {}".format(r.get("code"))
+        lines.append("Stopped: {} at {} ({}){}".format(r["ticket"] or r["run"], r["step"], r["run"], why))
     for row in snap.get("tickets") or []:
         for item in row.get("refused") or []:
             lines.append("Refused: {} {} (last seen {}): {}".format(row["ticket"], item["graph"], item["last_at"], item["reason"]))
@@ -116,6 +124,18 @@ def text(snap: dict) -> str:
         for r in snap["waiting_over_7_days"]:
             lines.append("{} {} since {}".format(r["ticket"] or r["run"], r["step"], r["since"]))
     return "\n".join(lines)
+
+
+def _stop_kind(run_id: str) -> dict:
+    """A runner stop's kind and code (JP-183), both fixed words; {} for a walker stop (a cap, a failed gate)."""
+    try:
+        stopped = runfolder.load(run_id).get("stopped") or {}
+    except (FileNotFoundError, ValueError):
+        return {}
+    kind, code = stopped.get("kind"), stopped.get("code")
+    if kind not in kinds.KINDS:
+        return {}
+    return {"kind": kind, "code": code if code in REASONS else "other"}
 
 
 def _graph(graph_id: str, root: Optional[Path]):
@@ -132,7 +152,7 @@ def _id(value) -> Optional[str]:
 def _attempt_sessions(run_id: str, row: dict) -> dict:
     """A role attempt's Agent Manager session, its Claude Code session when the ledger has none yet (an abandoned
     attempt never records one), and why the runner abandoned it, from the attempt's session and link files."""
-    found = {"am_session": None, "reason": None}
+    found = {"am_session": None, "reason": None, "failure_kind": None, "earlier_am_sessions": []}
     if row["kind"] != "role":
         return found
     try:
@@ -143,8 +163,11 @@ def _attempt_sessions(run_id: str, row: dict) -> dict:
         return found
     handle = doc.get("handle") if isinstance(doc.get("handle"), dict) else {}
     found["am_session"] = _id(handle.get("am_session")) or _id(link.get("am_session"))
-    if doc.get("state") == "abandoned":
+    if doc.get("state") in ("abandoned", "stopped", "spawn_failed") and doc.get("reason"):
         found["reason"] = doc.get("reason") if doc.get("reason") in REASONS else "other"
+        found["failure_kind"] = kinds.kind_of(found["reason"]) if found["reason"] != "other" else kinds.MAY_CLEAR
+    found["earlier_am_sessions"] = [i for i in (_id(((e or {}).get("handle") or {}).get("am_session"))
+                                                for e in (doc.get("earlier") or []) if isinstance(e, dict)) if i]
     if row.get("session") is None:
         found["session"] = _id(link.get("session_id"))
     return found
@@ -200,8 +223,16 @@ def render(report: dict) -> str:
             "jira_status", "started_at", "ended_at")
     lines = ["# {} · {} · {}".format(report.get("ticket") or "no ticket", report["graph"], report["run"]), "", ended,
              "", "| " + " | ".join(COLUMNS) + " |", "|" + " --- |" * len(COLUMNS)]
-    lines += ["| " + " | ".join(cell(_cost_cell(report, step) if k == "cost" else step.get(k)) for k in keys) + " |"
-              for step in report["steps"]]
+    def value(step: dict, k: str) -> object:
+        if k == "cost":
+            return _cost_cell(report, step)
+        if k == "reason" and step.get("reason") and step.get("failure_kind"):
+            return "{} ({})".format(step["reason"], step["failure_kind"])          # JP-183: why, and of which kind
+        if k == "am_session" and step.get("earlier_am_sessions"):
+            return "{} (earlier {})".format(step.get("am_session") or "-", ", ".join(step["earlier_am_sessions"]))
+        return step.get(k)
+
+    lines += ["| " + " | ".join(cell(value(step, k)) for k in keys) + " |" for step in report["steps"]]
     if not report.get("with_cost"):
         lines += ["", "Cost is not in a published snapshot; run `report --run <id>` on the laptop to see it."]
     return "\n".join(lines) + "\n"

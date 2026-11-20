@@ -9,6 +9,8 @@
   where <KEY> [--json] [--from-json <file>]    where a ticket is: every run on it, its step, Jira status, state, what it
                                         waits on, its sessions and their cost (or, from a published snapshot, the newest
                                         run and no cost) (JP-172)
+  resume --run <id>                     carry on with a stopped run from the step it stopped at (JP-183); for a stop that
+                                        started no model the step's run count is unchanged, so no allow is needed
   loop                                  the terminal host's loop (refuses under the job host)
   messages [--json]                     lead messages no lead was running to receive (JP-175), oldest first
 
@@ -56,6 +58,8 @@ def _parser() -> argparse.ArgumentParser:
     s.add_argument("key")
     s.add_argument("--json", action="store_true")
     s.add_argument("--from-json", type=Path)
+    s = command("resume")
+    s.add_argument("--run", required=True)
     command("loop")
     s = command("messages")
     s.add_argument("--json", action="store_true")
@@ -80,6 +84,8 @@ def _run(args) -> str:
         for item in args.input:
             argv += ["--input", item]
         return json.dumps(walk.call(*argv), sort_keys=True)
+    if args.command == "resume":
+        return json.dumps(walk.call("retry", "--run", args.run), sort_keys=True)
     if args.command == "status":
         snap = _snapshot()
         return json.dumps(snap, sort_keys=True) if args.json else status.text(snap)

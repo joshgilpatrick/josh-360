@@ -15,9 +15,10 @@ import time
 from pathlib import Path
 from typing import Callable, Optional
 
-from . import amgroups, leads, ledgerview, locks, notify, paths, sessionfile, walk
+from . import amgroups, failures, leads, ledgerview, locks, notify, paths, sessionfile, walk
 from .hooklib import entry as session_entry, marker as step_marker
 from .status import RUNNER
+from laptop import failure_kinds as kinds  # noqa: E402
 from ledger import db  # noqa: E402
 from walker_lib import runfolder  # noqa: E402
 
@@ -118,10 +119,16 @@ def _loop(run_id: str, now: Callable[[], float], root: Optional[Path]) -> str:
         if action == "waiting":
             return action
         if action == "stopped":
-            if notify.note_once(run_id, "stopped:" + str(answer.get("step"))):
-                _safely("telling the lead", run_id, teller.tell, run_id, "stopped", "stopped:" + str(answer.get("step")),
+            if failures.changed_since(answer, run_id, binding):           # JP-183: the fix may have landed
+                walk.call("retry", "--run", run_id, root=root)
+                paths.log("advance {}: what stopped {} ({}) has changed; trying it again".format(
+                    run_id, answer.get("step"), answer.get("code")))
+                continue
+            key = notify.stop_key(answer)
+            if notify.note_once(run_id, key):
+                _safely("telling the lead", run_id, teller.tell, run_id, "stopped", key,
                         {"step": answer.get("step")}, repeat=True)
-            paths.log("advance {}: stopped at {}: {}".format(run_id, answer.get("step"), str(answer.get("reason"))[:200]))
+            paths.log("advance {}: stopped at {}: {}".format(run_id, answer.get("step"), str(answer.get("reason"))[:300]))
             return "stopped"
         if action == "done":
             if notify.note_once(run_id, "done"):
@@ -154,8 +161,16 @@ def _step(run_id: str, a: dict, cfg: dict, binding, now: Callable[[], float], ro
             return "off"
         if not paths.rails_loaded():
             return "no-rails"
-        return _spawn(run_id, a, None, cfg, binding, now)
+        return _spawn(run_id, a, None, cfg, binding, now, root)
     state = doc.get("state")
+    if state == "stopped":                 # the walker asks for this attempt again, so the stop was lifted (JP-183)
+        failed = doc.pop("failure", None)
+        if failed:
+            doc.setdefault("failures", []).append(failed)
+        doc.update(state="spawn_failed", spawn_failures=0, next_try_at=None, resumed_at=now())
+        sessionfile.write(run_id, step, attempt, doc)
+        paths.log("advance {}: {} attempt {} resumed; its tries start again".format(run_id, step, attempt))
+        state = "spawn_failed"
     if state == "spawn_failed":
         try:
             linked = sessionfile.read_link(run_id, step, attempt)
@@ -164,13 +179,18 @@ def _step(run_id: str, a: dict, cfg: dict, binding, now: Callable[[], float], ro
         if linked:                                        # a refused spawn that linked anyway: that session is the one
             state = "spawning"
     if state == "spawn_failed":
-        if int(doc.get("spawn_failures") or 0) >= int(cfg["spawn_tries"]):
-            return _abandon(run_id, doc, "spawn-refused", now, root, off)
+        tries = int(doc.get("spawn_failures") or 0)
+        if tries >= int(cfg["spawn_tries"]):          # a file from before JP-183 that used its tries: stuck, not abandoned
+            code = doc.get("reason") if kinds.kind_of(doc.get("reason")) != kinds.RAN else "refused"
+            doc.setdefault("failure", {"reason": code, "kind": kinds.kind_of(code), "detail": "", "at": now()})
+            return _stop(run_id, doc, cfg, binding, now, root)
+        if now() < float(doc.get("next_try_at") or 0):
+            return "retry-later"                       # the gap after a failure that may clear by itself
         if off:
             return "off"
         if not paths.rails_loaded():
             return "no-rails"
-        return _spawn(run_id, a, doc, cfg, binding, now)
+        return _spawn(run_id, a, doc, cfg, binding, now, root)
     if state == "spawning":
         try:
             link = sessionfile.read_link(run_id, step, attempt)
@@ -182,7 +202,7 @@ def _step(run_id: str, a: dict, cfg: dict, binding, now: Callable[[], float], ro
             _keep(run_id, doc, binding, now)
             state = "started"
         elif now() - float(doc.get("intent_at") or 0) >= float(cfg["link_timeout_seconds"]):
-            return _abandon(run_id, doc, "never-started", now, root, off)
+            return _no_start(run_id, a, doc, "never-started", cfg, binding, now, root)
         else:
             return "working"
     if state == "started":
@@ -191,7 +211,8 @@ def _step(run_id: str, a: dict, cfg: dict, binding, now: Callable[[], float], ro
     return "working"
 
 
-def _spawn(run_id: str, a: dict, doc: Optional[dict], cfg: dict, binding, now: Callable[[], float]) -> str:
+def _spawn(run_id: str, a: dict, doc: Optional[dict], cfg: dict, binding, now: Callable[[], float],
+           root: Optional[Path] = None) -> Optional[str]:
     step, attempt = a["step"], a["attempt"]
     if not _spawn_slot(run_id, a, doc, cfg, now):
         return "limit" if _limit_reached(run_id, cfg) else "locked"
@@ -213,15 +234,56 @@ def _spawn(run_id: str, a: dict, doc: Optional[dict], cfg: dict, binding, now: C
         if str(err) in AMBIGUOUS_SPAWN:                    # the session may exist: the link, or the link timeout, decides
             paths.log("advance {}: spawn of {} gave no answer ({}); waiting for its link".format(run_id, step, err))
             return "working"
-        doc.update(state="spawn_failed", spawn_failures=int(doc.get("spawn_failures") or 0) + 1, reason=str(err))
-        sessionfile.write(run_id, step, attempt, doc)
-        paths.log("advance {}: spawn of {} refused: {}".format(run_id, step, err))
-        return "spawn-failed"
+        return _failed(run_id, a, doc, str(err), getattr(err, "detail", ""), cfg, binding, now, root)
     doc.update(state="started", started_at=now(), handle=handle)
     sessionfile.write(run_id, step, attempt, doc)
     _keep(run_id, doc, binding, now)
     paths.log("advance {}: started {} attempt {}".format(run_id, step, attempt))
     return "spawned"
+
+
+def _failed(run_id: str, a: dict, doc: dict, code: str, detail: str, cfg: dict, binding, now: Callable[[], float],
+            root: Optional[Path]) -> Optional[str]:
+    """A try that started no model (JP-183). One that won't fix itself stops the run at once; one that may clear waits a
+    growing gap and is tried again, and when the tries run out the run is stuck. Neither ends the attempt, so neither
+    uses a run of the step's tier cap, and a resume carries on with the same attempt."""
+    kind = kinds.kind_of(code)
+    said = kinds.short(detail, bool(a.get("phi")))
+    tries = int(doc.get("spawn_failures") or 0) + 1
+    doc.update(spawn_failures=tries, reason=code, failure={"reason": code, "kind": kind, "detail": said, "at": now()})
+    paths.log("advance {}: spawn of {} attempt {} refused ({}, {}, try {}): {}".format(
+        run_id, a["step"], a["attempt"], code, kind, tries, said or "no message"))
+    if kind == kinds.NEEDS_FIX or tries >= int(cfg["spawn_tries"]):
+        return _stop(run_id, doc, cfg, binding, now, root)
+    doc.update(state="spawn_failed", next_try_at=now() + kinds.gap(tries, cfg["spawn_gaps_seconds"]))
+    sessionfile.write(run_id, a["step"], a["attempt"], doc)
+    return "spawn-failed"
+
+
+def _stop(run_id: str, doc: dict, cfg: dict, binding, now: Callable[[], float], root: Optional[Path]) -> Optional[str]:
+    """Stop the run in the walker with the kind, the code and the fix, leaving the attempt open. Returns None so the loop
+    asks the walker again, which answers `stopped` and sends the one stop notice."""
+    failure = doc["failure"]
+    tries = int(doc.get("spawn_failures") or 0)
+    reason = failures.stop_reason(run_id, failure["reason"], failure["kind"], failure.get("detail") or "", tries)
+    doc.update(state="stopped", next_try_at=None)
+    sessionfile.write(run_id, doc["step"], doc["attempt"], doc)
+    walk.call("stop", "--run", run_id, "--step", doc["step"], "--kind", failure["kind"], "--code", failure["reason"],
+              "--reason", reason, "--fingerprint", failures.fingerprint(binding, doc.get("graph") or ""), root=root)
+    return None
+
+
+def _no_start(run_id: str, a: dict, doc: dict, code: str, cfg: dict, binding, now: Callable[[], float],
+              root: Optional[Path]) -> Optional[str]:
+    """A session that never linked to its run: as far as the runner can tell no model ran, so the attempt is kept and
+    the spawn is tried again as a failure that may clear (JP-183). The session is kept in `earlier`, and the attempt gets
+    a new key, so that session can never link to the attempt later."""
+    if doc.get("handle"):
+        doc.setdefault("earlier", []).append({"handle": doc["handle"], "reason": code, "at": now()})
+    doc.update(handle=None, started_at=None, resting_since=None, key=secrets.token_hex(8))
+    detail = ("the session did not link to its run within {} seconds".format(int(float(cfg["link_timeout_seconds"])))
+              if code == "never-started" else "the Agent Manager session ended before it linked to its run")
+    return _failed(run_id, a, doc, code, detail, cfg, binding, now, root)
 
 
 def _keep(run_id: str, doc: dict, binding, now: Callable[[], float]) -> None:
@@ -313,11 +375,13 @@ def _started(run_id: str, a: dict, doc: dict, cfg: dict, binding, now: Callable[
         return "off" if off else None
     began = float(doc.get("started_at") or doc.get("intent_at") or 0)
     if not link and now() - began >= float(cfg["link_timeout_seconds"]):
-        return _abandon(run_id, doc, "never-started", now, root, off)
+        return _no_start(run_id, a, doc, "never-started", cfg, binding, now, root)
     if now() - began >= float(cfg["time_cap_seconds"]) + float(cfg["time_cap_grace_seconds"]):
         return _abandon(run_id, doc, "time-cap", now, root, off)
     seen = binding.state(doc.get("handle") or {})
     if seen == "gone":
+        if not link:                                       # it ended before it linked: no model ran that we know of
+            return _no_start(run_id, a, doc, "gone-before-start", cfg, binding, now, root)
         return _abandon(run_id, doc, "session-gone", now, root, off)
     if seen == "working":
         if doc.get("resting_since") is not None:
@@ -351,9 +415,11 @@ def _parses(path: Path) -> bool:
 
 def _abandon(run_id: str, doc: dict, reason: str, now: Callable[[], float], root: Optional[Path], off: bool):
     """End this attempt in the walker, say why in the session file and the log, and (unless off) ask the walker again.
+    Only a failure where the model ran is abandoned (JP-183), so this attempt has used one run of the tier's cap.
     The session is never closed: an abandoned session stays visible in Agent Manager."""
     walk.call("abandon", "--run", run_id, root=root)
-    doc.update(state="abandoned", reason=reason, ended_at=now())
+    doc.update(state="abandoned", reason=reason, kind=kinds.kind_of(reason), ended_at=now())
     sessionfile.write(run_id, doc["step"], doc["attempt"], doc)
-    paths.log("advance {}: abandoned {} attempt {}: {}".format(run_id, doc["step"], doc["attempt"], reason))
+    paths.log("advance {}: abandoned {} attempt {}: {} ({}; it used a run of the cap)".format(
+        run_id, doc["step"], doc["attempt"], reason, kinds.kind_of(reason)))
     return "off" if off else None
