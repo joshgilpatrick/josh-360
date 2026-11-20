@@ -1,16 +1,124 @@
 {
-  "ended_runs": [],
-  "host": "job",
-  "open_runs": [
+  "ended_runs": [
     {
+      "end": "finished",
+      "ended_at": "2026-11-20T04:58:23Z",
       "graph": "validation",
       "run": "r-1e4ba9ad7579",
-      "since": "2026-11-19T22:38:26Z",
-      "state": "waiting",
-      "step": "watch",
-      "ticket": "JP-167",
-      "waiting_on": null
-    },
+      "score": "success",
+      "started_at": "2026-11-19T22:38:22Z",
+      "steps": [
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-19T22:38:23Z",
+          "jira_status": null,
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "pass",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-19T22:38:22Z",
+          "step": "_entry",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-19T22:38:24Z",
+          "jira_status": "Deployed",
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "watch",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-19T22:38:23Z",
+          "step": "read_criteria",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-19T22:38:25Z",
+          "jira_status": "Deployed",
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "started",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-19T22:38:24Z",
+          "step": "start_watch",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T04:58:19Z",
+          "jira_status": "Deployed",
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "met",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T04:58:19Z",
+          "step": "watch",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T04:58:19Z",
+          "jira_status": "Deployed",
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "met",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T04:58:19Z",
+          "step": "verdict",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T04:58:22Z",
+          "jira_status": "Done",
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "closed",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T04:58:19Z",
+          "step": "close",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T04:58:23Z",
+          "jira_status": null,
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "pass",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T04:58:22Z",
+          "step": "_exit",
+          "tier": null
+        }
+      ],
+      "ticket": "JP-167"
+    }
+  ],
+  "host": "job",
+  "open_runs": [
     {
       "graph": "validation",
       "run": "r-189cc4768e58",
@@ -69,11 +177,11 @@
   "rails": true,
   "runs": {
     "between": 0,
-    "open": 7,
+    "open": 6,
     "parked": 0,
     "queued": 0,
     "stopped": 1,
-    "waiting": 6,
+    "waiting": 5,
     "working": 0
   },
   "session_limit": 2,
@@ -217,15 +325,15 @@
       "worktree_kept": null
     },
     {
-      "attempt": null,
-      "end": null,
+      "attempt": 1,
+      "end": "finished",
       "graph": "validation",
-      "jira_status": "Deployed",
+      "jira_status": "Done",
       "refused": [],
       "run": "r-1e4ba9ad7579",
       "runner": "agent-manager",
       "runs": 1,
-      "score": null,
+      "score": "success",
       "sessions": [
         {
           "am_session": null,
@@ -268,19 +376,71 @@
           "started_at": "2026-11-19T22:38:24Z",
           "step": "start_watch",
           "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T04:58:19Z",
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "met",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T04:58:19Z",
+          "step": "watch",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T04:58:19Z",
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "met",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T04:58:19Z",
+          "step": "verdict",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T04:58:22Z",
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "closed",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T04:58:19Z",
+          "step": "close",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T04:58:23Z",
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "pass",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T04:58:22Z",
+          "step": "_exit",
+          "tier": null
         }
       ],
-      "since": "2026-11-19T22:38:26Z",
+      "since": "2026-11-20T04:58:23Z",
       "started_at": "2026-11-19T22:38:22Z",
-      "state": "waiting",
-      "step": "watch",
-      "step_label": "Watch",
+      "state": "ended",
+      "step": "close",
+      "step_label": "Close",
       "ticket": "JP-167",
-      "waits_on": {
-        "kind": "check",
-        "since": "2026-11-19T22:38:26Z",
-        "text": "the validation watch"
-      },
+      "waits_on": null,
       "worktree_kept": null
     },
     {
@@ -629,7 +789,6 @@
     "validation": {
       "jira": "ok",
       "skipped": {
-        "JP-167": "has an open run",
         "JP-171": "has an open run",
         "JP-172": "has an open run",
         "JP-173": "has an open run",
