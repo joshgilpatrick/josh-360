@@ -131,6 +131,9 @@ def laptop_problems() -> list[str]:
                                            "restore_retired_job.py", "launchd_check_job.py",
                                            "doctor.py", "doctor_job.py")]
     jp96 += sorted((ROOT / "scripts/doctor_lib").glob("*.py"))  # JP-152: the doctor runs on the laptop too
+    # JP-185: the console and its keep-alive job run on the laptop too.
+    jp96 += [ROOT / "scripts/console.py", ROOT / "scripts/console_terminal_job.py"]
+    jp96 += sorted((ROOT / "scripts/console_lib").glob("*.py"))
     # JP-107: the ledger and its hooks (some hook files have no .py suffix) run on the laptop too.
     ledger_hooks = [p for p in sorted((ROOT / "hooks").glob("*/*")) if p.is_file() and p.name != "README.md"
                     and p.read_text(encoding="utf-8", errors="replace").startswith("#!/usr/bin/env python")]
