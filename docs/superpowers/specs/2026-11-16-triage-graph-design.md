@@ -312,7 +312,7 @@ Triage: one question for Josh | run <run id> | next gate: your answer in Needs y
 Recommended: <the drafter's recommendation>, because <reason>.
 ```
 
-**Ask, `ask_at_limit`:** "{{ ticket }} is still not Ready after the rounds allowed. Its remaining gaps are on the ticket." Answers: **One more round**, **Park**.
+**Ask, `ask_at_limit`:** "{{ ticket }} is not Ready yet, and triage has reached one of its limits. The reason is below." The walker adds the reason as one line: the step at its run cap, the loop at its limit, or the verdict's outcome (JP-195). Answers: **One more round**, **Park**.
 
 **Comment after a drafter round (`apply-revision`):**
 

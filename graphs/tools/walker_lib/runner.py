@@ -215,9 +215,51 @@ def category_of(run: Run, step: str):
     return category[:240], usable
 
 
+def _times(n: int) -> str:
+    return "once" if n == 1 else "{} times".format(n)
+
+
+def _is_limit_ask(g, step: str) -> bool:
+    """An ask some loop names as its `at_limit`, or one that runs only on a limit."""
+    return g.on_limit_only(step) or any(
+        isinstance(arrow, dict) and arrow.get("at_limit") == step
+        for s in g.steps.values() for arrow in (s.get("on") or {}).values())
+
+
+def limit_reason(run: Run, step: str) -> Optional[str]:
+    """One line on what sent the run to this ask (JP-195): a step at its run cap, a loop at its limit, or the outcome
+    the ask's own `when` names. Step names and counts only, so it is safe wherever the question goes."""
+    g, st = run.graph, run.state
+    forced = st.forced if st.forced and st.forced.ask == step else None
+    if forced and forced.reason == "cap":
+        capped = list(forced.steps) or [s for s in g.order if g.cap(s) is not None
+                                         and st.runs.get(s, 0) >= g.cap(s) + st.consumed.get(s, 0)]
+        parts = []
+        for s in capped:
+            cap, extra = g.cap(s), st.consumed.get(s, 0)
+            parts.append("`{}` has run {} against a cap of {}{}".format(
+                s, _times(st.runs.get(s, 0)), cap, " plus {} you allowed".format(extra) if extra else ""))
+        if not parts:
+            return "Why you are asked: a step has used every run its tier allows."
+        return ("Why you are asked: {}, and the run needs it again. One more round allows one more run."
+                .format("; ".join(parts)))
+    if forced and forced.reason == "loop":
+        arrow = (g.steps.get(forced.from_step, {}).get("on") or {}).get(forced.outcome) or {}
+        target, limit = arrow.get("goto", "?"), arrow.get("max_loops", "?")
+        return ("Why you are asked: the run has gone from `{}` back to `{}` {}, the most this graph allows ({})."
+                .format(forced.from_step, target, _times(st.loops.get((forced.from_step, target), 0)), limit))
+    when = g.steps[step].get("when")
+    if when and when["step"] in st.done and _is_limit_ask(g, step):
+        return "Why you are asked: `{}` ended with `{}`.".format(when["step"], st.done[when["step"]])
+    return None
+
+
 def _ask_text(run: Run, step: str) -> str:
     g = run.graph
     text = g.render(g.steps[step]["ask"]["question"], run.values)
+    why = limit_reason(run, step)
+    if why:
+        text += "\n\n" + why
     card = _ancestors_card(run, step)
     return text + ("\n\n" + card if card else "")
 
