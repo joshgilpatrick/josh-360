@@ -78,12 +78,11 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      # The last version listed is the default python3; the laptop's jobs run on python3.9.
+      # The laptop's jobs run on Python 3.9, which actions/setup-python no longer builds for ubuntu-latest; uv
+      # installs it in the Install step.
       - uses: actions/setup-python@v5
         with:
-          python-version: |
-            3.9
-            3.12
+          python-version: '3.12'
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -95,7 +94,8 @@ jobs:
         run: |
           sudo apt-get update -q
           sudo apt-get install -y -q tmux
-          pip install -r requirements.txt
+          pip install -r requirements.txt uv
+          uv python install 3.9
           git config --global user.name "josh-360 e2e"
           git config --global user.email "e2e@example.invalid"
       - name: Agent Manager cache
@@ -110,7 +110,7 @@ jobs:
           JOSH360_E2E_AM: '1'
         run: python3 -m unittest discover -s tests -t tests -p 'test_e2e_*.py' -v
       - name: Whole runs
-        run: python3 scripts/e2e.py --all --python "$(command -v python3.9)" --evidence "$RUNNER_TEMP/e2e-evidence"
+        run: python3 scripts/e2e.py --all --python "$(uv python find 3.9)" --evidence "$RUNNER_TEMP/e2e-evidence"
       - name: Evidence
         if: always()
         uses: actions/upload-artifact@v4

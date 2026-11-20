@@ -99,7 +99,7 @@ It needs what the Agent Manager tests need, plus a Python 3.9 (`--python`, `$JOS
 
 ## In CI
 
-The `e2e` job in `.github/workflows/test.yml` runs on the same events as `suite`. It installs tmux, Go and Python 3.9, restores the Agent Manager build from the cache (keyed on the pinned version), runs the Agent Manager tests with `JOSH360_E2E_AM=1`, then `scripts/e2e.py --all`, and uploads the evidence as the `e2e-evidence` artifact whether it passed or not.
+The `e2e` job in `.github/workflows/test.yml` runs on the same events as `suite`. It installs tmux, Go and Python 3.9 (with uv, since `actions/setup-python` has no 3.9 for the current `ubuntu-latest`), restores the Agent Manager build from the cache (keyed on the pinned version), runs the Agent Manager tests with `JOSH360_E2E_AM=1`, then `scripts/e2e.py --all`, and uploads the evidence as the `e2e-evidence` artifact whether it passed or not.
 
 ## What it does not cover
 
