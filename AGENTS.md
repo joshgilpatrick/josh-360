@@ -13,7 +13,7 @@
 
 ## Workflow
 
-This repo follows `docs/WORKFLOW.md` (tickets, design gate, proof, review ceremony, merge). Values: `.claude/workflow.config.md`. Skills in `.claude/skills/`: `ticket-lifecycle`, `design-handoff`, `pr-proof`, `review-ceremony`, `workflow-roles`, `platform-doctor`, `verify-josh-360` (drives and proves features on a sandbox laptop; its feature map is `features/README.md`). Commands: `/design`, `/build`, `/fix`, `/review-pr`, `/ship`, `/session-end`, `/closeout`, `/doctor`. Subagents in `.claude/agents/`: `implementer` (one plan task, test first), `ceremony-reviewer` (fallback cloud review of a PR) and `closeout` (Josh's loose ends).
+This repo follows `docs/WORKFLOW.md` (tickets, design gate, proof, review ceremony, merge). Values: `.claude/workflow.config.md`. Skills in `.claude/skills/`: `ticket-lifecycle`, `design-handoff`, `pr-proof`, `review-ceremony`, `workflow-roles`, `platform-doctor`, `review-hook-blocks` (a verdict per blocking hook, JP-182), `verify-josh-360` (drives and proves features on a sandbox laptop; its feature map is `features/README.md`). Commands: `/design`, `/build`, `/fix`, `/review-pr`, `/ship`, `/session-end`, `/closeout`, `/doctor`, `/review-hooks`. Subagents in `.claude/agents/`: `implementer` (one plan task, test first), `ceremony-reviewer` (fallback cloud review of a PR) and `closeout` (Josh's loose ends).
 
 Status and history live in Jira (project `JP`, epic JP-94, label `josh-360`). There is no status file in the repo.
 
@@ -55,6 +55,7 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - What a ticket's sessions cost (JP-170, laptop, Josh only): `python3 ledger/measures.py ticket <KEY>` lists each session on the ticket, the graph step it did, its cost with its subagents and a total (`--json` for the data); `runner.py report --run <id>` has the same cost per step. Working agents cannot read cost.
 - Loose ends (JP-109, laptop only; read-only apart from `keep`): `python3 ledger/loose_ends.py` (add `--session <id>`, `--json`, `--fetch`); `--kind` narrows it to one kind of loose end and `--check` exits 1 when anything is loose; mark a branch kept on purpose with `python3 ledger/loose_ends.py keep --folder <path> --branch <name>` (`unkeep` takes the mark off); `python3 ledger/closeout.py` proposes, `--apply` does the reversible ones (`--only <item id>` for one); `/closeout` calls the closeout agent.
 - Platform health check (JP-152, laptop; read-only unless `--fix`): `python3 ~/.josh-360/repo/scripts/doctor.py` (add `--json` for an agent, `--online`, `--fix`, `--only <group>`); `/doctor` calls it. It also runs daily as the `doctor` job: read it from the cloud with `python3 laptop/status.py show doctor`. Reference: `docs/platform-doctor.md`.
+- Hook blocks (JP-182, laptop; reads only): `python3 ~/.josh-360/repo/scripts/hook_blocks.py` (`--days N`, default 14) lists every time any hook on the laptop blocked Claude (josh-360's, the claude-harness settings', plugins', project and action-triage guardrail hooks), from the stored transcripts, with what was tried, the message, what the agent did next and whether it looks like a false alarm. It writes `~/.josh-360/reviews/hook-blocks/hook-blocks-<date>.md` (and `.json`), which can hold patient data and stays on the laptop; `/review-hooks` (skill `review-hook-blocks`) turns it into a keep, narrow or bug verdict per hook and changes nothing.
 - Startup list check (JP-119, laptop): `python3 laptop/check_jobs.py` compares what is loaded and installed in launchd with the macbook-automations startup list and `laptop/launchd-register.json`, and prints each difference (`--json` for the report; the daily job `launchd-check` puts it on `laptop-status` as `reports/launchd-check.json`). A job switched off by `retire-leftover-jobs` comes back with `python3 scripts/restore_retired_job.py <archive folder>`.
 - Pause the laptop from the cloud: push a branch named `laptop-pause`; delete it to resume.
 - Feature tree (JP-143): `python3 scripts/feature_tree.py check`, and `build` after editing `docs/design/feature-tree/tree.yaml`.
@@ -97,6 +98,7 @@ Josh set these on 15 November 2026 (`docs/vision-and-roadmap.md`, "How the build
 - `requirements.txt`: PyYAML. `.gitattributes`: keeps both sides of appended lines in `jobs.yaml` and `docs/phase-1-deletion-list.md`.
 - `tests/`: the tests (stdlib unittest), run by `scripts/check.py`.
 - `scripts/doctor.py`, `scripts/doctor_lib/`, `scripts/doctor_job.py`: the platform doctor (JP-152); `docs/platform-doctor.md` lists every check.
+- `scripts/hook_blocks.py`, `scripts/hook_blocks_lib/`: the list of hook blocks from the stored transcripts (JP-182).
 - `jobs.yaml`: Josh 360's background jobs on the laptop.
 - `laptop/`: how the laptop follows `main`: the install script, the job runner, the `follow` job, the status branch and the pause switch.
 - `hooks/`: Claude Code hooks, loaded on the laptop through `hooks/dispatch`.
