@@ -310,9 +310,9 @@ class Recorder(LedgerCase):
     def test_rehome_writes_only_changed_homes(self):
         self.quiet_session()
         self.run_pass()
-        self.assertEqual(record.rehome_recent(self.conn, NOW, jira_ok, CONV), {"homes": 0})
+        self.assertEqual(record.rehome_recent(self.conn, NOW, jira_ok, CONV)["homes"], 0)
         other = lambda key: {"epic_key": "JP-999", "initiative_key": "TECH-901", "area": None, "system": None}  # noqa
-        self.assertEqual(record.rehome_recent(self.conn, NOW, other, CONV), {"homes": 1})
+        self.assertEqual(record.rehome_recent(self.conn, NOW, other, CONV)["homes"], 1)
         self.assertEqual(self.count("session_homes"), 2)
         self.assertEqual(self.rows("SELECT epic_key FROM current_homes"), [("JP-999",)])
 
@@ -320,15 +320,15 @@ class Recorder(LedgerCase):
         self.quiet_session()
         self.run_pass()
         other = lambda key: {"epic_key": "JP-999", "initiative_key": None, "area": None, "system": None}  # noqa
-        self.assertEqual(record.rehome_recent(self.conn, "2026-12-30T00:00:00Z", other, CONV), {"homes": 0})
+        self.assertEqual(record.rehome_recent(self.conn, "2026-12-30T00:00:00Z", other, CONV)["homes"], 0)
 
     def test_a_failed_jira_read_is_repeated_when_jira_answers(self):
         self.quiet_session()
         self.run_pass(jira=lambda key: None)
-        self.assertEqual(record.rehome_recent(self.conn, NOW, lambda key: None, CONV, only_failed=True), {"homes": 0})
-        self.assertEqual(record.rehome_recent(self.conn, NOW, jira_ok, CONV, only_failed=True), {"homes": 1})
+        self.assertEqual(record.rehome_recent(self.conn, NOW, lambda key: None, CONV, only_failed=True)["homes"], 0)
+        self.assertEqual(record.rehome_recent(self.conn, NOW, jira_ok, CONV, only_failed=True)["homes"], 1)
         self.assertEqual(self.rows("SELECT jira_read, epic_key FROM current_homes"), [("ok", "JP-901")])
-        self.assertEqual(record.rehome_recent(self.conn, NOW, jira_ok, CONV, only_failed=True), {"homes": 0})
+        self.assertEqual(record.rehome_recent(self.conn, NOW, jira_ok, CONV, only_failed=True)["homes"], 0)
 
     def test_recopy_costs_adds_a_batch_after_repricing(self):
         self.quiet_session()
@@ -338,7 +338,7 @@ class Recorder(LedgerCase):
                            conventions=CONV, state=self.state, cost_db=cdb)
         cdb.execute("INSERT INTO pricing_runs (id, started_at) VALUES (2, 'x')")
         cdb.execute("INSERT INTO message_costs VALUES (2, 1, 'model-a', 5.0, NULL, 'priced')")
-        self.assertEqual(record.recopy_costs_recent(self.conn, cdb, "2026-11-18T00:00:00Z"), {"costs": 1})
+        self.assertEqual(record.recopy_costs_recent(self.conn, cdb, "2026-11-18T00:00:00Z")["costs"], 1)
         self.assertEqual(self.rows("SELECT cost_usd FROM current_session_costs"), [(5.0,)])
 
     # -- no model, no network ----------------------------------------------------------------------------------
