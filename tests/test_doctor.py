@@ -317,7 +317,12 @@ class ServicesAndAccounts(h.DoctorCase):
         (self.home / "state" / "azure-upload.json").write_text(json.dumps({"last_success": "2026-11-01T06:00:00Z"}))
         self.assertEqual(self.results()["accounts.azure-upload"].status, "fail")
         (self.home / "state" / "azure-upload.json").write_text(json.dumps({"last_success": "2026-11-17T06:00:00Z"}))
-        (self.home / "state" / "azure-redactions-pending.json").write_text("[]")
+        pending = self.home / "state" / "azure-redactions-pending.json"
+        pending.write_text("[]")                      # the upload leaves this behind once it has caught up
+        self.assertEqual(self.results()["accounts.azure-upload"].status, "pass")
+        pending.write_text(json.dumps([{"table": "madeup", "row": 1, "column": "text"}]))
+        self.assertEqual(self.results()["accounts.azure-upload"].status, "warn")
+        pending.write_text("not json")                # unknown is not empty
         self.assertEqual(self.results()["accounts.azure-upload"].status, "warn")
 
     def test_jira_email_and_token(self):
