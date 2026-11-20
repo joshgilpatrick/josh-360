@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from laptop import failure_kinds
 from ledger import db
 from lib import follow_ups  # graphs/gates/lib, on sys.path through ledger._repo
 
@@ -192,6 +193,35 @@ def cmd_allow(conn, root: Path, args) -> dict:
     return {"allowed": True, "run": args.run, "step": args.step}
 
 
+CODE = re.compile(r"^[a-z][a-z-]{1,39}$")
+FINGERPRINT = re.compile(r"^[0-9a-f]{8,64}$")
+
+
+def cmd_stop(conn, root: Path, args) -> dict:
+    """The runner stops a run at its open role step for a failure that started no model (JP-183). The attempt stays
+    open, so it has used no run of the step's cap; `retry` (or a change in what the fingerprint covers) carries on."""
+    run = _load_run(conn, root, args.run)
+    if run.state.open_step != args.step or run.rows[-1]["kind"] != "role":
+        raise Refused("step '{}' is not the role step this run is waiting on".format(args.step))
+    if args.kind not in (failure_kinds.NEEDS_FIX, failure_kinds.MAY_CLEAR):
+        raise Refused("a run is stopped only for a failure that needs a fix or may clear, not '{}'".format(args.kind))
+    if not CODE.match(args.code):
+        raise Refused("'{}' is not a reason code".format(args.code))
+    if args.fingerprint and not FINGERPRINT.match(args.fingerprint):
+        raise Refused("'{}' is not a fingerprint".format(args.fingerprint))
+    stopped = {"step": args.step, "reason": " ".join(args.reason.split())[:600], "kind": args.kind, "code": args.code,
+               "by": "runner"}
+    if args.fingerprint:
+        stopped["fingerprint"] = args.fingerprint
+    run.doc["stopped"] = stopped
+    run.save()
+    runner.set_flag(run, True)
+    out = {"stopped": True, "run": args.run, "step": args.step, "kind": args.kind, "code": args.code}
+    if run.warnings:
+        out["warnings"] = list(run.warnings)
+    return out
+
+
 def cmd_retry(conn, root: Path, args) -> dict:
     run = _load_run(conn, root, args.run)
     if not run.doc.get("stopped"):
@@ -214,7 +244,7 @@ def cmd_status(conn, root: Path, args) -> dict:
 
 
 COMMANDS = {"start": cmd_start, "next": cmd_next, "record": cmd_record, "answer": cmd_answer, "abandon": cmd_abandon,
-            "allow": cmd_allow, "retry": cmd_retry, "status": cmd_status}
+            "allow": cmd_allow, "retry": cmd_retry, "status": cmd_status, "stop": cmd_stop}
 
 
 def parser() -> argparse.ArgumentParser:
@@ -249,6 +279,13 @@ def parser() -> argparse.ArgumentParser:
     s = sub.add_parser("allow")
     s.add_argument("--run", required=True)
     s.add_argument("--step", required=True)
+    s = sub.add_parser("stop")
+    s.add_argument("--run", required=True)
+    s.add_argument("--step", required=True)
+    s.add_argument("--kind", required=True)
+    s.add_argument("--code", required=True)
+    s.add_argument("--reason", required=True)
+    s.add_argument("--fingerprint")
     return p
 
 
