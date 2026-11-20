@@ -1,0 +1,30 @@
+test_the_instructions_needs_josh_example_is_recorded_and_posted (test_triage_run.TheDrafterIsToldItsOutputs.test_the_instructions_needs_josh_example_is_recorded_and_posted) ... ok
+test_the_instructions_revised_example_is_recorded_and_applied (test_triage_run.TheDrafterIsToldItsOutputs.test_the_instructions_revised_example_is_recorded_and_applied) ... ok
+test_the_proposal_fields_straight_under_outputs_are_refused_by_the_name_expected (test_triage_run.TheDrafterIsToldItsOutputs.test_the_proposal_fields_straight_under_outputs_are_refused_by_the_name_expected) ... ok
+test_the_revise_answer_names_its_one_output_and_its_contract (test_triage_run.TheDrafterIsToldItsOutputs.test_the_revise_answer_names_its_one_output_and_its_contract) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 2.736s
+
+OK
+test_an_answer_from_an_older_walker_keeps_the_general_line (test_runner_binding.Binding.test_an_answer_from_an_older_walker_keeps_the_general_line) ... ok
+test_binding_imports_nothing_of_the_runner (test_runner_binding.Binding.test_binding_imports_nothing_of_the_runner) ... ok
+test_close_archives (test_runner_binding.Binding.test_close_archives) ... ok
+test_fake_is_executable (test_runner_binding.Binding.test_fake_is_executable) ... ok
+test_group_is_made_once (test_runner_binding.Binding.test_group_is_made_once) ... ok
+test_long_prompt_goes_to_a_file (test_runner_binding.Binding.test_long_prompt_goes_to_a_file) ... ok
+test_model_refused_falls_back_to_the_next_entry (test_runner_binding.Binding.test_model_refused_falls_back_to_the_next_entry) ... ok
+test_other_spawn_failure_is_refused (test_runner_binding.Binding.test_other_spawn_failure_is_refused) ... ok
+test_prompt_for_a_step_with_no_outputs_says_to_leave_them_empty (test_runner_binding.Binding.test_prompt_for_a_step_with_no_outputs_says_to_leave_them_empty) ... ok
+test_prompt_gives_an_output_its_description_and_contract_file (test_runner_binding.Binding.test_prompt_gives_an_output_its_description_and_contract_file) ... ok
+test_prompt_names_each_declared_output_and_the_result_skeleton (test_runner_binding.Binding.test_prompt_names_each_declared_output_and_the_result_skeleton) ... ok
+test_prompt_order (test_runner_binding.Binding.test_prompt_order) ... ok
+test_spawn_command_names_the_session_group_folder_and_tier (test_runner_binding.Binding.test_spawn_command_names_the_session_group_folder_and_tier) ... ok
+test_spawn_puts_claude_code_on_the_path (test_runner_binding.Binding.test_spawn_puts_claude_code_on_the_path) ... ok
+test_state_maps_status_words (test_runner_binding.Binding.test_state_maps_status_words) ... ok
+test_worktree_input_wins_when_it_exists (test_runner_binding.Binding.test_worktree_input_wins_when_it_exists) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 3.757s
+
+OK

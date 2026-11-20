@@ -306,6 +306,7 @@
     "outputs": {
      "proposal": {
       "contract": "ticket-proposal",
+      "description": "Path to the revision, a JSON file in the work folder",
       "type": "string"
      }
     },
@@ -516,7 +517,7 @@
   }
  },
  "sources": {
-  "flows/triage.yaml": "df1ae303ecadc07b45d6ca063b27845f184cdd4a5583605fd957bfd8f8be118f",
+  "flows/triage.yaml": "14994d25b8ff2693861584eb1271cd779f0fc8e33f9697f7b752dfb829f01dad",
   "roles/sign-off/role.yaml": "2c940e901993068ff0bb897db05e74c23597b8a730e28ba2148bf29d47830254",
   "roles/ticket-drafter/role.yaml": "392bcc63415c2ce8d1593dcf345b9ed21cd4d999cdc7571d936d5ed16b7ef44a",
   "tiers.yaml": "af81c945dec4862af3be1d3957865dd692e7c77e42df42fa43b35c1fe3a14d44"

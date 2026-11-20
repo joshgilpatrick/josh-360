@@ -1,0 +1,58 @@
+EEFE
+======================================================================
+ERROR: test_the_instructions_needs_josh_example_is_recorded_and_posted (test_triage_run.TheDrafterIsToldItsOutputs.test_the_instructions_needs_josh_example_is_recorded_and_posted)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+ValueError: not enough values to unpack (expected 4, got 0)
+
+======================================================================
+ERROR: test_the_instructions_revised_example_is_recorded_and_applied (test_triage_run.TheDrafterIsToldItsOutputs.test_the_instructions_revised_example_is_recorded_and_applied)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+ValueError: not enough values to unpack (expected 4, got 0)
+
+======================================================================
+ERROR: test_the_revise_answer_names_its_one_output_and_its_contract (test_triage_run.TheDrafterIsToldItsOutputs.test_the_revise_answer_names_its_one_output_and_its_contract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+KeyError: 'outputs'
+
+======================================================================
+FAIL: test_the_proposal_fields_straight_under_outputs_are_refused_by_the_name_expected (test_triage_run.TheDrafterIsToldItsOutputs.test_the_proposal_fields_straight_under_outputs_are_refused_by_the_name_expected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+AssertionError: 'it declares proposal' not found in "step 'revise' does not declare the output 'action'"
+
+----------------------------------------------------------------------
+Ran 4 tests in 1.085s
+
+FAILED (failures=1, errors=3)
+E.......FFE.....
+======================================================================
+ERROR: test_an_answer_from_an_older_walker_keeps_the_general_line (test_runner_binding.Binding.test_an_answer_from_an_older_walker_keeps_the_general_line)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+KeyError: 'outputs'
+
+======================================================================
+ERROR: test_prompt_names_each_declared_output_and_the_result_skeleton (test_runner_binding.Binding.test_prompt_names_each_declared_output_and_the_result_skeleton)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+KeyError: 'outputs'
+
+======================================================================
+FAIL: test_prompt_for_a_step_with_no_outputs_says_to_leave_them_empty (test_runner_binding.Binding.test_prompt_for_a_step_with_no_outputs_says_to_leave_them_empty)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+AssertionError: 'This step declares no outputs: leave "outputs" empty.' not found in '[josh360-step run=r-55380bc3ba22 step=design attempt=1 key=0123456789abcdef]\nDo not run agent-manager rename; this session\'s name "JP-901 - Design (r5538)" is final.\nRead /tmp/josh360-walker-fqyydc2y/graphs/roles/designer/instructions.md first.\nTicket: JP-901.\nInputs:\nticket_key: JP-901\nEnd with one of these outcomes: ready.\nWhen you are done, use the Write tool to write {"outcome": "<one of them>", "outputs": {...}} to /tmp/josh360-walker-fqyydc2y/runs/r-55380bc3ba22/results/design-1.json, then stop.\nIf you find work outside this ticket, do not do it: report it in the same result file as "follow_ups": [{"summary": "<one line>", "why": "<why it is outside this ticket>", "blocks": true|false}] (at most 5; "blocks" is true only when this ticket cannot be finished without it). A script files each one as a ticket and tells the lead (graphs/contracts/follow-up.md).\nWork folder: /tmp/josh360-walker-fqyydc2y/runs/r-55380bc3ba22/work\nYou are a step in a graph run. Do not ask questions in this session: end with the outcome that says you need input. Do not write to Jira or GitHub; gate scripts do that.'
+
+======================================================================
+FAIL: test_prompt_gives_an_output_its_description_and_contract_file (test_runner_binding.Binding.test_prompt_gives_an_output_its_description_and_contract_file)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+AssertionError: '- proposal (string): Path to the revision. Format: /r/graphs/contracts/ticket-proposal.md.' not found in '[josh360-step run=r-df6b5dfe40eb step=design attempt=1 key=0123456789abcdef]\nDo not run agent-manager rename; this session\'s name "JP-901 - Design (rdf6b)" is final.\nRead /tmp/josh360-walker-vpm9nb52/graphs/roles/designer/instructions.md first.\nTicket: JP-901.\nInputs:\nticket_key: JP-901\nEnd with one of these outcomes: ready.\nWhen you are done, use the Write tool to write {"outcome": "<one of them>", "outputs": {...}} to /tmp/josh360-walker-vpm9nb52/runs/r-df6b5dfe40eb/results/design-1.json, then stop.\nIf you find work outside this ticket, do not do it: report it in the same result file as "follow_ups": [{"summary": "<one line>", "why": "<why it is outside this ticket>", "blocks": true|false}] (at most 5; "blocks" is true only when this ticket cannot be finished without it). A script files each one as a ticket and tells the lead (graphs/contracts/follow-up.md).\nWork folder: /tmp/josh360-walker-vpm9nb52/runs/r-df6b5dfe40eb/work\nYou are a step in a graph run. Do not ask questions in this session: end with the outcome that says you need input. Do not write to Jira or GitHub; gate scripts do that.'
+
+----------------------------------------------------------------------
+Ran 16 tests in 3.539s
+
+FAILED (failures=2, errors=2)

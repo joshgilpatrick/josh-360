@@ -115,6 +115,8 @@ Triage's `revise` step (JP-103, built in JP-122) writes a proposal with `action:
 | `authors` | Session ids of the steps that wrote the revision; the `apply-revision` script adds them to the ticket's `josh360.authors` |
 | `needs_josh` | Only when the step ends `needs_josh` (then there is no `tickets`, `closes` or `authors`): `question` (one sentence, ending in a question mark), `recommendation` and `reason`. The `post-question` script writes it on the ticket before Josh is asked. |
 
+The proposal is a JSON file in the run's work folder. The `revise` step's result names it as its one output, `{"outcome": "revised", "outputs": {"proposal": "<path>"}}` (or `"needs_josh"`); the fields above go in the file, never straight under `outputs`, which the walker refuses (JP-184). The ticket drafter's instructions have both examples.
+
 `apply-revision` writes the description only when the ticket still has the version the drafter was given. It never edits a ticket whose creator is not an allowed account.
 
 ```json

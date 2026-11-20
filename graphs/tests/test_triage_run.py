@@ -309,6 +309,82 @@ class ACheckThatFailsGoesToTheDrafterAndBack(RunCase):
         self.assertEqual(self.status(), "Not Started")
 
 
+def drafter_examples():
+    """The JSON blocks of the ticket drafter's "Revising a ticket that already exists" section, in order: the revised
+    result, its proposal, the needs_josh result, its proposal (JP-184)."""
+    text = (ROOT / "graphs" / "roles" / "ticket-drafter" / "instructions.md").read_text()
+    section = text.split("## Revising a ticket that already exists")[1]
+    return [json.loads(block.split("```", 1)[0]) for block in section.split("```json\n")[1:]]
+
+
+class TheDrafterIsToldItsOutputs(RunCase):
+    """JP-184: the laptop proof run's drafter put the proposal's own fields straight under "outputs", and the walker
+    refused the result. The step's answer names its output, a wrong shape is refused with that name, and the shape
+    the drafter's instructions show is recorded and read by the gates."""
+
+    def incomplete(self):
+        self.seed([t.issue(desc=t.description(sections={"first_step": ""})), t.issue("JP-94", type_="Epic", desc=None)])
+
+    def test_the_revise_answer_names_its_one_output_and_its_contract(self):
+        self.incomplete()
+        out = self.nxt(self.start())
+        self.assertEqual(out["step"], "revise")
+        self.assertEqual(list(out["outputs"]), ["proposal"])
+        spec = out["outputs"]["proposal"]
+        self.assertEqual(spec["type"], "string")
+        self.assertIn("Path", spec["description"])
+        self.assertTrue(spec["contract_file"].endswith("graphs/contracts/ticket-proposal.md"), spec)
+        self.assertTrue(Path(spec["contract_file"]).is_file())
+
+    def test_the_proposal_fields_straight_under_outputs_are_refused_by_the_name_expected(self):
+        self.incomplete()
+        run = self.start()
+        out = self.nxt(run)
+        proposal = json.loads(Path(self.revision(h.section_set())).read_text())
+        refused = self.walker("record", "--run", run, "--step", "revise", "--result-file", self.file("bad.json", {
+            "outcome": "revised", "outputs": proposal}), "--session", "s-drafter", code=2)
+        self.assertIn("does not declare the output 'action'", refused["error"])
+        self.assertIn("it declares proposal", refused["error"])
+        self.assertEqual(self.writes(), [])
+        # The step is still waiting, so the right shape is recorded on the same attempt.
+        self.walker("record", "--run", run, "--step", "revise", "--result-file", self.file("r.json", {
+            "outcome": "revised", "outputs": {"proposal": self.revision(h.section_set())}}), "--session", "s-drafter")
+        self.assertEqual(self.nxt(run)["step"], "sign_off")
+        self.assertEqual(out["attempt"], 1)
+
+    def example(self, result, proposal, run):
+        work = Path(self.nxt(run)["work_dir"])
+        target = work / Path(result["outputs"]["proposal"]).name
+        target.write_text(json.dumps(proposal))
+        self.assertEqual(list(result["outputs"]), ["proposal"])
+        return self.file("r.json", dict(result, outputs={"proposal": str(target)}))
+
+    def test_the_instructions_revised_example_is_recorded_and_applied(self):
+        revised, proposal, _, _ = drafter_examples()
+        self.assertEqual(revised["outcome"], "revised")
+        proposal["tickets"][0]["key"] = KEY
+        proposal["authors"] = ["s-drafter"]
+        self.incomplete()
+        run = self.start()
+        self.walker("record", "--run", run, "--step", "revise", "--result-file",
+                    self.example(revised, proposal, run), "--session", "s-drafter")
+        self.nxt(run)   # apply_revision writes it, then the checks run again
+        texts = [json.dumps(c) for c in self.state()["comments"][KEY]]
+        self.assertTrue(any("revised by the ticket drafter, round 1 of 2 | run " + run in c for c in texts), texts)
+
+    def test_the_instructions_needs_josh_example_is_recorded_and_posted(self):
+        _, _, needs, proposal = drafter_examples()
+        self.assertEqual(needs["outcome"], "needs_josh")
+        self.assertEqual(sorted(proposal), ["action", "needs_josh"])
+        self.incomplete()
+        run = self.start()
+        self.walker("record", "--run", run, "--step", "revise", "--result-file",
+                    self.example(needs, proposal, run), "--session", "s-drafter")
+        parked = self.nxt(run)
+        self.assertEqual((parked["action"], parked["step"]), ("parked", "ask_josh"), parked)
+        self.assertIn(proposal["needs_josh"]["question"], json.dumps(self.state()["comments"][KEY]))
+
+
 class SomeoneElsesTicket(RunCase):
     def other(self, **over):
         key = over.pop("key", KEY)

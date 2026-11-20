@@ -69,6 +69,41 @@ class Binding(RunnerCase):
         self.assertTrue(prompt.endswith(comments))
         self.assertIn(a["brief"], prompt)
 
+    def prompt_of(self, a):
+        self.start_session(a)
+        call = self.am_calls("spawn")[-1]
+        return call[call.index("--prompt") + 1]
+
+    def test_prompt_names_each_declared_output_and_the_result_skeleton(self):
+        # JP-184: a session told only `"outputs": {...}` put a contract's own fields there, and the walker refused it.
+        a = self.answer()
+        self.assertEqual(sorted(a["outputs"]), ["spec_path"])
+        prompt = self.prompt_of(a)
+        self.assertIn('Outputs: put only these keys under "outputs"', prompt)
+        self.assertIn("- spec_path (string)", prompt)
+        self.assertIn('{"outcome": "<one of them>", "outputs": {"spec_path": ...}} to ' + a["result_file"], prompt)
+        self.assertLess(prompt.index("- spec_path"), prompt.index(a["result_file"]))
+
+    def test_prompt_gives_an_output_its_description_and_contract_file(self):
+        a = dict(self.answer(), outputs={"proposal": {"type": "string", "description": "Path to the revision",
+                                                     "contract_file": "/r/graphs/contracts/ticket-proposal.md"}})
+        prompt = self.prompt_of(a)
+        self.assertIn("- proposal (string): Path to the revision. Format: /r/graphs/contracts/ticket-proposal.md.",
+                      prompt)
+        self.assertIn('"outputs": {"proposal": ...}}', prompt)
+
+    def test_prompt_for_a_step_with_no_outputs_says_to_leave_them_empty(self):
+        prompt = self.prompt_of(dict(self.answer(), outputs={}))
+        self.assertIn('This step declares no outputs: leave "outputs" empty.', prompt)
+        self.assertIn('{"outcome": "<one of them>", "outputs": {}}', prompt)
+
+    def test_an_answer_from_an_older_walker_keeps_the_general_line(self):
+        a = self.answer()
+        a.pop("outputs")
+        prompt = self.prompt_of(a)
+        self.assertNotIn("Outputs:", prompt)
+        self.assertIn('{"outcome": "<one of them>", "outputs": {...}}', prompt)
+
     def test_long_prompt_goes_to_a_file(self):
         a = self.answer()
         alt = self.tmp / "binding.json"
