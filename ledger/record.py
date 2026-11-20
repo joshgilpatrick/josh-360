@@ -11,8 +11,13 @@ the one network read (a ticket's epic in Jira) is the injected `jira` callable.
   - A resumed session that goes quiet again gets the next episode. Rows already written are never touched.
   - Each session is written in its own transaction, so one bad session never stops the others.
   - A session whose folder is inside a `.phi` folder stores no title. Any other title is stored after the screen.
+  - JP-181: a run stops starting new work once its time budget (BUDGET_SECONDS) is spent and leaves the rest for the
+    next run, so it ends well inside the job's timeout and the jobs behind it keep their five-minute pace. Its progress
+    mark is saved after every session that changed it, so even a run the job runner kills keeps what it did, and the
+    once-a-day re-home keeps its place between runs. Each ticket is read from Jira at most once per run.
 
-    python3 ledger/record.py    one pass over the real spool and transcripts; prints the counts
+    python3 ledger/record.py                 one run over the real spool and transcripts; prints the counts
+    python3 ledger/record.py --budget 60     the same with a different time budget, in seconds
 """
 from __future__ import annotations
 
@@ -37,6 +42,7 @@ BY = "ledger/record.py"
 QUIET_AFTER_SECONDS = 1800
 DISCOVER_DAYS = 14  # transcripts older than this are the backfill's job, not the recorder's
 GIT_TIMEOUT = 10
+BUDGET_SECONDS = 150  # the job's timeout is 4 minutes (jobs.yaml); one Jira read can take 10 s, a session up to 30 s
 REMOTE = re.compile(r"[:/]([^/:]+)/([^/]+?)(?:\.git)?/?$")
 
 GitRun = Callable[[str, List[str]], Optional[str]]  # (folder, git args) -> stdout, or None when git failed
@@ -348,15 +354,19 @@ def _link_ticket(conn, uid: str, branch: str, conv: dict, now: str, by: str = BY
 
 
 def record_pass(conn, *, now: str, spool: Path, projects: Path, git: GitRun, jira: Callable, conventions: dict,
-                state: Optional[Dict[str, object]] = None, cost_db=None,
-                claude_home: Optional[Path] = None) -> Dict[str, int]:
+                state: Optional[Dict[str, object]] = None, cost_db=None, claude_home: Optional[Path] = None,
+                out_of_time: Callable[[], bool] = lambda: False,
+                save: Callable[[Dict[str, object]], None] = lambda state: None) -> Dict[str, int]:
     """One pass. `state` holds the spool mark and each transcript's offset; pass the same dict to the next pass.
     `cost_db` is the cost ledger opened read-only (None when it is missing); `claude_home` is where STATE.md files
-    are read from (default ~/.claude) and where the size of the instruction files is counted (only when given)."""
+    are read from (default ~/.claude) and where the size of the instruction files is counted (only when given).
+    JP-181: no new session is started once `out_of_time()` says so (the rest waits for the next pass), and `save` is
+    given the state after the spool is read and after every session whose mark moved."""
     state = state if state is not None else _new_state()
     counts = {"sessions": 0, "episodes": 0, "refs": 0, "homes": 0, "skipped": 0, "costs": 0, "notes": 0, "offers": 0}
     now_epoch = _epoch(now)
     _read_spool(conn, state, spool, now, counts, conventions.get("registry"))
+    save(state)
     paths = _find_transcripts(projects, now_epoch)
     for sid, info in list(state["sessions"].items()):  # a transcript the spool named, wherever it is
         named = info.get("transcript")
@@ -364,27 +374,38 @@ def record_pass(conn, *, now: str, spool: Path, projects: Path, git: GitRun, jir
             paths[sid] = Path(named)
     # main sessions first, so a subagent's parent exists with its own starter before the child is written
     for sid in sorted(paths, key=lambda s: ("+" in s, s)):
+        if out_of_time():
+            break
+        before = dict(_info(state, sid))
         try:
             _record_session(conn, state, sid, paths[sid], now, now_epoch, git, jira, conventions, counts, cost_db,
                             claude_home)
         except Exception as e:  # noqa: BLE001  (one bad session never stops the others)
             _log("could not record {}: {}: {}".format(sid, type(e).__name__, e))
             counts["skipped"] += 1
+        if _info(state, sid) != before:
+            save(state)
     return counts
 
 
-def rehome_recent(conn, now: str, jira: Callable, conventions: dict, days: int = 30,
-                  only_failed: bool = False) -> Dict[str, int]:
+def rehome_recent(conn, now: str, jira: Callable, conventions: dict, days: int = 30, only_failed: bool = False,
+                  after: Optional[str] = None, out_of_time: Callable[[], bool] = lambda: False) -> Dict[str, object]:
     """Work out the home again for each session with an episode in the last `days` days; a row is written only when
     the answer changed (a ticket moved epic, the registry changed), or when a failed Jira read can now be repeated.
-    only_failed limits it to homes written while Jira was down, which the job retries on every pass."""
+    only_failed limits it to homes written while Jira was down, which the job retries on every pass.
+
+    Sessions go in session_uid order, starting after `after`. JP-181: it stops when `out_of_time()` says so and
+    returns {"homes", "done": False, "next"}: pass `next` as `after` to carry on. A finished run says "done": True."""
     since = _stamp(_epoch(now) - days * 86400)
     rows = conn.execute(
         """SELECT e.session_uid, e.episode, e.folder, e.repo, e.branch FROM current_session_episodes e
            WHERE e.episode = (SELECT MAX(e2.episode) FROM current_session_episodes e2 WHERE e2.session_uid = e.session_uid)
-             AND e.quiet_at >= ?""", (since,)).fetchall()
+             AND e.quiet_at >= ? AND e.session_uid > ? ORDER BY e.session_uid""", (since, after or "")).fetchall()
     written = 0
     for uid, number, folder, repo, branch in rows:
+        if out_of_time():
+            return {"homes": written, "done": False, "next": after}
+        after = uid
         try:
             if only_failed:
                 current = conn.execute("SELECT jira_read FROM current_homes WHERE session_uid = ?", (uid,)).fetchone()
@@ -396,23 +417,87 @@ def rehome_recent(conn, now: str, jira: Callable, conventions: dict, days: int =
                     written += 1
         except Exception as e:  # noqa: BLE001
             _log("could not re-home {}: {}: {}".format(uid, type(e).__name__, e))
-    return {"homes": written}
+    return {"homes": written, "done": True, "next": None}
 
 
-def recopy_costs_recent(conn, cost_db, now: str, days: int = 30) -> Dict[str, int]:
-    """Copy cost again for recent sessions, so a re-pricing or later usage adds a new batch."""
+def recopy_costs_recent(conn, cost_db, now: str, days: int = 30, after: Optional[str] = None,
+                        out_of_time: Callable[[], bool] = lambda: False) -> Dict[str, object]:
+    """Copy cost again for recent sessions, so a re-pricing or later usage adds a new batch. Stops and resumes like
+    rehome_recent (JP-181)."""
     since = _stamp(_epoch(now) - days * 86400)
     written = 0
     for uid, sid in conn.execute(
             """SELECT DISTINCT s.session_uid, s.tool_session_id FROM sessions s
-               JOIN current_session_episodes e ON e.session_uid = s.session_uid WHERE e.quiet_at >= ?""",
-            (since,)).fetchall():
+               JOIN current_session_episodes e ON e.session_uid = s.session_uid
+               WHERE e.quiet_at >= ? AND s.session_uid > ? ORDER BY s.session_uid""",
+            (since, after or "")).fetchall():
+        if out_of_time():
+            return {"costs": written, "done": False, "next": after}
+        after = uid
         try:
             with db.transaction(conn):
                 written += costs.copy_costs(conn, cost_db, uid, sid, now)
         except Exception as e:  # noqa: BLE001
             _log("could not re-copy cost for {}: {}: {}".format(uid, type(e).__name__, e))
-    return {"costs": written}
+    return {"costs": written, "done": True, "next": None}
+
+
+def once_per_run(jira: Callable[[str], Optional[dict]]) -> Callable[[str], Optional[dict]]:
+    """The Jira reader, remembering each ticket's answer for the rest of the run (JP-181). Many sessions share a
+    ticket (a graph run starts several, each with subagents), and a ticket's epic does not change within minutes. A
+    failed read is remembered too: Jira that did not answer a moment ago is not asked again, 10 s at a time, in the
+    same run; the next run asks again."""
+    seen: Dict[str, Optional[dict]] = {}
+
+    def read(key: str) -> Optional[dict]:
+        if key not in seen:
+            seen[key] = jira(key)
+        return seen[key]
+
+    return read
+
+
+def run(conn, state: Dict[str, object], *, now: str, spool: Path, projects: Path, git: GitRun, jira: Callable,
+        conventions: dict, cost_db=None, claude_home: Optional[Path] = None, budget: float = BUDGET_SECONDS,
+        clock: Callable[[], float] = time.monotonic,
+        save: Callable[[Dict[str, object]], None] = lambda state: None) -> Dict[str, int]:
+    """One run of the job: a recording pass, then the once-a-day re-home and cost re-copy (or, on other runs, the
+    homes written while Jira was down). Nothing new starts once `budget` seconds have gone by: the counts then say
+    "deferred": 1, and the next run carries on from the saved mark. `save` is given the state at every step."""
+    deadline = clock() + budget
+    out_of_time = lambda: clock() >= deadline  # noqa: E731
+    jira = once_per_run(jira)
+    counts = record_pass(conn, now=now, spool=spool, projects=projects, git=git, jira=jira, conventions=conventions,
+                         state=state, cost_db=cost_db, claude_home=claude_home, out_of_time=out_of_time, save=save)
+    deferred = out_of_time()
+    today = now[:10]
+    if state.get("rehomed") != today:  # once a day: a ticket's epic or the registry may have changed, costs re-priced
+        daily = state.get("rehome")
+        if not isinstance(daily, dict) or daily.get("day") != today:
+            daily = state["rehome"] = {"day": today, "homes_done": False, "after": None}
+        if not daily["homes_done"]:
+            done = rehome_recent(conn, now, jira, conventions, after=daily["after"], out_of_time=out_of_time)
+            counts["homes"] += done["homes"]
+            daily.update(homes_done=bool(done["done"]), after=done["next"])
+            save(state)
+        if daily["homes_done"]:
+            done = recopy_costs_recent(conn, cost_db, now, after=daily["after"], out_of_time=out_of_time)
+            counts["costs"] += done["costs"]
+            daily["after"] = done["next"]
+            if done["done"]:
+                state["rehomed"] = today
+                state.pop("rehome", None)
+            save(state)
+        deferred = deferred or state.get("rehomed") != today
+    else:  # every other run: homes written while Jira was down are repeated, carrying on where the last run stopped
+        done = rehome_recent(conn, now, jira, conventions, only_failed=True, after=state.get("retry_after"),
+                             out_of_time=out_of_time)
+        counts["homes"] += done["homes"]
+        state["retry_after"] = done["next"]
+        deferred = deferred or not done["done"]
+        save(state)
+    counts["deferred"] = int(deferred)
+    return counts
 
 
 def _conventions_version() -> str:
@@ -423,8 +508,10 @@ def _conventions_version() -> str:
         return "unknown"
 
 
-def main() -> int:
+def main(argv: Optional[List[str]] = None) -> int:
     from ledger import jira_read
+    argv = sys.argv[1:] if argv is None else argv
+    budget = float(argv[1]) if len(argv) == 2 and argv[0] == "--budget" else BUDGET_SECONDS
     mark_file = common.state_dir() / "ledger-record.json"
     state = common.read_json(mark_file, None) or _new_state()
     conv = homes.load_conventions(_conventions_version(), str(Path.home()))
@@ -434,22 +521,19 @@ def main() -> int:
     cost_db = costs.open_cost_ledger(costs.default_path(Path.home() / ".claude"))
     now = common.now_utc()
     jira = lambda key: jira_read.ticket_context(key, fetch, names)  # noqa: E731
+    lane = common.Lane()
+    save = lambda st: lane.write_text(mark_file, common.dump_json(st))  # noqa: E731
     try:
-        counts = record_pass(conn, now=now, spool=spool.spool_dir(), projects=Path.home() / ".claude" / "projects",
-                             git=real_git, jira=jira, conventions=conv, state=state, cost_db=cost_db,
-                             claude_home=Path.home() / ".claude")
-        daily = state.get("rehomed") != now[:10]
-        if daily:  # once a day: the registry or a ticket's epic may have changed, and costs may have been re-priced
-            counts["homes"] += rehome_recent(conn, now, jira, conv)["homes"]
-            counts["costs"] += recopy_costs_recent(conn, cost_db, now)["costs"]
-            state["rehomed"] = now[:10]
-        else:  # every pass: homes written while Jira was down are repeated
-            counts["homes"] += rehome_recent(conn, now, jira, conv, only_failed=True)["homes"]
+        counts = run(conn, state, now=now, spool=spool.spool_dir(), projects=Path.home() / ".claude" / "projects",
+                     git=real_git, jira=jira, conventions=conv, cost_db=cost_db, claude_home=Path.home() / ".claude",
+                     budget=budget, save=save)
     finally:
         conn.close()
         if cost_db is not None:
             cost_db.close()
-    common.Lane().write_text(mark_file, common.dump_json(state))
+    save(state)
+    if counts["deferred"]:
+        _log("stopped at the {:.0f}s budget; the next run carries on".format(budget))
     print(json.dumps(counts, sort_keys=True))
     return 0
 
