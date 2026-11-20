@@ -264,6 +264,48 @@ class ACheckThatFailsGoesToTheDrafterAndBack(RunCase):
         self.assertIn("Triage: one question for Josh | run " + run, json.dumps(self.state()["comments"][KEY]))
         self.assertEqual(self.status(), "Not Started")
 
+    # JP-199: the Needs you card asks the drafter's question itself, with the recommendation as an option.
+    def parked_on_a_question(self):
+        self.incomplete()
+        run = self.start()
+        self.assertEqual(self.nxt(run)["step"], "revise")
+        needs = {"action": "revise", "needs_josh": {"question": "Which file holds the first step?",
+                                                    "recommendation": "laptop/install.py", "reason": "it holds STEPS"}}
+        self.walker("record", "--run", run, "--step", "revise", "--result-file", self.file("r.json", {
+            "outcome": "needs_josh", "outputs": {"proposal": self.file("n.json", needs)}}), "--session", "s-drafter")
+        parked = self.nxt(run)
+        self.assertEqual((parked["action"], parked["step"]), ("parked", "ask_josh"), parked)
+        return run, questions.read(parked["question_id"])
+
+    def answers_file(self, run):
+        return (self.tmp / "runs" / run / "work" / "answers.md").read_text(encoding="utf-8")
+
+    def test_the_card_carries_the_question_and_the_recommendation(self):
+        _run, record = self.parked_on_a_question()
+        card = record["questions"][0]
+        self.assertIn("Which file holds the first step?", card["question"])
+        self.assertIn("laptop/install.py", card["question"])
+        self.assertIn("it holds STEPS", card["question"])
+        self.assertNotIn("on the ticket", card["question"])
+        self.assertEqual([o["label"] for o in card["options"]], ["laptop/install.py", "park"])
+        self.assertIn("it holds STEPS", card["options"][0]["description"])
+
+    def test_choosing_the_recommendation_answers_the_question(self):
+        run, _record = self.parked_on_a_question()
+        self.answer(run, "ask_josh", "laptop/install.py")
+        out = self.nxt(run)
+        self.assertEqual((out["step"], out["attempt"]), ("revise", 2), out)     # answered loops back to the drafter
+        self.assertIn("laptop/install.py", self.answers_file(run))
+        self.assertIn("Josh's answer: laptop/install.py", json.dumps(self.comments()))
+
+    def test_a_typed_answer_still_works(self):
+        run, _record = self.parked_on_a_question()
+        self.walker("answer", "--run", run, "--step", "ask_josh", "--text", "scripts/check.py, not the installer")
+        out = self.nxt(run)
+        self.assertEqual((out["step"], out["attempt"]), ("revise", 2), out)
+        self.assertIn("scripts/check.py, not the installer", self.answers_file(run))
+        self.assertIn("Josh's answer: scripts/check.py, not the installer", json.dumps(self.comments()))
+
     def test_two_drafter_rounds_then_josh(self):
         self.incomplete()
         run = self.start()

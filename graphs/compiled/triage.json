@@ -361,6 +361,16 @@
     "outcomes": [
      "posted"
     ],
+    "outputs": {
+     "card": {
+      "description": "The drafter's question and recommendation, as the Needs you card shows them",
+      "type": "string"
+     },
+     "options": {
+      "description": "The recommendation as an answer Josh can choose on the card: label and description",
+      "type": "list"
+     }
+    },
     "when": {
      "outcome": "needs_josh",
      "step": "revise"
@@ -372,7 +382,7 @@
       "answered",
       "park"
      ],
-     "question": "{{ inputs.ticket_key }} needs one answer from you before it can be Ready. The question is on the ticket."
+     "question": "{{ inputs.ticket_key }} needs one answer from you before it can be Ready."
     },
     "id": "ask_josh",
     "needs": [
@@ -517,7 +527,7 @@
   }
  },
  "sources": {
-  "flows/triage.yaml": "5c9add3472caa5013ca32ac00e063fe665ea394984a0b257ba94e956068a471b",
+  "flows/triage.yaml": "796b1cc8ea855c93e49dae839c76766cf52ecfe33d478c5dcd16b676683cb268",
   "roles/sign-off/role.yaml": "2c940e901993068ff0bb897db05e74c23597b8a730e28ba2148bf29d47830254",
   "roles/ticket-drafter/role.yaml": "392bcc63415c2ce8d1593dcf345b9ed21cd4d999cdc7571d936d5ed16b7ef44a",
   "tiers.yaml": "af81c945dec4862af3be1d3957865dd692e7c77e42df42fa43b35c1fe3a14d44"

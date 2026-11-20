@@ -159,13 +159,16 @@ steps:
     needs: [revise]
     when: { step: revise, outcome: needs_josh }
     inputs: [ticket_key, proposal]
+    outputs:
+      card: { type: string, description: "The drafter's question and recommendation, as the Needs you card shows them" }
+      options: { type: list, description: "The recommendation as an answer Josh can choose on the card: label and description" }
     outcomes: [posted]
 
   - id: ask_josh
     needs: [post_question]
     when: { step: post_question, outcome: posted }
     ask:
-      question: "{{ inputs.ticket_key }} needs one answer from you before it can be Ready. The question is on the ticket."
+      question: "{{ inputs.ticket_key }} needs one answer from you before it can be Ready."
       choices: [answered, park]
     on:
       answered: { goto: revise, max_loops: 2, at_limit: ask_at_limit }

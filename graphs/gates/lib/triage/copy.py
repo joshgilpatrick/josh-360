@@ -45,6 +45,18 @@ def question(run: str, text: str, recommendation: str, reason: str) -> str:
             "Recommended: {}, because {}.").format(run, q, _stop(recommendation), _stop(reason))
 
 
+def card(text: str, recommendation: str, reason: str) -> str:
+    """The question as the Needs you card shows it (JP-199): the question and the recommendation, no Jira header."""
+    q = _stop(text)
+    q = q if q.endswith("?") else q + "?"
+    return "{}\n\nRecommended: {}, because {}.".format(q, _stop(recommendation), _stop(reason))
+
+
+def recommended(reason: str) -> str:
+    """The description under the recommendation's option on the card (JP-199)."""
+    return "Recommended, because {}.".format(_stop(reason))
+
+
 def ready(run: str, session: str, graph: str, system: str, starts_now: bool) -> str:
     return "Triage: Ready | run {}, signed off by session {} | route: {} ({}) | next gate: {}".format(
         run, session, graph, system, "starts now" if starts_now else "starts when Josh queues it")

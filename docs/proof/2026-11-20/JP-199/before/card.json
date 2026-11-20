@@ -1,0 +1,13 @@
+{
+  "question": "JP-9001 needs one answer from you before it can be Ready. The question is on the ticket.",
+  "header": "ask_josh",
+  "multiSelect": false,
+  "options": [
+    {
+      "label": "answered"
+    },
+    {
+      "label": "park"
+    }
+  ]
+}

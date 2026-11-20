@@ -304,7 +304,7 @@ To compare a graph before and after a change, each run must record the version o
 
 ## Exact copy
 
-**Ask, `ask_josh`:** "{{ ticket }} needs one answer from you before it can be Ready. The question is on the ticket." Answers: **Answered**, **Park**. The question itself is posted on the ticket first:
+**Ask, `ask_josh`:** "{{ ticket }} needs one answer from you before it can be Ready." The card adds the question and the recommendation (`post_question`'s `card`), and its answers are the recommendation (`options`, described "Recommended, because <reason>."), **Park**, and a typed answer; choosing the recommendation or typing one is the outcome `answered` (JP-199). The question is also posted on the ticket first:
 
 ```text
 Triage: one question for Josh | run <run id> | next gate: your answer in Needs you

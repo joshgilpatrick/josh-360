@@ -212,6 +212,16 @@ class TheWriteGates(GateCase):
         self.assertEqual(len(bodies), 1)
         self.assertIn("Triage: one question for Josh | run " + RUN, json.dumps(bodies))
 
+    def test_post_question_gives_the_card_and_the_recommendation_as_an_option(self):    # JP-199
+        ask = {"needs_josh": {"question": "Which file holds the first step", "recommendation": "laptop/install.py",
+                              "reason": "it holds STEPS"}, "action": "revise"}
+        outcome, outputs, _ = self.gate("post-question", ticket_key=KEY, proposal=ask)
+        self.assertEqual(outcome, "posted")
+        self.assertIn("Which file holds the first step?", outputs["card"])
+        self.assertIn("Recommended: laptop/install.py, because it holds STEPS.", outputs["card"])
+        self.assertNotIn("Triage:", outputs["card"])
+        self.assertEqual(outputs["options"], [{"label": "laptop/install.py", "description": "Recommended, because it holds STEPS."}])
+
     def revision(self, **over):
         body = {"action": "revise", "closes": [1], "authors": ["s-drafter"], "tickets": [
             {"key": KEY, "type": "Story", "repository": "josh-360", "where_it_runs": "Cloud session",
