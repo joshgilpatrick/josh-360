@@ -23,7 +23,7 @@ Your step declares one output, `proposal`: the full path of a JSON file you writ
 
 A creation draft (outcome `drafted`):
 
-```json
+```json result step=draft
 {"outcome": "drafted", "outputs": {"proposal": "<work folder>/draft-1-proposal.json"}}
 ```
 
@@ -41,7 +41,7 @@ The result file is the same in both cases: only `proposal`, the path, under `out
 
 A revision (outcome `revised`). The result file:
 
-```json
+```json result step=revise
 {"outcome": "revised", "outputs": {"proposal": "<work folder>/revise-1-proposal.json"}}
 ```
 
@@ -63,7 +63,7 @@ and `revise-1-proposal.json`, the whole ticket as it should read (made-up data):
 
 A question for Josh (outcome `needs_josh`). The result file:
 
-```json
+```json result step=revise
 {"outcome": "needs_josh", "outputs": {"proposal": "<work folder>/revise-1-proposal.json"}}
 ```
 

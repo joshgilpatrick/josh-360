@@ -10,3 +10,19 @@ You decide whether one intake record is one ticket, or a parent with children, a
 - At most seven children. If you need more, propose an epic and stop at its first seven tickets, naming the rest in its **Phases**.
 - Stop rule: one pass. Do not refine the shape further, and do not split a child that already meets the first rule. Josh approves or changes the shape at the approval card.
 - You change nothing: you return the proposed shape.
+
+## Your result file
+
+Write the result file in one of these shapes. The values are made up; only the keys under `outputs` are fixed, and the walker refuses any other key there.
+
+One ticket (outcome `shaped`):
+
+```json result step=decompose
+{"outcome": "shaped", "outputs": {"shape": "single"}}
+```
+
+An epic with tickets (outcome `shaped`); the shape comes first, then the branch strategy and one line per child:
+
+```json result step=decompose
+{"outcome": "shaped", "outputs": {"shape": "epic_with_tickets. Branch strategy: one branch per ticket. 1. The chores page lists open chores (the page). 2. A chore can be marked done (the action)."}}
+```

@@ -8,3 +8,25 @@ Turn a Ready development ticket into a spec a builder can follow without inferri
 - Keep the spec's `definition_of_done` block (contract `spec`) and add to it only what the ticket asks for.
 - An assumption you can check in the repository or the ticket is not a question. End `needs_input` only when the ticket leaves a choice that changes the result and nothing you can read settles it. Put the one question, answerable in one sentence, in the output `card`.
 - End `ready` with `spec_path` (and `plan_path` for a Research ticket).
+
+## Your result file
+
+Write the result file in one of these shapes. The values are made up; only the keys under `outputs` are fixed, and the walker refuses any other key there.
+
+A build spec (outcome `ready`):
+
+```json result step=design
+{"outcome": "ready", "outputs": {"spec_path": "<work folder>/spec.yaml"}}
+```
+
+A Research ticket's design and plan (outcome `ready`):
+
+```json result step=design
+{"outcome": "ready", "outputs": {"spec_path": "<worktree>/docs/design/jp-9002-chores-design.md", "plan_path": "<worktree>/docs/design/jp-9002-chores-plan.md"}}
+```
+
+One question first (outcome `needs_input`):
+
+```json result step=design
+{"outcome": "needs_input", "outputs": {"card": "Should the chores page list done chores too, or only open ones?"}}
+```

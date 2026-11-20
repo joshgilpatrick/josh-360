@@ -43,6 +43,9 @@ Checks:
      folder, and the verify-josh-360 skill and its feature map keep their shape.
  17. JP-160: jobs.yaml reads with a standard YAML reader (yaml.safe_load), and gives the same jobs, key by key,
      as the laptop's own strict reader (laptop/common.py), which must also accept it. Needs PyYAML.
+ 18. JP-189: every role step in graphs/compiled/ has an example result in its role's instructions (a ```json result
+     step=<step> block) whose outcome is one of the step's and whose outputs keys are ones the step declares, and
+     together the step's examples name every declared output (graphs/tools/role_examples.py check).
 
 Tickets that add code add their own checks here or beside it. Exit 0 when everything passes, 1 otherwise.
 """
@@ -475,6 +478,9 @@ def main() -> int:
     code, output = run_quietly(["graphs/tools/compile_graphs.py", "--check"])
     if code != 0:
         problems.append(f"graph JSON copies are stale or missing (JP-114):\n{output}")
+    code, output = run_quietly(["graphs/tools/role_examples.py", "check"])
+    if code != 0:
+        problems.append(f"role example check failed (JP-189):\n{output}")
     code, output = run_quietly(["scripts/feature_tree.py", "check"])
     if code != 0:
         problems.append(f"feature tree check failed:\n{output}")

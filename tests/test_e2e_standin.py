@@ -211,6 +211,38 @@ class StandIn(unittest.TestCase):
         self.play(self.prompt(role=role))
         self.assertEqual(json.loads(self.result.read_text()), example)
 
+    def test_example_takes_the_example_tagged_for_its_step(self):
+        """JP-189: a role that serves two steps tags each example with its step; the stand-in takes its own."""
+        role = self.tmp / "roles" / "ticket-drafter"
+        role.mkdir(parents=True)
+        draft = {"outcome": "drafted", "outputs": {"proposal": "draft-1-proposal.json"}}
+        revise = {"outcome": "revised", "outputs": {"proposal": "revise-1-proposal.json"}}
+        (role / "instructions.md").write_text("Made-up role.\n\n```json result step=draft\n{}\n```\n\n"
+                                              "```json result step=revise\n{}\n```\n".format(json.dumps(draft),
+                                                                                            json.dumps(revise)))
+        self.play(self.prompt(step="revise", outcomes="revised, needs_josh", role=role))
+        self.assertEqual(json.loads(self.result.read_text()), revise)
+        self.result.unlink()
+        self.play(self.prompt(step="build", outcomes="done", role=role))   # no example for this step, none untagged
+        self.assertEqual(json.loads(self.result.read_text()), {"outcome": "done", "outputs": {}})
+
+    def test_every_role_step_gets_the_example_the_role_example_check_reads(self):
+        """JP-189: the stand-in's default result for each real role step is the example the check proves."""
+        sys.path.insert(0, str(ROOT / "graphs" / "tools"))
+        import role_examples
+        self.plan("example")
+        for role, pairs in sorted(role_examples.role_steps(ROOT / "graphs").items()):
+            text = (ROOT / "graphs" / "roles" / role / "instructions.md").read_text(encoding="utf-8")
+            for _, step in pairs:
+                with self.subTest(step=step["id"]):
+                    if self.result.exists():
+                        self.result.unlink()
+                    done = self.play(self.prompt(step=step["id"], outcomes=", ".join(step["outcomes"]),
+                                                 role=ROOT / "graphs" / "roles" / role))
+                    self.assertEqual(done.returncode, 0, done.stderr)
+                    self.assertEqual(json.loads(self.result.read_text()),
+                                     role_examples.example_for(text, step["id"]))
+
     def drafter(self):
         """A made-up role whose instructions carry two examples, as the ticket drafter's do (JP-184)."""
         role = self.tmp / "roles" / "drafter"

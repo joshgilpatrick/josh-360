@@ -1,0 +1,38 @@
+# the two new stand-in tests against the stand-in on main (dc12d16): it reads untagged blocks only
+$ python3 -m unittest tests.test_e2e_standin.StandIn.test_example_takes_the_example_tagged_for_its_step tests.test_e2e_standin.StandIn.test_every_role_step_gets_the_example_the_role_example_check_reads
+FAIL: test_example_takes_the_example_tagged_for_its_step (tests.test_e2e_standin.StandIn.test_example_takes_the_example_tagged_for_its_step)
+AssertionError: {'outcome': 'revised', 'outputs': {}} != {'outcome': 'revised', 'outputs': {'proposal': 'revise-1-proposal.json'}}
+FAIL: test_every_role_step_gets_the_example_the_role_example_check_reads (tests.test_e2e_standin.StandIn.test_every_role_step_gets_the_example_the_role_example_check_reads) (step='triage_question')
+AssertionError: {'out[26 chars]s': {}} != {'out[26 chars]s': {'answer': 'Retry through the existing hel[93 chars]".'}}
+FAIL: test_every_role_step_gets_the_example_the_role_example_check_reads (tests.test_e2e_standin.StandIn.test_every_role_step_gets_the_example_the_role_example_check_reads) (step='decompose')
+AssertionError: {'outcome': 'shaped', 'outputs': {}} != {'outcome': 'shaped', 'outputs': {'shape': 'single'}}
+FAIL: test_every_role_step_gets_the_example_the_role_example_check_reads (tests.test_e2e_standin.StandIn.test_every_role_step_gets_the_example_the_role_example_check_reads) (step='design')
+AssertionError: {'outcome': 'ready', 'outputs': {}} != {'outcome': 'ready', 'outputs': {'spec_path': '<work folder>/spec.yaml'}}
+FAIL: test_every_role_step_gets_the_example_the_role_example_check_reads (tests.test_e2e_standin.StandIn.test_every_role_step_gets_the_example_the_role_example_check_reads) (step='harden')
+AssertionError: {'outcome': 'pass', 'outputs': {}} != {'outcome': 'pass', 'outputs': {'findings': []}}
+FAIL: test_every_role_step_gets_the_example_the_role_example_check_reads (tests.test_e2e_standin.StandIn.test_every_role_step_gets_the_example_the_role_example_check_reads) (step='read_intake')
+AssertionError: {'out[21 chars]utputs': {}} != {'out[21 chars]utputs': {'intake_record': '<work folder>/intake-record.json'}}
+FAIL: test_every_role_step_gets_the_example_the_role_example_check_reads (tests.test_e2e_standin.StandIn.test_every_role_step_gets_the_example_the_role_example_check_reads) (step='find_precedent')
+AssertionError: {'out[23 chars]s': {}} != {'out[23 chars]s': {'candidates': [{'key': 'JP-9004', 'summar[128 chars]'}]}}
+FAIL: test_every_role_step_gets_the_example_the_role_example_check_reads (tests.test_e2e_standin.StandIn.test_every_role_step_gets_the_example_the_role_example_check_reads) (step='find_duplicates')
+AssertionError: {'out[26 chars]s': {}} != {'out[26 chars]s': {'candidates': [{'key': 'JP-9003', 'summar[108 chars]'}]}}
+FAIL: test_every_role_step_gets_the_example_the_role_example_check_reads (tests.test_e2e_standin.StandIn.test_every_role_step_gets_the_example_the_role_example_check_reads) (step='review_plan')
+AssertionError: {'outcome': 'complete', 'outputs': {}} != {'outcome': 'complete', 'outputs': {'findings': []}}
+FAIL: test_every_role_step_gets_the_example_the_role_example_check_reads (tests.test_e2e_standin.StandIn.test_every_role_step_gets_the_example_the_role_example_check_reads) (step='write_pr')
+AssertionError: {'out[25 chars]s': {}} != {'out[25 chars]s': {'pr_title': 'JP-9001 Add a made-up chores[156 chars]01'}}
+FAIL: test_every_role_step_gets_the_example_the_role_example_check_reads (tests.test_e2e_standin.StandIn.test_every_role_step_gets_the_example_the_role_example_check_reads) (step='judge_precedent')
+AssertionError: {'outcome': 'answers', 'outputs': {}} != {'outcome': 'answers', 'outputs': {'precedent': 'JP-9004'}}
+FAIL: test_every_role_step_gets_the_example_the_role_example_check_reads (tests.test_e2e_standin.StandIn.test_every_role_step_gets_the_example_the_role_example_check_reads) (step='do_work')
+AssertionError: {'out[22 chars]s': {}} != {'out[22 chars]s': {'deliverable_path': '<artifacts folder>/J[81 chars]md'}}
+FAIL: test_every_role_step_gets_the_example_the_role_example_check_reads (tests.test_e2e_standin.StandIn.test_every_role_step_gets_the_example_the_role_example_check_reads) (step='fix_review')
+AssertionError: {'out[23 chars]s': {}} != {'out[23 chars]s': {'resolution': 'Commit 1a2b3c4: chores.py,[130 chars]c.'}}
+FAIL: test_every_role_step_gets_the_example_the_role_example_check_reads (tests.test_e2e_standin.StandIn.test_every_role_step_gets_the_example_the_role_example_check_reads) (step='sign_off')
+AssertionError: {'outcome': 'ready', 'outputs': {}} != {'outcome': 'ready', 'outputs': {'defects': []}}
+FAIL: test_every_role_step_gets_the_example_the_role_example_check_reads (tests.test_e2e_standin.StandIn.test_every_role_step_gets_the_example_the_role_example_check_reads) (step='draft')
+AssertionError: {'out[18 chars]'outputs': {}} != {'out[18 chars]'outputs': {'proposal': '<work folder>/draft-1-proposal.json'}}
+FAIL: test_every_role_step_gets_the_example_the_role_example_check_reads (tests.test_e2e_standin.StandIn.test_every_role_step_gets_the_example_the_role_example_check_reads) (step='revise')
+AssertionError: {'out[19 chars]outputs': {}} != {'out[19 chars]outputs': {'proposal': '<work folder>/revise-1-proposal.json'}}
+FAIL: test_every_role_step_gets_the_example_the_role_example_check_reads (tests.test_e2e_standin.StandIn.test_every_role_step_gets_the_example_the_role_example_check_reads) (step='review_work')
+AssertionError: {'outcome': 'pass', 'outputs': {}} != {'outcome': 'pass', 'outputs': {'findings': []}}
+Ran 2 tests in 6.568s
+FAILED (failures=17)

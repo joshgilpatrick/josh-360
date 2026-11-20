@@ -11,6 +11,7 @@ from __future__ import annotations
 import io
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -314,7 +315,8 @@ def drafter_examples():
     result, its proposal, the needs_josh result, its proposal (JP-184)."""
     text = (ROOT / "graphs" / "roles" / "ticket-drafter" / "instructions.md").read_text()
     section = text.split("## Revising a ticket that already exists")[1]
-    return [json.loads(block.split("```", 1)[0]) for block in section.split("```json\n")[1:]]
+    # A result block is tagged with its step (```json result step=revise, JP-189); a proposal block is plain ```json.
+    return [json.loads(block.split("```", 1)[0]) for block in re.split(r"```json[^\n]*\n", section)[1:]]
 
 
 class TheDrafterIsToldItsOutputs(RunCase):

@@ -1,0 +1,26 @@
+$ python3 graphs/tools/role_examples.py check
+role examples: every one of 17 role steps has a matching example
+exit 0
+
+$ python3 -m unittest discover -s tests -t tests -p test_role_examples.py -v
+test_a_contract_block_without_an_outcome_is_not_an_example (test_role_examples.Broken.test_a_contract_block_without_an_outcome_is_not_an_example) ... ok
+test_a_declared_output_in_no_example_fails (test_role_examples.Broken.test_a_declared_output_in_no_example_fails) ... ok
+test_a_role_serving_two_steps_needs_an_example_for_each (test_role_examples.Broken.test_a_role_serving_two_steps_needs_an_example_for_each) ... ok
+test_a_step_with_no_example_fails_naming_that_step (test_role_examples.Broken.test_a_step_with_no_example_fails_naming_that_step)
+@auto Scenario: A step with no example fails. ... ok
+test_an_example_for_a_step_the_role_does_not_serve_fails (test_role_examples.Broken.test_an_example_for_a_step_the_role_does_not_serve_fails) ... ok
+test_an_example_that_is_not_json_fails (test_role_examples.Broken.test_an_example_that_is_not_json_fails) ... ok
+test_an_example_with_an_undeclared_output_fails_naming_the_step_and_the_key (test_role_examples.Broken.test_an_example_with_an_undeclared_output_fails_naming_the_step_and_the_key)
+@auto Scenario: An example with an undeclared output fails. ... ok
+test_an_outcome_the_step_does_not_declare_fails (test_role_examples.Broken.test_an_outcome_the_step_does_not_declare_fails) ... ok
+test_an_untagged_result_block_fails (test_role_examples.Broken.test_an_untagged_result_block_fails) ... ok
+test_outputs_that_are_not_an_object_fail (test_role_examples.Broken.test_outputs_that_are_not_an_object_fail) ... ok
+test_every_role_step_in_every_compiled_graph_is_covered (test_role_examples.OnMain.test_every_role_step_in_every_compiled_graph_is_covered) ... ok
+test_scripts_check_runs_it (test_role_examples.OnMain.test_scripts_check_runs_it) ... ok
+test_the_check_passes_on_the_graphs_and_roles_here (test_role_examples.OnMain.test_the_check_passes_on_the_graphs_and_roles_here) ... ok
+test_the_revise_example_is_revises_not_drafts (test_role_examples.OnMain.test_the_revise_example_is_revises_not_drafts) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.270s
+
+OK

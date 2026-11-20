@@ -15,6 +15,6 @@ How a graph is stored, and the rules the checker enforces: [CONVENTION.md](CONVE
 | `intake/` | `submit.py`, the one command that starts a ticket creation run from a pointer ([README.md](intake/README.md)) |
 | `bindings/` | Anything specific to one runner (Agent Manager first) |
 | `runner/` | The graph runner (JP-117): watches Jira, starts runs, starts Agent Manager sessions for role steps ([README.md](runner/README.md)) |
-| `tools/` | The checker, the walker (`walker.py`, `walker_lib/`) and `compile_graphs.py` |
+| `tools/` | The checker, the walker (`walker.py`, `walker_lib/`), `compile_graphs.py` and `role_examples.py` (every role step's example result matches the step, JP-189) |
 | `compiled/` | The JSON copy of each graph the walker reads, built by `compile_graphs.py` |
 | `tests/` | The checker's tests and sample graphs |
