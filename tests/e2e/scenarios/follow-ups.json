@@ -1,0 +1,1 @@
+{"_about": "The step writes its example result and reports two made-up follow-ups (graphs/contracts/follow-up.md).", "kind": "follow-ups", "think": 1, "follow_ups": [{"summary": "Add a made-up chores page footer", "why": "the footer is outside this ticket", "blocks": false}, {"summary": "Fix a made-up broken sample link", "why": "the link lives in another part", "blocks": true}]}
