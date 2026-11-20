@@ -1,0 +1,8 @@
+2026-11-20T17:57:19Z advance r-0354360cf95c: started revise attempt 1
+2026-11-20T17:57:21Z triage_jp116_job: the walker did not admit the run: the entry gate 'triageable' did not admit the run: gate 'triageable' failed (1): JP-116 could not be read from Jira
+2026-11-20T18:12:28Z advance r-0354360cf95c: abandoned revise attempt 1: rested-without-result (ran; it used a run of the cap)
+2026-11-20T18:12:28Z advance r-0354360cf95c: started revise attempt 2
+2026-11-20T18:27:36Z advance r-0354360cf95c: abandoned revise attempt 2: rested-without-result (ran; it used a run of the cap)
+2026-11-20T18:27:36Z advance r-0354360cf95c: started revise attempt 3
+2026-11-20T18:42:43Z advance r-0354360cf95c: abandoned revise attempt 3: rested-without-result (ran; it used a run of the cap)
+2026-11-20T18:42:44Z advance r-0354360cf95c: stopped at revise: step 'revise' has run as often as its tier allows (3 runs) and no question leads to a decision; use `allow` to allow one more

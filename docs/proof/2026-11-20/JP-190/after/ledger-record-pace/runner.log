@@ -1,0 +1,3 @@
+2026-11-20T18:24:04Z advance r-5745ce9e038b: started sign_off attempt 1
+2026-11-20T18:24:05Z triage_jp116_job: the walker did not admit the run: the entry gate 'triageable' did not admit the run: gate 'triageable' failed (1): JP-116 could not be read from Jira
+2026-11-20T18:31:44Z advance r-5745ce9e038b: recorded sign_off attempt 1
