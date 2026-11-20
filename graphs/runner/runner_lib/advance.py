@@ -124,6 +124,13 @@ def _loop(run_id: str, now: Callable[[], float], root: Optional[Path]) -> str:
                 paths.log("advance {}: what stopped {} ({}) has changed; trying it again".format(
                     run_id, answer.get("step"), answer.get("code")))
                 continue
+            again = failures.gate_retry(run_id, answer, cfg, now())     # JP-188: a gate that could not tell yet
+            if again == "due":
+                walk.call("retry", "--run", run_id, root=root)
+                paths.log("advance {}: gate stop at {} may have cleared; trying it again".format(run_id, answer.get("step")))
+                continue
+            if again == "wait":
+                return "retry-later"
             key = notify.stop_key(answer)
             if notify.note_once(run_id, key):
                 _safely("telling the lead", run_id, teller.tell, run_id, "stopped", key,
