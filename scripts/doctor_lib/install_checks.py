@@ -278,6 +278,11 @@ def once_jobs(ctx: Ctx) -> List[Result]:
                               "wait for the next runner pass, or: python3 ~/.josh-360/repo/laptop/run_jobs.py"))
         elif not dep_ok:
             out.append(Result(cid, WARN, "waiting for {} to succeed first (retries hourly)".format(dep), log))
+        elif record.get("kind") == "needs-fix":     # JP-183: it won't fix itself, so it is not retried hourly
+            said = " ".join(str(record.get("said") or "").split())[:200]
+            out.append(Result(cid, FAIL, "needs a fix ({}){}; not retried until the laptop copy or the job changes".format(
+                record.get("reason") or "needs-fix", ": " + said if said else ""),
+                "fix the cause ({}), then: python3 ~/.josh-360/repo/laptop/run_jobs.py --resume {}".format(log, jid)))
         else:
             out.append(Result(cid, FAIL, "last try {} exited {}; it retries hourly".format(
                 ago(ctx.age_seconds(float(record.get("last_run", 0) or 0))), record.get("last_result")), log))

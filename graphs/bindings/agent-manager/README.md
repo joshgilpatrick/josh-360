@@ -15,7 +15,8 @@
 
 The runner (`graphs/runner/`) loads the binding by the run's `runner` value, as `graphs/bindings/<runner>/binding.py`, and calls four things:
 
-- `start(answer, marker, comments)` spawns the session and returns its handle (`am_session`, `name`, `model`, `effort`, `directory`). It raises `SpawnRefused` with one of `no-cli`, `group`, `refused`, `timeout`, `no-id`.
+- `start(answer, marker, comments)` spawns the session and returns its handle (`am_session`, `name`, `model`, `effort`, `directory`). It raises `SpawnRefused`, whose text is a reason code and whose `detail` is Agent Manager's own message (JP-183). `classify(text)` reads the message: `no-cli` (not installed), `bad-model` or `bad-effort` (not one Agent Manager lists), `no-folder`, `not-running`, `rate-limited`, `network`, else `refused`; the binding itself adds `group`, `timeout` and `no-id`. The runner sorts each code into a kind with `laptop/failure_kinds.py`. A `bad-model`, `bad-effort` or `rate-limited` refusal tries the tier's next entry first; when every entry is refused, a rate limit wins (it may clear), else the first entry's refusal.
+- `inputs()` is what a spawn depends on outside the run (the settings in `binding.json` and where `agent-manager` and `claude` are found); the runner hashes it to tell when a stop that needs a fix may have been fixed.
 - `state(handle)` answers `working`, `resting`, `gone` or `unknown`. Unknown (a missing database, column or status word) changes nothing.
 - `close(handle)` archives the session and says whether that worked. It never raises.
 - `build_prompt` and `session_name` are what `start` uses; the first line of every prompt is the runner's marker.
@@ -26,7 +27,7 @@ Every `agent-manager` call runs with the folder of Claude Code first on the PATH
 
 ## binding.json
 
-Everything specific to Agent Manager that is not code: the group (`josh-360/graph-runs`), the tool (`claude`), `prompt_max_bytes` (a longer prompt goes to `<run folder>/prompts/<step>-<attempt>.md` and the session is told to read it), `id_fields` (the fields of `spawn --json` that can hold the new session's id), `status` (which Agent Manager status words mean working, resting and gone), `archive` (the archive command's words) and `models` (a map from a model id the walker names to the id Agent Manager takes; a model not in the map is used as it is). Tests point `JOSH360_AM_BINDING_JSON` at another copy.
+Everything specific to Agent Manager that is not code: the group (`josh-360/graph-runs`), the tool (`claude`), `prompt_max_bytes` (a longer prompt goes to `<run folder>/prompts/<step>-<attempt>.md` and the session is told to read it), `id_fields` (the fields of `spawn --json` that can hold the new session's id), `status` (which Agent Manager status words mean working, resting and gone), `archive` (the archive command's words) `models` (a map from a model id the walker names to the id Agent Manager takes; a model not in the map is used as it is) and `accepts` (the models and efforts Agent Manager lists, from its own refusal message on 20 November 2026: `default`, `opus`, `fable`, `sonnet`, `haiku`; `low`, `medium`, `high`). `doctor.py --only graphs` runs `graphs.tier-models`, which fails when a tier's model, after the `models` map, or its effort is not in `accepts` (JP-183). Tests point `JOSH360_AM_BINDING_JSON` at another copy.
 
 ## Setup notes
 
