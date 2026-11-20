@@ -1073,7 +1073,7 @@ async function candidate(piece, ctx) {
   if (roots !== null) absolutes = roots.map(r => [r + rest, '.'.repeat(r.length) + restMask])
   else if (relative) absolutes = ctx.bases.map(b => joinRaw(b, text)).map(a => [a, '.'.repeat(a.length - text.length) + mask])
   else absolutes = [[text, mask]]
-  const c = { spellings: [], reals: [], prefixes: [], anchors: [], relative: null }
+  const c = { spellings: [], reals: [], prefixes: [], globs: [], anchors: [], relative: null }
   const withSlash = d => (d.endsWith('/') ? d : `${d}/`)
   for (const [abs, m] of absolutes) {
     const dynAt = m.indexOf('d')
@@ -1081,6 +1081,13 @@ async function candidate(piece, ctx) {
       const real = await canonical(abs)
       c.spellings.push(path.resolve(abs), real)
       c.reals.push(real)
+      if (await isDirectory(real)) c.anchors.push(real)
+      continue
+    }
+    const shape = roots === null ? globShape(abs, m) : null
+    if (shape) {
+      const real = await canonical(shape.dir)
+      c.globs.push({ bases: [path.resolve(shape.dir), real], parts: shape.parts })
       if (await isDirectory(real)) c.anchors.push(real)
       continue
     }
@@ -1101,6 +1108,79 @@ async function candidate(piece, ctx) {
     }
   }
   return c
+}
+
+/**
+ * JP-197: a word whose only expansions are `*`, `?` and closed bracket expressions, read as the glob it is: the literal folder
+ * before the first pattern level, and each later level as a literal name or a RegExp (`*` within one level, `?` and a bracket one
+ * character). Null keeps the prefix rule: a variable, a command substitution, a brace list, `**`, a `.` or `..` after a pattern
+ * level, or a bracket the guard cannot read. A dot file matches `*` here, as it does with dotglob, so the rule only errs towards
+ * blocking.
+ */
+function globShape(abs, mask) {
+  for (let i = 0; i < abs.length; i++) {
+    if (mask[i] !== 'd') continue
+    const ch = abs[i]
+    if (ch !== '*' && ch !== '?' && ch !== '[') return null
+    if (ch === '*' && mask[i + 1] === 'd' && abs[i + 1] === '*') return null
+  }
+  const levels = []
+  let start = 0
+  for (let i = 0; i <= abs.length; i++) {
+    if (i < abs.length && !(abs[i] === '/' && mask[i] !== 'd')) continue
+    levels.push({ text: abs.slice(start, i), mask: mask.slice(start, i) })
+    start = i + 1
+  }
+  const first = levels.findIndex(l => l.mask.includes('d'))
+  if (first < 0) return null
+  const dir = levels.slice(0, first).map(l => l.text).join('/') || '/'
+  const parts = []
+  for (const level of levels.slice(first)) {
+    if (level.text === '') continue
+    if (!level.mask.includes('d')) {
+      if (level.text === '.' || level.text === '..') return null
+      parts.push(fold(level.text))
+      continue
+    }
+    const re = levelRegExp(level.text, level.mask)
+    if (re === null) return null
+    parts.push(re)
+  }
+  return parts.length > 0 ? { dir, parts } : null
+}
+
+const REGEX_SPECIAL_RE = /[\\^$.*+?()[\]{}|/]/g
+
+function levelRegExp(text, mask) {
+  let src = ''
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]
+    if (mask[i] !== 'd') { src += ch.replace(REGEX_SPECIAL_RE, '\\$&'); continue }
+    if (ch === '*') { src += '[^/]*'; continue }
+    if (ch === '?') { src += '[^/]'; continue }
+    const close = text.indexOf(']', i + 2)
+    if (close < 0) return null
+    let body = text.slice(i + 1, close)
+    let negate = false
+    if (body[0] === '!' || body[0] === '^') { negate = true; body = body.slice(1) }
+    // A POSIX class ([:alpha:]) or an empty set: any one character, which only errs towards blocking.
+    if (body === '' || body.includes('[:') || body.includes('[=') || body.includes('[.')) src += '[^/]'
+    else src += `[${negate ? '^/' : ''}${body.replace(/[\\\]^[]/g, '\\$&')}]`
+    i = close
+  }
+  try { return new RegExp(`^${src}$`, 'i') } catch { return null }
+}
+
+/** A glob that can stand for the protected path W or a folder holding it; or for W's `.git` entry, as `W/*` does. */
+function globHit(g, worktreePath) {
+  for (const base of g.bases) {
+    if (!isWithin(worktreePath, base)) continue
+    const below = fold(worktreePath).slice(fold(base).replace(/\/$/, '').length).split('/').filter(s => s !== '')
+    const names = g.parts.length <= below.length ? below : [...below, '.git']
+    if (g.parts.length > names.length) continue
+    if (g.parts.every((part, k) => (typeof part === 'string' ? part === names[k] : part.test(names[k])))) return true
+  }
+  return false
 }
 
 /** A relative word after a directory change that could not be followed: compared with the components of every worktree path. */
@@ -1125,6 +1205,7 @@ function candidateHit(c, protectedPaths) {
   for (const w of protectedPaths) {
     if (c.spellings.some(s => isWithin(w.worktreePath, s))) return w
     if (c.prefixes.some(p => fold(`${w.worktreePath}/`).startsWith(fold(p)))) return w
+    if (c.globs.some(g => globHit(g, w.worktreePath))) return w
     if (c.relative && relativeHit(c.relative, w)) return w
   }
   return null
@@ -1231,7 +1312,7 @@ async function appearsToTarget(command, words, cwd, git, catalog) {
   }
   const changeDirectory = async token => {
     const c = await candidate(token, ctx)
-    if (c === null || c.prefixes.length > 0 || c.reals.length === 0) ctx.unknown = true
+    if (c === null || c.prefixes.length > 0 || c.globs.length > 0 || c.reals.length === 0) ctx.unknown = true
     else for (const real of c.reals) if (!ctx.bases.includes(real)) ctx.bases.push(real)
   }
   const considered = []

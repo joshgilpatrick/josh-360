@@ -158,3 +158,37 @@ test('JP-157: a block names the verb and the path that caused it', async () => {
   assert.match(prose.stderr, /removes or prunes Git worktrees/)
   assert.match(prose.stderr, /remove the worktree/, 'shows the command that matched')
 })
+
+// JP-197: a `[` inside quoted code or a `[:N]` slice is not a glob over a worktree; a real glob that matches one still blocks.
+test('JP-197: a slice in a piped one-liner is allowed', async () => {
+  const commands = [
+    // JP-116's run: the laptop's own read of `git worktree list` output, blocked on 20 November.
+    `cat f | python3 -c 'import sys,json; [print(r["worktree"][:40]) for r in json.load(sys.stdin)[:3]]'`,
+    `cat ${main}/README.md | python3 -c "import sys, json; d = sys.stdin.read(); print(d[:3])"`,
+    `echo '{"a": [1, 2, 3]}' | python3 -c "import json, sys; print(json.load(sys.stdin)['a'][:2])"`,
+    `ls ${work} | head -n 3`,
+  ]
+  await each(commands, async command => {
+    const r = await guard(command)
+    assert.equal(r.code, 0, `${command}: expected exit 0\n${r.stderr}`)
+  })
+})
+
+test('JP-197: a glob that matches the worktree folder still blocks', async () => {
+  const repo = makeRepo(join(home, 'dotted'))
+  git(repo, 'worktree', 'add', '-q', '-b', 'inner', join(repo, '.claude', 'worktrees', 'inner'))
+  for (const command of ['rm -rf [.]claude', 'rm -rf .clau?e', `rm -rf ${repo}/.claude/work*`, 'rm -rf .claude/worktrees/[a-z]*']) {
+    const r = await guard(command, repo)
+    assert.equal(r.code, 2, `${command}: expected exit 2\n${r.stderr}`)
+  }
+})
+
+test('JP-197: a star glob over a worktree\'s parent still blocks', async () => {
+  for (const command of ['rm -rf ../proj*', `rm -rf ${work}/proj-*`, `rm -rf ${work}/*`, 'rm -rf ../worktree-?wo']) {
+    const r = await guard(command)
+    assert.equal(r.code, 2, `${command}: expected exit 2\n${r.stderr}`)
+  }
+  // A glob that matches no worktree path is not blocked for being a glob.
+  const r = await guard(`rm -rf ${home}/plain/*.tmp`)
+  assert.equal(r.code, 0, r.stderr)
+})

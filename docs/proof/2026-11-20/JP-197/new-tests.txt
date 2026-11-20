@@ -1,0 +1,7 @@
+ok 1 - JP-157: commands that delete nothing pass, whatever words they quote
+ok 2 - JP-157: a command with no deleting word skips the checkout-count rule for a folder of many repositories
+ok 3 - JP-157: every real deletion that was blocked stays blocked
+ok 4 - JP-157: a block names the verb and the path that caused it
+ok 5 - JP-197: a slice in a piped one-liner is allowed
+ok 6 - JP-197: a glob that matches the worktree folder still blocks
+ok 7 - JP-197: a star glob over a worktree's parent still blocks
