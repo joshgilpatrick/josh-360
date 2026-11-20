@@ -13,8 +13,16 @@
 | Movers (JP-168) | `validation-rule`: after a merge or a sign-off, `watch` (the ticket goes to Deployed) or `done`; `close-ticket` moves the ticket to the `target_status` the step's stretch names, Done or Deployed |
 | Shared | `ready` (entry gate of the development and non-development graphs), `no-loose-ends` (exit gate of the triage, development and non-development graphs; built in JP-161 on JP-109's loose-ends finder) |
 | Walker effects | `set-flag` and `post-comment`: the walker calls them, no graph step names them |
+| Runner (JP-191) | `close-out`: the graph runner calls it once when a ticket's last step session closes; no graph step names it. Done is left alone, Deployed and Cancelled are never moved, anything else goes to Done (`graphs/runner/README.md`) |
 
 The ticket creation gates are written like the others, over the shared Jira library `lib/jira.py` (`lib/jira_fake.py` is a Jira in a folder, for tests that run the scripts as separate processes). Their other parts in `lib/`: `adf.py` (Atlassian Document Format helpers), `card.py` (the approval card text), `contracts.py` (reads and checks the intake record and the ticket proposal), `sources.py` (where an intake item lives and whether it may start a run or be linked) and `ready_checklist.py` (the per-type checklist as data, which `ticket-complete` reads).
+
+## The strict fake Jira (JP-187)
+
+`lib/jira_fake.py` is lenient on its own: it accepts any transition, field or status. A folder made with `lib/jira_strict.install(folder, fixtures=("JP-9116",))` also holds `snapshot.json`, a copy of `jira-snapshot/JP.json`, and then the fake answers as JP's real Jira does: 400 for a transition id that does not lead from the ticket's status, a field that is not on the issue type's create screen (or is `status`), an option value the field does not have, an issue type or project JP does not have, or a JQL `status`, `issuetype` or `project` value JP does not have; 404 for a missing ticket or an unknown link type. Transitions, create metadata and link types come from the snapshot, and statuses and issue types come back with their real ids. A stored ticket in a status JP does not have answers 500, so a test cannot be seeded with one.
+
+- `jira-snapshot/JP.json`: JP's statuses, transitions (id, target, the statuses each leads from), issue types with their create fields, custom field ids with option values, link types, priorities and the `josh360.route` shape. Ids and names only, no ticket text. Refresh it read-only with `python3 scripts/jira_snapshot.py` (Jira credentials as for the gates).
+- `jira-snapshot/fixtures/JP-9116.json`: a made-up Task, "Add a made-up chores page", in Ready with `ready-to-run` and a route to the development graph, for end-to-end runs.
 
 ## How the non-development gates are written (JP-123)
 

@@ -483,6 +483,124 @@ class AgentManagerGroups(h.DoctorCase):
         self.assertEqual(self.results()[self.ID].status, "skip")
 
 
+class ClosedSessionsInGroups(AgentManagerGroups):
+    """JP-191: a killed session, or one whose step the runner recorded as finished, is not counted as in view."""
+
+    def setUp(self):
+        super().setUp()
+        conn = sqlite3.connect(str(self.am_db))
+        conn.execute("ALTER TABLE sessions ADD COLUMN status TEXT")
+        conn.commit()
+        conn.close()
+
+    def am(self, *rows):
+        conn = sqlite3.connect(str(self.am_db))
+        conn.executemany("INSERT INTO sessions VALUES (?, ?, ?, ?, ?)",
+                         [r if len(r) == 5 else tuple(r) + ("idle",) for r in rows])
+        conn.commit()
+        conn.close()
+
+    def test_a_killed_session_is_not_in_view(self):
+        self.tickets([self.session(1, "s-1"), self.session(2, "s-2")])
+        self.am(("s-1", "JP-900(a) - Design", "josh-360/completed-steps", 0, "dead"),
+                ("s-2", "JP-900(b) - Build", self.GROUP, 0, "working"))
+        r = self.results()[self.ID]
+        self.assertEqual(r.status, "pass", r.detail)
+
+    def test_a_finished_session_is_left_to_the_completed_steps_check(self):
+        done = dict(self.session(1, "s-1"), finished_at=1795000000.0)
+        self.tickets([done, self.session(2, "s-2")])
+        self.am(("s-1", "JP-900(a) - Design", "josh-360/completed-steps", 0, "idle"),
+                ("s-2", "JP-900(b) - Build", self.GROUP, 0, "working"))
+        self.assertEqual(self.results()[self.ID].status, "pass")
+
+    def test_a_killed_unknown_session_in_a_ticket_group_is_not_a_problem(self):
+        self.tickets([self.session(1, "s-1")])
+        self.am(("s-1", "JP-900(a) - Build", self.GROUP, 0, "working"), ("s-9", "JP-901(a) - Build", self.GROUP, 0, "dead"))
+        self.assertEqual(self.results()[self.ID].status, "pass")
+
+
+class CompletedStepSessions(h.DoctorCase):
+    """JP-191: no finished step's session is still open. Made-up runner file and Agent Manager database, at the
+    doctor's made-up clock."""
+    ID = "graphs.completed-step-sessions"
+    COMPLETED = "josh-360/completed-steps"
+
+    def setUp(self):
+        super().setUp()
+        self.am_db = self.tmp / "am-state.db"
+        self.env["JOSH360_AM_DB"] = str(self.am_db)
+        conn = sqlite3.connect(str(self.am_db))
+        conn.execute("CREATE TABLE sessions (id TEXT, name TEXT, group_name TEXT, archived INTEGER, status TEXT)")
+        conn.commit()
+        conn.close()
+
+    def now(self):
+        return self.ctx().now.timestamp()
+
+    def am(self, *rows):
+        conn = sqlite3.connect(str(self.am_db))
+        conn.executemany("INSERT INTO sessions VALUES (?, ?, ?, ?, ?)", rows)
+        conn.commit()
+        conn.close()
+
+    def tickets(self, *sessions):
+        path = self.home / "state" / "runner" / "am-tickets.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({"tickets": {"JP-900": {"count": len(sessions), "status": "In Progress",
+                                                           "group": "josh-360/tickets/In Progress", "done_at": None,
+                                                           "sessions": list(sessions)}}}))
+
+    def finished(self, n, am, ago):
+        return {"n": n, "am_session": am, "finished_at": self.now() - ago, "archived": False}
+
+    def test_nothing_finished_passes(self):
+        r = self.results()[self.ID]
+        self.assertEqual(r.status, "pass", r.detail)
+        self.tickets({"n": 1, "am_session": "s-1", "archived": False})
+        self.am(("s-1", "JP-900(a) - Build", "josh-360/tickets/In Progress", 0, "working"))
+        self.assertEqual(self.results()[self.ID].status, "pass")
+
+    def test_killed_in_completed_steps_or_archived_passes(self):
+        self.tickets(self.finished(1, "s-1", 7200), self.finished(2, "s-2", 7200), self.finished(3, "s-3", 7200))
+        self.am(("s-1", "JP-900(a) - Design", self.COMPLETED, 0, "dead"),
+                ("s-2", "JP-900(b) - Build", "josh-360/tickets/In Progress", 1, "idle"),
+                ("s-3", "JP-900(c) - Review", "josh-360/tickets/Done", 0, "dead"))
+        r = self.results()[self.ID]
+        self.assertEqual(r.status, "pass", r.detail)
+        self.assertIn("3 finished", r.detail)
+
+    def test_a_finished_session_still_running_fails(self):
+        self.tickets(self.finished(1, "s-1", 7200))
+        self.am(("s-1", "JP-900(a) - Design", self.COMPLETED, 0, "idle"))
+        r = self.results()[self.ID]
+        self.assertEqual(r.status, "fail")
+        self.assertIn("s-1 finished its step but is still running", r.detail)
+
+    def test_a_killed_session_outside_completed_steps_fails(self):
+        self.tickets(self.finished(1, "s-1", 7200))
+        self.am(("s-1", "JP-900(a) - Design", "josh-360/tickets/In Progress", 0, "dead"))
+        r = self.results()[self.ID]
+        self.assertEqual(r.status, "fail")
+        self.assertIn("not 'josh-360/completed-steps'", r.detail)
+
+    def test_a_session_inside_its_kill_wait_is_not_judged(self):
+        self.tickets(self.finished(1, "s-1", 600))
+        self.am(("s-1", "JP-900(a) - Design", self.COMPLETED, 0, "working"))
+        r = self.results()[self.ID]
+        self.assertEqual(r.status, "pass", r.detail)
+        self.assertIn("old enough", r.detail)
+
+    def test_an_unreadable_runner_file_fails_and_a_missing_database_skips(self):
+        path = self.home / "state" / "runner" / "am-tickets.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("{not json")
+        self.assertEqual(self.results()[self.ID].status, "fail")
+        path.unlink()
+        self.am_db.unlink()
+        self.assertEqual(self.results()[self.ID].status, "skip")
+
+
 class ValidationWatch(h.DoctorCase):
     """JP-167: the validation rule is on, and no open watch is past its give-up time and a day (the day is for a closed
     laptop)."""

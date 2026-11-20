@@ -160,28 +160,41 @@ def old_atlas_hooks(ctx: Ctx) -> Result:
 
 @check("hooks", "log")
 def hooks_log(ctx: Ctx) -> Result:
-    """Hooks that failed or blocked in the last day, by name and count only."""
+    """Hooks that failed or blocked in the last day, by name and count only. A log line is
+    "<time> <Event> <hook file> failed (exit N), skipped" or "... blocked (exit 2)" (hooks/dispatch). A failure warns;
+    a block is a hook doing its job, so blocks alone pass and are named, with the command that reviews them (JP-182)."""
     cid = "hooks.log"
     path = ctx.logs / "hooks.log"
     if not path.is_file():
-        return Result(cid, PASS, "no hook has failed (no hooks.log yet)")
+        return Result(cid, PASS, "no hook has failed or blocked (no hooks.log yet)")
     try:
-        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()[-500:]
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()[-2000:]
     except OSError:
         return Result(cid, WARN, "{} cannot be read".format(ctx.tilde(path)))
-    recent: Dict[str, int] = {}
+    failed: Dict[str, int] = {}
+    blocked: Dict[str, int] = {}
     for line in lines:
         parts = line.split(" ", 3)
-        if len(parts) < 4 or "failed (exit" not in parts[3]:
+        if len(parts) < 4:
+            continue
+        what = failed if parts[3].startswith("failed (exit") else blocked if parts[3].startswith("blocked") else None
+        if what is None:
             continue
         try:
             when = datetime.datetime.strptime(parts[0], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
         except ValueError:
             continue
         if ctx.now.timestamp() - when.timestamp() <= 86400:
-            name = parts[3].split(" ", 1)[0]
-            recent[name] = recent.get(name, 0) + 1
-    if recent:
-        text = ", ".join("{} x{}".format(k, v) for k, v in sorted(recent.items()))
-        return Result(cid, WARN, "hooks that failed in the last 24 hours: " + text, "read ~/.josh-360/logs/hooks.log")
-    return Result(cid, PASS, "no hook failed in the last 24 hours")
+            what[parts[2]] = what.get(parts[2], 0) + 1
+
+    def names(counts: Dict[str, int]) -> str:
+        return ", ".join("{} x{}".format(k, v) for k, v in sorted(counts.items()))
+
+    said = ("hooks that blocked in the last 24 hours: " + names(blocked)
+            + " (python3 ~/.josh-360/repo/scripts/hook_blocks.py lists each block and its reason)") if blocked else ""
+    if failed:
+        return Result(cid, WARN, "hooks that failed in the last 24 hours: " + names(failed) + ("; " + said if said else ""),
+                      "read ~/.josh-360/logs/hooks.log")
+    if blocked:
+        return Result(cid, PASS, "no hook failed in the last 24 hours; " + said)
+    return Result(cid, PASS, "no hook failed or blocked in the last 24 hours")

@@ -1,0 +1,13 @@
+{
+  "command": [
+    "hooks/dispatch",
+    "SessionStart"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp185b/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp185b",
+  "started_at": "2026-11-20T14:59:46Z",
+  "stderr": "",
+  "stdin": "{\"session_id\": \"verify-sess-0001\", \"transcript_path\": \"/tmp/verify-josh-360/jp185b/home/.claude/projects/-tmp-verify-josh-360-jp185b-work-sample-repo/verify-sess-0001.jsonl\", \"cwd\": \"/tmp/verify-josh-360/jp185b/work/sample-repo\", \"hook_event_name\": \"SessionStart\", \"source\": \"startup\"}",
+  "stdout": ""
+}

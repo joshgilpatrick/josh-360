@@ -1,0 +1,439 @@
+#!/usr/bin/env python3
+"""A stand-in for Claude Code (JP-186). Python 3.9, standard library only. It calls no model.
+
+Agent Manager starts whatever `claude` is first on the pane's PATH, so a cloud test puts this folder first and the
+real Agent Manager drives this script as it would drive Claude Code. It does three things:
+
+* **The model probe.** Agent Manager asks `claude -p --input-format stream-json ...` for its models with a
+  `control_request` of subtype `initialize`. This answers with the laptop's list (`tests/e2e/laptop-models.json`, or
+  `$JOSH360_STANDIN_MODELS`), so Agent Manager refuses a model the laptop would refuse, with the laptop's message.
+* **A session.** Started with a prompt (as Agent Manager does: `claude --model M --effort E <prompt> --session-id ID
+  --settings <file> ...`), it fires Claude Code's hooks in Claude Code's order with Claude Code's payload shapes:
+  `SessionStart`, `UserPromptSubmit` (carrying the prompt), `PreToolUse` and `PostToolUse` for a `Write` of the step's
+  result file, then `Stop`. Hooks come from `~/.claude/settings.json` and from the `--settings` file, and their `env`
+  blocks are applied. A hook that blocks (exit 2, or a JSON `decision: block` / `permissionDecision: deny`) is honoured:
+  a blocked prompt ends the turn, a blocked `Write` writes nothing, a blocked `Stop` starts another pass (up to three,
+  the later ones with `stop_hook_active`). After the turn it prints a turn-end line and a composer line, then waits at
+  the prompt like Claude Code: each line typed into the pane (Agent Manager's `send`) is a new turn that only stops.
+  On SIGHUP or SIGTERM it fires `SessionEnd` and exits.
+* **What it writes** comes from a scenario (`tests/e2e/scenarios/<name>.json`): `example` (the outcome and outputs the
+  scenario names, else the example result in the role's instructions, else the first outcome with no outputs),
+  `wrong-shape`, `silent`, `hang`, `question` and `follow-ups`. Which scenario a step plays is chosen by the plan
+  file, `$JOSH360_STANDIN_PLAN` or `~/.josh360-standin/plan.json`: `{"default": "<scenario>", "steps": {"<step>":
+  "<scenario>"}}`; a scenario is a name in `scenarios/` or a path to a JSON file. With no plan, `example`. A scenario's
+  `think` is how many seconds the turn works before it writes; `$JOSH360_STANDIN_THINK` overrides it.
+
+Every action is logged as one JSON line to `$JOSH360_STANDIN_LOG` or `~/.josh360-standin/log.jsonl`: the arguments,
+each hook fired with its exit code and whether it blocked, each file written. Tests assert on that log.
+"""
+from __future__ import annotations
+
+import json
+import os
+import re
+import signal
+import subprocess
+import sys
+import time
+import uuid
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
+HERE = Path(os.path.realpath(__file__)).parent
+E2E = HERE.parent
+SCENARIOS = E2E / "scenarios"
+VALUE_FLAGS = {"--model", "--effort", "--session-id", "--settings", "--mcp-config", "--resume", "--name",
+               "--input-format", "--output-format", "--permission-mode", "--add-dir", "--append-system-prompt",
+               "--fallback-model", "--allowedTools", "--disallowedTools", "--max-turns", "--agents", "--agent"}
+MARKER = re.compile(r"^\[josh360-step run=(r-[0-9a-z]+) step=([a-z0-9_]+) attempt=([0-9]+) key=([0-9a-f]{16})\]\s*$",
+                    re.M)
+RESULT = re.compile(r"to (\S+), then stop\.")
+OUTCOMES = re.compile(r"^End with one of these outcomes: (.+)\.\s*$", re.M)
+ROLE = re.compile(r"^Read (\S+)/instructions\.md first", re.M)
+TASK_FILE = re.compile(r"^Read (\S+) in full before anything else; it is your task\.\s*$", re.M)
+STOP_PASSES = 3
+HOOK_TIMEOUT = 60
+
+
+def standin_dir() -> Path:
+    return Path(os.path.expanduser("~")) / ".josh360-standin"
+
+
+def log(kind: str, **fields: object) -> None:
+    path = Path(os.environ.get("JOSH360_STANDIN_LOG") or (standin_dir() / "log.jsonl"))
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(str(path), "a", encoding="utf-8") as handle:
+            handle.write(json.dumps(dict(fields, kind=kind, at=time.time(), pid=os.getpid()), sort_keys=True) + "\n")
+    except OSError:
+        pass
+
+
+def read_json(path: Path) -> Optional[dict]:
+    try:
+        doc = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return doc if isinstance(doc, dict) else None
+
+
+# -- arguments ------------------------------------------------------------------------------------------------------
+
+def parse(argv: List[str]) -> Tuple[Dict[str, str], List[str], List[str]]:
+    """(flags with values, bare flags, positional words). Claude Code's own value flags take the next word."""
+    values: Dict[str, str] = {}
+    bare: List[str] = []
+    words: List[str] = []
+    i = 0
+    while i < len(argv):
+        arg = argv[i]
+        if arg.startswith("--") and "=" in arg:
+            name, value = arg.split("=", 1)
+            values[name] = value
+        elif arg in VALUE_FLAGS and i + 1 < len(argv):
+            values[arg] = argv[i + 1]
+            i += 1
+        elif arg.startswith("-") and len(arg) > 1:
+            bare.append(arg)
+        else:
+            words.append(arg)
+        i += 1
+    return values, bare, words
+
+
+# -- the model probe ------------------------------------------------------------------------------------------------
+
+def models() -> List[dict]:
+    path = Path(os.environ.get("JOSH360_STANDIN_MODELS") or (E2E / "laptop-models.json"))
+    doc = read_json(path) or {}
+    return [m for m in doc.get("models") or [] if isinstance(m, dict)]
+
+
+def probe() -> int:
+    """Answer Agent Manager's catalog question the way the Agent SDK does, then exit when stdin closes."""
+    log("probe", argv=sys.argv[1:])
+    for line in sys.stdin:
+        try:
+            message = json.loads(line)
+        except ValueError:
+            continue
+        if message.get("type") != "control_request":
+            continue
+        request = message.get("request") or {}
+        reply = {"type": "control_response", "response": {"subtype": "error", "request_id": message.get("request_id"),
+                                                          "error": "unsupported request"}}
+        if request.get("subtype") == "initialize":
+            reply = {"type": "control_response", "response": {
+                "subtype": "success", "request_id": message.get("request_id"),
+                "response": {"models": models(), "output_style": "default"}},
+                "pending_permission_requests": [], "pending_user_dialog_requests": []}
+        sys.stdout.write(json.dumps(reply) + "\n")
+        sys.stdout.flush()
+    return 0
+
+
+# -- hooks ----------------------------------------------------------------------------------------------------------
+
+class Hooks:
+    """The hook entries of ~/.claude/settings.json and of the --settings file, with their env blocks merged."""
+
+    def __init__(self, settings_file: Optional[str], cwd: str):
+        self.cwd = cwd
+        self.groups: Dict[str, List[dict]] = {}
+        self.env: Dict[str, str] = {}
+        files = [Path(os.path.expanduser("~")) / ".claude" / "settings.json"]
+        if settings_file:
+            files.append(Path(settings_file))
+        for path in files:
+            doc = read_json(path) or {}
+            for name, value in (doc.get("env") or {}).items():
+                self.env[str(name)] = str(value)
+            for event, groups in (doc.get("hooks") or {}).items():
+                for group in groups or []:
+                    if isinstance(group, dict):
+                        self.groups.setdefault(event, []).append(group)
+
+    @staticmethod
+    def _matches(matcher: Optional[str], subject: Optional[str]) -> bool:
+        if matcher in (None, "", "*") or subject is None:
+            return True
+        try:
+            return re.fullmatch(matcher, subject) is not None
+        except re.error:
+            return matcher == subject
+
+    def commands(self, event: str, subject: Optional[str]) -> List[str]:
+        found: List[str] = []
+        for group in self.groups.get(event, []):
+            if not self._matches(group.get("matcher"), subject):
+                continue
+            for hook in group.get("hooks") or []:
+                command = hook.get("command") if isinstance(hook, dict) else None
+                if isinstance(command, str) and command and command not in found:   # Claude Code runs a command once
+                    found.append(command)
+        return found
+
+    def fire(self, event: str, payload: dict, subject: Optional[str] = None) -> Tuple[bool, str]:
+        """Run every matching hook. (blocked, reason)."""
+        env = dict(os.environ)
+        env.update(self.env)
+        env["CLAUDE_PROJECT_DIR"] = self.cwd
+        body = json.dumps(dict(payload, hook_event_name=event))
+        blocked, reasons = False, []
+        for command in self.commands(event, subject):
+            try:
+                done = subprocess.run(["/bin/sh", "-c", command], input=body, stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE, universal_newlines=True, cwd=self.cwd, env=env,
+                                      timeout=HOOK_TIMEOUT)
+                code, out, err = done.returncode, done.stdout, done.stderr
+            except subprocess.TimeoutExpired:
+                code, out, err = -1, "", "timed out"
+            except OSError as e:
+                code, out, err = -1, "", str(e)
+            this_blocks, reason = code == 2, err.strip()
+            if code == 0 and out.strip().startswith("{"):
+                try:
+                    said = json.loads(out)
+                except ValueError:
+                    said = {}
+                specific = said.get("hookSpecificOutput") or {}
+                if said.get("decision") == "block" or said.get("continue") is False or \
+                        specific.get("permissionDecision") == "deny":
+                    this_blocks = True
+                    reason = str(said.get("reason") or said.get("stopReason") or
+                                 specific.get("permissionDecisionReason") or "")
+            log("hook", event=event, command=command, code=code, blocked=this_blocks, reason=reason,
+                stdout=out.strip()[:2000])
+            if this_blocks:
+                blocked = True
+                reasons.append(reason)
+        return blocked, "\n".join(r for r in reasons if r)
+
+
+# -- scenarios ------------------------------------------------------------------------------------------------------
+
+def scenario_for(step: Optional[str]) -> dict:
+    plan = read_json(Path(os.environ.get("JOSH360_STANDIN_PLAN") or (standin_dir() / "plan.json"))) or {}
+    chosen = (plan.get("steps") or {}).get(step) if step else None
+    chosen = chosen or plan.get("default") or "example"
+    if isinstance(chosen, dict):
+        return chosen
+    path = Path(chosen) if os.path.isabs(str(chosen)) else SCENARIOS / "{}.json".format(chosen)
+    doc = read_json(path)
+    if doc is None:
+        log("no-scenario", wanted=str(chosen))
+        return {"kind": "silent"}
+    return doc
+
+
+def task_text(prompt: str) -> str:
+    """The prompt, or the task file a long prompt points to."""
+    found = TASK_FILE.search(prompt)
+    if found:
+        try:
+            return prompt + "\n" + Path(found.group(1)).read_text(encoding="utf-8")
+        except OSError:
+            pass
+    return prompt
+
+
+def role_example(text: str) -> Optional[dict]:
+    """The first ```json block in the role's instructions that holds an `outcome`."""
+    found = ROLE.search(text)
+    if not found:
+        return None
+    try:
+        instructions = (Path(found.group(1)) / "instructions.md").read_text(encoding="utf-8")
+    except OSError:
+        return None
+    for block in re.findall(r"```json\s*\n(.*?)```", instructions, re.S):
+        try:
+            doc = json.loads(block)
+        except ValueError:
+            continue
+        if isinstance(doc, dict) and "outcome" in doc:
+            return doc
+    return None
+
+
+def result_for(scenario: dict, text: str) -> Optional[Tuple[str, dict]]:
+    """(result file, document) the scenario writes, or None when it writes nothing."""
+    kind = scenario.get("kind", "example")
+    found = RESULT.search(text)
+    if not found or kind in ("silent", "hang", "question"):
+        return None
+    path = found.group(1)
+    if kind == "wrong-shape":
+        return path, scenario.get("document") or {"result": "done", "fields": {"note": "not under outputs"}}
+    outcomes = OUTCOMES.search(text)
+    listed = [o.strip() for o in outcomes.group(1).split(",")] if outcomes else []
+    example = role_example(text) if "outputs" not in scenario and "outcome" not in scenario else None
+    if example:
+        doc = dict(example)
+    else:
+        doc = {"outcome": scenario.get("outcome") or (listed[0] if listed else "done"),
+               "outputs": scenario.get("outputs") or {}}
+    if scenario.get("follow_ups"):
+        doc["follow_ups"] = scenario["follow_ups"]
+    return path, doc
+
+
+# -- the session ----------------------------------------------------------------------------------------------------
+
+class Session:
+    def __init__(self, values: Dict[str, str], prompt: Optional[str]):
+        self.cwd = os.getcwd()
+        self.id = values.get("--session-id") or values.get("--resume") or str(uuid.uuid4())
+        self.model, self.effort = values.get("--model"), values.get("--effort")
+        self.hooks = Hooks(values.get("--settings"), self.cwd)
+        self.prompt = prompt
+        slug = re.sub(r"[^A-Za-z0-9]", "-", self.cwd)
+        self.transcript = Path(os.path.expanduser("~")) / ".claude" / "projects" / slug / (self.id + ".jsonl")
+        self.ended = False
+
+    def base(self) -> dict:
+        return {"session_id": self.id, "transcript_path": str(self.transcript), "cwd": self.cwd,
+                "permission_mode": "default"}
+
+    def line(self, kind: str, **extra: object) -> None:
+        """A transcript line with made-up text only."""
+        entry = {"type": kind, "sessionId": self.id, "cwd": self.cwd, "uuid": str(uuid.uuid4()), "isSidechain": False,
+                 "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+        entry.update(extra)
+        try:
+            self.transcript.parent.mkdir(parents=True, exist_ok=True)
+            with open(str(self.transcript), "a", encoding="utf-8") as handle:
+                handle.write(json.dumps(entry) + "\n")
+        except OSError:
+            pass
+
+    def show(self, text: str) -> None:
+        sys.stdout.write(text + "\n")
+        sys.stdout.flush()
+
+    def write_tool(self, path: str, content: str) -> bool:
+        tool_input = {"file_path": path, "content": content}
+        use_id = "toolu_" + uuid.uuid4().hex[:20]
+        self.line("assistant", message={"role": "assistant", "model": self.model, "content": [
+            {"type": "tool_use", "id": use_id, "name": "Write", "input": tool_input}]})
+        blocked, reason = self.hooks.fire("PreToolUse", dict(self.base(), tool_name="Write", tool_input=tool_input,
+                                                              tool_use_id=use_id), "Write")
+        if blocked:
+            log("write-blocked", path=path, reason=reason)
+            self.show("⏺ Write({}) was blocked by a hook".format(path))
+            return False
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        Path(path).write_text(content, encoding="utf-8")
+        log("wrote", path=path, content=content)
+        response = {"type": "create", "filePath": path, "content": content, "structuredPatch": []}
+        self.line("user", toolUseResult=response, message={"role": "user", "content": [
+            {"type": "tool_result", "tool_use_id": use_id, "content": "File created successfully"}]})
+        self.hooks.fire("PostToolUse", dict(self.base(), tool_name="Write", tool_input=tool_input,
+                                            tool_response=response, tool_use_id=use_id), "Write")
+        self.show("⏺ Write({})".format(path))
+        return True
+
+    def wait_forever(self) -> None:
+        while not self.ended:
+            time.sleep(0.5)
+
+    def turn(self, prompt: str, scenario: Optional[dict] = None) -> None:
+        started = time.time()
+        self.show("❯ " + prompt.splitlines()[-1][:200] if prompt.strip() else "❯")
+        self.line("user", message={"role": "user", "content": prompt})
+        blocked, reason = self.hooks.fire("UserPromptSubmit", dict(self.base(), prompt=prompt))
+        if blocked:
+            log("prompt-blocked", reason=reason)
+            self.show("⏺ The prompt was blocked by a hook")
+            return
+        text = task_text(prompt)
+        step = MARKER.search(text)
+        scenario = scenario if scenario is not None else scenario_for(step.group(2) if step else None)
+        log("turn", step=step.group(2) if step else None, scenario=scenario, model=self.model, effort=self.effort)
+        time.sleep(float(os.environ.get("JOSH360_STANDIN_THINK") or scenario.get("think", 0)))
+        kind = scenario.get("kind", "example")
+        if kind == "hang":
+            log("hanging")
+            self.wait_forever()
+            return
+        if kind == "question":
+            question = {"questions": [{"question": scenario.get("question") or "Which made-up option do you want?",
+                                       "header": "Choice", "options": [{"label": "A"}, {"label": "B"}]}]}
+            blocked, reason = self.hooks.fire("PreToolUse", dict(self.base(), tool_name="AskUserQuestion",
+                                                                  tool_input=question, tool_use_id="toolu_ask"),
+                                              "AskUserQuestion")
+            if blocked:
+                log("question-blocked", reason=reason)
+            else:
+                self.hooks.fire("Notification", dict(self.base(), message="Claude needs your input",
+                                                     notification_type="elicitation_dialog"), "elicitation_dialog")
+                self.show("Which made-up option do you want?\n❯ 1. A\n  2. B\nEnter to select")
+                log("asking")
+                self.wait_forever()
+                return
+        planned = result_for(scenario, text)
+        written = False
+        if planned:
+            written = self.write_tool(planned[0], json.dumps(planned[1], sort_keys=True))
+        self.line("assistant", message={"role": "assistant", "model": self.model,
+                                        "content": [{"type": "text", "text": "(stand-in: no model was called)"}]})
+        for n in range(STOP_PASSES):
+            blocked, reason = self.hooks.fire("Stop", dict(self.base(), stop_hook_active=n > 0))
+            if not blocked:
+                break
+            log("stop-blocked", reason=reason, pass_number=n + 1)
+            if scenario.get("on_stop_block") == "obey" and not written:
+                obeyed = result_for(dict(scenario, kind="example"), text)
+                if obeyed:
+                    written = self.write_tool(obeyed[0], json.dumps(obeyed[1], sort_keys=True))
+        self.show("✻ Worked for {}s".format(max(1, int(time.time() - started))))
+        self.show("────────────────────────────────────────\n❯ ")
+
+    def end(self, reason: str) -> None:
+        if self.ended:
+            return
+        self.ended = True
+        self.hooks.fire("SessionEnd", dict(self.base(), reason=reason))
+        log("ended", reason=reason)
+
+    def run(self, interactive: bool) -> int:
+        def stop(signum: int, frame: object) -> None:
+            self.end("other")
+            sys.exit(0)
+        signal.signal(signal.SIGTERM, stop)
+        signal.signal(signal.SIGHUP, stop)
+        log("session", argv=sys.argv[1:], session_id=self.id, cwd=self.cwd, model=self.model, effort=self.effort,
+            am_session=os.environ.get("AGENT_MANAGER_SESSION_ID"))
+        self.hooks.fire("SessionStart", dict(self.base(), source="resume" if "--resume" in sys.argv else "startup",
+                                             model=self.model), "resume" if "--resume" in sys.argv else "startup")
+        if self.prompt:
+            self.turn(self.prompt)
+        if not interactive:
+            self.end("other")
+            return 0
+        while not self.ended:                  # at the prompt: each typed line is a turn that only stops
+            line = sys.stdin.readline()
+            if not line:
+                self.wait_forever()
+                break
+            if line.strip():
+                log("typed", text=line.strip())
+                self.turn(line.strip(), {"kind": "silent"})
+        return 0
+
+
+def main(argv: List[str]) -> int:
+    values, bare, words = parse(argv)
+    if "--version" in bare or "-v" in bare:
+        print("{} (Claude Code; JP-186 stand-in)".format((read_json(E2E / "laptop-models.json") or {}).get(
+            "claude_version", "2.1.329")))
+        return 0
+    if values.get("--input-format") == "stream-json":
+        return probe()
+    prompt = words[0] if words else None
+    printing = "-p" in bare or "--print" in bare
+    return Session(values, prompt).run(interactive=not printing)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

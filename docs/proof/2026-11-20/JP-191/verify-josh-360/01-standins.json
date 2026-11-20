@@ -1,0 +1,15 @@
+{
+  "command": [
+    "python3",
+    "-I",
+    "/home/claude/josh-360/docs/proof/2026-11-20/JP-191/standins/standin_setup.py",
+    "/tmp/verify-josh-360/jp191/home/.josh-360/repo",
+    "/tmp/verify-josh-360/jp191/standin"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp191/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp191",
+  "started_at": "2026-11-20T15:12:26Z",
+  "stderr": "",
+  "stdout": "compile_graphs: ok (3 graph(s))\n{\"graphs\": \"/tmp/verify-josh-360/jp191/standin/graphs\", \"jira\": \"/tmp/verify-josh-360/jp191/standin/jira\", \"ok\": true}\n"
+}

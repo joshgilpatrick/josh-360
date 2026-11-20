@@ -1,0 +1,30 @@
+06:59:38 console · Josh 360 console · /tmp/verify-josh-360/jp185b/home/.josh-360 · from 06:49:38 · Ctrl-C stops
+06:59:38 console · not there yet: runner log, hooks log, job logs, hook spool (shown once they appear)
+06:59:46 session · session verify-s started by josh in sample-repo (startup)
+06:59:46 job     · follow ran, exit 0
+06:59:47 job     · inventory ran, exit 0
+06:59:47 job     · retire-focus-dashboard ran, exit 0
+06:59:47 job     · graph-runner ran, exit 0
+06:59:47 job     · ledger-backup ran, exit 0
+06:59:47 job     · ledger-record ran, exit 0
+06:59:47 job     · ledger-summary ran, exit 0
+06:59:48 job     · ledger-backfill ran, exit 0
+06:59:48 job     · ledger-friction-catchup ran, exit 0
+06:59:48 job     · ledger-upload ran, exit 0
+06:59:48 job     · retire-session-atlas ran, exit 0
+06:59:48 job     · session-atlas-service ran, exit 0
+06:59:48 job     · ticket-comments ran, exit 0
+06:59:48 job     · doctor ran, exit 0
+06:59:49 job     · launchd-check ran, exit 0
+06:59:49 job     · retire-leftover-jobs ran, exit 0
+06:59:49 job     · console-terminal ran, exit 0
+06:59:49 job     · jp-117-triage-jp-116 ran, exit 0
+06:59:50 graph   ▶ run started: ticket-creation on session:verify-sess-0001
+06:59:50 graph   ▶ gate _entry started, attempt 1
+06:59:50 graph   ✔ gate _entry ended: pass — admitted
+06:59:50 graph   ▶ role read_intake started, attempt 1 (mid)
+06:59:58 graph   ✔ role read_intake ended: recorded
+06:59:58 graph   ▶ gate route started, attempt 1
+06:59:58 graph   ✔ gate route ended: personal — personal: None by repository
+06:59:58 graph   ■ run of ticket-creation ended: route.personal (neutral)
+07:00:11 hooks   ✖ PreToolUse 99-proof-blocker blocked (exit 2)

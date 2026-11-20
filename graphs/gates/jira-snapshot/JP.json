@@ -1,0 +1,600 @@
+{
+ "about": "JP's real Jira workflow, read-only, for the strict fake Jira (JP-187). No ticket text. Refresh with scripts/jira_snapshot.py.",
+ "version": 1,
+ "taken": "2026-11-20",
+ "taken_by": "Atlassian connector (read-only), cloud session for JP-187",
+ "site": "https://eventuswh-analytics.atlassian.net",
+ "project": {
+  "key": "JP",
+  "id": "10235",
+  "simplified": true
+ },
+ "initial_status": "Not Started",
+ "statuses": [
+  {
+   "id": "10508",
+   "name": "Ready",
+   "category": "new"
+  },
+  {
+   "id": "10580",
+   "name": "Not Started",
+   "category": "new"
+  },
+  {
+   "id": "10509",
+   "name": "In Progress",
+   "category": "indeterminate"
+  },
+  {
+   "id": "10510",
+   "name": "Code Review",
+   "category": "indeterminate"
+  },
+  {
+   "id": "10511",
+   "name": "Validation",
+   "category": "indeterminate"
+  },
+  {
+   "id": "10581",
+   "name": "Design/Planning",
+   "category": "indeterminate"
+  },
+  {
+   "id": "10582",
+   "name": "Deployed",
+   "category": "indeterminate"
+  },
+  {
+   "id": "10513",
+   "name": "Done",
+   "category": "done"
+  },
+  {
+   "id": "10614",
+   "name": "Cancelled",
+   "category": "done"
+  }
+ ],
+ "transitions": [
+  {
+   "id": "2",
+   "name": "Validation",
+   "to": "Validation",
+   "from": [
+    "Ready",
+    "Not Started",
+    "In Progress",
+    "Code Review",
+    "Validation",
+    "Design/Planning",
+    "Deployed",
+    "Done",
+    "Cancelled"
+   ]
+  },
+  {
+   "id": "3",
+   "name": "Not Started",
+   "to": "Not Started",
+   "from": [
+    "Ready",
+    "Not Started",
+    "In Progress",
+    "Code Review",
+    "Validation",
+    "Design/Planning",
+    "Deployed",
+    "Done",
+    "Cancelled"
+   ]
+  },
+  {
+   "id": "4",
+   "name": "Done",
+   "to": "Done",
+   "from": [
+    "Ready",
+    "Not Started",
+    "In Progress",
+    "Code Review",
+    "Validation",
+    "Design/Planning",
+    "Deployed",
+    "Done",
+    "Cancelled"
+   ]
+  },
+  {
+   "id": "5",
+   "name": "Design",
+   "to": "Design/Planning",
+   "from": [
+    "Ready",
+    "Not Started",
+    "In Progress",
+    "Code Review",
+    "Validation",
+    "Design/Planning",
+    "Deployed",
+    "Done",
+    "Cancelled"
+   ]
+  },
+  {
+   "id": "6",
+   "name": "Cancel",
+   "to": "Cancelled",
+   "from": [
+    "Ready",
+    "Not Started",
+    "In Progress",
+    "Code Review",
+    "Validation",
+    "Design/Planning",
+    "Deployed",
+    "Done",
+    "Cancelled"
+   ]
+  },
+  {
+   "id": "7",
+   "name": "Deployed",
+   "to": "Deployed",
+   "from": [
+    "Ready",
+    "Not Started",
+    "In Progress",
+    "Code Review",
+    "Validation",
+    "Design/Planning",
+    "Deployed",
+    "Done",
+    "Cancelled"
+   ]
+  },
+  {
+   "id": "11",
+   "name": "Ready",
+   "to": "Ready",
+   "from": [
+    "Ready",
+    "Not Started",
+    "In Progress",
+    "Code Review",
+    "Validation",
+    "Design/Planning",
+    "Deployed",
+    "Done",
+    "Cancelled"
+   ]
+  },
+  {
+   "id": "21",
+   "name": "In Progress",
+   "to": "In Progress",
+   "from": [
+    "Ready",
+    "Not Started",
+    "In Progress",
+    "Code Review",
+    "Validation",
+    "Design/Planning",
+    "Deployed",
+    "Done",
+    "Cancelled"
+   ]
+  },
+  {
+   "id": "31",
+   "name": "Code Review",
+   "to": "Code Review",
+   "from": [
+    "Ready",
+    "Not Started",
+    "In Progress",
+    "Code Review",
+    "Validation",
+    "Design/Planning",
+    "Deployed",
+    "Done",
+    "Cancelled"
+   ]
+  }
+ ],
+ "transitions_observed_from": [
+  "Ready",
+  "Not Started",
+  "In Progress",
+  "Code Review",
+  "Validation",
+  "Deployed",
+  "Done",
+  "Cancelled"
+ ],
+ "issue_types": [
+  {
+   "id": "10296",
+   "name": "Subtask",
+   "subtask": true,
+   "create_fields": [
+    "assignee",
+    "attachment",
+    "customfield_10000",
+    "customfield_10001",
+    "customfield_10019",
+    "customfield_10021",
+    "customfield_10281",
+    "customfield_10403",
+    "customfield_10453",
+    "customfield_10487",
+    "description",
+    "fixVersions",
+    "issuelinks",
+    "issuerestriction",
+    "issuetype",
+    "labels",
+    "parent",
+    "project",
+    "reporter",
+    "summary"
+   ],
+   "required": [
+    "issuetype",
+    "parent",
+    "project",
+    "reporter",
+    "summary"
+   ]
+  },
+  {
+   "id": "10297",
+   "name": "Epic",
+   "subtask": false,
+   "create_fields": [
+    "assignee",
+    "attachment",
+    "customfield_10000",
+    "customfield_10001",
+    "customfield_10015",
+    "customfield_10017",
+    "customfield_10019",
+    "customfield_10021",
+    "customfield_10281",
+    "customfield_10403",
+    "description",
+    "duedate",
+    "fixVersions",
+    "issuelinks",
+    "issuerestriction",
+    "issuetype",
+    "labels",
+    "parent",
+    "priority",
+    "project",
+    "reporter",
+    "summary"
+   ],
+   "required": [
+    "issuetype",
+    "project",
+    "reporter",
+    "summary"
+   ]
+  },
+  {
+   "id": "10298",
+   "name": "Story",
+   "subtask": false,
+   "create_fields": [
+    "assignee",
+    "attachment",
+    "customfield_10000",
+    "customfield_10001",
+    "customfield_10015",
+    "customfield_10019",
+    "customfield_10021",
+    "customfield_10281",
+    "customfield_10403",
+    "customfield_10453",
+    "customfield_10487",
+    "description",
+    "duedate",
+    "fixVersions",
+    "issuelinks",
+    "issuerestriction",
+    "issuetype",
+    "labels",
+    "parent",
+    "priority",
+    "project",
+    "reporter",
+    "summary"
+   ],
+   "required": [
+    "issuetype",
+    "project",
+    "reporter",
+    "summary"
+   ]
+  },
+  {
+   "id": "10299",
+   "name": "Bug",
+   "subtask": false,
+   "create_fields": [
+    "assignee",
+    "attachment",
+    "customfield_10000",
+    "customfield_10001",
+    "customfield_10015",
+    "customfield_10019",
+    "customfield_10021",
+    "customfield_10281",
+    "customfield_10403",
+    "customfield_10453",
+    "customfield_10487",
+    "description",
+    "duedate",
+    "fixVersions",
+    "issuelinks",
+    "issuerestriction",
+    "issuetype",
+    "labels",
+    "parent",
+    "priority",
+    "project",
+    "reporter",
+    "summary"
+   ],
+   "required": [
+    "issuetype",
+    "project",
+    "reporter",
+    "summary"
+   ]
+  },
+  {
+   "id": "10300",
+   "name": "Task",
+   "subtask": false,
+   "create_fields": [
+    "assignee",
+    "attachment",
+    "customfield_10000",
+    "customfield_10001",
+    "customfield_10015",
+    "customfield_10019",
+    "customfield_10021",
+    "customfield_10281",
+    "customfield_10403",
+    "customfield_10453",
+    "customfield_10487",
+    "description",
+    "duedate",
+    "fixVersions",
+    "issuelinks",
+    "issuerestriction",
+    "issuetype",
+    "labels",
+    "parent",
+    "priority",
+    "project",
+    "reporter",
+    "summary"
+   ],
+   "required": [
+    "issuetype",
+    "project",
+    "reporter",
+    "summary"
+   ]
+  },
+  {
+   "id": "10385",
+   "name": "Research",
+   "subtask": false,
+   "create_fields": [
+    "assignee",
+    "attachment",
+    "customfield_10000",
+    "customfield_10001",
+    "customfield_10015",
+    "customfield_10019",
+    "customfield_10021",
+    "customfield_10034",
+    "customfield_10035",
+    "description",
+    "duedate",
+    "fixVersions",
+    "issuelinks",
+    "issuerestriction",
+    "issuetype",
+    "labels",
+    "parent",
+    "project",
+    "reporter",
+    "summary"
+   ],
+   "required": [
+    "issuetype",
+    "project",
+    "reporter",
+    "summary"
+   ]
+  }
+ ],
+ "custom_fields": {
+  "customfield_10000": {
+   "name": "Development"
+  },
+  "customfield_10001": {
+   "name": "Team"
+  },
+  "customfield_10015": {
+   "name": "Start date"
+  },
+  "customfield_10017": {
+   "name": "Issue color"
+  },
+  "customfield_10019": {
+   "name": "Rank"
+  },
+  "customfield_10020": {
+   "name": "Sprint",
+   "settable": false
+  },
+  "customfield_10021": {
+   "name": "Flagged",
+   "options": [
+    "Impediment"
+   ]
+  },
+  "customfield_10034": {
+   "name": "Vulnerability"
+  },
+  "customfield_10035": {
+   "name": "Design"
+  },
+  "customfield_10281": {
+   "name": "Agent Sessions"
+  },
+  "customfield_10403": {
+   "name": "AI Cost"
+  },
+  "customfield_10453": {
+   "name": "Agent Status",
+   "options": [
+    "Queued",
+    "Running",
+    "Needs input",
+    "Stuck",
+    "On hold",
+    "Finished"
+   ]
+  },
+  "customfield_10487": {
+   "name": "Repository",
+   "options": [
+    "Eventus-Whole-Health/action-triage",
+    "Eventus-Whole-Health/ai_scribing_services",
+    "Eventus-Whole-Health/bifrost-migration",
+    "Eventus-Whole-Health/charta_services",
+    "Eventus-Whole-Health/claude-eventus-mcp",
+    "Eventus-Whole-Health/cqm_web_extension",
+    "Eventus-Whole-Health/data-services",
+    "Eventus-Whole-Health/dotsuki",
+    "Eventus-Whole-Health/equip-services",
+    "Eventus-Whole-Health/equip_services",
+    "Eventus-Whole-Health/eventus-ccm",
+    "Eventus-Whole-Health/eventus-ccm-extension",
+    "Eventus-Whole-Health/eventus-connect-data-platform",
+    "Eventus-Whole-Health/fx-app-apps-services",
+    "Eventus-Whole-Health/fx-app-josh-services",
+    "Eventus-Whole-Health/fx-app-template",
+    "Eventus-Whole-Health/fx-app-zus-services",
+    "Eventus-Whole-Health/inbox-zero",
+    "Eventus-Whole-Health/josh-projects",
+    "Eventus-Whole-Health/keystone-platform",
+    "Eventus-Whole-Health/pims_services",
+    "Eventus-Whole-Health/succinctly_eventus_config",
+    "Eventus-Whole-Health/survey-services",
+    "Eventus-Whole-Health/synapse-pipelines",
+    "Eventus-Whole-Health/training-services",
+    "Eventus-Whole-Health/wiki-services",
+    "eventuswh-apps/athena-data-migration",
+    "eventuswh-apps/athena-services",
+    "eventuswh-apps/azure-iac",
+    "eventuswh-apps/claude-eventus-mcp",
+    "eventuswh-apps/cqm_web_extension",
+    "eventuswh-apps/ElasticIT-Athena",
+    "eventuswh-apps/eventus-ccm",
+    "eventuswh-apps/eventus-ccm-extension",
+    "eventuswh-apps/fx-app-template",
+    "eventuswh-apps/it-admin-dashboard",
+    "eventuswh-apps/survey-services",
+    "eventuswh-apps/vital-portal",
+    "eventuswh-apps/wiki-services",
+    "joshgilpatrick/claude-360",
+    "joshgilpatrick/claude-harness",
+    "joshgilpatrick/macbook-automations"
+   ]
+  }
+ },
+ "priorities": [
+  "Highest",
+  "High",
+  "Medium",
+  "Low",
+  "Lowest"
+ ],
+ "link_types": [
+  {
+   "name": "Blocks",
+   "inward": "is blocked by",
+   "outward": "blocks"
+  },
+  {
+   "name": "Cloners",
+   "inward": "is cloned by",
+   "outward": "clones"
+  },
+  {
+   "name": "depends on",
+   "inward": "depends on",
+   "outward": "depends on"
+  },
+  {
+   "name": "Discovery - Connected",
+   "inward": "is connected to",
+   "outward": "connects to"
+  },
+  {
+   "name": "Duplicate",
+   "inward": "is duplicated by",
+   "outward": "duplicates"
+  },
+  {
+   "name": "Polaris datapoint work item link",
+   "inward": "added to idea",
+   "outward": "is idea for"
+  },
+  {
+   "name": "Polaris merge work item link",
+   "inward": "merged into",
+   "outward": "merged from"
+  },
+  {
+   "name": "Polaris work item link",
+   "inward": "is implemented by",
+   "outward": "implements"
+  },
+  {
+   "name": "Problem/Incident",
+   "inward": "is caused by",
+   "outward": "causes"
+  },
+  {
+   "name": "Relates",
+   "inward": "relates to",
+   "outward": "relates to"
+  }
+ ],
+ "properties": {
+  "josh360.route": {
+   "source": "graphs/gates/mark-ready.py (no JP ticket carried one on 2026-11-20)",
+   "keys": {
+    "graph": "string",
+    "system": "string",
+    "space": "string",
+    "version": "string",
+    "run": "string",
+    "signed_by": "string",
+    "returns": "integer",
+    "returns_seen": "integer",
+    "returned_from": "string"
+   }
+  }
+ }
+}

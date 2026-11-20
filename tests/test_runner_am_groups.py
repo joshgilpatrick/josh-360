@@ -1,5 +1,5 @@
-"""JP-173: each ticket's Agent Manager sessions carry a letter, the newest stays in view in its status group, and Done
-tickets leave after 7 days. The agent-manager is a fake, the clock and tickets are made up; no real session starts."""
+"""JP-173: each ticket's Agent Manager sessions carry a letter, the newest open one stays in view in its status group,
+and Done tickets leave after 7 days (a finished step's session is closed instead: JP-191, test_runner_close_sessions). The agent-manager is a fake, the clock and tickets are made up; no real session starts."""
 import json
 import sqlite3
 import time
@@ -99,15 +99,22 @@ class Groups(RunnerCase):
         self.sync()
         self.assertEqual(self.am_row("s-2")[1:], ("josh-360/tickets/Code Review", 0))
         self.assertIn(["move", "s-2", "josh-360/tickets/Code Review", "--json"], self.am_calls("move"))
-        self.assertEqual(self.am_row("s-1")[2], 1)        # the design session went when the build one started
+        self.assertEqual(self.am_row("s-1")[1:], ("josh-360/completed-steps", 0))   # finished: filed, killed (JP-191)
         self.sync()                                       # nothing left to do: no second move
         self.assertEqual([c for c in self.am_calls("move") if c[1] == "s-2"],
                          [["move", "s-2", "josh-360/tickets/Code Review", "--json"]])
 
-    def test_a_recorded_result_keeps_the_session_in_view(self):
+    def test_a_recorded_result_files_the_session_away_unarchived(self):
+        """JP-191 replaces JP-173's "stays in view": the row stays (not archived) but leaves the status group."""
         self.design_done()
-        self.assertEqual(self.am_row("s-1")[2], 0)
+        self.assertEqual(self.am_row("s-1")[1:], ("josh-360/completed-steps", 0))
         self.assertEqual(self.am_calls("archive"), [])
+
+    def design_working(self):
+        """The design session starts and is still at work: its step is open, so it follows the ticket's status."""
+        self.assertEqual(self.advance(self.run_id), "spawned")
+        self.session_starts(self.run_id, "design")
+        self.assertEqual(self.advance(self.run_id), "working")
 
     def test_done_tickets_leave_after_7_days(self):
         """Scenario: Done tickets leave after 7 days; one that reached Done 6 days ago keeps its session."""
@@ -127,13 +134,13 @@ class Groups(RunnerCase):
 
     def test_the_tick_places_sessions(self):
         from runner_lib import tick
-        self.design_done()
+        self.design_working()
         self.set_status(self.run_id, "Code Review")
         tick.tick(now=lambda: self.now, launcher=lambda r: None, jira=None, root=self.root)
         self.assertEqual(self.am_row("s-1")[1], "josh-360/tickets/Code Review")
 
     def test_a_failed_move_is_tried_again(self):
-        self.design_done()
+        self.design_working()
         self.set_status(self.run_id, "Code Review")
         self.am_behaviour(move_fails=True)
         self.sync()

@@ -7,7 +7,9 @@
 # Shape (the reader is strict and stops on anything else):
 #   - id: a lower-case name
 #     run: a .py file in this repo
-#     every: a number and m, h or d (5m, 1h, 1d), or once (once: runs until it succeeds one time, retried at most hourly)
+#     every: a number and m, h or d (5m, 1h, 1d), or once (once: runs until it succeeds one time, retried at most hourly;
+#            a once job that exits 78 after a `needs-fix: <why>` line, or fails on an import or syntax error, is not
+#            retried until the laptop copy or the job changes or Josh resumes it: laptop/run_jobs.py --resume <id>, JP-183)
 #     timeout: optional, same form as every (but not once), default 15m
 #     report: optional, true means the job prints JSON, which goes to laptop-status as reports/<id>.json
 #     description: optional
@@ -132,3 +134,10 @@ jobs:
     timeout: 5m
     report: true
     description: JP-117, temporary. Starts the triage run of JP-116, the runner's proof ticket, once the runner has ticked; does nothing once that run exists. Removed with the proof page.
+
+  - id: console-terminal
+    run: scripts/console_terminal_job.py
+    every: 5m
+    timeout: 3m
+    report: true
+    description: JP-185. Keeps one Agent Manager terminal named console, in group josh-360, running scripts/console.py (Josh 360's live activity in one colored stream). Does nothing while the console's heartbeat is fresh; never opens a second terminal when it cannot read the terminal list. touch ~/.josh-360/state/console-off stops it. The report is the status, the terminal id and the heartbeat's age only.

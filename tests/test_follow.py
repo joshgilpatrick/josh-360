@@ -56,7 +56,7 @@ class FollowTest(LaptopCase):
         tree = self.status_tree()
         self.assertEqual([p for p in tree if not p.startswith("reports/")], ["status.json"])
         self.assertEqual([p for p in tree if p.startswith("reports/")],
-                         ["reports/doctor.json", "reports/graph-runner.json",
+                         ["reports/console-terminal.json", "reports/doctor.json", "reports/graph-runner.json",
                           "reports/inventory.json", "reports/jp-117-triage-jp-116.json", "reports/launchd-check.json",
                           "reports/ledger-backfill.json",
                           "reports/ledger-friction-catchup.json", "reports/ledger-upload.json",

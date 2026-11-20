@@ -1,0 +1,21 @@
+{
+  "command": [
+    "env",
+    "JOSH360_GRAPHS_ROOT=/tmp/verify-josh-360/jp191/standin/graphs",
+    "JOSH360_AM_BIN=/tmp/verify-josh-360/jp191/home/.josh-360/repo/tests/fakes/agent-manager",
+    "FAKE_AM_DIR=/tmp/verify-josh-360/jp191/standin/am",
+    "JOSH360_AM_DB=/tmp/verify-josh-360/jp191/standin/am/state.db",
+    "JOSH360_CLAUDE_SETTINGS=/tmp/verify-josh-360/jp191/standin/claude-settings.json",
+    "JOSH360_JIRA_FAKE=/tmp/verify-josh-360/jp191/standin/jira",
+    "WALKER_TEST_PLAN=/tmp/verify-josh-360/jp191/standin/plan.json",
+    "JOSH360_NO_NOTIFY=1",
+    "cat",
+    "/tmp/verify-josh-360/jp191/home/.josh-360/state/runner/am-tickets.json"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp191/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp191",
+  "started_at": "2026-11-20T15:13:25Z",
+  "stderr": "",
+  "stdout": "{\n \"tickets\": {\n  \"JP-900\": {\n   \"closed_out\": null,\n   \"count\": 3,\n   \"done_at\": null,\n   \"group\": \"josh-360/tickets/Code Review\",\n   \"sessions\": [\n    {\n     \"am_session\": \"s-1\",\n     \"archived\": true,\n     \"attempt\": 1,\n     \"filed_at\": 1794579124.100206,\n     \"finished_at\": 1795187552.9002059,\n     \"group\": \"josh-360/completed-steps\",\n     \"killed\": true,\n     \"n\": 1,\n     \"name\": \"JP-900(a) - Design\",\n     \"run\": \"r-68d32848e8ce\",\n     \"step\": \"design\"\n    },\n    {\n     \"am_session\": \"s-2\",\n     \"archived\": false,\n     \"attempt\": 1,\n     \"filed_at\": 1794669178.8521404,\n     \"finished_at\": 1795187578.8521404,\n     \"group\": \"josh-360/completed-steps\",\n     \"killed\": true,\n     \"n\": 2,\n     \"name\": \"JP-900(b) - Build\",\n     \"run\": \"r-68d32848e8ce\",\n     \"step\": \"build\"\n    },\n    {\n     \"am_session\": \"s-3\",\n     \"archived\": false,\n     \"attempt\": 1,\n     \"group\": \"josh-360/tickets/Code Review\",\n     \"n\": 3,\n     \"name\": \"JP-900(c) - Review\",\n     \"run\": \"r-68d32848e8ce\",\n     \"step\": \"review\"\n    }\n   ],\n   \"status\": \"Code Review\"\n  },\n  \"JP-901\": {\n   \"closed_out\": 1795187597.3858273,\n   \"count\": 1,\n   \"done_at\": 1795187596.0,\n   \"group\": \"josh-360/tickets/Done\",\n   \"sessions\": [\n    {\n     \"am_session\": \"s-4\",\n     \"archived\": false,\n     \"attempt\": 1,\n     \"filed_at\": 1795187597.3858273,\n     \"finished_at\": 1795187596.243561,\n     \"group\": \"josh-360/tickets/Done\",\n     \"killed\": true,\n     \"n\": 1,\n     \"name\": \"JP-901(a) - Design\",\n     \"run\": \"r-2ed5487445b0\",\n     \"step\": \"design\"\n    }\n   ],\n   \"status\": \"Done\"\n  }\n }\n}"
+}

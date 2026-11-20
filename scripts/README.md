@@ -6,6 +6,7 @@ The repository's own tools: the checks CI runs, the platform doctor, and the scr
 
 - [Checks and reference files](#checks-and-reference-files)
 - [The platform doctor](#the-platform-doctor)
+- [Hook blocks](#hook-blocks)
 - [Laptop jobs and their helpers](#laptop-jobs-and-their-helpers)
 
 ## Checks and reference files
@@ -17,11 +18,16 @@ The repository's own tools: the checks CI runs, the platform doctor, and the scr
 | `conventions.py` | Checks and reads `conventions/registry.yaml` and `priorities.yaml` (`check`, `lookup --folder <path>` or `--repo <name>`, `priority`, `export-json`). |
 | `decisions.py` | The per-ticket decision files in `docs/decisions/` (`list [--ticket JP-n]`, `check`). |
 | `feature_tree.py` | The JP-143 feature tree: `check`, and `build` the review page after editing `docs/design/feature-tree/tree.yaml`. |
+| `jira_snapshot.py` | Reads JP's real workflow from Jira, read-only, into `graphs/gates/jira-snapshot/JP.json`, the file that makes the fake Jira strict (JP-187). |
 | `architecture_page.py` | The JP-144 architecture page: `check`, and `build` after editing the feature tree or `docs/design/architecture/`. |
 
 ## The platform doctor
 
 `doctor.py` (JP-152) checks every part of Josh 360 on the laptop and prints the one step that fixes each problem; `doctor_lib/` holds the checks by group and the safe fixes; `doctor_job.py` runs it daily as the `doctor` job. Reference: `docs/platform-doctor.md`.
+
+## Hook blocks
+
+`hook_blocks.py` (JP-182) reads the stored Claude Code transcripts on the laptop and writes one review file listing every time any hook blocked something, with a summary of every hook on the laptop (blocking or not). `hook_blocks_lib/` holds its parts: the hook list (`inventory.py`), the transcript reader (`transcripts.py`), what the agent did next (`follow.py`), which hook it was (`attribute.py`) and the file itself (`report.py`). The `review-hook-blocks` skill reads the file and gives each blocking hook a verdict.
 
 ## Laptop jobs and their helpers
 
@@ -34,4 +40,6 @@ Each `*_job.py` is the script a `jobs.yaml` entry runs; the others are run by ha
 | `launchd_check_job.py` | Runs `laptop/check_jobs.py` daily as the `launchd-check` job (JP-119). |
 | `retire_focus_dashboard.py`, `retire_session_atlas.py`, `retire_leftover_jobs.py` | One-time jobs that switch an old launchd job off and archive it (JP-100, JP-111, JP-119). |
 | `restore_retired_job.py` | Puts a job switched off by `retire-leftover-jobs` back, from its archive folder. |
+| `console.py`, `console_lib/` | The live console (JP-185): what Josh 360 is doing, read from the ledger and the logs, in one colored stream. `--once` prints and exits. |
+| `console_terminal_job.py` | Keeps one Agent Manager terminal named `console` running the console, as the `console-terminal` job (JP-185). |
 | `atlas_service.py` | Keeps the headless Session Atlas running, as the hourly `session-atlas-service` job (JP-111). It is the one launchd installer Josh 360 ships, until the phase 1 close (`docs/phase-1-close-checklist.md`). |

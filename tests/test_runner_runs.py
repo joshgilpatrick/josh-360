@@ -99,7 +99,9 @@ class Running(RunnerCase):
         names = self.spawn_names()
         self.assertEqual(len(names), 3)
         self.assertEqual(names, ["JP-901(a) - Draft", "JP-901(b) - Make", "JP-901(c) - Look"])
-        self.assertEqual(self.am_calls("archive"), [["archive", "s-1"], ["archive", "s-2"]])   # (c) stays in view
+        # JP-191: each finished step's session is killed and filed in completed-steps, not archived at once
+        self.assertEqual(self.am_calls("archive"), [])
+        self.assertEqual([c[1] for c in self.am_calls("kill")], ["s-1", "s-2", "s-3"])
         conn = db.connect(db.ledger_path())
         try:
             self.assertEqual(conn.execute("SELECT runner FROM graph_runs WHERE run_id = ?", (run,)).fetchone()[0],

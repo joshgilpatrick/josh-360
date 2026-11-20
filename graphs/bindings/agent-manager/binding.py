@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import sqlite3
 import subprocess
@@ -30,7 +31,52 @@ FOLLOW_UPS = ('If you find work outside this ticket, do not do it: report it in 
 
 
 class SpawnRefused(Exception):
-    """A session could not be started. The message is one of: no-cli, group, refused, timeout, no-id."""
+    """A session could not be started. `str(err)` is the reason code: no-cli, bad-model, bad-effort, no-folder,
+    not-running, rate-limited, network, group, refused, timeout or no-id (JP-183 sorts each into a kind in
+    laptop/failure_kinds.py). `detail` is Agent Manager's own message, unshortened; the runner shortens and screens it."""
+
+    def __init__(self, code: str, detail: str = "") -> None:
+        super().__init__(code)
+        self.code = code
+        self.detail = detail
+
+
+FALLBACK_ON = ("bad-model", "bad-effort", "rate-limited")   # refusals for which the tier's next entry is tried
+
+# What Agent Manager's message says, read in this order (JP-183). A message that matches none is `refused`.
+_SAYS = (
+    ("no-cli", re.compile(r"is not installed|command not found")),
+    ("bad-model", re.compile(r"\bmodel\b[^\n]*\b(is not one|not one .* lists|unknown|not supported|unsupported|invalid|"
+                             r"not (a )?valid|not recogni[sz]ed|no such)|unknown model|invalid model")),
+    ("bad-effort", re.compile(r"\beffort\b[^\n]*\b(is not one|not one .* lists|unknown|not supported|unsupported|invalid|"
+                              r"not (a )?valid|not recogni[sz]ed|no such)|unknown effort|invalid effort")),
+    ("no-folder", re.compile(r"(directory|folder)[^\n]*(does not exist|doesn't exist|not found|no such)|"
+                             r"no such file or directory")),
+    ("not-running", re.compile(r"not running|is it running|connection refused|could not connect|cannot connect|"
+                               r"failed to connect")),
+    ("rate-limited", re.compile(r"rate.?limit|too many requests|\b429\b|overloaded")),
+    ("network", re.compile(r"network|temporarily unavailable|connection reset|timed out|name resolution")),
+)
+
+
+def classify(text: str) -> str:
+    """The reason code for a refused spawn, from what Agent Manager printed."""
+    low = str(text or "").lower()
+    for code, pattern in _SAYS:
+        if pattern.search(low):
+            return code
+    return "refused"
+
+
+def inputs() -> dict:
+    """What a spawn depends on outside the run: this binding's settings and where the two commands are found. The
+    runner hashes it to tell when a failure that needs a fix may have been fixed (JP-183)."""
+    try:
+        cfg = config()
+    except (OSError, ValueError):
+        cfg = None
+    return {"config": cfg, "agent_manager": _find("agent-manager", "JOSH360_AM_BIN"),
+            "claude": _find("claude", "JOSH360_CLAUDE_BIN")}
 
 
 def config() -> dict:
@@ -167,7 +213,7 @@ def build_prompt(answer: dict, marker: str, comments: str) -> str:
 def _am() -> str:
     found = _find("agent-manager", "JOSH360_AM_BIN")
     if not found:
-        raise SpawnRefused("no-cli")
+        raise SpawnRefused("no-cli", "the agent-manager command is not installed or not on the PATH")
     return found
 
 
@@ -201,7 +247,7 @@ def _ensure_group(am: str, group: str) -> None:
     for i in range(1, len(parts) + 1):
         code, out, err = _run([am, "create-group", "/".join(parts[:i])])
         if code != 0 and "already exists" not in (out + err).lower():
-            raise SpawnRefused("group")
+            raise SpawnRefused("group", (err.strip() or out.strip()))
     target = _groups_file()
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(sorted(set(ready + [group]))), encoding="utf-8")
@@ -232,38 +278,42 @@ def start(answer: dict, marker: str, comments: str) -> dict:
         _ensure_group(am, group)
         name, directory = session_name(answer), _directory(answer)
         prompt = build_prompt(answer, marker, comments)
-        last = "refused"
+        if not os.path.isdir(directory):
+            raise SpawnRefused("no-folder", "the folder {} does not exist".format(directory))
+        tried: List[SpawnRefused] = []
         for entry in answer["models"]:
             model = cfg.get("models", {}).get(entry["model"], entry["model"])
             argv = [am, "spawn", "--name", name, "--tool", cfg.get("tool", "claude"), "--group", group,
                     "--directory", directory, "--model", model, "--effort", entry["effort"], "--prompt", prompt, "--json"]
             code, out, err = _run(argv)
-            text = (out + err).lower()
             if code == 0:
                 return dict(_handle(cfg, out, name, model, entry["effort"], directory), group=group)
-            if "is not installed" in text:
-                raise SpawnRefused("no-cli")
-            if "model" not in text and "effort" not in text:
-                raise SpawnRefused("refused")
-        raise SpawnRefused(last)
+            refused = SpawnRefused(classify(out + "\n" + err), err.strip() or out.strip())
+            if refused.code not in FALLBACK_ON:
+                raise refused
+            tried.append(refused)                      # this entry's model cannot take it now: try the tier's next one
+        # Every entry was refused for its model, effort or a rate limit. One that may clear (a rate limit) wins, so
+        # the step is tried again; otherwise the first entry's refusal, which needs a fix.
+        hopeful = [t for t in tried if t.code == "rate-limited"]
+        raise (hopeful or tried or [SpawnRefused("refused", "the tier names no model")])[0]
     except subprocess.TimeoutExpired:
-        raise SpawnRefused("timeout")
-    except OSError:
-        raise SpawnRefused("no-cli")
+        raise SpawnRefused("timeout", "agent-manager did not answer within {} seconds".format(TIMEOUT))
+    except OSError as err:
+        raise SpawnRefused("no-cli", "agent-manager could not be run: {}".format(type(err).__name__))
 
 
 def _handle(cfg: dict, out: str, name: str, model: str, effort: str, directory: str) -> dict:
     try:
         reply = json.loads(out)
     except ValueError:
-        raise SpawnRefused("no-id")
+        raise SpawnRefused("no-id", "the spawn reply was not JSON")
     found = None
     for field in cfg.get("id_fields", ["id"]):
         if isinstance(reply, dict) and isinstance(reply.get(field), str) and reply[field]:
             found = reply[field]
             break
     if not found:
-        raise SpawnRefused("no-id")
+        raise SpawnRefused("no-id", "the spawn reply named no session id")
     return {"am_session": found, "name": name, "model": model, "effort": effort, "directory": directory}
 
 
@@ -304,6 +354,24 @@ def close(handle: dict) -> bool:
         return code == 0
     except (SpawnRefused, subprocess.SubprocessError, OSError, KeyError, ValueError):
         return False
+
+
+def kill(handle: dict) -> bool:
+    """Stop the session's agent and keep its row, so it can be revived (JP-191): `agent-manager kill <id> --json`.
+    Never raises."""
+    session = (handle or {}).get("am_session")
+    if not session:
+        return False
+    try:
+        code, _, _ = _run([_am()] + list(config().get("kill", ["kill"])) + [session, "--json"], timeout=60)
+        return code == 0
+    except (SpawnRefused, subprocess.SubprocessError, OSError, ValueError):
+        return False
+
+
+def completed_group() -> str:
+    """Where a finished step's session is filed until it is archived (JP-191)."""
+    return str(config().get("completed_group", "josh-360/completed-steps"))
 
 
 def move(handle: dict, group: str) -> bool:
