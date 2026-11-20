@@ -110,6 +110,13 @@ class StandIn(unittest.TestCase):
         self.assertEqual(names, ["default", "opus", "fable", "sonnet", "haiku"])
         self.assertEqual(self.hooks(), [])                    # a probe fires no hooks
 
+    def test_the_laptop_list_matches_what_the_binding_says_agent_manager_accepts(self):
+        accepts = json.loads((ROOT / "graphs" / "bindings" / "agent-manager" / "binding.json").read_text())["accepts"]
+        doc = json.loads((E2E / "laptop-models.json").read_text())
+        self.assertEqual([m["value"] for m in doc["models"]], accepts["models"])
+        for model in doc["models"]:
+            self.assertEqual(model["supportedEffortLevels"], accepts["efforts"], model["value"])
+
     def test_version(self):
         done = subprocess.run([str(STANDIN), "--version"], env=self.env, stdout=subprocess.PIPE,
                               universal_newlines=True, timeout=30)
