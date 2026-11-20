@@ -23,21 +23,39 @@
     {
       "graph": "validation",
       "run": "r-ed36fe69f6fd",
-      "since": "2026-11-20T01:49:48Z",
+      "since": "2026-11-20T01:49:52Z",
+      "state": "waiting",
+      "step": "watch",
+      "ticket": "JP-172",
+      "waiting_on": null
+    },
+    {
+      "graph": "triage",
+      "run": "r-4400caa5965b",
+      "since": "2026-11-20T01:49:51Z",
       "state": "between",
       "step": null,
-      "ticket": "JP-172",
+      "ticket": "JP-116",
+      "waiting_on": null
+    },
+    {
+      "graph": "validation",
+      "run": "r-9350fc38c238",
+      "since": "2026-11-20T02:05:44Z",
+      "state": "between",
+      "step": null,
+      "ticket": "JP-173",
       "waiting_on": null
     }
   ],
   "rails": true,
   "runs": {
-    "between": 1,
-    "open": 3,
+    "between": 2,
+    "open": 5,
     "parked": 0,
     "queued": 0,
     "stopped": 0,
-    "waiting": 2,
+    "waiting": 3,
     "working": 0
   },
   "session_limit": 2,
@@ -46,11 +64,46 @@
   "stopped": [],
   "ticket_counts": {
     "cost_fields": 0,
-    "listed": 3,
+    "listed": 5,
     "refusals_readable": true,
     "refused": 0
   },
   "tickets": [
+    {
+      "attempt": null,
+      "end": null,
+      "graph": "triage",
+      "jira_status": null,
+      "refused": [],
+      "run": "r-4400caa5965b",
+      "runner": "agent-manager",
+      "runs": 1,
+      "score": null,
+      "sessions": [
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T01:49:53Z",
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "pass",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T01:49:51Z",
+          "step": "_entry",
+          "tier": null
+        }
+      ],
+      "since": "2026-11-20T01:49:51Z",
+      "started_at": "2026-11-20T01:49:51Z",
+      "state": "between",
+      "step": null,
+      "step_label": null,
+      "ticket": "JP-116",
+      "waits_on": null,
+      "worktree_kept": null
+    },
     {
       "attempt": null,
       "end": null,
@@ -115,7 +168,8 @@
         "kind": "check",
         "since": "2026-11-19T22:38:26Z",
         "text": "the validation watch"
-      }
+      },
+      "worktree_kept": null
     },
     {
       "attempt": null,
@@ -181,13 +235,14 @@
         "kind": "check",
         "since": "2026-11-19T22:54:31Z",
         "text": "the validation watch"
-      }
+      },
+      "worktree_kept": null
     },
     {
       "attempt": null,
       "end": null,
       "graph": "validation",
-      "jira_status": null,
+      "jira_status": "Deployed",
       "refused": [],
       "run": "r-ed36fe69f6fd",
       "runner": "agent-manager",
@@ -207,15 +262,83 @@
           "started_at": "2026-11-20T01:49:48Z",
           "step": "_entry",
           "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T01:49:50Z",
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "watch",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T01:49:49Z",
+          "step": "read_criteria",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T01:49:51Z",
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "started",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T01:49:50Z",
+          "step": "start_watch",
+          "tier": null
         }
       ],
-      "since": "2026-11-20T01:49:48Z",
+      "since": "2026-11-20T01:49:52Z",
       "started_at": "2026-11-20T01:49:48Z",
+      "state": "waiting",
+      "step": "watch",
+      "step_label": "Watch",
+      "ticket": "JP-172",
+      "waits_on": {
+        "kind": "check",
+        "since": "2026-11-20T01:49:52Z",
+        "text": "the validation watch"
+      },
+      "worktree_kept": null
+    },
+    {
+      "attempt": null,
+      "end": null,
+      "graph": "validation",
+      "jira_status": null,
+      "refused": [],
+      "run": "r-9350fc38c238",
+      "runner": "agent-manager",
+      "runs": 1,
+      "score": null,
+      "sessions": [
+        {
+          "am_session": null,
+          "attempt": 1,
+          "ended_at": "2026-11-20T02:05:45Z",
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "pass",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T02:05:44Z",
+          "step": "_entry",
+          "tier": null
+        }
+      ],
+      "since": "2026-11-20T02:05:44Z",
+      "started_at": "2026-11-20T02:05:44Z",
       "state": "between",
       "step": null,
       "step_label": null,
-      "ticket": "JP-172",
-      "waits_on": null
+      "ticket": "JP-173",
+      "waits_on": null,
+      "worktree_kept": null
     }
   ],
   "waiting_over_7_days": [],
@@ -229,10 +352,11 @@
       "jira": "ok",
       "skipped": {
         "JP-167": "has an open run",
-        "JP-171": "has an open run"
+        "JP-171": "has an open run",
+        "JP-172": "has an open run"
       },
       "started": [
-        "JP-172"
+        "JP-173"
       ]
     }
   }
