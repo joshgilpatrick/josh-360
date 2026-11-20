@@ -51,6 +51,8 @@ RESULT = re.compile(r"to (\S+), then stop\.")
 OUTCOMES = re.compile(r"^End with one of these outcomes: (.+)\.\s*$", re.M)
 ROLE = re.compile(r"^Read (\S+)/instructions\.md first", re.M)
 TASK_FILE = re.compile(r"^Read (\S+) in full before anything else; it is your task\.\s*$", re.M)
+WORK = re.compile(r"^Work folder: (\S+)\s*$", re.M)
+PLACEHOLDER = "<work folder>/"
 STOP_PASSES = 3
 HOOK_TIMEOUT = 60
 
@@ -252,9 +254,10 @@ def _examples_module():
     return module
 
 
-def role_example(text: str, step: Optional[str]) -> Optional[dict]:
+def role_example(text: str, step: Optional[str] = None, outcome: Optional[str] = None) -> Optional[dict]:
     """The step's first example result in the role's instructions (```json result step=<step>, JP-189), read by the
-    same code as `graphs/tools/role_examples.py check`; else the first untagged ```json block holding an `outcome`."""
+    same code as `graphs/tools/role_examples.py check`; else the first untagged ```json block holding an `outcome`.
+    With `outcome` (JP-190), only an example for that outcome."""
     found = ROLE.search(text)
     if not found:
         return None
@@ -268,25 +271,61 @@ def role_example(text: str, step: Optional[str]) -> Optional[dict]:
     examples = module.examples_in(instructions)
     for wanted in ([step] if step else []) + [None]:
         for example in examples:
-            if example.step == wanted and example.doc is not None:
+            if example.step == wanted and example.doc is not None and \
+                    (outcome is None or example.doc.get("outcome") == outcome):
                 return dict(example.doc)
     return None
 
 
-def result_for(scenario: dict, text: str) -> Optional[Tuple[str, dict]]:
-    """(result file, document) the scenario writes, or None when it writes nothing."""
+def _placed(value: str, result: str, work: Optional[str]) -> str:
+    """An example's `<work folder>/<step>-1-<name>` made real: the work folder, named after the result file, as the
+    roles' instructions say (result `revise-4.json` -> `revise-4-proposal.json`)."""
+    name = value[len(PLACEHOLDER):]
+    found = re.match(r"^[a-z_]+-\d+-(.+)$", name)
+    if found:
+        name = "{}-{}".format(Path(result).stem, found.group(1))
+    return str(Path(work or str(Path(result).parent)) / name)
+
+
+def result_for(scenario: dict, text: str, session_id: str = "") -> Optional[Tuple[str, dict, List[Tuple[str, str]]]]:
+    """(result file, document, the files written before it) the scenario writes, or None when it writes nothing.
+
+    `example_outcome` takes the role's own example for that outcome (JP-190): the step's first example with that
+    outcome (JP-189), its `<work folder>/...` paths made real, and the scenario's `companions` (the files those paths
+    name, by output name) written first, with `<your session id>` filled in. A role with no example for the outcome
+    writes nothing: the session rests without a result, as a model told nothing would leave the step unfinished."""
     kind = scenario.get("kind", "example")
     found = RESULT.search(text)
     if not found or kind in ("silent", "hang", "question"):
         return None
     path = found.group(1)
     if kind == "wrong-shape":
-        return path, scenario.get("document") or {"result": "done", "fields": {"note": "not under outputs"}}
+        return path, scenario.get("document") or {"result": "done", "fields": {"note": "not under outputs"}}, []
     outcomes = OUTCOMES.search(text)
     listed = [o.strip() for o in outcomes.group(1).split(",")] if outcomes else []
     step = MARKER.search(text)
-    wanted = step.group(2) if step else None
-    example = role_example(text, wanted) if "outputs" not in scenario and "outcome" not in scenario else None
+    step_id = step.group(2) if step else None
+    extras: List[Tuple[str, str]] = []
+    wanted = scenario.get("example_outcome")
+    if wanted:
+        example = role_example(text, step_id, wanted)
+        if example is None:
+            log("no-example", outcome=wanted)
+            return None
+        work = WORK.search(text)
+        outputs = dict(example.get("outputs") or {})
+        for name, value in list(outputs.items()):
+            if isinstance(value, str) and value.startswith(PLACEHOLDER):
+                outputs[name] = _placed(value, path, work.group(1) if work else None)
+                companion = (scenario.get("companions") or {}).get(name)
+                if companion is not None:
+                    content = json.dumps(companion, sort_keys=True).replace("<your session id>", session_id)
+                    extras.append((outputs[name], content))
+        doc = dict(example, outputs=outputs)
+        if scenario.get("follow_ups"):
+            doc["follow_ups"] = scenario["follow_ups"]
+        return path, doc, extras
+    example = role_example(text, step_id) if "outputs" not in scenario and "outcome" not in scenario else None
     if example:
         doc = dict(example)
     else:
@@ -294,7 +333,7 @@ def result_for(scenario: dict, text: str) -> Optional[Tuple[str, dict]]:
                "outputs": scenario.get("outputs") or {}}
     if scenario.get("follow_ups"):
         doc["follow_ups"] = scenario["follow_ups"]
-    return path, doc
+    return path, doc, extras
 
 
 # -- the session ----------------------------------------------------------------------------------------------------
@@ -390,9 +429,11 @@ class Session:
                 log("asking")
                 self.wait_forever()
                 return
-        planned = result_for(scenario, text)
+        planned = result_for(scenario, text, self.id)
         written = False
         if planned:
+            for extra_path, content in planned[2]:
+                self.write_tool(extra_path, content)
             written = self.write_tool(planned[0], json.dumps(planned[1], sort_keys=True))
         self.line("assistant", message={"role": "assistant", "model": self.model,
                                         "content": [{"type": "text", "text": "(stand-in: no model was called)"}]})
@@ -402,8 +443,10 @@ class Session:
                 break
             log("stop-blocked", reason=reason, pass_number=n + 1)
             if scenario.get("on_stop_block") == "obey" and not written:
-                obeyed = result_for(dict(scenario, kind="example"), text)
+                obeyed = result_for(dict(scenario, kind="example"), text, self.id)
                 if obeyed:
+                    for extra_path, content in obeyed[2]:
+                        self.write_tool(extra_path, content)
                     written = self.write_tool(obeyed[0], json.dumps(obeyed[1], sort_keys=True))
         self.show("✻ Worked for {}s".format(max(1, int(time.time() - started))))
         self.show("────────────────────────────────────────\n❯ ")

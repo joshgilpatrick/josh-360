@@ -1,0 +1,9 @@
+=== 2026-11-20T17:15:11Z exit 0
+{"costs": 0, "deferred": 0, "episodes": 0, "homes": 0, "notes": 0, "offers": 0, "refs": 0, "sessions": 0, "skipped": 0}
+=== 2026-11-20T17:20:20Z exit 0
+{"costs": 0, "deferred": 0, "episodes": 0, "homes": 0, "notes": 0, "offers": 0, "refs": 0, "sessions": 1, "skipped": 0}
+2026-11-20T17:25:23Z git unavailable for a session folder; git_root, repo and commits left empty
+=== 2026-11-20T17:25:22Z exit 0
+{"costs": 0, "deferred": 0, "episodes": 1, "homes": 1, "notes": 0, "offers": 0, "refs": 2, "sessions": 0, "skipped": 0}
+=== 2026-11-20T17:30:24Z exit 0
+{"costs": 0, "deferred": 0, "episodes": 0, "homes": 0, "notes": 0, "offers": 0, "refs": 0, "sessions": 0, "skipped": 0}

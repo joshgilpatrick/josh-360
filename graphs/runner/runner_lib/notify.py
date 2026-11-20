@@ -51,6 +51,9 @@ def _write(run_id: str, doc: dict) -> None:
     os.replace(str(tmp), str(target))
 
 
+read, write = _read, _write   # the run's runner.json, for failures.gate_retry (JP-188)
+
+
 def note_once(run_id: str, what: str) -> bool:
     """True the first time `what` is noted for the run (and the person is told); False after that."""
     doc = _read(run_id)
@@ -87,9 +90,11 @@ def stop_key(stopped: dict) -> str:
 
 
 def forget_stops(run_id: str) -> None:
-    """Drop every `stopped:*` note, so a run that stops again after a retry is told about again."""
+    """Drop every `stopped:*` note, so a run that stops again after a retry is told about again, and the count of a gate
+    stop's retries (JP-188), so a later stop gets its own tries."""
     doc = _read(run_id)
     noted = [n for n in doc.get("noted") or [] if not str(n).startswith("stopped:")]
-    if noted != list(doc.get("noted") or []):
+    if noted != list(doc.get("noted") or []) or "gate_retries" in doc:
         doc["noted"] = noted
+        doc.pop("gate_retries", None)
         _write(run_id, doc)

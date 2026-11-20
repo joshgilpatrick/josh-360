@@ -1,0 +1,51 @@
+{
+ "about": "Ledger-record has a backlog of 700 made-up sessions, each on its own ticket, and the recorder's Jira answers each read after half a second: more work than its 150-second budget in each of two passes. In both passes graph-runner must still start within five minutes of the pass starting (JP-181). The one-time backfill is marked done long ago, as it is on the laptop.",
+ "graph": "triage",
+ "ticket": "JP-9116",
+ "fixture": {
+  "status": "Not Started",
+  "creator": {
+   "accountId": "acct-josh"
+  }
+ },
+ "issues": {
+  "JP-94": {
+   "summary": "A made-up stand-in for the epic",
+   "issuetype": "Epic",
+   "status": "Not Started",
+   "project": {
+    "key": "JP"
+   },
+   "labels": [
+    "josh-360"
+   ]
+  }
+ },
+ "starts": {
+  "per_pass": 1,
+  "graphs": {
+   "triage": {
+    "on": true,
+    "jql": "project = JP AND status = \"Not Started\" AND labels = \"ready-to-run\"",
+    "route_record": false,
+    "inputs": {}
+   }
+  }
+ },
+ "backlog": {
+  "sessions": 700,
+  "jira_delay": 0.5
+ },
+ "jobs_done": [
+  "ledger-backfill"
+ ],
+ "plan": {
+  "default": "example"
+ },
+ "passes": 2,
+ "limit_minutes": 60,
+ "expect": {
+  "graph_runner_within_seconds": 300,
+  "ledger_record_busy_seconds": 145
+ }
+}

@@ -10,15 +10,22 @@ Strict (JP-187): when the folder also holds snapshot.json (a copy of graphs/gate
 `jira_strict.install`), the fake refuses with 400 any status, transition id, issue type, field, option value or link
 type that JP's real Jira does not have, answers transitions and create metadata from the snapshot, and returns
 statuses and issue types with their real ids. Without the file it is as lenient as before.
+
+Credentials (JP-190): when the folder also holds credentials.json (`{"email": ..., "token": ...}`, made up), a client
+must find that email and token the way the real one does (`Jira.from_env` reads them from the environment, which
+`walker_lib/gates.jira_env` fills from ~/.josh-360/state/jira-email and the keychain), and every request whose
+Authorization header does not carry them gets the real Jira's 401. Without the file any client is let in.
 """
 from __future__ import annotations
 
+import base64
 import json
 import os
 import re
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Optional, Tuple
+from urllib.parse import urlsplit
 
 from lib import jira_strict
 
@@ -26,6 +33,7 @@ SPRINT_FIELD = "customfield_10020"
 FLAG_FIELD = "customfield_10021"      # "Flagged"; the same id as lib.jira.FLAG_FIELD
 MARKER = "fake-jira.json"
 CALLS = "calls.jsonl"
+CREDENTIALS = "credentials.json"
 
 
 def folder_from(environ: dict) -> Optional[Path]:
@@ -34,6 +42,27 @@ def folder_from(environ: dict) -> Optional[Path]:
         return None
     folder = Path(os.path.expanduser(value))
     return folder if (folder / MARKER).is_file() else None
+
+
+def credentials(folder: Path) -> Optional[Tuple[str, str]]:
+    """(email, token) a client must send, or None when this fake asks for none (JP-190)."""
+    try:
+        doc = json.loads((Path(folder) / CREDENTIALS).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(doc, dict) or not doc.get("email") or not doc.get("token"):
+        return None
+    return str(doc["email"]), str(doc["token"])
+
+
+def _path(url: str) -> str:
+    """The request's path and query, whatever site the client was given (a test may name a local one)."""
+    if "atlassian.net" in url:
+        return url.split("atlassian.net", 1)[1]
+    if url.startswith(("http://", "https://")):
+        parts = urlsplit(url)
+        return parts.path + ("?" + parts.query if parts.query else "")
+    return url
 
 
 def _judge(issues: list, jql: str) -> Optional[list]:
@@ -97,8 +126,16 @@ class FileTransport:
         os.replace(str(tmp), str(self.folder / MARKER))
 
     def __call__(self, method: str, url: str, headers: Dict[str, str], body: Optional[bytes]) -> Tuple[int, bytes, dict]:
-        path = url.split("atlassian.net", 1)[1] if "atlassian.net" in url else url
+        path = _path(url)
         data = json.loads(body) if body else None
+        want = credentials(self.folder)
+        if want is not None:
+            expected = "Basic " + base64.b64encode("{}:{}".format(*want).encode("utf-8")).decode("ascii")
+            if {k.lower(): v for k, v in (headers or {}).items()}.get("authorization") != expected:
+                with open(str(self.folder / CALLS), "a", encoding="utf-8") as log:
+                    log.write(json.dumps({"method": method, "path": path, "body": data, "status": 401}) + "\n")
+                return 401, json.dumps({"errorMessages": ["Client must be authenticated to access this resource."]
+                                        }).encode(), {}
         with open(str(self.folder / CALLS), "a", encoding="utf-8") as log:
             log.write(json.dumps({"method": method, "path": path, "body": data}) + "\n")
         state = self._load()

@@ -1,0 +1,78 @@
+{
+ "about": "The fixture ticket, drafted and waiting in Not Started, goes through the triage graph: the scripts pass it, the sign-off step's session (the stand-in) writes its role's example result, and the run ends with the ticket moved to Ready.",
+ "agent_manager": "0.47.1",
+ "checks": [
+  {
+   "check": "a run started for the ticket",
+   "detail": "r-02d5258d8eb9",
+   "ok": true
+  },
+  {
+   "check": "the run ended at its end state",
+   "detail": {
+    "ended": "finished",
+    "want": "finished",
+    "why_the_drive_stopped": "ended"
+   },
+   "ok": true
+  },
+  {
+   "check": "the fake Jira shows the ticket in the status the graph sets",
+   "detail": {
+    "status": "Ready",
+    "want": "Ready"
+   },
+   "ok": true
+  },
+  {
+   "check": "every role step has one Agent Manager session",
+   "detail": {
+    "agent_manager_sessions": 1,
+    "spawns": 1,
+    "steps": {
+     "sign_off-1": {
+      "am_session": "80870fb6",
+      "earlier": 0,
+      "in_agent_manager": true,
+      "state": "recorded"
+     }
+    }
+   },
+   "ok": true
+  },
+  {
+   "check": "the ticket's sessions follow its status: a live one sits in the group for the ticket's status, a finished one is killed and filed in completed-steps (or archived)",
+   "detail": {
+    "completed_group": "josh-360/completed-steps",
+    "final": [
+     {
+      "archived": 0,
+      "group_name": "josh-360/completed-steps",
+      "id": "80870fb6",
+      "name": "JP-9116(a) - Sign Off",
+      "status": "dead"
+     }
+    ],
+    "live_sightings": 1,
+    "misplaced": [],
+    "not_put_away": [],
+    "ticket_group": "josh-360/tickets/Ready",
+    "want_ticket_group": "josh-360/tickets/Ready"
+   },
+   "ok": true
+  }
+ ],
+ "commit": "4f7cf456d9431631a3875dc2dc885ea00b587d0f",
+ "drive": {
+  "e2e_minutes": 20.0,
+  "passes": 4,
+  "real_seconds": 16.2,
+  "why": "ended"
+ },
+ "evidence": "/tmp/claude-0/ev5/triage-happy",
+ "ok": true,
+ "python": "/root/.local/bin/python3.9",
+ "run": "r-02d5258d8eb9",
+ "sandbox": "/tmp/verify-josh-360/e2e-triage-happy-20261120T171009Z",
+ "scenario": "triage-happy"
+}

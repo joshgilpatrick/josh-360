@@ -1,4 +1,4 @@
-# The real Agent Manager in the cloud (JP-186)
+# The real Agent Manager in the cloud (JP-186, JP-188)
 
 ## Contents
 
@@ -7,13 +7,17 @@
 - [The parts](#the-parts)
 - [The stand-in for Claude Code](#the-stand-in-for-claude-code)
 - [Scenarios](#scenarios)
+- [A whole run](#a-whole-run)
+- [This week's laptop failures](#this-weeks-laptop-failures)
+- [The clock](#the-clock)
+- [In CI](#in-ci)
 - [What it does not cover](#what-it-does-not-cover)
 
 ## What it is
 
 Josh 360 starts its graph steps only through Agent Manager on Josh's laptop. This folder lets a cloud session or a CI job run that same Agent Manager, at the laptop's version (0.47.1), with no screen, and drive it through the real binding (`graphs/bindings/agent-manager/binding.py`). Claude Code is replaced by a stand-in script, so no model is called and nothing is paid per turn. The product does not change: nothing in `graphs/`, `ledger/` or `hooks/` knows about this folder.
 
-The design and the spike behind it are in `/mnt/project-files/josh-360/cloud-e2e-testing-design.md` (the project's shared files). JP-188 builds the whole-run driver and the CI job on top of this.
+The design and the spike behind it are in `/mnt/project-files/josh-360/cloud-e2e-testing-design.md` (the project's shared files). JP-188 added the whole-run driver (`scripts/e2e.py`, below) and the CI job on top of this; JP-190 added a run for each failure Josh found on his laptop in the week of 16 November 2026.
 
 ## Running it
 
@@ -22,7 +26,7 @@ python3 tests/e2e/agent_manager.py install                              # once: 
 python3 -m unittest discover -s tests -t tests -p 'test_e2e_*.py' -v    # the tests here
 ```
 
-`install` needs Go, git and tmux 3.1 or newer (`apt-get install -y tmux`). It builds into `~/.cache/josh360-e2e/agent-manager-0.47.1/` (`$JOSH360_E2E_CACHE` moves it) and does nothing when that binary is already there at the right version. Without it, `tests/test_e2e_agent_manager.py` skips every test with the install command as the reason; set `JOSH360_E2E_AM=1` to make a missing install fail instead (the CI job will). `tests/test_e2e_standin.py` needs nothing and always runs.
+`install` needs Go, git and tmux 3.1 or newer (`apt-get install -y tmux`). It builds into `~/.cache/josh360-e2e/agent-manager-0.47.1/` (`$JOSH360_E2E_CACHE` moves it) and does nothing when that binary is already there at the right version. Without it, `tests/test_e2e_agent_manager.py` skips every test with the install command as the reason; set `JOSH360_E2E_AM=1` to make a missing install fail instead (the CI job does). `tests/test_e2e_standin.py` needs nothing and always runs.
 
 To drive an instance by hand:
 
@@ -36,7 +40,7 @@ python3 tests/e2e/agent_manager.py down --root /tmp/am-1    # stop the manager a
 
 | File | What it does |
 | --- | --- |
-| `agent_manager.py` | Installs the pinned Agent Manager; makes an instance (its own `HOME`, `XDG_CONFIG_HOME` and `TMUX_TMPDIR`); starts the manager in a detached tmux session, because statuses only move in `state.db` while a manager runs; says when the manager is not running (`snapshot --json`'s `manager_awake`). `Instance.env()` is the environment the binding and the sessions run with: the stand-in first on the `PATH`, `JOSH360_AM_DB` at the Linux database (`$XDG_CONFIG_HOME/agent-manager/state.db`), `JOSH360_AM_BIN` at the recorder, and no credentials. |
+| `agent_manager.py` | Installs the pinned Agent Manager; makes an instance (its own `HOME`, `XDG_CONFIG_HOME` and `TMUX_TMPDIR`); starts the manager in a detached tmux session, because statuses only move in `state.db` while a manager runs; says when the manager is not running (`snapshot --json`'s `manager_awake`). `Instance.env()` is the environment the binding and the sessions run with: the stand-in first on the `PATH` (the whole-run driver replaces that `PATH` with a job's and puts the stand-in at `~/.local/bin/claude` instead), `JOSH360_AM_DB` at the Linux database (`$XDG_CONFIG_HOME/agent-manager/state.db`), `JOSH360_AM_BIN` at the recorder, and no credentials. |
 | `am-record` | Runs the real `agent-manager` and logs each call with its exit code, standard output and standard error to `am-calls.jsonl`. The binding keeps only a short reason (`refused`); the log keeps Agent Manager's own words. |
 | `standin/claude` | The stand-in for Claude Code, below. |
 | `laptop-models.json` | The models the laptop's Claude Code lists (default, opus, fable, sonnet, haiku). Refresh it from the laptop when Claude Code changes there. |
@@ -65,8 +69,60 @@ The plan file maps steps to scenarios: `{"default": "example", "steps": {"build"
 | `hang` | Starts working and never stops. |
 | `question` | Calls `AskUserQuestion` instead of ending with the needs-input outcome; if no hook blocks it, waits at the dialog (`Notification` `elicitation_dialog`, which Agent Manager reads as waiting). |
 | `follow-ups` | Writes the example result with two made-up follow-ups. |
+| `undeclared-output.json` | Writes the example `ready` result plus an output, `made_up_extra`, that no step declares (a file scenario, JP-188). |
+| `revise-example.json` | `example_outcome: revised`: writes the role's own example result for that outcome (the ticket drafter's, JP-184), its `<work folder>/...` path made real and named after the result file, after first writing the file that path names from the scenario's `companions` (here JP-9116 with its Validation section back). A role with no example for the outcome writes nothing (JP-190). |
 
 A scenario's `think` is how long the turn works before writing; `$JOSH360_STANDIN_THINK` overrides it (the stand-in's own tests use 0).
+
+## A whole run
+
+`python3 scripts/e2e.py --scenario <name>` carries a made-up ticket from its start status to an ended run on a sandbox laptop, with the real Agent Manager, the stand-in and the strict fake Jira (JP-187). `--all` runs every scenario, each into its own evidence folder; `--list` prints them. The scenarios are the files in `runs/`:
+
+| Run | What it proves |
+| --- | --- |
+| `triage-happy` | The fixture JP-9116 goes through the triage graph from Not Started to Ready: the run ends `finished`, each role step had one session, the fake Jira shows Ready, and every pass the live session sat in the group for the ticket's status, with the earlier ones put away. |
+| `undeclared-output` | The sign-off session writes an output its step does not declare: the run stops at `sign_off` within 25 e2e minutes and `runner.log` names `made_up_extra`. |
+| `bad-model-map` | `binding.json`'s `models` map is empty (`binding` in the scenario): the run stops at `sign_off` after one spawn, `runner.log` carries Agent Manager's own message naming `claude-sonnet-5-5`, and two more passes spawn nothing. |
+| `permanent-refusal` | The laptop's Claude Code no longer lists `opus` (`claude_lists`), the model sign-off's tier maps to: the run stops at `sign_off` after one spawn, says it needs a fix, and the step's one attempt stays open, so the walker counts no run of it against the cap. |
+| `triage-revise` | The fixture lacks its Validation section, so triage sends it to `revise`; the stand-in plays `revise-example.json`; the walker records `revise` with `revised`, the revision is applied and the ticket reaches Ready. |
+| `ledger-record-pace` | The recorder has a backlog of 700 made-up sessions (`backlog`) and its Jira answers each read after 0.5 s: ledger-record uses (nearly) its whole 150-second budget in each of two passes (`passes: 2`, checked as at least 145 s), and `graph-runner` still starts within 300 s of each pass starting. |
+
+Every run is laptop-like in the ways the laptop has bitten (JP-190): the Jira email is only in `~/.josh-360/state/jira-email`, and the fake Jira holds `credentials.json`, so a gate or the runner that does not find it the laptop's way is refused with Jira's 401 (the token stands in for the keychain as `JOSH360_JIRA_TOKEN`); the stand-in is only at `~/.local/bin/claude`, with no `JOSH360_CLAUDE_BIN`, so the binding must find it under a job's `PATH`; and the ledger recorder reads a local stand-in for Jira's REST API, never the real site. Every verdict checks that no Jira call was refused.
+
+A scenario may also carry: `binding` (keys merged over `binding.json`, handed over in `JOSH360_AM_BINDING_JSON`), `claude_lists` (the models the stand-in's probe lists, from `laptop-models.json`), `backlog` (`sessions`, `jira_delay`), `jobs_done` (once jobs marked done long ago in `jobs-state.json`), `passes` (stop after that many passes) and `after_stop_passes` (passes run after the stop, to show it holds). Its `expect` may name `admitted`, `claude_found`, `spawns`, `cap_used`, `step_outcomes`, `graph_runner_within_seconds` and `ledger_record_busy_seconds` besides JP-188's checks. `collect` also saves `walker-status.json`.
+
+What it does, in order:
+
+1. Launches a sandbox laptop with verify-josh-360's `sandbox.py` (committed `HEAD`; `--allow-dirty` while iterating).
+2. Makes an Agent Manager instance whose home is the sandbox's, wires the hooks, writes the stand-in plan, installs the strict fake Jira with the scenario's fixture and made-up neighbours, and writes the scenario's starts file (handed over in `JOSH360_RUNNER_STARTS`; the laptop's own `graphs/runner/starts.json` is not touched).
+3. Each pass moves the clock five minutes, runs `laptop/run_jobs.py` with Python 3.9 and a job's `PATH` (`/usr/bin:/bin:/usr/sbin:/sbin`, no `~/.local/bin`), and waits until no advance holds its lock and no session is starting or working. One more pass follows the run's end, so the tick files the last session.
+4. Stops when the run ends, when it stops at the scenario's `stopped_at` (and its `after_stop_passes` have run), after the scenario's `passes`, or at the e2e-minute or real-time limit.
+5. Copies the evidence and judges it against the scenario's `expect`.
+
+The evidence folder (default `docs/proof/<date>/e2e/<run>/`, `--evidence` moves it) holds `verdict.json`, `passes.jsonl` (one line per pass: e2e minutes, run, Jira status, sessions), `logs/` (with `runner.log`), `run/` (the run folder), `report.txt` and `report.json`, `jira/calls.jsonl` and the fake's final state, `agent-manager/` (sessions, the binding's calls, the stand-in's log and plan) and `sandbox/`. Exit 0 when every check passed, 1 when one failed, 2 when the harness could not run (no Agent Manager, no Python 3.9, a dirty checkout). The sandbox is removed afterwards unless `--keep`.
+
+It needs what the Agent Manager tests need, plus a Python 3.9 (`--python`, `$JOSH360_E2E_PYTHON`, `python3.9` on the `PATH`, or `uv python find 3.9`) for the laptop's jobs.
+
+## This week's laptop failures
+
+Each failure Josh found on the laptop in the week of 16 November 2026, and the run that now fails if it comes back. Each run was shown failing on the code that had the bug and passing on `main` (`docs/proof/2026-11-20/JP-190/`). `tests/test_e2e_driver.py` keeps this map.
+
+| Failure | Run |
+| --- | --- |
+| `binding.json` had an empty `models` map, so every spawn was refused (fixed in 6b03062) | `bad-model-map`; `triage-happy` and every other run spawn through the real map |
+| Spawn retries spent the tier cap on a refusal that could never pass, and the log said only "refused" (JP-183) | `permanent-refusal`, `bad-model-map` |
+| The `revise` result was refused for an undeclared output (JP-184) | `triage-revise` |
+| `ledger-record` held up the five-minute jobs (JP-181) | `ledger-record-pace` |
+| Gate scripts did not find the Jira email when it was only in `state/jira-email` (JP-171) | `triage-happy`, `triage-revise` (and every run's Jira check) |
+| "claude is not installed" under a job's PATH | `triage-happy` (and every run that spawns) |
+
+## The clock
+
+`clock/sitecustomize.py` is on the `PYTHONPATH` of every laptop process the driver starts. With `JOSH360_E2E_CLOCK` naming a file, `time.time`, `gmtime`, `localtime`, `strftime`, `ctime` and `datetime.datetime`'s `now`, `utcnow` and `today` run that many seconds ahead; the driver writes the file between passes. Monotonic clocks stay real, so time-outs and sleeps are not shortened. Agent Manager itself (Go) keeps the real clock, which only matters for its own timestamps.
+
+## In CI
+
+The `e2e` job in `.github/workflows/test.yml` runs on the same events as `suite`. It installs tmux, Go and Python 3.9 (with uv, since `actions/setup-python` has no 3.9 for the current `ubuntu-latest`), restores the Agent Manager build from the cache (keyed on the pinned version), runs the Agent Manager tests with `JOSH360_E2E_AM=1`, then `scripts/e2e.py --all`, and uploads the evidence as the `e2e-evidence` artifact whether it passed or not.
 
 ## What it does not cover
 

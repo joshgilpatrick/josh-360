@@ -1,0 +1,14 @@
+2026-11-20T17:57:21Z advance r-28a8ab777ddb: spawn of sign_off refused: refused
+2026-11-20T17:57:22Z triage_jp116_job: the walker did not admit the run: the entry gate 'triageable' did not admit the run: gate 'triageable' failed (1): JP-116 could not be read from Jira
+2026-11-20T18:02:24Z advance r-28a8ab777ddb: spawn of sign_off refused: refused
+2026-11-20T18:07:26Z advance r-28a8ab777ddb: spawn of sign_off refused: refused
+2026-11-20T18:12:28Z advance r-28a8ab777ddb: abandoned sign_off attempt 1: spawn-refused
+2026-11-20T18:12:28Z advance r-28a8ab777ddb: spawn of sign_off refused: refused
+2026-11-20T18:17:30Z advance r-28a8ab777ddb: spawn of sign_off refused: refused
+2026-11-20T18:22:32Z advance r-28a8ab777ddb: spawn of sign_off refused: refused
+2026-11-20T18:27:34Z advance r-28a8ab777ddb: abandoned sign_off attempt 2: spawn-refused
+2026-11-20T18:27:34Z advance r-28a8ab777ddb: spawn of sign_off refused: refused
+2026-11-20T18:32:36Z advance r-28a8ab777ddb: spawn of sign_off refused: refused
+2026-11-20T18:37:38Z advance r-28a8ab777ddb: spawn of sign_off refused: refused
+2026-11-20T18:42:40Z advance r-28a8ab777ddb: abandoned sign_off attempt 3: spawn-refused
+2026-11-20T18:42:40Z advance r-28a8ab777ddb: stopped at sign_off: step 'sign_off' has run as often as its tier allows (3 runs) and no question leads to a decision; use `allow` to allow one more

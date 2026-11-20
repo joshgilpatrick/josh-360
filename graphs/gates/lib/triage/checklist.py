@@ -21,7 +21,7 @@ from typing import Callable, Dict, List, Optional, Set
 
 from lib import patient_data, ready_checklist
 from lib.ticket_text import collapse
-from lib.triage import TRIAGE_TYPES
+from lib.triage import RUN_LABEL, TRIAGE_TYPES
 from lib.triage.gherkin import find_gherkin_blocks, read_feature, strip_blocks
 from lib.triage.registry import RepoLookup
 from lib.triage.ticket import Ticket
@@ -189,9 +189,10 @@ def checkrepository_of(ticket: Ticket, ctx: Context) -> List[dict]:
         elif answer["system"] not in ticket.labels:
             out.append(failure("C8", "labels", "labels: " + (", ".join(ticket.labels) or "none"),
                                "Add the label {}.".format(answer["system"])))
-    for label in ticket.labels:
-        if label != "improvement" and label not in ctx.system_names:
-            out.append(failure("C8", "labels", label, "Labels are a registry system name or improvement."))
+    for label in ticket.labels:   # ready-to-run is the runner's start label (JP-117), so it is never a gap (JP-188)
+        if label not in ("improvement", RUN_LABEL) and label not in ctx.system_names:
+            out.append(failure("C8", "labels", label, "Labels are a registry system name, improvement or "
+                                                      "ready-to-run."))
     return out
 
 

@@ -88,7 +88,8 @@ class Jira:
         fake = jira_fake.folder_from(env)
         if fake is not None and "transport" not in kwargs:
             kwargs["transport"] = jira_fake.FileTransport(fake)
-            return cls(env.get("JOSH360_JIRA_SITE") or DEFAULT_SITE, "test@example.com", "fake-token", **kwargs)
+            if jira_fake.credentials(fake) is None:     # JP-190: a fake that asks for credentials gets the real ones
+                return cls(env.get("JOSH360_JIRA_SITE") or DEFAULT_SITE, "test@example.com", "fake-token", **kwargs)
         email = env.get("JOSH360_JIRA_EMAIL") or env.get("ACTION_AGENT_JIRA_EMAIL")
         token = env.get("JOSH360_JIRA_TOKEN")
         if not email or not token:

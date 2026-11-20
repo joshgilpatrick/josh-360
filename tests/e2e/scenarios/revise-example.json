@@ -1,0 +1,42 @@
+{
+ "_about": "The revise step (JP-190): the ticket drafter's own example result for revised, from its instructions, and the revision it names, written first: JP-9116 with its missing Validation section put back. Made-up data.",
+ "kind": "example",
+ "think": 1,
+ "example_outcome": "revised",
+ "companions": {
+  "proposal": {
+   "action": "revise",
+   "closes": [
+    1
+   ],
+   "authors": [
+    "<your session id>"
+   ],
+   "tickets": [
+    {
+     "key": "JP-9116",
+     "type": "Task",
+     "repository": "josh-360",
+     "where_it_runs": "Cloud session.",
+     "sections": {
+      "goal": "a made-up chores page lists the chores due this week.",
+      "first_step": "read this made-up ticket; nothing in it is real.",
+      "why": "a fixture for end-to-end runs of the graph runner in the cloud (JP-187). No real ticket text.",
+      "in_scope": [
+       "A page that lists made-up chores"
+      ],
+      "not_in_scope": [
+       "Anything real"
+      ],
+      "acceptance_criteria": "Feature: The made-up chores page\n\n  @auto\n  Scenario: The page lists this week's chores\n    Given two made-up chores are due this week\n    When the page opens\n    Then it lists both",
+      "validation": "- Needed: no. A made-up ticket for tests; nothing runs in production.",
+      "parent_or_related": "Parent: JP-94.",
+      "decisions_already_made": [
+       "None."
+      ]
+     }
+    }
+   ]
+  }
+ }
+}

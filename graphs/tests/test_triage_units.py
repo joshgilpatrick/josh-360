@@ -152,6 +152,10 @@ class OneCasePerItem(unittest.TestCase):
     def test_c8_the_system_label_is_missing(self):
         self.assertEqual(items(ticket(labels=[])), ["C8"])
 
+    def test_c8_the_runners_start_label_is_not_a_gap(self):
+        self.assertEqual(items(ticket(labels=["josh-360", "ready-to-run"])), [])     # JP-188
+        self.assertEqual(items(ticket(labels=["josh-360", "equip"])), ["C8"])
+
     def test_c9_where_it_runs_says_neither(self):
         self.assertEqual(items(ticket(where="On a server")), ["C9"])
 

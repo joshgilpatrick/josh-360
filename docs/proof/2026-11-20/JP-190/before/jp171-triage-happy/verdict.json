@@ -1,0 +1,92 @@
+{
+ "about": "The fixture ticket, drafted and waiting in Not Started, goes through the triage graph: the scripts pass it, the sign-off step's session (the stand-in) writes its role's example result, and the run ends with the ticket moved to Ready. As on the laptop, the Jira email is only in state/jira-email (JP-171) and claude only in ~/.local/bin, which a job's PATH lacks: the entry gate must admit the run and Agent Manager must find claude.",
+ "agent_manager": "0.47.1",
+ "checks": [
+  {
+   "check": "a run started for the ticket",
+   "detail": null,
+   "ok": false
+  },
+  {
+   "check": "the run ended at its end state",
+   "detail": {
+    "ended": null,
+    "want": "finished",
+    "why_the_drive_stopped": "e2e time limit (60.0 minutes)"
+   },
+   "ok": false
+  },
+  {
+   "check": "the fake Jira shows the ticket in the status the graph sets",
+   "detail": {
+    "status": "Not Started",
+    "want": "Ready"
+   },
+   "ok": false
+  },
+  {
+   "check": "every role step has one Agent Manager session",
+   "detail": {
+    "agent_manager_sessions": 0,
+    "spawns": 0,
+    "steps": {}
+   },
+   "ok": false
+  },
+  {
+   "check": "the ticket's sessions follow its status: a live one sits in the group for the ticket's status, a finished one is killed and filed in completed-steps (or archived)",
+   "detail": {
+    "completed_group": "josh-360/completed-steps",
+    "final": [],
+    "live_sightings": 0,
+    "misplaced": [],
+    "not_put_away": [],
+    "ticket_group": null,
+    "want_ticket_group": "josh-360/tickets/Not Started"
+   },
+   "ok": false
+  },
+  {
+   "check": "every Jira call carried the credentials found the laptop's way (email only in state/jira-email)",
+   "detail": {
+    "calls": 12,
+    "refused_401": []
+   },
+   "ok": true
+  },
+  {
+   "check": "the entry gate admitted the run",
+   "detail": {
+    "refused": [
+     "2026-11-20T17:57:17Z start of triage for JP-9116 refused: the entry gate 'triageable' did not admit the run: gate 'triageable' failed (1): Jira credentials missing: set JOSH360_JIRA_EMAIL and JOSH360_JIRA_TOKEN",
+     "2026-11-20T18:02:23Z start of triage for JP-9116 refused: the entry gate 'triageable' did not admit the run: gate 'triageable' failed (1): Jira credentials missing: set JOSH360_JIRA_EMAIL and JOSH360_JIRA_TOKEN",
+     "2026-11-20T18:07:25Z start of triage for JP-9116 refused: the entry gate 'triageable' did not admit the run: gate 'triageable' failed (1): Jira credentials missing: set JOSH360_JIRA_EMAIL and JOSH360_JIRA_TOKEN"
+    ],
+    "run": null
+   },
+   "ok": false
+  },
+  {
+   "check": "Agent Manager found claude in ~/.local/bin under a job's PATH (no JOSH360_CLAUDE_BIN)",
+   "detail": {
+    "not_installed": [],
+    "spawns": 0
+   },
+   "ok": false
+  }
+ ],
+ "commit": "050b58a259bfe1f4cde27ed4504ed5273852bdf6",
+ "drive": {
+  "e2e_minutes": 60.0,
+  "passes": 12,
+  "real_seconds": 32.4,
+  "stopped_e2e_minutes": 60.0,
+  "why": "e2e time limit (60.0 minutes)"
+ },
+ "evidence": "/tmp/claude-0/e2e/proof/jp171-triage-happy",
+ "ok": false,
+ "python": "/root/.local/bin/python3.9",
+ "run": null,
+ "sandbox": "/tmp/verify-josh-360/e2e-triage-happy-20261120T175215Z",
+ "scenario": "triage-happy"
+}

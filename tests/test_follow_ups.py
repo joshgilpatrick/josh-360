@@ -231,7 +231,7 @@ class NoLeadIsRunning(FollowUpCase):
         import runner
         self.sprint("s1", "lead-1", live=False)
         run = self.start("JP-902")
-        self.plan({"lint-spec": ["crash"]})                       # a gate fails, so the run stops
+        self.plan({"lint-spec": ["no-such-outcome"]})             # a gate fails in a way that needs a fix (JP-188)
         self.do_role(run, "draft", "ready", {"note": "a made-up note"})
         self.assertEqual(self.advance(run), "stopped")
         self.assertEqual(self.sent(), [])

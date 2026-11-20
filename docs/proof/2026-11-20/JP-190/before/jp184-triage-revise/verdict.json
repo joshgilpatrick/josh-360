@@ -1,0 +1,88 @@
+{
+ "about": "The fixture ticket is missing its Validation section, so the Ready checklist fails and triage sends it to the ticket drafter's revise step. The stand-in writes the ticket drafter's own example result for revised (the role's instructions, JP-184) and the revision it names; the walker must accept it, the revision is applied, and the ticket goes on to Ready.",
+ "agent_manager": "0.47.1",
+ "checks": [
+  {
+   "check": "a run started for the ticket",
+   "detail": "r-0354360cf95c",
+   "ok": true
+  },
+  {
+   "check": "the run ended at its end state",
+   "detail": {
+    "ended": null,
+    "want": "finished",
+    "why_the_drive_stopped": "e2e time limit (60.0 minutes)"
+   },
+   "ok": false
+  },
+  {
+   "check": "the fake Jira shows the ticket in the status the graph sets",
+   "detail": {
+    "status": "Not Started",
+    "want": "Ready"
+   },
+   "ok": false
+  },
+  {
+   "check": "every Jira call carried the credentials found the laptop's way (email only in state/jira-email)",
+   "detail": {
+    "calls": 33,
+    "refused_401": []
+   },
+   "ok": true
+  },
+  {
+   "check": "the entry gate admitted the run",
+   "detail": {
+    "refused": [],
+    "run": "r-0354360cf95c"
+   },
+   "ok": true
+  },
+  {
+   "check": "the walker recorded revise with the outcome revised",
+   "detail": {
+    "rows": [
+     {
+      "allowed": false,
+      "attempt": 1,
+      "outcome": "_abandoned",
+      "step": "revise"
+     },
+     {
+      "allowed": false,
+      "attempt": 2,
+      "outcome": "_abandoned",
+      "step": "revise"
+     },
+     {
+      "allowed": false,
+      "attempt": 3,
+      "outcome": "_abandoned",
+      "step": "revise"
+     }
+    ],
+    "stopped": {
+     "reason": "step 'revise' has run as often as its tier allows (3 runs) and no question leads to a decision; use `allow` to allow one more",
+     "step": "revise"
+    }
+   },
+   "ok": false
+  }
+ ],
+ "commit": "fafb421b55b2b13398d35ccef84ff3de146ce222",
+ "drive": {
+  "e2e_minutes": 60.0,
+  "passes": 12,
+  "real_seconds": 33.2,
+  "stopped_e2e_minutes": 60.0,
+  "why": "e2e time limit (60.0 minutes)"
+ },
+ "evidence": "/tmp/claude-0/e2e/proof/jp184-triage-revise",
+ "ok": false,
+ "python": "/root/.local/bin/python3.9",
+ "run": "r-0354360cf95c",
+ "sandbox": "/tmp/verify-josh-360/e2e-triage-revise-20261120T175215Z",
+ "scenario": "triage-revise"
+}

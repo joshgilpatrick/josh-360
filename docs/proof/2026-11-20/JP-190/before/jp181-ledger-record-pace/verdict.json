@@ -1,0 +1,65 @@
+{
+ "about": "Ledger-record has a backlog of 700 made-up sessions, each on its own ticket, and the recorder's Jira answers each read after half a second: more work than its 150-second budget in each of two passes. In both passes graph-runner must still start within five minutes of the pass starting (JP-181). The one-time backfill is marked done long ago, as it is on the laptop.",
+ "agent_manager": "0.47.1",
+ "checks": [
+  {
+   "check": "a run started for the ticket",
+   "detail": "r-ed49def8fb03",
+   "ok": true
+  },
+  {
+   "check": "every Jira call carried the credentials found the laptop's way (email only in state/jira-email)",
+   "detail": {
+    "calls": 40,
+    "refused_401": []
+   },
+   "ok": true
+  },
+  {
+   "check": "graph-runner started within 300 seconds of e2e time in every pass",
+   "detail": [
+    {
+     "graph_runner_after_seconds": 604,
+     "ledger_record_seconds": 603,
+     "pass": 1
+    },
+    {
+     "graph_runner_after_seconds": 601,
+     "ledger_record_seconds": 601,
+     "pass": 2
+    }
+   ],
+   "ok": false
+  },
+  {
+   "check": "ledger-record ran ahead of it for at least 145 seconds in every pass (the backlog was big enough)",
+   "detail": [
+    {
+     "graph_runner_after_seconds": 604,
+     "ledger_record_seconds": 603,
+     "pass": 1
+    },
+    {
+     "graph_runner_after_seconds": 601,
+     "ledger_record_seconds": 601,
+     "pass": 2
+    }
+   ],
+   "ok": true
+  }
+ ],
+ "commit": "1d88cd639770f0775aa4efe959eb715931ec549e",
+ "drive": {
+  "e2e_minutes": 10.0,
+  "passes": 2,
+  "real_seconds": 1217.4,
+  "stopped_e2e_minutes": 10.0,
+  "why": "passes"
+ },
+ "evidence": "/tmp/claude-0/e2e/proof/jp181-ledger-record-pace",
+ "ok": false,
+ "python": "/root/.local/bin/python3.9",
+ "run": "r-ed49def8fb03",
+ "sandbox": "/tmp/verify-josh-360/e2e-pace-before-jp181",
+ "scenario": "ledger-record-pace"
+}

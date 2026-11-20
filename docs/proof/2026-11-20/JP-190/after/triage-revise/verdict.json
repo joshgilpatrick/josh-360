@@ -1,0 +1,73 @@
+{
+ "about": "The fixture ticket is missing its Validation section, so the Ready checklist fails and triage sends it to the ticket drafter's revise step. The stand-in writes the ticket drafter's own example result for revised (the role's instructions, JP-184) and the revision it names; the walker must accept it, the revision is applied, and the ticket goes on to Ready.",
+ "agent_manager": "0.47.1",
+ "checks": [
+  {
+   "check": "a run started for the ticket",
+   "detail": "r-439860f69b7e",
+   "ok": true
+  },
+  {
+   "check": "the run ended at its end state",
+   "detail": {
+    "ended": "finished",
+    "want": "finished",
+    "why_the_drive_stopped": "ended"
+   },
+   "ok": true
+  },
+  {
+   "check": "the fake Jira shows the ticket in the status the graph sets",
+   "detail": {
+    "status": "Ready",
+    "want": "Ready"
+   },
+   "ok": true
+  },
+  {
+   "check": "every Jira call carried the credentials found the laptop's way (email only in state/jira-email)",
+   "detail": {
+    "calls": 68,
+    "refused_401": []
+   },
+   "ok": true
+  },
+  {
+   "check": "the entry gate admitted the run",
+   "detail": {
+    "refused": [],
+    "run": "r-439860f69b7e"
+   },
+   "ok": true
+  },
+  {
+   "check": "the walker recorded revise with the outcome revised",
+   "detail": {
+    "rows": [
+     {
+      "allowed": false,
+      "attempt": 1,
+      "outcome": "revised",
+      "step": "revise"
+     }
+    ],
+    "stopped": null
+   },
+   "ok": true
+  }
+ ],
+ "commit": "6101ee28eabd6722ef6d2db4993d7d5e3007e604",
+ "drive": {
+  "e2e_minutes": 25.0,
+  "passes": 5,
+  "real_seconds": 24.2,
+  "stopped_e2e_minutes": 25.0,
+  "why": "ended"
+ },
+ "evidence": "/tmp/claude-0/e2e/all/triage-revise",
+ "ok": true,
+ "python": "/root/.local/bin/python3.9",
+ "run": "r-439860f69b7e",
+ "sandbox": "/tmp/verify-josh-360/e2e-triage-revise-20261120T182217Z",
+ "scenario": "triage-revise"
+}
