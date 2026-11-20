@@ -1,0 +1,26 @@
+{
+ "tickets": {
+  "JP-9116": {
+   "closed_out": null,
+   "count": 1,
+   "done_at": null,
+   "group": "josh-360/tickets/Ready",
+   "sessions": [
+    {
+     "am_session": "80870fb6",
+     "archived": false,
+     "attempt": 1,
+     "filed_at": 1795195221.2456298,
+     "finished_at": 1795195221.2456298,
+     "group": "josh-360/completed-steps",
+     "killed": true,
+     "n": 1,
+     "name": "JP-9116(a) - Sign Off",
+     "run": "r-02d5258d8eb9",
+     "step": "sign_off"
+    }
+   ],
+   "status": "Ready"
+  }
+ }
+}

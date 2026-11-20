@@ -1,0 +1,74 @@
+{
+  "console-terminal": {
+    "last_result": 0,
+    "last_run": 1795195840.9235485
+  },
+  "doctor": {
+    "last_result": 0,
+    "last_run": 1795194930.3511703
+  },
+  "follow": {
+    "last_result": 0,
+    "last_run": 1795195536.2176464
+  },
+  "graph-runner": {
+    "last_result": 0,
+    "last_run": 1795195840.500368
+  },
+  "inventory": {
+    "last_result": 0,
+    "last_run": 1795194928.2959106
+  },
+  "jp-117-triage-jp-116": {
+    "last_result": 0,
+    "last_run": 1795194930.833265
+  },
+  "launchd-check": {
+    "last_result": 0,
+    "last_run": 1795194930.5625265
+  },
+  "ledger-backfill": {
+    "last_result": 0,
+    "last_run": 1795194929.4761667
+  },
+  "ledger-backup": {
+    "last_result": 0,
+    "last_run": 1795194929.1496375
+  },
+  "ledger-friction-catchup": {
+    "last_result": 0,
+    "last_run": 1795194929.6189325
+  },
+  "ledger-record": {
+    "last_result": 0,
+    "last_run": 1795195840.2796211
+  },
+  "ledger-summary": {
+    "last_result": 0,
+    "last_run": 1795195840.583525
+  },
+  "ledger-upload": {
+    "last_result": 0,
+    "last_run": 1795194929.2843015
+  },
+  "retire-focus-dashboard": {
+    "last_result": 0,
+    "last_run": 1795194928.419264
+  },
+  "retire-leftover-jobs": {
+    "last_result": 0,
+    "last_run": 1795194930.4472494
+  },
+  "retire-session-atlas": {
+    "last_result": 0,
+    "last_run": 1795194929.900947
+  },
+  "session-atlas-service": {
+    "last_result": 0,
+    "last_run": 1795194930.0173857
+  },
+  "ticket-comments": {
+    "last_result": 0,
+    "last_run": 1795195840.7243686
+  }
+}

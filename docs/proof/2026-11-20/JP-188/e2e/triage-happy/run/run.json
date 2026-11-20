@@ -1,0 +1,38 @@
+{
+ "allow": [],
+ "ended": "finished",
+ "flag_on": false,
+ "graph": "triage",
+ "inputs": {
+  "reason": "new",
+  "ticket_key": "JP-9116"
+ },
+ "jira_status": "Ready",
+ "outputs": {
+  "check_sign_off": {
+   "kept": []
+  },
+  "mark_ready": {},
+  "read_ticket": {
+   "author_kind": "own",
+   "authors": [],
+   "ticket_type": "Task",
+   "version": "e2f18ba633c5dd87fd72a788e096a2668fb08f7c0ebe83803bf471f1104024c9"
+  },
+  "ready_check": {
+   "failures": []
+  },
+  "route": {
+   "graph": "development",
+   "route_reason": "",
+   "space": "JP",
+   "system": "josh-360"
+  },
+  "sign_off": {},
+  "verdict": {
+   "gaps": []
+  }
+ },
+ "stopped": null,
+ "ticket": "JP-9116"
+}

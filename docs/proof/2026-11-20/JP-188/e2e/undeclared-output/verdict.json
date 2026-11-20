@@ -1,0 +1,51 @@
+{
+ "about": "As triage-happy, but every sign-off session writes a result carrying an output its step does not declare. The walker refuses each one, the runner abandons the attempt (a run of the tier's cap of 3), and the run must stop at sign_off and say why, not hang: about 20 laptop minutes, one five-minute pass per attempt.",
+ "agent_manager": "0.47.1",
+ "checks": [
+  {
+   "check": "a run started for the ticket",
+   "detail": "r-9f525c1da6da",
+   "ok": true
+  },
+  {
+   "check": "the run stopped at the step",
+   "detail": {
+    "ended": null,
+    "stopped": {
+     "reason": "step 'sign_off' has run as often as its tier allows (3 runs) and no question leads to a decision; use `allow` to allow one more",
+     "step": "sign_off"
+    }
+   },
+   "ok": true
+  },
+  {
+   "check": "it stopped within 25 minutes of e2e time",
+   "detail": {
+    "e2e_minutes": 20.0,
+    "why_the_drive_stopped": "stopped"
+   },
+   "ok": true
+  },
+  {
+   "check": "runner.log names the refused output",
+   "detail": {
+    "log": "/tmp/verify-josh-360/e2e-undeclared-output-20261120T171027Z/home/.josh-360/logs/runner/runner.log",
+    "missing": []
+   },
+   "ok": true
+  }
+ ],
+ "commit": "4f7cf456d9431631a3875dc2dc885ea00b587d0f",
+ "drive": {
+  "e2e_minutes": 20.0,
+  "passes": 4,
+  "real_seconds": 14.1,
+  "why": "stopped"
+ },
+ "evidence": "/tmp/claude-0/ev5/undeclared-output",
+ "ok": true,
+ "python": "/root/.local/bin/python3.9",
+ "run": "r-9f525c1da6da",
+ "sandbox": "/tmp/verify-josh-360/e2e-undeclared-output-20261120T171027Z",
+ "scenario": "undeclared-output"
+}

@@ -1,0 +1,11 @@
+2026-11-20T17:15:29Z advance r-9f525c1da6da: started sign_off attempt 1
+2026-11-20T17:15:30Z triage_jp116_job: the walker did not admit the run: the entry gate 'triageable' did not admit the run: gate 'triageable' failed (1): JP-116 could not be read from Jira
+2026-11-20T17:20:32Z advance r-9f525c1da6da: result of sign_off refused: step 'sign_off' does not declare the output 'made_up_extra'
+2026-11-20T17:20:32Z advance r-9f525c1da6da: abandoned sign_off attempt 1: bad-result (ran; it used a run of the cap)
+2026-11-20T17:20:32Z advance r-9f525c1da6da: started sign_off attempt 2
+2026-11-20T17:25:36Z advance r-9f525c1da6da: result of sign_off refused: step 'sign_off' does not declare the output 'made_up_extra'
+2026-11-20T17:25:36Z advance r-9f525c1da6da: abandoned sign_off attempt 2: bad-result (ran; it used a run of the cap)
+2026-11-20T17:25:36Z advance r-9f525c1da6da: started sign_off attempt 3
+2026-11-20T17:30:40Z advance r-9f525c1da6da: result of sign_off refused: step 'sign_off' does not declare the output 'made_up_extra'
+2026-11-20T17:30:40Z advance r-9f525c1da6da: abandoned sign_off attempt 3: bad-result (ran; it used a run of the cap)
+2026-11-20T17:30:40Z advance r-9f525c1da6da: stopped at sign_off: step 'sign_off' has run as often as its tier allows (3 runs) and no question leads to a decision; use `allow` to allow one more
