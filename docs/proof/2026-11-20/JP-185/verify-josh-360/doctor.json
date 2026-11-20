@@ -1,6 +1,6 @@
 {
-  "checked_at": "2026-11-20T14:58:07Z",
-  "commit": "04f80b25a417621a6476d7d9363871259035708d",
+  "checked_at": "2026-11-20T14:59:28Z",
+  "commit": "d34af0f1e341d8c70e0444e2af9f47f3ad6d0b51",
   "doctor_report": {
     "checks": [
       {
@@ -37,7 +37,7 @@
       },
       {
         "auto_fix": null,
-        "detail": "on main at 04f80b2, no local changes",
+        "detail": "on main at d34af0f, no local changes",
         "fix": "",
         "group": "install",
         "id": "install.follows-main",
@@ -45,7 +45,7 @@
       },
       {
         "auto_fix": null,
-        "detail": "the install record matches the copy (04f80b2)",
+        "detail": "the install record matches the copy (d34af0f)",
         "fix": "",
         "group": "install",
         "id": "install.installed-commit",
@@ -656,7 +656,7 @@
       "skip": 10,
       "warn": 29
     },
-    "time": "2026-11-20T14:58:07Z"
+    "time": "2026-11-20T14:59:28Z"
   },
   "doctor_summary": {
     "fail": 14,
@@ -664,9 +664,9 @@
     "skip": 10,
     "warn": 29
   },
-  "main": "04f80b25a417621a6476d7d9363871259035708d",
+  "main": "d34af0f1e341d8c70e0444e2af9f47f3ad6d0b51",
   "ok": true,
-  "origin": "/tmp/verify-josh-360/jp185/origin.git",
+  "origin": "/tmp/verify-josh-360/jp185b/origin.git",
   "problems": [],
   "required_pass": [
     "install.home",
@@ -681,5 +681,5 @@
     "graphs.compiled",
     "graphs.walker"
   ],
-  "run": "jp185"
+  "run": "jp185b"
 }

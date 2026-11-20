@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "graphs/tools/walker.py",
+    "start",
+    "--graph",
+    "non-development",
+    "--ticket",
+    "JP-9001",
+    "--runner",
+    "cli"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp185b/home/.josh-360/repo",
+  "exit_code": 2,
+  "run": "jp185b",
+  "started_at": "2026-11-20T14:59:58Z",
+  "stderr": "",
+  "stdout": "{\"error\": \"the entry gate 'ready' did not admit the run: gate 'ready' failed (1): Jira credentials missing: set JOSH360_JIRA_EMAIL and JOSH360_JIRA_TOKEN\"}\n"
+}
