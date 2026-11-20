@@ -16,6 +16,12 @@ ends or a limit passes. Every pass runs the way launchd runs it on the laptop: P
 pace), so a run that takes an hour of laptop time takes a few minutes. The scenario files are `tests/e2e/runs/*.json`;
 `tests/e2e/README.md` describes them.
 
+The sandbox is set up the way Josh's laptop is, so a run trips on what the laptop trips on (JP-190): the Jira email is
+only in `~/.josh-360/state/jira-email` and the fake Jira refuses a client without it; Claude Code is only in
+`~/.local/bin`, which a job's PATH does not hold; and the ledger recorder reads a local stand-in for Jira's REST API
+(slow when a scenario asks), never the real site. A scenario can also change the binding's settings, the models the
+laptop's Claude Code lists, give the recorder a backlog of made-up sessions, or mark a once job as done long ago.
+
 Everything it saw goes in the evidence folder (runner.log, the run folder, the run report, the fake Jira's calls,
 Agent Manager's sessions and calls, the stand-in's log, each pass) with `verdict.json` on top. Exit 0 when every check
 of the scenario passed, 1 when one failed, 2 when the harness could not run (a missing tool or bad input).
@@ -31,9 +37,11 @@ import shutil
 import sqlite3
 import subprocess
 import sys
+import threading
 import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 E2E = ROOT / "tests" / "e2e"
@@ -44,6 +52,9 @@ PASS_SECONDS = 300                          # the laptop's job runner runs every
 JOB_PATH = "/usr/bin:/bin:/usr/sbin:/sbin"   # launchd's PATH: no ~/.local/bin, no Homebrew, no stand-in
 SETTLE_PASSES = 1                            # passes run after the run ends: the next tick places its sessions
 QUIET_SECONDS = 120                          # real seconds a pass may wait for the sessions it started to rest
+JIRA_EMAIL = "josh@example.test"             # made up: the laptop keeps the real one in ~/.josh-360/state/jira-email
+JIRA_TOKEN = "made-up-token"                 # made up: stands in for the laptop's keychain item, which Linux lacks
+BACKLOG_EPIC = "JP-94"
 sys.path.insert(0, str(E2E))
 sys.path.insert(0, str(ROOT / "graphs" / "gates"))
 import agent_manager  # noqa: E402
@@ -147,6 +158,9 @@ class Laptop:
         self.starts = self.root / "starts.json"
         self.am = agent_manager.Instance(self.root, am_bin)      # its home is the sandbox's HOME
         self.ticket = doc.get("ticket", "JP-9116")
+        self.binding_json = self.root / "binding.json"
+        self.claude_models = self.root / "claude-models.json"
+        self.recorder_jira: Optional[ThreadingHTTPServer] = None
 
     # -- setting up ---------------------------------------------------------------------------------------------
     def setup(self) -> None:
@@ -163,20 +177,66 @@ class Laptop:
         _fill(state["issues"][self.ticket]["fields"], self.doc.get("fixture") or {})
         (self.jira / "fake-jira.json").write_text(json.dumps(state), encoding="utf-8")
         write_json(self.starts, self.doc["starts"])
+        self.laptop_like()
         self.am.start_manager()
+
+    def laptop_like(self) -> None:
+        """What the laptop has and the earlier harness papered over (JP-190), plus the scenario's own changes."""
+        state = self.josh / "state"
+        state.mkdir(parents=True, exist_ok=True)
+        (state / "jira-email").write_text(JIRA_EMAIL + "\n", encoding="utf-8")       # JP-171: the email is only here
+        write_json(self.jira / "credentials.json", {"email": JIRA_EMAIL, "token": JIRA_TOKEN})
+        local_bin = self.home / ".local" / "bin"                                     # Claude Code's own install folder
+        local_bin.mkdir(parents=True, exist_ok=True)
+        if not (local_bin / "claude").exists():
+            os.symlink(str(E2E / "standin" / "claude"), str(local_bin / "claude"))
+        if self.doc.get("binding"):
+            cfg = json.loads((ROOT / "graphs" / "bindings" / "agent-manager" / "binding.json").read_text(encoding="utf-8"))
+            cfg.update(self.doc["binding"])
+            write_json(self.binding_json, cfg)
+        if self.doc.get("claude_lists") is not None:
+            listed = json.loads((E2E / "laptop-models.json").read_text(encoding="utf-8"))
+            listed["models"] = [m for m in listed["models"] if m["value"] in self.doc["claude_lists"]]
+            write_json(self.claude_models, listed)
+        backlog = self.doc.get("backlog") or {}
+        if backlog.get("sessions"):
+            made_up_backlog(self.home / ".claude" / "projects" / "-made-up-backlog", int(backlog["sessions"]))
+        self.recorder_jira = recorder_jira(float(backlog.get("jira_delay", 0)))
+        if self.doc.get("jobs_done"):
+            jobs_state = state / "jobs-state.json"
+            record = read_json(jobs_state) or {}
+            for job in self.doc["jobs_done"]:
+                record[job] = {"last_run": time.time(), "last_result": 0}
+            write_json(jobs_state, record)
+
+    def stop(self) -> None:
+        self.am.stop()
+        if self.recorder_jira is not None:
+            self.recorder_jira.shutdown()
+            self.recorder_jira.server_close()
+            self.recorder_jira = None
 
     def env(self) -> Dict[str, str]:
         """A launchd job's environment on the laptop, pointed at this sandbox's Agent Manager, Jira and clock."""
         sandbox = load_sandbox()
         env = sandbox.sandbox_env(self.meta)
         am = self.am.env(env)
+        # Not JOSH360_CLAUDE_BIN: the laptop sets no such thing, so the binding must find ~/.local/bin/claude itself.
         for key in ("XDG_CONFIG_HOME", "TMUX_TMPDIR", "JOSH360_AM_BIN", "JOSH360_E2E_REAL_AM", "JOSH360_E2E_AM_LOG",
-                    "JOSH360_AM_DB", "JOSH360_CLAUDE_BIN", "JOSH360_STANDIN_LOG", "JOSH360_STANDIN_PLAN"):
+                    "JOSH360_AM_DB", "JOSH360_STANDIN_LOG", "JOSH360_STANDIN_PLAN"):
             env[key] = am[key]
         env.update({"PATH": JOB_PATH, "JOSH360_JIRA_FAKE": str(self.jira), "JOSH360_RUNNER_STARTS": str(self.starts),
                     "JOSH360_NO_NOTIFY": "1", "JOSH360_E2E_CLOCK": str(self.clock), "PYTHONPATH": str(CLOCK_DIR),
-                    "LANG": "C.UTF-8"})
-        for key in ("PYTHONHOME", "VIRTUAL_ENV", "TMUX", "TMUX_PANE"):
+                    "LANG": "C.UTF-8", "JOSH360_JIRA_TOKEN": JIRA_TOKEN,
+                    "NO_PROXY": "127.0.0.1,localhost", "no_proxy": "127.0.0.1,localhost"})
+        if self.recorder_jira is not None:
+            env["JOSH360_JIRA_SITE"] = "http://127.0.0.1:{}".format(self.recorder_jira.server_address[1])
+        if self.binding_json.is_file():
+            env["JOSH360_AM_BINDING_JSON"] = str(self.binding_json)
+        if self.claude_models.is_file():
+            env["JOSH360_STANDIN_MODELS"] = str(self.claude_models)
+        for key in ("PYTHONHOME", "VIRTUAL_ENV", "TMUX", "TMUX_PANE", "JOSH360_CLAUDE_BIN", "JOSH360_JIRA_EMAIL",
+                    "ACTION_AGENT_JIRA_EMAIL"):
             env.pop(key, None)
         return env
 
@@ -289,6 +349,65 @@ def _held(lock: Path) -> bool:
         os.close(fd)
 
 
+def made_up_backlog(folder: Path, count: int) -> None:
+    """`count` quiet made-up sessions, each on its own made-up ticket, for the ledger recorder to catch up on (JP-181:
+    the backlog that once kept ledger-record past its timeout and held up the graph runner behind it)."""
+    folder.mkdir(parents=True, exist_ok=True)
+    quiet = time.time() - 3600
+    for n in range(count):
+        sid = "backlog-{:05d}".format(n)
+        lines = []
+        for i, kind in enumerate(("user", "assistant", "user", "assistant")):
+            lines.append(json.dumps({"type": kind, "timestamp": "2026-11-19T09:0{}:00Z".format(i), "sessionId": sid,
+                                     "uuid": "u-{}-{}".format(sid, i), "isSidechain": False,
+                                     "cwd": "/tmp/made-up/josh_360", "gitBranch": "JP-{}-made-up".format(20000 + n),
+                                     "message": {"role": kind, "content": "made-up text"}}))
+        path = folder / (sid + ".jsonl")
+        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        os.utime(str(path), (quiet, quiet))
+
+
+def recorder_jira(delay: float) -> ThreadingHTTPServer:
+    """A local stand-in for the Jira REST reads the laptop's ledger jobs make (`ledger/jira_read.py`): every issue is a
+    made-up Task under a made-up epic, answered after `delay` seconds (the recorder's slow reads, JP-181), and every
+    comment page is empty, at once (so the comment relay does not slow the run down too). It never reaches the real
+    site."""
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):  # noqa: N802
+            if "/rest/api/3/issue/" not in self.path:
+                self.send_error(404)
+                return
+            key = self.path.split("/issue/")[1].split("?")[0]
+            if key.endswith("/comment"):
+                doc = {"comments": [], "startAt": 0, "maxResults": 50, "total": 0}
+            else:
+                time.sleep(delay)
+                fields = {"labels": [], "issuelinks": [],
+                          "issuetype": {"name": "Epic" if key == BACKLOG_EPIC else "Task"}}
+                if key != BACKLOG_EPIC:
+                    fields["parent"] = {"key": BACKLOG_EPIC}
+                doc = {"key": key, "names": {}, "fields": fields}
+            body = json.dumps(doc).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def do_POST(self):  # noqa: N802
+            self.send_error(405)
+
+        do_PUT = do_POST
+
+        def log_message(self, *args):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    return server
+
+
 # -- driving ---------------------------------------------------------------------------------------------------------
 
 def launch(run: str, evidence: Path, allow_dirty: bool) -> dict:
@@ -311,7 +430,9 @@ def drive(laptop: Laptop, doc: dict, passes_log: Path, limit_minutes: float, wal
     began = time.monotonic()
     outcome = {"why": "limit", "passes": 0}
     want_stop = (doc.get("expect") or {}).get("stopped_at")
-    settle = 0
+    want_passes = doc.get("passes")                 # a scenario that is about the passes themselves, not the run's end
+    after_stop = int(doc.get("after_stop_passes", 0))
+    settle, stopped_for = 0, 0
     while True:
         e2e_minutes = laptop.offset() / 60.0
         if e2e_minutes >= limit_minutes:
@@ -322,18 +443,22 @@ def drive(laptop: Laptop, doc: dict, passes_log: Path, limit_minutes: float, wal
             break
         laptop.jump(PASS_SECONDS)
         outcome["passes"] += 1
+        started_at = time.time() + laptop.offset()   # when the pass began on the laptop's clock
         done = laptop.run([laptop.python, "laptop/run_jobs.py"], timeout=900)
         left = laptop.quiet()
         run_id = laptop.run_id()
         run = laptop.run_doc(run_id) or {}
         ended = laptop.ended(run_id)
-        line = {"pass": outcome["passes"], "e2e_minutes": round(laptop.offset() / 60.0, 1),
+        line = {"pass": outcome["passes"], "e2e_minutes": round(laptop.offset() / 60.0, 1), "started_at": started_at,
                 "real_seconds": round(time.monotonic() - began, 1), "run_jobs_exit": done.returncode,
                 "run_jobs": done.stdout.strip().splitlines(), "run_jobs_stderr": done.stderr.strip()[-2000:],
                 "run": run_id, "ended": ended, "stopped": run.get("stopped"), "still_busy": left,
                 "jira_status": laptop.jira_status(), "sessions": [_brief(r) for r in laptop.ticket_sessions()]}
         with open(str(passes_log), "a", encoding="utf-8") as handle:
             handle.write(json.dumps(line, sort_keys=True) + "\n")
+        if want_passes and outcome["passes"] >= int(want_passes):
+            outcome["why"] = "passes"
+            break
         if ended:
             outcome["why"] = "ended"
             settle += 1
@@ -341,9 +466,13 @@ def drive(laptop: Laptop, doc: dict, passes_log: Path, limit_minutes: float, wal
                 break
             continue
         if want_stop and (run.get("stopped") or {}).get("step") == want_stop:
-            outcome["why"] = "stopped"
-            break
+            if not stopped_for:
+                outcome.update(why="stopped", stopped_e2e_minutes=round(laptop.offset() / 60.0, 1))
+            stopped_for += 1
+            if stopped_for > after_stop:   # the passes after the stop show it stays stopped and spawns nothing more
+                break
     outcome.update(e2e_minutes=round(laptop.offset() / 60.0, 1), real_seconds=round(time.monotonic() - began, 1))
+    outcome.setdefault("stopped_e2e_minutes", outcome["e2e_minutes"])
     return outcome
 
 
@@ -372,6 +501,12 @@ def collect(laptop: Laptop, evidence: Path, run_id: Optional[str]) -> dict:
         except ValueError:
             report = {}
         write_json(evidence / "report.json", report)
+        done = laptop.run([laptop.python, "graphs/tools/walker.py", "status", "--run", run_id], timeout=120)
+        try:
+            walker = json.loads(done.stdout)
+        except ValueError:
+            walker = {"error": (done.stdout + done.stderr).strip()[-1000:]}
+        write_json(evidence / "walker-status.json", walker)
     for name in ("fake-jira.json", "calls.jsonl"):
         if (laptop.jira / name).is_file():
             target = evidence / "jira" / name
@@ -383,7 +518,7 @@ def collect(laptop: Laptop, evidence: Path, run_id: Optional[str]) -> dict:
                       (laptop.am.standin_plan, "standin-plan.json")):
         if src.is_file():
             shutil.copyfile(str(src), str(evidence / "agent-manager" / name))
-    return {"report": report, "am_sessions": sessions}
+    return {"report": report, "am_sessions": sessions, "walker": read_json(evidence / "walker-status.json") or {}}
 
 
 # -- the checks ------------------------------------------------------------------------------------------------------
@@ -459,14 +594,90 @@ def judge(laptop: Laptop, doc: dict, run_id: Optional[str], outcome: dict, seen:
               {"stopped": stopped, "ended": ended})
         limit = float(expect.get("within_minutes", 10))
         check("it stopped within {:g} minutes of e2e time".format(limit),
-              outcome["why"] == "stopped" and outcome["e2e_minutes"] <= limit,
-              {"e2e_minutes": outcome["e2e_minutes"], "why_the_drive_stopped": outcome["why"]})
+              outcome["why"] == "stopped" and outcome["stopped_e2e_minutes"] <= limit,
+              {"e2e_minutes": outcome["stopped_e2e_minutes"], "why_the_drive_stopped": outcome["why"]})
+    runner_log = laptop.josh / "logs" / "runner" / "runner.log"
+    runner_text = runner_log.read_text(encoding="utf-8") if runner_log.is_file() else ""
     if expect.get("runner_log_names"):
-        log = laptop.josh / "logs" / "runner" / "runner.log"
-        text = log.read_text(encoding="utf-8") if log.is_file() else ""
-        missing = [w for w in expect["runner_log_names"] if w not in text]
-        check("runner.log names the refused output", not missing, {"missing": missing, "log": str(log)})
+        missing = [w for w in expect["runner_log_names"] if w not in runner_text]
+        check("runner.log names what was refused, in the tool's own words", not missing,
+              {"missing": missing, "log": str(runner_log)})
+    # JP-171: every Jira call a gate or the runner made carried the email the laptop keeps in state/jira-email.
+    calls = _lines(laptop.jira / "calls.jsonl")
+    refused = [c for c in calls if c.get("status") == 401]
+    check("every Jira call carried the credentials found the laptop's way (email only in state/jira-email)",
+          bool(calls) and not refused, {"calls": len(calls), "refused_401": refused[:5]})
+    if expect.get("admitted"):
+        line = "start of {} for {} refused".format(doc["graph"], laptop.ticket)
+        said = [x for x in runner_text.splitlines() if line in x]
+        check("the entry gate admitted the run", bool(run_id) and not said, {"run": run_id, "refused": said[:3]})
+    spawns = laptop.am.calls("spawn")
+    if expect.get("claude_found"):
+        # "claude is not installed": a job's PATH has no ~/.local/bin, where Claude Code is, so the binding must find it
+        missing = [c for c in spawns if "not installed" in (str(c.get("stderr")) + str(c.get("stdout")))]
+        check("Agent Manager found claude in ~/.local/bin under a job's PATH (no JOSH360_CLAUDE_BIN)",
+              any(c.get("code") == 0 for c in spawns) and not missing,
+              {"spawns": len(spawns), "not_installed": [c.get("stderr") for c in missing][:3]})
+    if "spawns" in expect:
+        check("Agent Manager was asked to spawn exactly {} time(s)".format(expect["spawns"]),
+              len(spawns) == int(expect["spawns"]),
+              {"spawns": [{"code": c.get("code"), "stderr": str(c.get("stderr"))[:300]} for c in spawns]})
+    walker = seen.get("walker") or {}
+    for step, want in (expect.get("cap_used") or {}).items():
+        # A step's runs against its tier cap are its attempts that ended. A spawn that started no model leaves its one
+        # attempt open, and a resume carries on with that same attempt (JP-183), so it uses none; before JP-183 each
+        # refusal abandoned the attempt and the next began a new one, which spent the cap.
+        rows = [r for r in walker.get("steps") or [] if r.get("step") == step]
+        used = [r for r in rows if r.get("outcome") is not None]
+        check("the walker counts {} run(s) of {} against its cap (attempts that ended)".format(want, step),
+              len(used) == want and bool(rows),
+              {"attempts": rows, "runs": (walker.get("runs") or {}).get(step), "stopped": walker.get("stopped")})
+    for step, want in (expect.get("step_outcomes") or {}).items():
+        rows = [r for r in walker.get("steps") or [] if r.get("step") == step]
+        check("the walker recorded {} with the outcome {}".format(step, want), any(r.get("outcome") == want for r in rows),
+              {"rows": rows, "stopped": walker.get("stopped")})
+    if "graph_runner_within_seconds" in expect:
+        checks.extend(_pace(laptop, expect))
     return checks
+
+
+def _stamps(log: Path) -> List[float]:
+    """When each run of a job began, from the `=== <time> exit <code>` lines the job runner writes."""
+    out = []
+    for line in log.read_text(encoding="utf-8").splitlines() if log.is_file() else []:
+        if line.startswith("=== "):
+            try:
+                at = datetime.datetime.strptime(line.split()[1], "%Y-%m-%dT%H:%M:%SZ")
+            except (IndexError, ValueError):
+                continue
+            out.append(at.replace(tzinfo=datetime.timezone.utc).timestamp())
+    return out
+
+
+def _pace(laptop: Laptop, expect: dict) -> List[dict]:
+    """JP-181: in every pass, graph-runner starts within the bound of the pass starting, though ledger-record ahead of
+    it had more work than its budget. Times are the laptop's clock, from the passes and the job logs."""
+    bound, busy = float(expect["graph_runner_within_seconds"]), float(expect.get("ledger_record_busy_seconds", 0))
+    logs = laptop.josh / "logs"
+    runner, record = _stamps(logs / "graph-runner.log"), _stamps(logs / "ledger-record.log")
+    passes = _lines(laptop.evidence / "passes.jsonl")
+    rows = []
+    for n, line in enumerate(passes):
+        began = float(line["started_at"])
+        until = float(passes[n + 1]["started_at"]) if n + 1 < len(passes) else float("inf")
+        ran = next((t for t in runner if began - 1 <= t < until), None)
+        rec = next((t for t in record if began - 1 <= t < until), None)
+        rows.append({"pass": line["pass"], "graph_runner_after_seconds": None if ran is None else round(ran - began),
+                     "ledger_record_seconds": None if ran is None or rec is None else round(ran - rec)})
+    found = [r for r in rows if r["graph_runner_after_seconds"] is not None]
+    out = [{"check": "graph-runner started within {:g} seconds of e2e time in every pass".format(bound),
+            "ok": bool(rows) and len(found) == len(rows) and all(r["graph_runner_after_seconds"] <= bound for r in rows),
+            "detail": rows}]
+    if busy:
+        out.append({"check": "ledger-record ran ahead of it for at least {:g} seconds in every pass (the backlog was "
+                             "big enough)".format(busy),
+                    "ok": bool(rows) and all((r["ledger_record_seconds"] or 0) >= busy for r in rows), "detail": rows})
+    return out
 
 
 def _binding(laptop: Laptop):
@@ -507,7 +718,7 @@ def run_scenario(name: str, evidence: Optional[Path], run: Optional[str], python
         checks = judge(laptop, doc, run_id, outcome, seen)
     finally:
         if not keep:
-            laptop.am.stop()
+            laptop.stop()
     verdict = {"ok": bool(checks) and all(c["ok"] for c in checks), "scenario": name, "about": doc.get("about"),
                "run": run_id, "sandbox": meta["root"], "commit": meta["commit"], "python": python,
                "agent_manager": agent_manager.PINNED, "drive": outcome, "checks": checks, "evidence": str(evidence)}
