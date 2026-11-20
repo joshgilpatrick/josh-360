@@ -11,7 +11,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T07:18:07Z",
+          "failure_kind": null,
           "jira_status": null,
           "kind": "gate",
           "loop_count": 0,
@@ -26,7 +28,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T07:18:08Z",
+          "failure_kind": null,
           "jira_status": "Deployed",
           "kind": "gate",
           "loop_count": 0,
@@ -41,7 +45,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T07:18:10Z",
+          "failure_kind": null,
           "jira_status": "Deployed",
           "kind": "gate",
           "loop_count": 0,
@@ -56,7 +62,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T13:26:35Z",
+          "failure_kind": null,
           "jira_status": "Deployed",
           "kind": "gate",
           "loop_count": 0,
@@ -71,7 +79,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T13:26:35Z",
+          "failure_kind": null,
           "jira_status": "Deployed",
           "kind": "gate",
           "loop_count": 0,
@@ -86,7 +96,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T13:26:39Z",
+          "failure_kind": null,
           "jira_status": "Done",
           "kind": "gate",
           "loop_count": 0,
@@ -101,7 +113,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T13:26:40Z",
+          "failure_kind": null,
           "jira_status": null,
           "kind": "gate",
           "loop_count": 0,
@@ -127,7 +141,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-19T22:38:23Z",
+          "failure_kind": null,
           "jira_status": null,
           "kind": "gate",
           "loop_count": 0,
@@ -142,7 +158,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-19T22:38:24Z",
+          "failure_kind": null,
           "jira_status": "Deployed",
           "kind": "gate",
           "loop_count": 0,
@@ -157,7 +175,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-19T22:38:25Z",
+          "failure_kind": null,
           "jira_status": "Deployed",
           "kind": "gate",
           "loop_count": 0,
@@ -172,7 +192,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T04:58:19Z",
+          "failure_kind": null,
           "jira_status": "Deployed",
           "kind": "gate",
           "loop_count": 0,
@@ -187,7 +209,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T04:58:19Z",
+          "failure_kind": null,
           "jira_status": "Deployed",
           "kind": "gate",
           "loop_count": 0,
@@ -202,7 +226,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T04:58:22Z",
+          "failure_kind": null,
           "jira_status": "Done",
           "kind": "gate",
           "loop_count": 0,
@@ -217,7 +243,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T04:58:23Z",
+          "failure_kind": null,
           "jira_status": null,
           "kind": "gate",
           "loop_count": 0,
@@ -292,21 +320,21 @@
     {
       "graph": "validation",
       "run": "r-383d1f07928f",
-      "since": "2026-11-20T16:13:37Z",
-      "state": "between",
-      "step": null,
+      "since": "2026-11-20T16:13:43Z",
+      "state": "waiting",
+      "step": "watch",
       "ticket": "JP-185",
       "waiting_on": null
     }
   ],
   "rails": true,
   "runs": {
-    "between": 1,
+    "between": 0,
     "open": 7,
     "parked": 0,
     "queued": 0,
     "stopped": 1,
-    "waiting": 5,
+    "waiting": 6,
     "working": 0
   },
   "session_limit": 2,
@@ -340,7 +368,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T01:49:53Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -354,7 +384,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T02:05:46Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -368,7 +400,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T02:05:48Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -382,7 +416,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T02:05:49Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -396,7 +432,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T02:52:20Z",
+          "failure_kind": "may-clear",
           "kind": "role",
           "loop_count": 0,
           "model": null,
@@ -410,7 +448,9 @@
         {
           "am_session": null,
           "attempt": 2,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T03:39:18Z",
+          "failure_kind": "may-clear",
           "kind": "role",
           "loop_count": 1,
           "model": null,
@@ -424,7 +464,9 @@
         {
           "am_session": null,
           "attempt": 3,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T04:26:34Z",
+          "failure_kind": "may-clear",
           "kind": "role",
           "loop_count": 2,
           "model": null,
@@ -438,7 +480,9 @@
         {
           "am_session": "5ad6d4ec",
           "attempt": 4,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T14:32:14Z",
+          "failure_kind": "ran",
           "kind": "role",
           "loop_count": 3,
           "model": null,
@@ -477,7 +521,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-19T22:38:23Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -491,7 +537,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-19T22:38:24Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -505,7 +553,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-19T22:38:25Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -519,7 +569,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T04:58:19Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -533,7 +585,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T04:58:19Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -547,7 +601,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T04:58:22Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -561,7 +617,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T04:58:23Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -596,7 +654,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-19T22:54:24Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -610,7 +670,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-19T22:54:28Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -624,7 +686,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-19T22:54:30Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -663,7 +727,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T01:49:49Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -677,7 +743,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T01:49:50Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -691,7 +759,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T01:49:51Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -730,7 +800,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T02:05:45Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -744,7 +816,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T02:05:46Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -758,7 +832,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T02:05:47Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -797,7 +873,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T02:21:15Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -811,7 +889,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T02:21:17Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -825,7 +905,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T02:21:19Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -864,7 +946,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T02:36:45Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -878,7 +962,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T02:36:47Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -892,7 +978,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T02:36:49Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -931,7 +1019,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T07:18:07Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -945,7 +1035,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T07:18:08Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -959,7 +1051,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T07:18:10Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -973,7 +1067,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T13:26:35Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -987,7 +1083,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T13:26:35Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -1001,7 +1099,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T13:26:39Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -1015,7 +1115,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T13:26:40Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -1040,7 +1142,7 @@
       "attempt": null,
       "end": null,
       "graph": "validation",
-      "jira_status": null,
+      "jira_status": "Deployed",
       "refused": [],
       "run": "r-383d1f07928f",
       "runner": "agent-manager",
@@ -1050,7 +1152,9 @@
         {
           "am_session": null,
           "attempt": 1,
+          "earlier_am_sessions": [],
           "ended_at": "2026-11-20T16:13:38Z",
+          "failure_kind": null,
           "kind": "gate",
           "loop_count": 0,
           "model": null,
@@ -1060,15 +1164,51 @@
           "started_at": "2026-11-20T16:13:37Z",
           "step": "_entry",
           "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "earlier_am_sessions": [],
+          "ended_at": "2026-11-20T16:13:40Z",
+          "failure_kind": null,
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "watch",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T16:13:39Z",
+          "step": "read_criteria",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "earlier_am_sessions": [],
+          "ended_at": "2026-11-20T16:13:42Z",
+          "failure_kind": null,
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "started",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T16:13:40Z",
+          "step": "start_watch",
+          "tier": null
         }
       ],
-      "since": "2026-11-20T16:13:37Z",
+      "since": "2026-11-20T16:13:43Z",
       "started_at": "2026-11-20T16:13:37Z",
-      "state": "between",
-      "step": null,
-      "step_label": null,
+      "state": "waiting",
+      "step": "watch",
+      "step_label": "Watch",
       "ticket": "JP-185",
-      "waits_on": null,
+      "waits_on": {
+        "kind": "check",
+        "since": "2026-11-20T16:13:43Z",
+        "text": "the validation watch"
+      },
       "worktree_kept": null
     }
   ],
@@ -1086,11 +1226,10 @@
         "JP-172": "has an open run",
         "JP-173": "has an open run",
         "JP-174": "has an open run",
-        "JP-175": "has an open run"
+        "JP-175": "has an open run",
+        "JP-185": "has an open run"
       },
-      "started": [
-        "JP-185"
-      ]
+      "started": []
     }
   }
 }
