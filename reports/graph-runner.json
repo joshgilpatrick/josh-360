@@ -32,8 +32,8 @@
     {
       "graph": "triage",
       "run": "r-4400caa5965b",
-      "since": "2026-11-20T03:39:18Z",
-      "state": "queued",
+      "since": "2026-11-20T01:49:51Z",
+      "state": "stopped",
       "step": "revise",
       "ticket": "JP-116",
       "waiting_on": null
@@ -71,15 +71,21 @@
     "between": 0,
     "open": 7,
     "parked": 0,
-    "queued": 1,
-    "stopped": 0,
+    "queued": 0,
+    "stopped": 1,
     "waiting": 6,
     "working": 0
   },
   "session_limit": 2,
   "sessions_live": 0,
   "status": "ok",
-  "stopped": [],
+  "stopped": [
+    {
+      "run": "r-4400caa5965b",
+      "step": "revise",
+      "ticket": "JP-116"
+    }
+  ],
   "ticket_counts": {
     "cost_fields": 0,
     "listed": 7,
@@ -185,28 +191,28 @@
         {
           "am_session": null,
           "attempt": 3,
-          "ended_at": null,
+          "ended_at": "2026-11-20T04:26:34Z",
           "kind": "role",
           "loop_count": 2,
           "model": null,
-          "outcome": null,
-          "reason": null,
+          "outcome": "_abandoned",
+          "reason": "spawn-refused",
           "session": null,
           "started_at": "2026-11-20T03:39:18Z",
           "step": "revise",
           "tier": "mid"
         }
       ],
-      "since": "2026-11-20T03:39:18Z",
+      "since": "2026-11-20T01:49:51Z",
       "started_at": "2026-11-20T01:49:51Z",
-      "state": "queued",
+      "state": "stopped",
       "step": "revise",
       "step_label": "Revise",
       "ticket": "JP-116",
       "waits_on": {
-        "kind": "session",
-        "since": "2026-11-20T03:39:18Z",
-        "text": "a free session slot"
+        "kind": "cap",
+        "since": "2026-11-20T01:49:51Z",
+        "text": "Josh: the step ran as often as its tier allows (allow or retry it)"
       },
       "worktree_kept": null
     },
