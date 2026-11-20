@@ -1,0 +1,55 @@
+{
+ "about": "binding.json's models map is empty, as it was until 6b03062, so the binding hands Agent Manager the tier's own name (claude-sonnet-5-5 for sign-off, a mid-tier step), which the laptop's Claude Code does not list. The run must stop after one spawn, say Agent Manager's own words in runner.log, and spawn nothing more in the passes after (JP-183).",
+ "graph": "triage",
+ "ticket": "JP-9116",
+ "fixture": {
+  "status": "Not Started",
+  "creator": {
+   "accountId": "acct-josh"
+  }
+ },
+ "issues": {
+  "JP-94": {
+   "summary": "A made-up stand-in for the epic",
+   "issuetype": "Epic",
+   "status": "Not Started",
+   "project": {
+    "key": "JP"
+   },
+   "labels": [
+    "josh-360"
+   ]
+  }
+ },
+ "starts": {
+  "per_pass": 1,
+  "graphs": {
+   "triage": {
+    "on": true,
+    "jql": "project = JP AND status = \"Not Started\" AND labels = \"ready-to-run\"",
+    "route_record": false,
+    "inputs": {}
+   }
+  }
+ },
+ "binding": {
+  "models": {}
+ },
+ "plan": {
+  "default": "example"
+ },
+ "limit_minutes": 60,
+ "after_stop_passes": 2,
+ "expect": {
+  "stopped_at": "sign_off",
+  "within_minutes": 10,
+  "spawns": 1,
+  "runner_log_names": [
+   "claude-sonnet-5-5",
+   "is not one claude lists"
+  ],
+  "cap_used": {
+   "sign_off": 0
+  }
+ }
+}
