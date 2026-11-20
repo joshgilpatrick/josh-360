@@ -39,7 +39,7 @@ graphs/
   bindings/<tool>/       everything specific to one runner (Agent Manager first); never read by the checker
   intake/                the command that starts a ticket creation run (submit.py)
   runner/                the graph runner: watches Jira, starts runs and Agent Manager sessions
-  tools/                 the checker, the walker (walker.py, walker_lib/) and compile_graphs.py
+  tools/                 the checker, the walker (walker.py, walker_lib/), compile_graphs.py and role_examples.py
   compiled/              the JSON copy of each graph the walker reads (built by compile_graphs.py)
   tests/                 the checker's tests and sample graphs
 ```
@@ -57,7 +57,7 @@ A role is a job in a graph, such as designer, builder or code reviewer. It lives
   - `may_change`: `true` if the role may change files, tickets or anything else; `false` if it only reads and judges.
   - `tier`: `cheap`, `mid` or `gate`, the cheapest tier that can do the job.
   - `reviewer` (optional, default `false`): `true` for a role whose output is a list of defects.
-- `instructions.md`: what the role does, in plain words. Not empty.
+- `instructions.md`: what the role does, in plain words. Not empty. It shows at least one example result for each step that uses the role, a fenced block tagged ```` ```json result step=<step> ```` that holds `{"outcome": ..., "outputs": {...}}` (JP-189). `python3 graphs/tools/role_examples.py check`, part of `scripts/check.py`, reads every graph in `compiled/` and fails when a role step has no example, when an example's outcome is not one the step declares or it puts a key under `outputs` the step does not declare, or when a declared output is in none of the step's examples. The stand-in Claude Code in `tests/e2e/` writes the step's first example by default.
 
 ### Agents
 
@@ -265,6 +265,7 @@ python3 graphs/tools/check_graph.py                             # every graph in
 python3 graphs/tools/check_graph.py graphs/flows/my-graph.yaml   # one file
 python3 graphs/tools/check_graph.py --root <dir> <file>         # another parts folder (the tests use this)
 python3 graphs/tools/compile_graphs.py [--check]                 # the JSON copies the walker reads (see The walker)
+python3 graphs/tools/role_examples.py check [--root <graphs>]    # every role step's example result matches the step
 ```
 
 It checks `tiers.yaml` (models, efforts and run caps), every role and agent, and each graph file. A wait step must name a gate script, have access `read`, take no `effects` and not declare `pending`. It prints one line per problem, naming the file and where in it (a step id, a loop, a key), and exits 0 when there are none, 1 when there are, and 2 when it cannot run (a missing folder, or PyYAML not installed). A YAML key written twice in one mapping is refused, and `on`, `off`, `yes` and `no` are read as plain words, not as true or false. It needs PyYAML (`pip install -r requirements.txt`). `python3 scripts/check.py`, the repository's suite, runs it and its tests (`graphs/tests/`). The sample graphs there, one that passes and one per broken rule, are the quickest way to see the convention in use.
