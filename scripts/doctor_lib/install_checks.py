@@ -3,6 +3,7 @@ the background jobs from jobs.yaml running. Reads only; the proofs these come fr
 JP-112."""
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 from typing import List
@@ -188,6 +189,27 @@ def jobs_file(ctx: Ctx) -> Result:
     return Result("install.jobs-file", PASS, "jobs.yaml lists {} jobs".format(len(jobs)))
 
 
+BAD_REPORT = ("failed", "error", "unknown")
+
+
+def report_says_failed(ctx: Ctx, jid: str) -> str:
+    """JP-196: a job that reports exits 0 even when it could not do its work, and says so in its report. The saved
+    report's `status` or `result` of failed, error or unknown, with its reason; empty when it says nothing of the kind
+    (or there is no readable report)."""
+    try:
+        doc = json.loads((ctx.state / "reports" / "{}.json".format(jid)).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return ""
+    if not isinstance(doc, dict):
+        return ""
+    for field in ("status", "result"):
+        value = doc.get(field)
+        if isinstance(value, str) and value.lower() in BAD_REPORT:
+            why = doc.get("reason") or doc.get("error")
+            return "{} {}{}".format(field, value, " ({})".format(str(why)[:160]) if why else "")
+    return ""
+
+
 @check("jobs", "recurring")
 def recurring_jobs(ctx: Ctx) -> List[Result]:
     jobs, state = ctx.jobs(), ctx.job_state()
@@ -207,8 +229,12 @@ def recurring_jobs(ctx: Ctx) -> List[Result]:
                               "wait for the next runner pass, or: python3 ~/.josh-360/repo/laptop/run_jobs.py"))
             continue
         age = ctx.age_seconds(float(record.get("last_run", 0) or 0))
+        said = report_says_failed(ctx, jid)
         if record.get("last_result") != 0:
             out.append(Result(cid, FAIL, "last run {} exited {}".format(ago(age), record.get("last_result")), log))
+        elif said:
+            out.append(Result(cid, FAIL, "last run {} exited 0, but its report says {}".format(ago(age), said),
+                              "read ~/.josh-360/state/reports/{}.json and {}".format(jid, log[5:])))
         elif age > OVERDUE_FACTOR * float(every) + OVERDUE_SLACK_SECONDS:
             out.append(Result(cid, WARN, "last ran {}; it is due every {} min".format(ago(age), int(every) // 60),
                               "check install.runner-launchd and that the laptop was awake"))

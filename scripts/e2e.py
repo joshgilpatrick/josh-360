@@ -562,10 +562,15 @@ def judge(laptop: Laptop, doc: dict, run_id: Optional[str], outcome: dict, seen:
                 "am_session": handle.get("am_session"), "in_agent_manager": handle.get("am_session") in am_rows,
                 "earlier": len(f.get("earlier") or []), "state": f.get("state")}
         spawned = [c for c in laptop.am.calls("spawn") if c.get("code") == 0]
+        # Only the ticket's own sessions count: the `console` terminal the console-terminal job keeps open (JP-196)
+        # is an Agent Manager row too, but no role step's.
+        mine = [r for r in am_rows.values() if str(r.get("name") or "").startswith(laptop.ticket + "(")]
+        others = sorted(str(r.get("name")) for r in am_rows.values() if r not in mine)
         ok = bool(files) and all(v["in_agent_manager"] and not v["earlier"] for v in per_attempt.values()) \
-            and len(spawned) == len(files) == len(am_rows)
+            and len(spawned) == len(files) == len(mine)
         check("every role step has one Agent Manager session", ok,
-              {"steps": per_attempt, "spawns": len(spawned), "agent_manager_sessions": len(am_rows)})
+              {"steps": per_attempt, "spawns": len(spawned), "agent_manager_sessions": len(mine),
+               "other_agent_manager_rows": others})
     if expect.get("sessions_follow_status"):
         binding = _binding(laptop)
         completed = binding.completed_group()

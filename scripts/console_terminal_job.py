@@ -6,8 +6,10 @@ Every five minutes:
 1. `~/.josh-360/state/console-off` exists: do nothing (status `off`).
 2. The console's heartbeat (`state/console-heartbeat.json`, written every 30 seconds) is fresh: do nothing, with no
    Agent Manager call at all (status `running`).
-3. Otherwise list Agent Manager's terminals. If the list cannot be read, do nothing (status `unknown`): a second
-   console is never opened on a guess.
+3. Otherwise read Agent Manager's terminals from `snapshot --json`, keeping the running ones. If they cannot be read,
+   do nothing (status `unknown`): a second console is never opened on a guess. Not `terminal list`: that one acts as
+   the caller's own pane, so from a launchd job it always fails with "not inside an Agent Manager session" (JP-196).
+   `snapshot`, `create-group` and `terminal create` and `send` all run from a script outside Agent Manager.
 4. The terminal this job opened (its id is in `state/console-terminal.json`), or one named `console`, is still
    listed: send the console command to it again, at most once every ten minutes (status `restarted`, or `starting`
    while it waits for the first heartbeat).
@@ -71,10 +73,11 @@ def command(home: Path) -> str:
 
 
 def terminals(listed) -> List[dict]:
-    """Agent Manager's terminal list as dicts with an `id` and a `name`; raises ValueError on a shape it cannot read."""
+    """The running terminals in Agent Manager's snapshot (or a bare list) as dicts with an `id` and a `name`; raises
+    ValueError on a shape it cannot read. A terminal the snapshot marks not running or archived is left out."""
     rows = listed.get("terminals") if isinstance(listed, dict) else listed
     if not isinstance(rows, list):
-        raise ValueError("terminal list is not a list")
+        raise ValueError("the terminals are not a list")
     found = []
     for row in rows:
         if not isinstance(row, dict):
@@ -82,6 +85,8 @@ def terminals(listed) -> List[dict]:
         ident = row.get("id") or row.get("terminal_id")
         if ident is None:
             raise ValueError("a terminal entry has no id")
+        if row.get("running") is False or row.get("archived"):
+            continue
         found.append({"id": str(ident), "name": str(row.get("name") or row.get("title") or "")})
     return found
 
@@ -106,9 +111,9 @@ def keep_alive(home: Path, now: float) -> dict:
         report["status"] = "running"
         return report
     try:
-        listed = terminals(am.run_json(["terminal", "list", "--json"]))
+        listed = terminals(am.run_json(["snapshot", "--json"]))
     except ValueError as err:
-        report.update(status="unknown", reason="terminal list: {}".format(str(err)[:160]))
+        report.update(status="unknown", reason="snapshot: {}".format(str(err)[:160]))
         return report
     ids = {t["id"] for t in listed}
     tid = record.get("terminal_id") if record.get("terminal_id") in ids else None
