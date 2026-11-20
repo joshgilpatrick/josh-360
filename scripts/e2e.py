@@ -5,6 +5,7 @@ One command carries the made-up fixture ticket (JP-9116) from Jira to an ended r
 Agent Manager (JP-186), the stand-in Claude Code and the strict fake Jira (JP-187):
 
     python3 scripts/e2e.py --scenario triage-happy --evidence <folder>
+    python3 scripts/e2e.py --all --evidence <folder>      # every scenario, each in <folder>/<scenario>/
     python3 scripts/e2e.py --list
 
 It launches a verify-josh-360 sandbox laptop (its own HOME and a bare `origin.git` for GitHub), starts a pinned Agent
