@@ -58,7 +58,7 @@ The plan file maps steps to scenarios: `{"default": "example", "steps": {"build"
 
 | Scenario | What the session does |
 | --- | --- |
-| `example` | Writes the example result in the role's instructions (the first ```` ```json ```` block holding `outcome`), else the scenario's own `outcome` and `outputs`, else the first listed outcome with no outputs. Works for 6 seconds first, longer than the manager's 5-second poll, so `working` is seen. |
+| `example` | Writes the step's example result in the role's instructions (the first ```` ```json result step=<step> ```` block, read by the same code as `graphs/tools/role_examples.py check`, JP-189; else the first untagged ```` ```json ```` block holding `outcome`), else the scenario's own `outcome` and `outputs`, else the first listed outcome with no outputs. Works for 6 seconds first, longer than the manager's 5-second poll, so `working` is seen. |
 | `wrong-shape` | Writes a result with no `outcome` and its fields not under `outputs`. |
 | `silent` | Writes nothing and stops, ignoring the Stop hook's nudge. |
 | `silent-then-obeys` | Writes nothing, then writes the example result when the Stop hook nudges it. |
