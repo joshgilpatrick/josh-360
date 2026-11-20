@@ -1,0 +1,1 @@
+{"_about": "The step stops without writing its result; when the Stop hook nudges it, it writes the example result.", "kind": "silent", "on_stop_block": "obey", "think": 1}
