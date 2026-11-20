@@ -1,0 +1,8 @@
+Wrote /tmp/claude-0/j360/reviews/hook-blocks/hook-blocks-2026-11-20.md (and hook-blocks-2026-11-20.json): 13 blocks, 5 likely false alarms, 18 hooks listed, 9 transcripts read, 0 skipped.
+  project proj:pre.py: 4 blocks, 4 likely false alarms
+  project proj:post.py: 2 blocks, 0 likely false alarms
+  project proj:stop.py: 2 blocks, 0 likely false alarms
+  project proj:prompt.py: 2 blocks, 0 likely false alarms
+  project proj:pre2.py: 1 blocks, 1 likely false alarms
+  project proj:stopexit.py: 1 blocks, 0 likely false alarms
+  project proj:substop.py: 1 blocks, 0 likely false alarms
