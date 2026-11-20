@@ -106,9 +106,11 @@ def scenario(name: str) -> dict:
 def standin_plan(doc: dict) -> dict:
     """The stand-in's plan with each scenario that names a file in tests/e2e/scenarios/ made absolute."""
     plan = json.loads(json.dumps(doc.get("plan") or {"default": "example"}))
-    for step, name in list((plan.get("steps") or {}).items()):
-        if isinstance(name, str) and name.endswith(".json"):
-            plan["steps"][step] = str(E2E / "scenarios" / name)
+    def absolute(name):
+        return str(E2E / "scenarios" / name) if isinstance(name, str) and name.endswith(".json") else name
+
+    for step, name in list((plan.get("steps") or {}).items()):   # a list is one scenario per attempt (JP-194)
+        plan["steps"][step] = [absolute(n) for n in name] if isinstance(name, list) else absolute(name)
     return plan
 
 

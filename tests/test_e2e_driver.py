@@ -33,6 +33,7 @@ LAPTOP_FAILURES = {
     "ledger-record holds up the five-minute jobs (JP-181)": ["ledger-record-pace"],
     "gates miss the Jira email in state/jira-email (JP-171)": ["triage-happy", "triage-revise"],
     "claude is not installed under a job's PATH": ["triage-happy"],
+    "the run cap stops the loop back to a re-read after the drafter's last run (JP-194, JP-116's run)": ["triage-revise-at-cap"],
 }
 
 
@@ -59,12 +60,13 @@ class Scenarios(unittest.TestCase):
     def test_every_scenario_file_a_plan_names_exists(self):
         for name, doc in e2e.scenarios().items():
             plan = e2e.standin_plan(doc)
-            for step, value in (plan.get("steps") or {}).items():
-                if value.endswith(".json"):
-                    with self.subTest(name=name, step=step):
-                        self.assertTrue(Path(value).is_absolute())
-                        played = json.loads(Path(value).read_text(encoding="utf-8"))
-                        self.assertIn("kind", played)
+            for step, values in (plan.get("steps") or {}).items():
+                for value in values if isinstance(values, list) else [values]:   # one per attempt (JP-194)
+                    if value.endswith(".json"):
+                        with self.subTest(name=name, step=step):
+                            self.assertTrue(Path(value).is_absolute())
+                            played = json.loads(Path(value).read_text(encoding="utf-8"))
+                            self.assertIn("kind", played)
 
     def test_the_stopped_run_names_an_output_its_session_writes(self):
         doc = e2e.scenario("undeclared-output")

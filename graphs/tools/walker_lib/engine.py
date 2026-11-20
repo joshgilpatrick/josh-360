@@ -6,7 +6,7 @@ The rules are the ones in graphs/CONVENTION.md, "How a graph runs" and "The run 
 """
 from __future__ import annotations
 
-from typing import Dict, List, NamedTuple, Optional, Set, Tuple
+from typing import Dict, FrozenSet, List, NamedTuple, Optional, Set, Tuple
 
 from .graphfile import Graph
 
@@ -24,8 +24,16 @@ class Corrupt(Exception):
 class Forced(NamedTuple):
     ask: str          # the at_limit ask the run was sent to
     reason: str       # 'loop' (the arrow is at its limit) or 'cap' (a role step is at its tier's run cap)
-    from_step: str
+    from_step: str    # the step whose outcome took the loop
     outcome: str
+    steps: Tuple[str, ...] = ()   # for 'cap': the role step at its cap that was about to start (JP-194)
+
+
+class Held(NamedTuple):
+    forced: Forced
+    loop: Tuple[str, str]        # the loop's (from step, to step)
+    done: Dict[str, str]         # st.done before the loop was taken
+    skipped: FrozenSet[str]      # st.skipped before the loop was taken
 
 
 class Action(NamedTuple):
@@ -45,6 +53,13 @@ class State:
         self.consumed: Dict[str, int] = {}                # runs past the cap that Josh allowed, already started
         self.grants: Dict[str, int] = {}                  # runs past the cap Josh allowed, not started yet
         self.forced: Optional[Forced] = None
+        # JP-194: a loop that reset a role step already at its cap is still taken. The ask that loop names waits here,
+        # per step, with the done and skipped steps as they were before the loop, and the run goes to it only when that
+        # step is the next one to start.
+        self.cap_asks: Dict[str, Held] = {}
+        # The newest such loop, kept until the next step starts. replay() uses it for a ledger a walker from before
+        # JP-194 wrote, which has the ask straight after the loop step (that walker went to the ask at once).
+        self.eager: Optional[Held] = None
         self.ended: Optional[str] = None
         self.open_step: Optional[str] = None              # started, no result yet
         self.entered = False
@@ -93,14 +108,27 @@ def decide(g: Graph, st: State) -> Action:
     if kind == "role" and _over_cap(g, st, step):
         if st.grants.get(step, 0) > 0:
             return Action("run", step, allowed=True)
+        held = st.cap_asks.get(step)
+        if held is not None:
+            # The capped step would start now, so the loop that reset it names the question (JP-194). The run is put
+            # back as it stood when that loop was taken, so an answer that moves on carries on from there.
+            _hold(st, held)
+            st.forced = held.forced._replace(steps=(step,))
+            return Action("ask", st.forced.ask, forced=st.forced)
         return Action("stopped", step, reason="step '{}' has run as often as its tier allows ({} runs) and no "
                       "question leads to a decision; use `allow` to allow one more".format(step, g.cap(step)))
     return Action("run" if kind == "role" else kind, step)
 
 
+def _hold(st: State, held: Held) -> None:
+    st.done, st.skipped = dict(held.done), set(held.skipped)
+
+
 def begin(g: Graph, st: State, step: str, allowed: bool = False) -> int:
     """A step starts. Returns its attempt number."""
     st.runs[step] = st.runs.get(step, 0) + 1
+    st.cap_asks.pop(step, None)
+    st.eager = None
     if allowed:
         st.consumed[step] = st.consumed.get(step, 0) + 1
         st.grants[step] = max(0, st.grants.get(step, 0) - 1)
@@ -145,11 +173,15 @@ def finish(g: Graph, st: State, step: str, outcome: str) -> None:
             st.forced = Forced(at_limit, "loop", step, outcome)
             return
         if roles_at_cap:
-            st.forced = Forced(at_limit, "cap", step, outcome)
-            return
+            # JP-194: a step at its cap may never run on this pass (the drafter runs only when the verdict says revise),
+            # so the loop is taken and the cap is held until that step is the next to start (see decide()).
+            st.eager = Held(Forced(at_limit, "cap", step, outcome), key, dict(st.done), frozenset(st.skipped))
+            for r in roles_at_cap:
+                st.cap_asks[r] = st.eager
     else:
         for r in roles_at_cap:
             st.grants[r] = st.grants.get(r, 0) + 1
+            st.cap_asks.pop(r, None)
     st.loops[key] = st.loops.get(key, 0) + 1
     for sid in reset:
         st.done.pop(sid, None)
@@ -168,6 +200,16 @@ def replay(g: Graph, rows: List[dict]) -> State:
             if row.get("allowed"):   # an `allow` from Josh is not in the ledger; the flag on the row is its trace
                 st.grants[step] = max(1, st.grants.get(step, 0))
             expected = decide(g, st)
+            if (expected.step != step or expected.kind != "ask") and st.eager and st.eager[0].ask == step:
+                # A run a walker from before JP-194 recorded: it went to the ask as soon as the loop met a capped step,
+                # without taking the loop. Put the run back as that walker left it.
+                held = st.eager
+                st.loops[held.loop] -= 1
+                if not st.loops[held.loop]:
+                    del st.loops[held.loop]
+                _hold(st, held)
+                st.forced = held.forced
+                expected = decide(g, st)
             if expected.step != step or expected.kind not in ("run", "gate", "wait", "ask"):
                 raise Corrupt("the ledger has step '{}' where the graph says '{}' comes next".format(
                     step, expected.step or expected.kind))
