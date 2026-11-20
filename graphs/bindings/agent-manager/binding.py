@@ -328,6 +328,24 @@ def close(handle: dict) -> bool:
         return False
 
 
+def kill(handle: dict) -> bool:
+    """Stop the session's agent and keep its row, so it can be revived (JP-191): `agent-manager kill <id> --json`.
+    Never raises."""
+    session = (handle or {}).get("am_session")
+    if not session:
+        return False
+    try:
+        code, _, _ = _run([_am()] + list(config().get("kill", ["kill"])) + [session, "--json"], timeout=60)
+        return code == 0
+    except (SpawnRefused, subprocess.SubprocessError, OSError, ValueError):
+        return False
+
+
+def completed_group() -> str:
+    """Where a finished step's session is filed until it is archived (JP-191)."""
+    return str(config().get("completed_group", "josh-360/completed-steps"))
+
+
 def move(handle: dict, group: str) -> bool:
     """File the session under the group (made first if missing): `agent-manager move <id> <group>`. Never raises."""
     session = (handle or {}).get("am_session")

@@ -1,0 +1,22 @@
+{
+  "command": [
+    "env",
+    "JOSH360_GRAPHS_ROOT=/tmp/verify-josh-360/jp191/standin/graphs",
+    "JOSH360_AM_BIN=/tmp/verify-josh-360/jp191/home/.josh-360/repo/tests/fakes/agent-manager",
+    "FAKE_AM_DIR=/tmp/verify-josh-360/jp191/standin/am",
+    "JOSH360_AM_DB=/tmp/verify-josh-360/jp191/standin/am/state.db",
+    "JOSH360_CLAUDE_SETTINGS=/tmp/verify-josh-360/jp191/standin/claude-settings.json",
+    "JOSH360_JIRA_FAKE=/tmp/verify-josh-360/jp191/standin/jira",
+    "WALKER_TEST_PLAN=/tmp/verify-josh-360/jp191/standin/plan.json",
+    "JOSH360_NO_NOTIFY=1",
+    "python3",
+    "-c",
+    "import json;[print(l.strip()) for l in open('/tmp/verify-josh-360/jp191/standin/am/calls.jsonl') if not l.startswith('[\"spawn')]"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp191/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp191",
+  "started_at": "2026-11-20T15:13:25Z",
+  "stderr": "",
+  "stdout": "[\"create-group\", \"josh-360\"]\n[\"create-group\", \"josh-360/tickets\"]\n[\"create-group\", \"josh-360/tickets/Design-Planning\"]\n[\"kill\", \"s-1\", \"--json\"]\n[\"create-group\", \"josh-360\"]\n[\"create-group\", \"josh-360/completed-steps\"]\n[\"move\", \"s-1\", \"josh-360/completed-steps\", \"--json\"]\n[\"create-group\", \"josh-360\"]\n[\"create-group\", \"josh-360/tickets\"]\n[\"create-group\", \"josh-360/tickets/In Progress\"]\n[\"kill\", \"s-2\", \"--json\"]\n[\"move\", \"s-2\", \"josh-360/completed-steps\", \"--json\"]\n[\"create-group\", \"josh-360\"]\n[\"create-group\", \"josh-360/tickets\"]\n[\"create-group\", \"josh-360/tickets/Code Review\"]\n[\"archive\", \"s-1\"]\n[\"kill\", \"s-4\", \"--json\"]\n[\"move\", \"s-4\", \"josh-360/completed-steps\", \"--json\"]\n[\"create-group\", \"josh-360\"]\n[\"create-group\", \"josh-360/tickets\"]\n[\"create-group\", \"josh-360/tickets/Done\"]\n[\"move\", \"s-4\", \"josh-360/tickets/Done\", \"--json\"]\n"
+}

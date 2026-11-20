@@ -27,6 +27,7 @@ DEFAULTS = {
     "spawn_gaps_seconds": [300, 900, 1800, 3600],   # JP-183: the waits between tries of a spawn that may clear
     "tick_seconds": 300, "heartbeat_stale_seconds": 600, "wait_flag_days": 7,
     "result_settle_seconds": 60, "archive_finished_sessions": True, "ended_runs_days": 14, "done_keep_days": 7,
+    "kill_grace_seconds": 1800, "completed_keep_days": 7,   # JP-191: a finished step's session is killed, then filed away
     "wait_flag_exempt": ["validation.watch"],   # "<graph>.<step>" waits that are meant to last: never listed as stuck
 }
 EVENTS = ("UserPromptSubmit", "PreToolUse", "PostToolUse", "Stop")

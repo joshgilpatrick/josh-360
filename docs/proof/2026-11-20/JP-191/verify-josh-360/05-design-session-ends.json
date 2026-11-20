@@ -1,0 +1,28 @@
+{
+  "command": [
+    "env",
+    "JOSH360_GRAPHS_ROOT=/tmp/verify-josh-360/jp191/standin/graphs",
+    "JOSH360_AM_BIN=/tmp/verify-josh-360/jp191/home/.josh-360/repo/tests/fakes/agent-manager",
+    "FAKE_AM_DIR=/tmp/verify-josh-360/jp191/standin/am",
+    "JOSH360_AM_DB=/tmp/verify-josh-360/jp191/standin/am/state.db",
+    "JOSH360_CLAUDE_SETTINGS=/tmp/verify-josh-360/jp191/standin/claude-settings.json",
+    "JOSH360_JIRA_FAKE=/tmp/verify-josh-360/jp191/standin/jira",
+    "WALKER_TEST_PLAN=/tmp/verify-josh-360/jp191/standin/plan.json",
+    "JOSH360_NO_NOTIFY=1",
+    "python3",
+    "-I",
+    "/home/claude/josh-360/docs/proof/2026-11-20/JP-191/standins/session.py",
+    "/tmp/verify-josh-360/jp191/home/.josh-360/runs",
+    "r-68d32848e8ce",
+    "design",
+    "ready",
+    "{\"spec_path\":\"spec-1\"}",
+    "/tmp/verify-josh-360/jp191/standin/am/state.db"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp191/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp191",
+  "started_at": "2026-11-20T15:12:32Z",
+  "stderr": "",
+  "stdout": "{\"session\": \"s-1\", \"name\": \"JP-900(a) - Design\", \"wrote\": \"ready\"}\n"
+}

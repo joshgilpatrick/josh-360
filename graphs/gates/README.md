@@ -13,6 +13,7 @@
 | Movers (JP-168) | `validation-rule`: after a merge or a sign-off, `watch` (the ticket goes to Deployed) or `done`; `close-ticket` moves the ticket to the `target_status` the step's stretch names, Done or Deployed |
 | Shared | `ready` (entry gate of the development and non-development graphs), `no-loose-ends` (exit gate of the triage, development and non-development graphs; built in JP-161 on JP-109's loose-ends finder) |
 | Walker effects | `set-flag` and `post-comment`: the walker calls them, no graph step names them |
+| Runner (JP-191) | `close-out`: the graph runner calls it once when a ticket's last step session closes; no graph step names it. Done is left alone, Deployed and Cancelled are never moved, anything else goes to Done (`graphs/runner/README.md`) |
 
 The ticket creation gates are written like the others, over the shared Jira library `lib/jira.py` (`lib/jira_fake.py` is a Jira in a folder, for tests that run the scripts as separate processes). Their other parts in `lib/`: `adf.py` (Atlassian Document Format helpers), `card.py` (the approval card text), `contracts.py` (reads and checks the intake record and the ticket proposal), `sources.py` (where an intake item lives and whether it may start a run or be linked) and `ready_checklist.py` (the per-type checklist as data, which `ticket-complete` reads).
 

@@ -1,0 +1,23 @@
+{
+  "command": [
+    "env",
+    "JOSH360_GRAPHS_ROOT=/tmp/verify-josh-360/jp191/standin/graphs",
+    "JOSH360_AM_BIN=/tmp/verify-josh-360/jp191/home/.josh-360/repo/tests/fakes/agent-manager",
+    "FAKE_AM_DIR=/tmp/verify-josh-360/jp191/standin/am",
+    "JOSH360_AM_DB=/tmp/verify-josh-360/jp191/standin/am/state.db",
+    "JOSH360_CLAUDE_SETTINGS=/tmp/verify-josh-360/jp191/standin/claude-settings.json",
+    "JOSH360_JIRA_FAKE=/tmp/verify-josh-360/jp191/standin/jira",
+    "WALKER_TEST_PLAN=/tmp/verify-josh-360/jp191/standin/plan.json",
+    "JOSH360_NO_NOTIFY=1",
+    "grep",
+    "-h",
+    "close-out\\|recorded",
+    "/tmp/verify-josh-360/jp191/home/.josh-360/logs/runner/runner.log"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp191/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp191",
+  "started_at": "2026-11-20T15:13:25Z",
+  "stderr": "",
+  "stdout": "2026-11-20T15:12:33Z advance r-68d32848e8ce: recorded design attempt 1\n2026-11-20T15:12:58Z advance r-68d32848e8ce: recorded build attempt 1\n2026-11-20T15:13:16Z advance r-2ed5487445b0: recorded design attempt 1\n2026-11-20T15:13:17Z close-out JP-901: moved\n"
+}

@@ -17,5 +17,7 @@
   "archive_finished_sessions": true,
   "ended_runs_days": 14,
   "done_keep_days": 7,
+  "kill_grace_seconds": 1800,
+  "completed_keep_days": 7,
   "wait_flag_exempt": ["validation.watch"]
 }

@@ -5,6 +5,8 @@
   "id_fields": ["id", "session_id"],
   "status": {"working": ["working", "starting"], "resting": ["idle", "waiting", "finished"], "gone": ["dead"]},
   "archive": ["archive"],
+  "kill": ["kill"],
+  "completed_group": "josh-360/completed-steps",
   "accepts": {
     "models": ["default", "opus", "fable", "sonnet", "haiku"],
     "efforts": ["low", "medium", "high"]

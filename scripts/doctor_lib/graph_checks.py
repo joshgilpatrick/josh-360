@@ -1,5 +1,5 @@
 """The graphs' checks. JP-167: the validation start rule is on, and no watch has run past its give-up time. JP-174: no
-graph worktree has outlived its ticket's last run by more than seven days. Reads the laptop copy's
+graph worktree has outlived its ticket's last run by more than seven days. JP-191: no finished step's session is open. Reads the laptop copy's
 `graphs/runner/starts.json` and `conventions/registry.json`, the ledger (read-only), the run folders' watch files and the
 registered clones' `.claude/worktrees/` folders. It writes nothing, and what it prints is a run id, a ticket key, a
 worktree's folder name and its clone's path."""
@@ -188,6 +188,23 @@ def _am_db(ctx: Ctx) -> Path:
     return Path(named) if named else ctx.user_home / "Library" / "Application Support" / "agent-manager" / "state.db"
 
 
+def _am_rows(ctx: Ctx) -> list:
+    """(id, name, group_name, archived, status) for every session in Agent Manager's database. `status` is None when
+    the table has no such column. Raises when the database cannot be read."""
+    conn = ctx.sqlite_ro(_am_db(ctx))
+    try:
+        columns = {r[1] for r in conn.execute("PRAGMA table_info(sessions)")}
+        status = "status" if "status" in columns else "NULL"
+        return conn.execute("SELECT id, name, group_name, archived, {} FROM sessions".format(status)).fetchall()
+    finally:
+        conn.close()
+
+
+def _open(row) -> bool:
+    """Open: neither archived nor killed (`dead`, JP-191). A killed session keeps its row but is closed."""
+    return not row[3] and row[4] != "dead"
+
+
 @check("graphs", "agent-manager-groups")
 def agent_manager_groups(ctx: Ctx) -> Result:
     """JP-173: each ticket's kept session is the only one in view, is named `<KEY>(<letter>) - <Step>`, and sits in the
@@ -203,11 +220,7 @@ def agent_manager_groups(ctx: Ctx) -> Result:
         return Result(cid, FAIL, "the runner's {} cannot be read ({})".format(ctx.tilde(path), type(err).__name__),
                       "look at the file; the runner rewrites it on its next tick only when it can read it")
     try:
-        conn = ctx.sqlite_ro(_am_db(ctx))
-        try:
-            rows = conn.execute("SELECT id, name, group_name, archived FROM sessions").fetchall()
-        finally:
-            conn.close()
+        rows = _am_rows(ctx)
     except Exception as err:  # noqa: BLE001  (a missing, locked or changed database is one answer: cannot be read)
         return Result(cid, SKIP, "Agent Manager's database cannot be read ({})".format(type(err).__name__))
     by_id = {r[0]: r for r in rows}
@@ -216,7 +229,8 @@ def agent_manager_groups(ctx: Ctx) -> Result:
         rec = tickets[key] if isinstance(tickets[key], dict) else {}
         sessions = [s for s in rec.get("sessions") or [] if isinstance(s, dict)]
         known.update(s.get("am_session") for s in sessions)
-        live = [by_id[s["am_session"]] for s in sessions if s.get("am_session") in by_id and not by_id[s["am_session"]][3]]
+        live = [by_id[s["am_session"]] for s in sessions if s.get("am_session") in by_id
+                and _open(by_id[s["am_session"]]) and s.get("finished_at") is None]   # JP-191: closed ones are not
         if not live:
             continue
         shown += 1
@@ -229,7 +243,7 @@ def agent_manager_groups(ctx: Ctx) -> Result:
             if rec.get("group") and row[2] != rec["group"]:
                 problems.append("{}'s session {} is in '{}', not '{}'".format(key, row[0], row[2] or "(root)", rec["group"]))
     for row in rows:
-        if not row[3] and str(row[2] or "").startswith(TICKET_ROOT) and row[0] not in known:
+        if _open(row) and str(row[2] or "").startswith(TICKET_ROOT) and row[0] not in known:
             problems.append("session {} is in '{}' but the runner has no record of it".format(row[0], row[2]))
     if problems:
         return Result(cid, FAIL, "; ".join(problems[:5]) + ("" if len(problems) <= 5 else " (and {} more)".format(
@@ -238,6 +252,73 @@ def agent_manager_groups(ctx: Ctx) -> Result:
     if not shown:
         return Result(cid, SKIP, "no ticket has a graph session in view, so there is nothing to check")
     return Result(cid, PASS, "{} ticket(s) in view, each with one session in its status group".format(shown))
+
+
+COMPLETED = "josh-360/completed-steps"
+DONE_GROUP = TICKET_ROOT + "Done"
+
+
+def _runner_number(ctx: Ctx, name: str, default: float) -> float:
+    """A number from the laptop copy's `graphs/runner/settings.json`, else the runner's own default."""
+    try:
+        doc = json.loads((ctx.copy / "graphs" / "runner" / "settings.json").read_text(encoding="utf-8"))
+        return float(doc.get(name, default))
+    except (OSError, ValueError, TypeError, AttributeError):
+        return default
+
+
+@check("graphs", "completed-step-sessions")
+def completed_step_sessions(ctx: Ctx) -> Result:
+    """JP-191: no finished step's session is still open. Each ticket session whose result the runner recorded
+    (`finished_at` in `state/runner/am-tickets.json`) is killed or archived in Agent Manager, and an unarchived one sits
+    in `josh-360/completed-steps` (or, for a ticket's last session, `josh-360/tickets/Done`). A session is judged only
+    once the runner has had its kill wait (`kill_grace_seconds`) and two ticks. Reads the runner's file and Agent
+    Manager's database, read-only; never Jira. No finished session yet passes: nothing is left open."""
+    cid = "graphs.completed-step-sessions"
+    path = ctx.state / "runner" / "am-tickets.json"
+    try:
+        tickets = json.loads(path.read_text(encoding="utf-8"))["tickets"] if path.is_file() else {}
+        if not isinstance(tickets, dict):
+            raise ValueError("tickets is not an object")
+    except (OSError, ValueError, KeyError, TypeError) as err:
+        return Result(cid, FAIL, "the runner's {} cannot be read ({})".format(ctx.tilde(path), type(err).__name__),
+                      "look at the file; the runner rewrites it on its next tick only when it can read it")
+    try:
+        rows = {r[0]: r for r in _am_rows(ctx)}
+    except Exception as err:  # noqa: BLE001
+        return Result(cid, SKIP, "Agent Manager's database cannot be read ({})".format(type(err).__name__))
+    wait = _runner_number(ctx, "kill_grace_seconds", 1800) + 2 * _runner_number(ctx, "tick_seconds", 300)
+    problems, judged = [], 0
+    for key in sorted(tickets):
+        rec = tickets[key] if isinstance(tickets[key], dict) else {}
+        for s in rec.get("sessions") or []:
+            if not isinstance(s, dict) or s.get("finished_at") is None or s.get("am_session") not in rows:
+                continue
+            try:
+                age = ctx.age_seconds(float(s["finished_at"]))
+            except (TypeError, ValueError):
+                problems.append("{}'s session {} has an unreadable finish time".format(key, s.get("am_session")))
+                continue
+            if age < wait:
+                continue
+            judged += 1
+            row = rows[s["am_session"]]
+            if row[3]:
+                continue
+            if row[4] != "dead":
+                problems.append("{}'s session {} finished its step but is still running".format(key, row[0]))
+            elif row[2] not in (COMPLETED, DONE_GROUP):
+                problems.append("{}'s finished session {} is in '{}', not '{}'".format(
+                    key, row[0], row[2] or "(root)", COMPLETED))
+    if problems:
+        return Result(cid, FAIL, "; ".join(problems[:5]) + ("" if len(problems) <= 5 else " (and {} more)".format(
+            len(problems) - 5)), "the runner's next tick kills and files what it can; read "
+            "~/.josh-360/logs/runner/runner.log for an Agent Manager kill or move that keeps failing. The runner never "
+            "kills a session twice, so one revived by hand stays open: archive it when you are done with it "
+            "(agent-manager archive <id>)")
+    if not judged:
+        return Result(cid, PASS, "no finished step's session is old enough to judge, so none is left open")
+    return Result(cid, PASS, "{} finished step session(s), each killed or archived".format(judged))
 
 
 @check("graphs", "tier-models")
