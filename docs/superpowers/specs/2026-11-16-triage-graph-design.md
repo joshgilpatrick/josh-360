@@ -159,7 +159,7 @@ A script, `ready-check`, runs these items. Each failure names its item, the sect
 | C5 | Every scenario has at least one Given, at most one When, and at least one Then (`And` and `But` continue the line before). |
 | C6 | Every scenario carries exactly one tag: `@auto`, `@e2e` or `@manual`. This is what makes "the acceptance checks can be run" something a script can see. |
 | C7 | Repository names one repository the registry knows (`scripts/conventions.py lookup --repo`), or says `none`. `none` is allowed only for a Task or a Research ticket. |
-| C8 | The repository's system name is a label (unless Repository is `none`), and every label is a registry system name or `improvement`. |
+| C8 | The repository's system name is a label (unless Repository is `none`), and every label is a registry system name, `improvement` or `ready-to-run` (the runner's start label; JP-188). |
 | C9 | Where it runs starts with `Cloud session` or `Josh's laptop`, and a laptop line gives a reason. |
 | C10 | Every ticket key under Parent or related exists, and a parent is in the same Jira space. |
 | C11 | Every subtask has a Goal and a Done when that passes C4 to C6. A parent passes only when every subtask passes. |

@@ -2,14 +2,48 @@
  "about": "As triage-happy, but the sign-off session writes a result carrying an output its step does not declare. The walker refuses it, and the run must stop at sign_off and say why, not hang.",
  "graph": "triage",
  "ticket": "JP-9116",
- "fixture": {"status": "Not Started"},
+ "fixture": {
+  "status": "Not Started",
+  "creator": {
+   "accountId": "acct-josh"
+  }
+ },
+ "issues": {
+  "JP-94": {
+   "summary": "A made-up stand-in for the epic",
+   "issuetype": "Epic",
+   "status": "Not Started",
+   "project": {
+    "key": "JP"
+   },
+   "labels": [
+    "josh-360"
+   ]
+  }
+ },
  "starts": {
   "per_pass": 1,
   "graphs": {
-   "triage": {"on": true, "jql": "project = JP AND status = \"Not Started\" AND labels = \"ready-to-run\"", "route_record": false, "inputs": {}}
+   "triage": {
+    "on": true,
+    "jql": "project = JP AND status = \"Not Started\" AND labels = \"ready-to-run\"",
+    "route_record": false,
+    "inputs": {}
+   }
   }
  },
- "plan": {"default": "example", "steps": {"sign_off": "undeclared-output.json"}},
+ "plan": {
+  "default": "example",
+  "steps": {
+   "sign_off": "undeclared-output.json"
+  }
+ },
  "limit_minutes": 60,
- "expect": {"stopped_at": "sign_off", "within_minutes": 10, "runner_log_names": ["made_up_extra"]}
+ "expect": {
+  "stopped_at": "sign_off",
+  "within_minutes": 10,
+  "runner_log_names": [
+   "made_up_extra"
+  ]
+ }
 }

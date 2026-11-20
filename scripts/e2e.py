@@ -155,9 +155,10 @@ class Laptop:
         jira_strict.install(self.jira, fixtures=(self.ticket,))
         state = json.loads((self.jira / "fake-jira.json").read_text(encoding="utf-8"))
         state["apply_jql"] = True
-        fields = state["issues"][self.ticket]["fields"]
-        for name, value in (self.doc.get("fixture") or {}).items():
-            fields[name] = {"name": value} if name in ("status", "issuetype") else value
+        for key, extra in (self.doc.get("issues") or {}).items():         # made-up neighbours, such as the epic
+            state["issues"][key] = {"key": key, "fields": {}}
+            _fill(state["issues"][key]["fields"], extra)
+        _fill(state["issues"][self.ticket]["fields"], self.doc.get("fixture") or {})
         (self.jira / "fake-jira.json").write_text(json.dumps(state), encoding="utf-8")
         write_json(self.starts, self.doc["starts"])
         self.am.start_manager()
@@ -217,9 +218,8 @@ class Laptop:
     def ended(self, run_id: Optional[str]) -> Optional[str]:
         if not run_id:
             return None
-        rows = self.ledger("SELECT e.end_state FROM run_ends e JOIN graph_runs r ON r.id = e.run_id WHERE r.run_id = ?",
-                           (run_id,))
-        return rows[0]["end_state"] if rows else None
+        rows = self.ledger("SELECT end_name FROM run_ends WHERE run_id = ? ORDER BY version DESC LIMIT 1", (run_id,))
+        return rows[0]["end_name"] if rows else None
 
     def busy(self) -> List[str]:
         """What still moves on its own: an `advance` holding its lock, or a session Agent Manager says is not at rest."""
@@ -257,6 +257,11 @@ class Laptop:
     def jira_issue(self) -> dict:
         state = read_json(self.jira / "fake-jira.json") or {}
         return (state.get("issues") or {}).get(self.ticket) or {}
+
+
+def _fill(fields: dict, values: dict) -> None:
+    for name, value in values.items():
+        fields[name] = {"name": value} if name in ("status", "issuetype") else value
 
 
 def _held(lock: Path) -> bool:

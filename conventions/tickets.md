@@ -186,7 +186,7 @@ The sign-off agent, who already judges every ticket once, judges one more item, 
 ## Labels
 
 - Each ticket carries the lowercase name of each repository that will receive changes. That name is the system's `name` in the registry. Child tickets inherit their parent's labels unless they change a different repository.
-- The only other label is `improvement`. Product, feature and topic words (for example `equip` or `security`) are not labels; the registry maps a repository to its system and area.
+- The only other labels are `improvement` and `ready-to-run` (the graph runner starts a Ready ticket that carries it, JP-117). Product, feature and topic words (for example `equip` or `security`) are not labels; the registry maps a repository to its system and area.
 - The team labels on TECH initiatives belong to the department convention and are not used on tickets.
 - Labels already in Jira are left as they are. New tickets follow this rule.
 
