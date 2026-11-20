@@ -1,0 +1,180 @@
+{
+ "ended_runs": [],
+ "host": "job",
+ "open_runs": [
+  {
+   "graph": "triage",
+   "run": "r-9f525c1da6da",
+   "since": "2026-11-20T17:25:36Z",
+   "state": "working",
+   "step": "sign_off",
+   "ticket": "JP-9116",
+   "waiting_on": null
+  }
+ ],
+ "rails": true,
+ "runs": {
+  "between": 0,
+  "open": 1,
+  "parked": 0,
+  "queued": 0,
+  "stopped": 0,
+  "waiting": 0,
+  "working": 1
+ },
+ "session_limit": 2,
+ "sessions_live": 1,
+ "status": "ok",
+ "stopped": [],
+ "ticket_counts": {
+  "cost_fields": 0,
+  "listed": 1,
+  "refusals_readable": true,
+  "refused": 0
+ },
+ "tickets": [
+  {
+   "attempt": 3,
+   "end": null,
+   "graph": "triage",
+   "jira_status": "Not Started",
+   "refused": [],
+   "run": "r-9f525c1da6da",
+   "runner": "agent-manager",
+   "runs": 1,
+   "score": null,
+   "sessions": [
+    {
+     "am_session": null,
+     "attempt": 1,
+     "earlier_am_sessions": [],
+     "ended_at": "2026-11-20T17:15:28Z",
+     "failure_kind": null,
+     "kind": "gate",
+     "loop_count": 0,
+     "model": null,
+     "outcome": "pass",
+     "reason": null,
+     "session": null,
+     "started_at": "2026-11-20T17:15:28Z",
+     "step": "_entry",
+     "tier": null
+    },
+    {
+     "am_session": null,
+     "attempt": 1,
+     "earlier_am_sessions": [],
+     "ended_at": "2026-11-20T17:15:29Z",
+     "failure_kind": null,
+     "kind": "gate",
+     "loop_count": 0,
+     "model": null,
+     "outcome": "read",
+     "reason": null,
+     "session": null,
+     "started_at": "2026-11-20T17:15:29Z",
+     "step": "read_ticket",
+     "tier": null
+    },
+    {
+     "am_session": null,
+     "attempt": 1,
+     "earlier_am_sessions": [],
+     "ended_at": "2026-11-20T17:15:29Z",
+     "failure_kind": null,
+     "kind": "gate",
+     "loop_count": 0,
+     "model": null,
+     "outcome": "pass",
+     "reason": null,
+     "session": null,
+     "started_at": "2026-11-20T17:15:29Z",
+     "step": "ready_check",
+     "tier": null
+    },
+    {
+     "am_session": null,
+     "attempt": 1,
+     "earlier_am_sessions": [],
+     "ended_at": "2026-11-20T17:15:29Z",
+     "failure_kind": null,
+     "kind": "gate",
+     "loop_count": 0,
+     "model": null,
+     "outcome": "development",
+     "reason": null,
+     "session": null,
+     "started_at": "2026-11-20T17:15:29Z",
+     "step": "route",
+     "tier": null
+    },
+    {
+     "am_session": "693733ce",
+     "attempt": 1,
+     "earlier_am_sessions": [],
+     "ended_at": "2026-11-20T17:20:32Z",
+     "failure_kind": "ran",
+     "kind": "role",
+     "loop_count": 0,
+     "model": null,
+     "outcome": "_abandoned",
+     "reason": "bad-result",
+     "session": "72171d0f-e52c-4b55-b56b-833a6cf7b4ca",
+     "started_at": "2026-11-20T17:15:29Z",
+     "step": "sign_off",
+     "tier": "mid"
+    },
+    {
+     "am_session": "a681200a",
+     "attempt": 2,
+     "earlier_am_sessions": [],
+     "ended_at": "2026-11-20T17:25:36Z",
+     "failure_kind": "ran",
+     "kind": "role",
+     "loop_count": 1,
+     "model": null,
+     "outcome": "_abandoned",
+     "reason": "bad-result",
+     "session": "4555d04c-1135-4519-932d-dcf7a50286dc",
+     "started_at": "2026-11-20T17:20:32Z",
+     "step": "sign_off",
+     "tier": "mid"
+    },
+    {
+     "am_session": "b2add63f",
+     "attempt": 3,
+     "earlier_am_sessions": [],
+     "ended_at": null,
+     "failure_kind": null,
+     "kind": "role",
+     "loop_count": 2,
+     "model": null,
+     "outcome": null,
+     "reason": null,
+     "session": "dfb1ebc1-1183-48e4-8ace-9fe253dcf299",
+     "started_at": "2026-11-20T17:25:36Z",
+     "step": "sign_off",
+     "tier": "mid"
+    }
+   ],
+   "since": "2026-11-20T17:25:36Z",
+   "started_at": "2026-11-20T17:15:28Z",
+   "state": "working",
+   "step": "sign_off",
+   "step_label": "Sign off",
+   "ticket": "JP-9116",
+   "waits_on": null,
+   "worktree_kept": null
+  }
+ ],
+ "waiting_over_7_days": [],
+ "watch": {
+  "triage": {
+   "jira": "ok",
+   "skipped": {
+    "JP-9116": "has an open run"
+   },
+   "started": []
+  }
+ }
+}

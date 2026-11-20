@@ -1,0 +1,15 @@
+{
+ "ok": true,
+ "scenarios": {
+  "triage-happy": {
+   "evidence": "/tmp/claude-0/ev5/triage-happy",
+   "failed": [],
+   "ok": true
+  },
+  "undeclared-output": {
+   "evidence": "/tmp/claude-0/ev5/undeclared-output",
+   "failed": [],
+   "ok": true
+  }
+ }
+}

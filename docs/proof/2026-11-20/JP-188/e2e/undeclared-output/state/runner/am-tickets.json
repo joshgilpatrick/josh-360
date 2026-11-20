@@ -1,0 +1,43 @@
+{
+ "tickets": {
+  "JP-9116": {
+   "closed_out": null,
+   "count": 3,
+   "done_at": null,
+   "group": "josh-360/tickets/Not Started",
+   "sessions": [
+    {
+     "am_session": "693733ce",
+     "archived": true,
+     "attempt": 1,
+     "group": "josh-360/tickets/Not Started",
+     "n": 1,
+     "name": "JP-9116(a) - Sign Off",
+     "run": "r-9f525c1da6da",
+     "step": "sign_off"
+    },
+    {
+     "am_session": "a681200a",
+     "archived": true,
+     "attempt": 2,
+     "group": "josh-360/tickets/Not Started",
+     "n": 2,
+     "name": "JP-9116(b) - Sign Off",
+     "run": "r-9f525c1da6da",
+     "step": "sign_off"
+    },
+    {
+     "am_session": "b2add63f",
+     "archived": false,
+     "attempt": 3,
+     "group": "josh-360/tickets/Not Started",
+     "n": 3,
+     "name": "JP-9116(c) - Sign Off",
+     "run": "r-9f525c1da6da",
+     "step": "sign_off"
+    }
+   ],
+   "status": "Not Started"
+  }
+ }
+}

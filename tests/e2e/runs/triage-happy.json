@@ -1,0 +1,45 @@
+{
+ "about": "The fixture ticket, drafted and waiting in Not Started, goes through the triage graph: the scripts pass it, the sign-off step's session (the stand-in) writes its role's example result, and the run ends with the ticket moved to Ready.",
+ "graph": "triage",
+ "ticket": "JP-9116",
+ "fixture": {
+  "status": "Not Started",
+  "creator": {
+   "accountId": "acct-josh"
+  }
+ },
+ "issues": {
+  "JP-94": {
+   "summary": "A made-up stand-in for the epic",
+   "issuetype": "Epic",
+   "status": "Not Started",
+   "project": {
+    "key": "JP"
+   },
+   "labels": [
+    "josh-360"
+   ]
+  }
+ },
+ "starts": {
+  "per_pass": 1,
+  "graphs": {
+   "triage": {
+    "on": true,
+    "jql": "project = JP AND status = \"Not Started\" AND labels = \"ready-to-run\"",
+    "route_record": false,
+    "inputs": {}
+   }
+  }
+ },
+ "plan": {
+  "default": "example"
+ },
+ "limit_minutes": 120,
+ "expect": {
+  "end": "finished",
+  "jira_status": "Ready",
+  "one_session_per_role_step": true,
+  "sessions_follow_status": true
+ }
+}

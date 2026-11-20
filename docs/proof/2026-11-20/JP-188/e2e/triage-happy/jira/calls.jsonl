@@ -1,0 +1,45 @@
+{"method": "POST", "path": "/rest/api/3/search/jql", "body": {"jql": "project = JP AND status = \"Not Started\" AND labels = \"ready-to-run\" ORDER BY Rank ASC", "fields": ["issuetype", "status", "labels"], "maxResults": 50}}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116?fields=summary%2Cstatus%2Cissuetype%2Clabels%2Cparent%2Cdescription%2Cissuelinks%2Ccreated%2Ccustomfield_10021%2Ccreator%2Csubtasks", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/properties/josh360.authors", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/changelog?startAt=0&maxResults=100", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/comment?startAt=0&maxResults=100", "body": null}
+{"method": "GET", "path": "/rest/api/3/myself", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116?fields=status", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116?fields=summary%2Cstatus%2Cissuetype%2Clabels%2Cparent%2Cdescription%2Cissuelinks%2Ccreated%2Ccustomfield_10021%2Ccreator%2Csubtasks", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/properties/josh360.authors", "body": null}
+{"method": "GET", "path": "/rest/api/3/myself", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116?fields=summary%2Cstatus%2Cissuetype%2Clabels%2Cparent%2Cdescription%2Cissuelinks%2Ccreated%2Ccustomfield_10021%2Ccreator%2Csubtasks", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/properties/josh360.authors", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/changelog?startAt=0&maxResults=100", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/comment?startAt=0&maxResults=100", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-94?fields=summary", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116?fields=summary%2Cstatus%2Cissuetype%2Clabels%2Cparent%2Cdescription%2Cissuelinks%2Ccreated%2Ccustomfield_10021%2Ccreator%2Csubtasks", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/properties/josh360.authors", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/properties/action-triage.spec", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-116?fields=summary%2Cstatus%2Cissuetype%2Clabels%2Cparent%2Cdescription%2Cissuelinks%2Ccreated%2Ccustomfield_10021%2Ccreator%2Csubtasks", "body": null}
+{"method": "POST", "path": "/rest/api/3/search/jql", "body": {"jql": "project = JP AND status = \"Not Started\" AND labels = \"ready-to-run\" ORDER BY Rank ASC", "fields": ["issuetype", "status", "labels"], "maxResults": 50}}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116?fields=summary%2Cstatus%2Cissuetype%2Clabels%2Cparent%2Cdescription%2Cissuelinks%2Ccreated%2Ccustomfield_10021%2Ccreator%2Csubtasks", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/properties/josh360.authors", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/properties/josh360.route", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/changelog?startAt=0&maxResults=100", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/comment?startAt=0&maxResults=100", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116?fields=summary%2Cstatus%2Cissuetype%2Clabels%2Cparent%2Cdescription%2Cissuelinks%2Ccreated%2Ccustomfield_10021%2Ccreator%2Csubtasks", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/properties/josh360.authors", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/changelog?startAt=0&maxResults=100", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/comment?startAt=0&maxResults=100", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/properties/josh360.route", "body": null}
+{"method": "PUT", "path": "/rest/api/3/issue/JP-9116/properties/josh360.route", "body": {"graph": "development", "system": "josh-360", "space": "JP", "version": "e2f18ba633c5dd87fd72a788e096a2668fb08f7c0ebe83803bf471f1104024c9", "run": "r-02d5258d8eb9", "signed_by": "2afe3d3a-fcba-44b4-b4a5-0e4559163150", "returns": 0, "returns_seen": 0, "returned_from": ""}}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/properties/josh360.route", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116?fields=status", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/transitions", "body": null}
+{"method": "POST", "path": "/rest/api/3/issue/JP-9116/transitions", "body": {"transition": {"id": "11"}}}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116?fields=status", "body": null}
+{"method": "POST", "path": "/rest/api/3/issue/JP-9116/comment", "body": {"body": {"type": "doc", "version": 1, "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Triage: Ready | run r-02d5258d8eb9, signed off by session 2afe3d3a-fcba-44b4-b4a5-0e4559163150 | route: development (josh-360) | next gate: starts now"}]}]}}}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/comment/1", "body": null}
+{"method": "PUT", "path": "/rest/api/3/issue/JP-9116", "body": {"fields": {"customfield_10021": [{"value": "Impediment"}]}}}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116?fields=customfield_10021", "body": null}
+{"method": "POST", "path": "/rest/api/3/search/jql", "body": {"jql": "project = JP AND status = \"Not Started\" AND labels = \"ready-to-run\" ORDER BY Rank ASC", "fields": ["issuetype", "status", "labels"], "maxResults": 50}}
+{"method": "PUT", "path": "/rest/api/3/issue/JP-9116", "body": {"fields": {"customfield_10021": []}}}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116?fields=customfield_10021", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116?fields=parent%2Cissuetype", "body": null}
+{"method": "POST", "path": "/rest/api/3/search/jql", "body": {"jql": "project = JP AND status = \"Not Started\" AND labels = \"ready-to-run\" ORDER BY Rank ASC", "fields": ["issuetype", "status", "labels"], "maxResults": 50}}

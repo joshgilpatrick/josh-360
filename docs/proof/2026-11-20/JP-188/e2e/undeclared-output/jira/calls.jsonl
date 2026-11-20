@@ -1,0 +1,25 @@
+{"method": "POST", "path": "/rest/api/3/search/jql", "body": {"jql": "project = JP AND status = \"Not Started\" AND labels = \"ready-to-run\" ORDER BY Rank ASC", "fields": ["issuetype", "status", "labels"], "maxResults": 50}}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116?fields=summary%2Cstatus%2Cissuetype%2Clabels%2Cparent%2Cdescription%2Cissuelinks%2Ccreated%2Ccustomfield_10021%2Ccreator%2Csubtasks", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/properties/josh360.authors", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/changelog?startAt=0&maxResults=100", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/comment?startAt=0&maxResults=100", "body": null}
+{"method": "GET", "path": "/rest/api/3/myself", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116?fields=status", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116?fields=summary%2Cstatus%2Cissuetype%2Clabels%2Cparent%2Cdescription%2Cissuelinks%2Ccreated%2Ccustomfield_10021%2Ccreator%2Csubtasks", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/properties/josh360.authors", "body": null}
+{"method": "GET", "path": "/rest/api/3/myself", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116?fields=summary%2Cstatus%2Cissuetype%2Clabels%2Cparent%2Cdescription%2Cissuelinks%2Ccreated%2Ccustomfield_10021%2Ccreator%2Csubtasks", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/properties/josh360.authors", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/changelog?startAt=0&maxResults=100", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/comment?startAt=0&maxResults=100", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-94?fields=summary", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116?fields=summary%2Cstatus%2Cissuetype%2Clabels%2Cparent%2Cdescription%2Cissuelinks%2Ccreated%2Ccustomfield_10021%2Ccreator%2Csubtasks", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/properties/josh360.authors", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116/properties/action-triage.spec", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-116?fields=summary%2Cstatus%2Cissuetype%2Clabels%2Cparent%2Cdescription%2Cissuelinks%2Ccreated%2Ccustomfield_10021%2Ccreator%2Csubtasks", "body": null}
+{"method": "POST", "path": "/rest/api/3/search/jql", "body": {"jql": "project = JP AND status = \"Not Started\" AND labels = \"ready-to-run\" ORDER BY Rank ASC", "fields": ["issuetype", "status", "labels"], "maxResults": 50}}
+{"method": "POST", "path": "/rest/api/3/search/jql", "body": {"jql": "project = JP AND status = \"Not Started\" AND labels = \"ready-to-run\" ORDER BY Rank ASC", "fields": ["issuetype", "status", "labels"], "maxResults": 50}}
+{"method": "POST", "path": "/rest/api/3/search/jql", "body": {"jql": "project = JP AND status = \"Not Started\" AND labels = \"ready-to-run\" ORDER BY Rank ASC", "fields": ["issuetype", "status", "labels"], "maxResults": 50}}
+{"method": "PUT", "path": "/rest/api/3/issue/JP-9116", "body": {"fields": {"customfield_10021": [{"value": "Impediment"}]}}}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116?fields=customfield_10021", "body": null}
+{"method": "GET", "path": "/rest/api/3/issue/JP-9116?fields=parent%2Cissuetype", "body": null}

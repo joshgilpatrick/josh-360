@@ -54,7 +54,9 @@ class Ticking(RunnerCase):
         return run
 
     def stopped(self, ticket="JP-903"):
-        self.plan({"lint-spec": ["crash"]})
+        """A gate stop that needs a fix: an outcome the step does not declare. (A gate that exits 1 or times out may
+        clear, so the runner retries it before telling anyone: tests/test_runner_gate_retry.py, JP-188.)"""
+        self.plan({"lint-spec": ["no-such-outcome"]})
         run = self.start("valid", ticket, *AM)
         self.do_role(run, "design", "ready", {"spec_path": "spec-1"})
         self.assertEqual(self.walker("next", "--run", run)["action"], "stopped")

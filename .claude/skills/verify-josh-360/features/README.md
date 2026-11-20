@@ -52,6 +52,7 @@ Each feature file starts with an H1 title and one paragraph describing the behav
 - [Platform doctor](./platform-doctor.md) covers the health check in text and JSON, the safe `--fix` that registers the hook dispatcher, and reading the daily report from the cloud.
 - [Laptop follow and jobs](./laptop-follow.md) covers the job runner, the `follow` job moving the copy to a new `main` and reinstalling, the `laptop-status` branch, and the pause switch.
 - [Live console](./console.md) covers the console following the ledger, the job and runner logs, hook blocks and the spool in one colored stream, and the `console-terminal` job's report. Proved on 20 November 2026 (`docs/proof/2026-11-20/JP-185/`).
+- [Cloud end-to-end run](./cloud-e2e.md) covers carrying a made-up ticket through a whole graph run with the real Agent Manager, the stand-in Claude Code and the strict fake Jira, the session groups following its status, a run stopped by an undeclared output, and the `e2e` CI check. Proved on 20 November 2026 (`docs/proof/2026-11-20/JP-188/`).
 
 ## Not mapped yet
 

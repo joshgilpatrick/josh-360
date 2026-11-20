@@ -244,6 +244,8 @@ The checker cannot add up loops that share a step, because which loops fire depe
 
 A reason the table does not know is `may-clear`, so nothing is stopped for good by guesswork. A run stopped for `needs-fix` or `may-clear` goes on from the same step, with the same attempt and its count unchanged, in either of two ways: on its own on the next pass once what the failure depended on has changed (the stop keeps a fingerprint of the binding's settings and commands, the run's compiled graph and the laptop copy's commit), or with `runner.py resume --run <id>`. Neither needs an `allow`.
 
+A gate that stops a run is sorted the same way (JP-188). A gate that exited 1 or timed out may be saying "not yet" (the exit gate `no-loose-ends` stops every run until the recorder has caught up with the last session), so the runner tries the gate again on the same growing gaps, up to `spawn_tries`, before the stop is told about. A gate that printed an outcome its step does not declare, printed no outcome, is missing or failed with any other exit needs a fix, and its stop is told about at once.
+
 ## The walker
 
 `graphs/tools/walker.py` (JP-114) is the one script that holds the logic above. Design and decisions: `docs/superpowers/specs/2026-11-17-walker-design.md`. It runs on the laptop's Python 3.9 with the standard library only, so it reads the JSON copy of a graph in `graphs/compiled/<graph>.json`, never the YAML.
