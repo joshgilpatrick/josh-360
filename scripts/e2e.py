@@ -488,9 +488,38 @@ def _brief(row: dict) -> dict:
 
 # -- the command line ------------------------------------------------------------------------------------------------
 
+def run_scenario(name: str, evidence: Optional[Path], run: Optional[str], python: str, am_bin: Path,
+                 limit_minutes: Optional[float], wall_limit: float, allow_dirty: bool, keep: bool) -> dict:
+    """Launch a sandbox laptop, drive the scenario, collect the evidence and judge it. Returns the verdict."""
+    doc = scenario(name)
+    run = run or "e2e-{}-{}".format(name, stamp())
+    evidence = evidence or (ROOT / "docs" / "proof" / datetime.date.today().isoformat() / "e2e" / run)
+    evidence.mkdir(parents=True, exist_ok=True)
+    meta = launch(run, evidence, allow_dirty)
+    laptop = Laptop(meta, am_bin, python, doc, evidence)
+    try:
+        laptop.setup()
+        outcome = drive(laptop, doc, evidence / "passes.jsonl", limit_minutes or float(doc.get("limit_minutes", 120)),
+                        wall_limit)
+        run_id = laptop.run_id()
+        seen = collect(laptop, evidence, run_id)
+        checks = judge(laptop, doc, run_id, outcome, seen)
+    finally:
+        if not keep:
+            laptop.am.stop()
+    verdict = {"ok": bool(checks) and all(c["ok"] for c in checks), "scenario": name, "about": doc.get("about"),
+               "run": run_id, "sandbox": meta["root"], "commit": meta["commit"], "python": python,
+               "agent_manager": agent_manager.PINNED, "drive": outcome, "checks": checks, "evidence": str(evidence)}
+    write_json(evidence / "verdict.json", verdict)
+    if not keep:
+        shutil.rmtree(str(laptop.root), ignore_errors=True)
+    return verdict
+
+
 def main(argv: List[str]) -> int:
     parser = argparse.ArgumentParser(prog="e2e.py", description=__doc__.split("\n\n")[0])
     parser.add_argument("--scenario", help="a file in tests/e2e/runs/, without .json")
+    parser.add_argument("--all", action="store_true", help="every scenario, each in <evidence>/<scenario>/")
     parser.add_argument("--evidence", help="where the evidence goes (default docs/proof/<date>/e2e/<run>)")
     parser.add_argument("--run", help="the sandbox's run id (default e2e-<scenario>-<time>)")
     parser.add_argument("--python", help="the laptop's Python 3.9 (default: found)")
@@ -503,43 +532,37 @@ def main(argv: List[str]) -> int:
     if a.list:
         print(json.dumps({n: d.get("about", "") for n, d in scenarios().items()}, indent=1, sort_keys=True))
         return 0
-    if not a.scenario:
-        parser.error("--scenario is required (or --list)")
-    laptop = None
+    if bool(a.scenario) == bool(a.all):
+        parser.error("name one --scenario, or --all (or --list)")
+    names = list(scenarios()) if a.all else [a.scenario]
     try:
-        doc = scenario(a.scenario)
+        for name in names:
+            scenario(name)
         am_bin = check_tools()
         python = find_python(a.python)
-        run = a.run or "e2e-{}-{}".format(a.scenario, stamp())
-        evidence = Path(a.evidence).absolute() if a.evidence else (
-            ROOT / "docs" / "proof" / datetime.date.today().isoformat() / "e2e" / run)
-        evidence.mkdir(parents=True, exist_ok=True)
-        meta = launch(run, evidence, a.allow_dirty)
-        laptop = Laptop(meta, am_bin, python, doc, evidence)
-        laptop.setup()
     except (Problem, agent_manager.Problem, OSError, subprocess.SubprocessError) as err:
-        if laptop is not None and not a.keep:
-            laptop.am.stop()
         print(json.dumps({"ok": False, "error": str(err)}, indent=1))
         return 2
-    try:
-        outcome = drive(laptop, doc, evidence / "passes.jsonl", a.limit_minutes or float(doc.get("limit_minutes", 120)),
-                        a.wall_limit)
-        run_id = laptop.run_id()
-        seen = collect(laptop, evidence, run_id)
-        checks = judge(laptop, doc, run_id, outcome, seen)
-    finally:
-        if not a.keep:
-            laptop.am.stop()
-    ok = bool(checks) and all(c["ok"] for c in checks)
-    verdict = {"ok": ok, "scenario": a.scenario, "about": doc.get("about"), "run": run_id, "sandbox": meta["root"],
-               "commit": meta["commit"], "python": python, "agent_manager": agent_manager.PINNED, "drive": outcome,
-               "checks": checks, "evidence": str(evidence)}
-    write_json(evidence / "verdict.json", verdict)
-    if not a.keep:
-        shutil.rmtree(str(laptop.root), ignore_errors=True)
-    print(json.dumps(verdict, indent=1, sort_keys=True))
-    return 0 if ok else 1
+    verdicts = []
+    base = Path(a.evidence).absolute() if a.evidence else None
+    for name in names:
+        evidence = (base / name if a.all else base) if base else None
+        try:
+            verdicts.append(run_scenario(name, evidence, None if a.all else a.run, python, am_bin, a.limit_minutes,
+                                         a.wall_limit, a.allow_dirty, a.keep))
+        except (Problem, agent_manager.Problem, OSError, subprocess.SubprocessError) as err:
+            print(json.dumps({"ok": False, "scenario": name, "error": str(err)}, indent=1))
+            return 2
+    if a.all:
+        summary = {"ok": all(v["ok"] for v in verdicts),
+                   "scenarios": {v["scenario"]: {"ok": v["ok"], "failed": [c["check"] for c in v["checks"] if not c["ok"]],
+                                                 "evidence": v["evidence"]} for v in verdicts}}
+        if base:
+            write_json(base / "summary.json", summary)
+        print(json.dumps(summary, indent=1, sort_keys=True))
+        return 0 if summary["ok"] else 1
+    print(json.dumps(verdicts[0], indent=1, sort_keys=True))
+    return 0 if verdicts[0]["ok"] else 1
 
 
 if __name__ == "__main__":

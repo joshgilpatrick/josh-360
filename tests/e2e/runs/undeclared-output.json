@@ -1,5 +1,5 @@
 {
- "about": "As triage-happy, but the sign-off session writes a result carrying an output its step does not declare. The walker refuses it, and the run must stop at sign_off and say why, not hang.",
+ "about": "As triage-happy, but every sign-off session writes a result carrying an output its step does not declare. The walker refuses each one, the runner abandons the attempt (a run of the tier's cap of 3), and the run must stop at sign_off and say why, not hang: about 20 laptop minutes, one five-minute pass per attempt.",
  "graph": "triage",
  "ticket": "JP-9116",
  "fixture": {
@@ -41,7 +41,7 @@
  "limit_minutes": 60,
  "expect": {
   "stopped_at": "sign_off",
-  "within_minutes": 10,
+  "within_minutes": 25,
   "runner_log_names": [
    "made_up_extra"
   ]
