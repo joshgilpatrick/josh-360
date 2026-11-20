@@ -1,0 +1,25 @@
+{
+  "command": [
+    "env",
+    "JOSH360_GRAPHS_ROOT=/tmp/verify-josh-360/jp191/standin/graphs",
+    "JOSH360_AM_BIN=/tmp/verify-josh-360/jp191/home/.josh-360/repo/tests/fakes/agent-manager",
+    "FAKE_AM_DIR=/tmp/verify-josh-360/jp191/standin/am",
+    "JOSH360_AM_DB=/tmp/verify-josh-360/jp191/standin/am/state.db",
+    "JOSH360_CLAUDE_SETTINGS=/tmp/verify-josh-360/jp191/standin/claude-settings.json",
+    "JOSH360_JIRA_FAKE=/tmp/verify-josh-360/jp191/standin/jira",
+    "WALKER_TEST_PLAN=/tmp/verify-josh-360/jp191/standin/plan.json",
+    "JOSH360_NO_NOTIFY=1",
+    "python3",
+    "-I",
+    "/home/claude/josh-360/docs/proof/2026-11-20/JP-191/standins/age.py",
+    "/tmp/verify-josh-360/jp191/home/.josh-360/state/runner/am-tickets.json",
+    "s-1=7.042",
+    "s-2=6"
+  ],
+  "cwd": "/tmp/verify-josh-360/jp191/home/.josh-360/repo",
+  "exit_code": 0,
+  "run": "jp191",
+  "started_at": "2026-11-20T15:12:59Z",
+  "stderr": "",
+  "stdout": "{\"moved_back_days\": {\"s-1\": 7.042, \"s-2\": 6.0}}\n"
+}
