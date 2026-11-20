@@ -334,12 +334,21 @@
       "step": "decide",
       "ticket": "JP-191",
       "waiting_on": null
+    },
+    {
+      "graph": "validation",
+      "run": "r-f520b3706f73",
+      "since": "2026-11-20T17:16:30Z",
+      "state": "between",
+      "step": null,
+      "ticket": "JP-184",
+      "waiting_on": null
     }
   ],
   "rails": true,
   "runs": {
-    "between": 0,
-    "open": 8,
+    "between": 1,
+    "open": 9,
     "parked": 1,
     "queued": 0,
     "stopped": 1,
@@ -358,7 +367,7 @@
   ],
   "ticket_counts": {
     "cost_fields": 0,
-    "listed": 10,
+    "listed": 11,
     "refusals_readable": true,
     "refused": 0
   },
@@ -1151,6 +1160,43 @@
       "attempt": null,
       "end": null,
       "graph": "validation",
+      "jira_status": null,
+      "refused": [],
+      "run": "r-f520b3706f73",
+      "runner": "agent-manager",
+      "runs": 1,
+      "score": null,
+      "sessions": [
+        {
+          "am_session": null,
+          "attempt": 1,
+          "earlier_am_sessions": [],
+          "ended_at": "2026-11-20T17:16:31Z",
+          "failure_kind": null,
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "pass",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T17:16:30Z",
+          "step": "_entry",
+          "tier": null
+        }
+      ],
+      "since": "2026-11-20T17:16:30Z",
+      "started_at": "2026-11-20T17:16:30Z",
+      "state": "between",
+      "step": null,
+      "step_label": null,
+      "ticket": "JP-184",
+      "waits_on": null,
+      "worktree_kept": null
+    },
+    {
+      "attempt": null,
+      "end": null,
+      "graph": "validation",
       "jira_status": "Deployed",
       "refused": [],
       "run": "r-383d1f07928f",
@@ -1324,10 +1370,11 @@
         "JP-172": "has an open run",
         "JP-173": "has an open run",
         "JP-174": "has an open run",
-        "JP-175": "has an open run",
-        "JP-185": "has an open run"
+        "JP-175": "has an open run"
       },
-      "started": []
+      "started": [
+        "JP-184"
+      ]
     }
   }
 }
