@@ -43,3 +43,4 @@ Known events: `SessionStart`, `SessionEnd`, `UserPromptSubmit`, `PreToolUse`, `P
 - Keep it fast: `PreToolUse` and `PostToolUse` run on every tool call.
 - Use the laptop's `/usr/bin/python3` (3.9) and the standard library, or bash 3.2.
 - No patient data in anything it writes or logs.
+- To see how often a hook blocks and whether it was right, run `python3 ~/.josh-360/repo/scripts/hook_blocks.py` on the laptop (JP-182); it reads the transcripts, so a hook needs no logging of its own for this.

@@ -6,6 +6,7 @@ The repository's own tools: the checks CI runs, the platform doctor, and the scr
 
 - [Checks and reference files](#checks-and-reference-files)
 - [The platform doctor](#the-platform-doctor)
+- [Hook blocks](#hook-blocks)
 - [Laptop jobs and their helpers](#laptop-jobs-and-their-helpers)
 
 ## Checks and reference files
@@ -22,6 +23,10 @@ The repository's own tools: the checks CI runs, the platform doctor, and the scr
 ## The platform doctor
 
 `doctor.py` (JP-152) checks every part of Josh 360 on the laptop and prints the one step that fixes each problem; `doctor_lib/` holds the checks by group and the safe fixes; `doctor_job.py` runs it daily as the `doctor` job. Reference: `docs/platform-doctor.md`.
+
+## Hook blocks
+
+`hook_blocks.py` (JP-182) reads the stored Claude Code transcripts on the laptop and writes one review file listing every time any hook blocked something, with a summary of every hook on the laptop (blocking or not). `hook_blocks_lib/` holds its parts: the hook list (`inventory.py`), the transcript reader (`transcripts.py`), what the agent did next (`follow.py`), which hook it was (`attribute.py`) and the file itself (`report.py`). The `review-hook-blocks` skill reads the file and gives each blocking hook a verdict.
 
 ## Laptop jobs and their helpers
 
