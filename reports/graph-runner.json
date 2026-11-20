@@ -459,9 +459,9 @@
     {
       "graph": "triage",
       "run": "r-4400caa5965b",
-      "since": "2026-11-20T19:39:01Z",
-      "state": "parked",
-      "step": "ask_at_limit",
+      "since": "2026-11-20T21:57:28Z",
+      "state": "working",
+      "step": "sign_off",
       "ticket": "JP-116",
       "waiting_on": null
     },
@@ -513,25 +513,25 @@
     {
       "graph": "validation",
       "run": "r-1cbefd2c048a",
-      "since": "2026-11-20T21:57:15Z",
-      "state": "between",
-      "step": null,
+      "since": "2026-11-20T21:57:24Z",
+      "state": "waiting",
+      "step": "watch",
       "ticket": "JP-191",
       "waiting_on": null
     }
   ],
   "rails": true,
   "runs": {
-    "between": 1,
+    "between": 0,
     "open": 9,
-    "parked": 1,
+    "parked": 0,
     "queued": 0,
     "stopped": 0,
-    "waiting": 7,
-    "working": 0
+    "waiting": 8,
+    "working": 1
   },
   "session_limit": 2,
-  "sessions_live": 0,
+  "sessions_live": 1,
   "status": "ok",
   "stopped": [],
   "ticket_counts": {
@@ -716,30 +716,90 @@
           "am_session": null,
           "attempt": 1,
           "earlier_am_sessions": [],
-          "ended_at": null,
+          "ended_at": "2026-11-20T21:57:21Z",
           "failure_kind": null,
           "kind": "ask",
           "loop_count": 0,
           "model": null,
-          "outcome": null,
+          "outcome": "one_more_round",
           "reason": null,
           "session": null,
           "started_at": "2026-11-20T19:39:01Z",
           "step": "ask_at_limit",
           "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 2,
+          "earlier_am_sessions": [],
+          "ended_at": "2026-11-20T21:57:24Z",
+          "failure_kind": null,
+          "kind": "gate",
+          "loop_count": 1,
+          "model": null,
+          "outcome": "read",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T21:57:22Z",
+          "step": "read_ticket",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 2,
+          "earlier_am_sessions": [],
+          "ended_at": "2026-11-20T21:57:27Z",
+          "failure_kind": null,
+          "kind": "gate",
+          "loop_count": 1,
+          "model": null,
+          "outcome": "pass",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T21:57:24Z",
+          "step": "ready_check",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "earlier_am_sessions": [],
+          "ended_at": "2026-11-20T21:57:28Z",
+          "failure_kind": null,
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "development",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T21:57:27Z",
+          "step": "route",
+          "tier": null
+        },
+        {
+          "am_session": "9892dc0b",
+          "attempt": 1,
+          "earlier_am_sessions": [],
+          "ended_at": null,
+          "failure_kind": null,
+          "kind": "role",
+          "loop_count": 0,
+          "model": null,
+          "outcome": null,
+          "reason": null,
+          "session": "00f5b2ec-9b26-4cf1-ac21-6e0feef9a49e",
+          "started_at": "2026-11-20T21:57:28Z",
+          "step": "sign_off",
+          "tier": "mid"
         }
       ],
-      "since": "2026-11-20T19:39:01Z",
+      "since": "2026-11-20T21:57:28Z",
       "started_at": "2026-11-20T01:49:51Z",
-      "state": "parked",
-      "step": "ask_at_limit",
-      "step_label": "Ask at limit",
+      "state": "working",
+      "step": "sign_off",
+      "step_label": "Sign off",
       "ticket": "JP-116",
-      "waits_on": {
-        "kind": "question",
-        "since": "2026-11-20T19:39:01Z",
-        "text": "a question to Josh"
-      },
+      "waits_on": null,
       "worktree_kept": null
     },
     {
@@ -1523,7 +1583,7 @@
       "attempt": null,
       "end": null,
       "graph": "validation",
-      "jira_status": null,
+      "jira_status": "Deployed",
       "refused": [],
       "run": "r-1cbefd2c048a",
       "runner": "agent-manager",
@@ -1545,15 +1605,51 @@
           "started_at": "2026-11-20T21:57:15Z",
           "step": "_entry",
           "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "earlier_am_sessions": [],
+          "ended_at": "2026-11-20T21:57:21Z",
+          "failure_kind": null,
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "watch",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T21:57:20Z",
+          "step": "read_criteria",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "earlier_am_sessions": [],
+          "ended_at": "2026-11-20T21:57:24Z",
+          "failure_kind": null,
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "started",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T21:57:21Z",
+          "step": "start_watch",
+          "tier": null
         }
       ],
-      "since": "2026-11-20T21:57:15Z",
+      "since": "2026-11-20T21:57:24Z",
       "started_at": "2026-11-20T21:57:15Z",
-      "state": "between",
-      "step": null,
-      "step_label": null,
+      "state": "waiting",
+      "step": "watch",
+      "step_label": "Watch",
       "ticket": "JP-191",
-      "waits_on": null,
+      "waits_on": {
+        "kind": "check",
+        "since": "2026-11-20T21:57:24Z",
+        "text": "the validation watch"
+      },
       "worktree_kept": null
     },
     {
@@ -1658,11 +1754,10 @@
         "JP-174": "has an open run",
         "JP-175": "has an open run",
         "JP-184": "has an open run",
-        "JP-185": "has an open run"
+        "JP-185": "has an open run",
+        "JP-191": "has an open run"
       },
-      "started": [
-        "JP-191"
-      ]
+      "started": []
     }
   }
 }
