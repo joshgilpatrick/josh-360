@@ -1,0 +1,8 @@
+FAIL: test_a_slow_ledger_record_does_not_delay_the_graph_runner (tests.test_job_pace.Pace.test_a_slow_ledger_record_does_not_delay_the_graph_runner)
+AssertionError: 640.0 not less than or equal to 300.0 : graph-runner began 640s into the pass
+FAIL: test_ledger_record_still_runs_before_the_graph_runner (tests.test_job_pace.Pace.test_ledger_record_still_runs_before_the_graph_runner)
+AssertionError: 600.0 not less than or equal to 240
+FAIL: test_the_daily_jobs_do_not_delay_the_graph_runner_either (tests.test_job_pace.Pace.test_the_daily_jobs_do_not_delay_the_graph_runner_either)
+AssertionError: 3915.0 not less than or equal to 300.0
+Ran 3 tests in 0.022s
+FAILED (failures=3)

@@ -6,7 +6,8 @@ stand-in for Jira that answers every read after DELAY seconds, then runs `python
 laptop/run_jobs.py does (a subprocess with a timeout, exit 124 when it is cut off), PASSES times in a row. TIMEOUT
 stands in for the job's real 10 minutes; DELAY stands in for a slow real Jira read.
 
-    python3 docs/proof/2026-11-20/JP-181/repro.py [--timeout 15] [--delay 0.1] [--sessions 120] [--passes 4]
+    python3 docs/proof/2026-11-20/JP-181/repro.py [--timeout 15] [--delay 0.1] [--sessions 120] [--tickets 12]
+                                                  [--passes 4] [--budget 9]
 
 Nothing here touches the real ledger, transcripts or Jira. Python 3.9, standard library only.
 """
@@ -72,7 +73,8 @@ def main() -> int:
     ap.add_argument("--delay", type=float, default=0.1)
     ap.add_argument("--sessions", type=int, default=120)
     ap.add_argument("--passes", type=int, default=4)
-    ap.add_argument("--extra", nargs="*", default=[], help="arguments passed on to ledger/record.py")
+    ap.add_argument("--tickets", type=int, default=12, help="how many made-up tickets the sessions share")
+    ap.add_argument("--budget", default=None, help="passed on to ledger/record.py as --budget (after the fix)")
     args = ap.parse_args()
 
     tmp = Path(tempfile.mkdtemp(prefix="jp181-"))
@@ -83,7 +85,7 @@ def main() -> int:
         old = time.time() - 3600  # quiet for an hour, well inside the recorder's 14-day window
         for n in range(args.sessions):
             path = projects / "sess-{:04d}.jsonl".format(n)
-            path.write_text(transcript(path.stem, "JP-{}-made-up".format(900 + n % 12)), encoding="utf-8")
+            path.write_text(transcript(path.stem, "JP-{}-made-up".format(900 + n % args.tickets)), encoding="utf-8")
             os.utime(str(path), (old, old))
         server = jira_stand_in(args.delay)
         env = {k: v for k, v in os.environ.items() if k.lower() not in ("http_proxy", "https_proxy", "all_proxy")}
@@ -92,12 +94,14 @@ def main() -> int:
                    JOSH360_JIRA_SITE="http://127.0.0.1:{}".format(server.server_address[1]))
         subprocess.run([sys.executable, str(ROOT / "ledger" / "db.py")], env=env, check=True,
                        stdout=subprocess.DEVNULL)
-        print("made-up sessions: {}, Jira stand-in delay {}s per read, job timeout {}s".format(
-            args.sessions, args.delay, args.timeout))
+        print("made-up sessions: {} on {} tickets, Jira stand-in delay {}s per read, job timeout {}s, budget {}".format(
+            args.sessions, args.tickets, args.delay, args.timeout, args.budget or "(none)"))
         for n in range(1, args.passes + 1):
             reads_before, started = server.reads, time.time()  # type: ignore[attr-defined]
             try:
-                done = subprocess.run([sys.executable, str(ROOT / "ledger" / "record.py")] + args.extra, cwd=str(ROOT),
+                command = [sys.executable, str(ROOT / "ledger" / "record.py")]
+                command += ["--budget", args.budget] if args.budget else []
+                done = subprocess.run(command, cwd=str(ROOT),
                                       env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                       universal_newlines=True, timeout=args.timeout)
                 code, out = done.returncode, done.stdout.strip() or done.stderr.strip()[-300:]
