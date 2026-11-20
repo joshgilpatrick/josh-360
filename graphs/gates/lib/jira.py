@@ -295,6 +295,11 @@ class Jira:
             return "unknown", None
         return "set", parsed.get("value")
 
+    def read_json(self, path: str, params: Optional[dict] = None, body: Optional[dict] = None) -> Optional[object]:
+        """A raw read for tools such as scripts/jira_snapshot.py: the parsed body, None when unknown; a 4xx raises.
+        `body` is only for the search endpoint, which Jira reads with a POST."""
+        return self._ok(self._call("POST" if body is not None else "GET", path, body, params), "read " + path)
+
     def create_meta(self, project: str) -> Optional[Dict[str, str]]:
         """{issue type name: id} for a project, from Jira's create metadata. None when unknown."""
         try:

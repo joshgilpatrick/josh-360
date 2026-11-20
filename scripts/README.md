@@ -18,6 +18,7 @@ The repository's own tools: the checks CI runs, the platform doctor, and the scr
 | `conventions.py` | Checks and reads `conventions/registry.yaml` and `priorities.yaml` (`check`, `lookup --folder <path>` or `--repo <name>`, `priority`, `export-json`). |
 | `decisions.py` | The per-ticket decision files in `docs/decisions/` (`list [--ticket JP-n]`, `check`). |
 | `feature_tree.py` | The JP-143 feature tree: `check`, and `build` the review page after editing `docs/design/feature-tree/tree.yaml`. |
+| `jira_snapshot.py` | Reads JP's real workflow from Jira, read-only, into `graphs/gates/jira-snapshot/JP.json`, the file that makes the fake Jira strict (JP-187). |
 | `architecture_page.py` | The JP-144 architecture page: `check`, and `build` after editing the feature tree or `docs/design/architecture/`. |
 
 ## The platform doctor

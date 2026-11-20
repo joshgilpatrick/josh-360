@@ -5,6 +5,11 @@ It is used only when JOSH360_JIRA_FAKE names a folder that holds a file called f
 
 State is kept in <folder>/fake-jira.json (issues, comments, properties) and every request is appended to
 <folder>/calls.jsonl, so a test can read what was written and in what order. Python 3.9, standard library only.
+
+Strict (JP-187): when the folder also holds snapshot.json (a copy of graphs/gates/jira-snapshot/JP.json, put there by
+`jira_strict.install`), the fake refuses with 400 any status, transition id, issue type, field, option value or link
+type that JP's real Jira does not have, answers transitions and create metadata from the snapshot, and returns
+statuses and issue types with their real ids. Without the file it is as lenient as before.
 """
 from __future__ import annotations
 
@@ -14,6 +19,8 @@ import re
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Optional, Tuple
+
+from lib import jira_strict
 
 SPRINT_FIELD = "customfield_10020"
 FLAG_FIELD = "customfield_10021"      # "Flagged"; the same id as lib.jira.FLAG_FIELD
@@ -95,7 +102,11 @@ class FileTransport:
         with open(str(self.folder / CALLS), "a", encoding="utf-8") as log:
             log.write(json.dumps({"method": method, "path": path, "body": data}) + "\n")
         state = self._load()
-        status, payload = self._handle(state, method, path, data)
+        rules = jira_strict.load(self.folder)
+        if rules is None:
+            status, payload = self._handle(state, method, path, data)
+        else:
+            status, payload = self._strict(rules, state, method, path, data)
         self._save(state)
         return status, (json.dumps(payload).encode() if payload is not None else b""), {}
 
@@ -110,6 +121,68 @@ class FileTransport:
         state["changelogs"].setdefault(key, []).append({
             "created": self._now(state), "author": {"accountId": state.get("myself", "acct-josh")},
             "items": [{"field": field, "fromString": before, "toString": after}]})
+
+    def _strict(self, rules, state: dict, method: str, path: str, data: Optional[dict]):
+        """The same calls, judged against JP's snapshot first (jira_strict.Rules); what passes goes to _handle."""
+        bare = path.split("?")[0]
+        parts = bare.strip("/").split("/")
+        issues = state["issues"]
+        if method == "POST" and bare == "/rest/api/3/issue":
+            problem = rules.check_create(data)
+            if problem:
+                return 400, problem
+            status, payload = self._handle(state, method, path, data)
+            fields = issues[payload["key"]]["fields"]
+            fields["status"] = rules.initial()
+            fields["issuetype"] = rules.wire_type(rules.issue_type(fields["issuetype"]))
+            return status, payload
+        if method == "POST" and bare == "/rest/api/3/search/jql":
+            problem = rules.check_jql((data or {}).get("jql") or "")
+            if problem:
+                return 400, problem
+            status, payload = self._handle(state, method, path, data)
+            for issue in (payload or {}).get("issues") or []:
+                problem = rules.dress(issue)
+                if problem:
+                    return 500, jira_strict.refusal(messages=[problem])
+            return status, payload
+        if method == "GET" and bare == "/rest/api/3/issue/createmeta/{}/issuetypes".format(rules.project["key"]):
+            return 200, rules.createmeta()
+        if method == "GET" and bare == "/rest/api/3/issueLinkType":
+            return 200, rules.link_types()
+        if method == "POST" and bare == "/rest/api/3/issueLink":
+            problem = rules.check_link(data)
+            if problem:
+                return 404, problem
+            for side in ("outwardIssue", "inwardIssue"):
+                if ((data or {}).get(side) or {}).get("key") not in issues:
+                    return 404, jira_strict.refusal(messages=["Issue does not exist or you do not have permission "
+                                                              "to see it."])
+            return self._handle(state, method, path, data)
+        if parts[:4] == ["rest", "api", "3", "issue"] and len(parts) >= 5:
+            if parts[4] not in issues:
+                return 404, jira_strict.refusal(messages=["Issue does not exist or you do not have permission to see it."])
+            issue = issues[parts[4]]
+            if method == "GET" and len(parts) == 5:
+                copy = json.loads(json.dumps(issue))
+                problem = rules.dress(copy)
+                return (500, jira_strict.refusal(messages=[problem])) if problem else (200, copy)
+            if method == "PUT" and len(parts) == 5:
+                problem = rules.check_edit(issue, data)
+                return (400, problem) if problem else self._handle(state, method, path, data)
+            if parts[5:] == ["transitions"]:
+                current = (issue["fields"].get("status") or {}).get("name") or ""
+                if method == "GET":
+                    return 200, {"transitions": rules.transitions_from(current)}
+                if method == "POST":
+                    problem, target = rules.check_transition(issue, data)
+                    if problem:
+                        return 400, problem
+                    issue["fields"].update((data or {}).get("fields") or {})
+                    issue["fields"]["status"] = target
+                    self._log_change(state, parts[4], "status", current, target["name"])
+                    return 204, None
+        return self._handle(state, method, path, data)
 
     def _handle(self, state: dict, method: str, path: str, data: Optional[dict]):
         bare = path.split("?")[0]
