@@ -380,9 +380,9 @@
     {
       "graph": "triage",
       "run": "r-4400caa5965b",
-      "since": "2026-11-20T19:33:16Z",
-      "state": "working",
-      "step": "revise",
+      "since": "2026-11-20T19:39:01Z",
+      "state": "parked",
+      "step": "ask_at_limit",
       "ticket": "JP-116",
       "waiting_on": null
     },
@@ -436,14 +436,14 @@
   "runs": {
     "between": 0,
     "open": 8,
-    "parked": 0,
+    "parked": 1,
     "queued": 0,
     "stopped": 0,
     "waiting": 7,
-    "working": 1
+    "working": 0
   },
   "session_limit": 2,
-  "sessions_live": 1,
+  "sessions_live": 0,
   "status": "ok",
   "stopped": [],
   "ticket_counts": {
@@ -454,7 +454,7 @@
   },
   "tickets": [
     {
-      "attempt": 5,
+      "attempt": 1,
       "end": null,
       "graph": "triage",
       "jira_status": "Not Started",
@@ -596,26 +596,62 @@
           "am_session": "cc0976f1",
           "attempt": 5,
           "earlier_am_sessions": [],
-          "ended_at": null,
+          "ended_at": "2026-11-20T19:38:56Z",
           "failure_kind": null,
           "kind": "role",
           "loop_count": 4,
-          "model": null,
-          "outcome": null,
+          "model": "opus",
+          "outcome": "revised",
           "reason": null,
           "session": "86939280-bf57-4964-9f5e-03d753c409a6",
           "started_at": "2026-11-20T19:33:16Z",
           "step": "revise",
           "tier": "mid"
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "earlier_am_sessions": [],
+          "ended_at": "2026-11-20T19:39:01Z",
+          "failure_kind": null,
+          "kind": "gate",
+          "loop_count": 0,
+          "model": null,
+          "outcome": "applied",
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T19:38:56Z",
+          "step": "apply_revision",
+          "tier": null
+        },
+        {
+          "am_session": null,
+          "attempt": 1,
+          "earlier_am_sessions": [],
+          "ended_at": null,
+          "failure_kind": null,
+          "kind": "ask",
+          "loop_count": 0,
+          "model": null,
+          "outcome": null,
+          "reason": null,
+          "session": null,
+          "started_at": "2026-11-20T19:39:01Z",
+          "step": "ask_at_limit",
+          "tier": null
         }
       ],
-      "since": "2026-11-20T19:33:16Z",
+      "since": "2026-11-20T19:39:01Z",
       "started_at": "2026-11-20T01:49:51Z",
-      "state": "working",
-      "step": "revise",
-      "step_label": "Revise",
+      "state": "parked",
+      "step": "ask_at_limit",
+      "step_label": "Ask at limit",
       "ticket": "JP-116",
-      "waits_on": null,
+      "waits_on": {
+        "kind": "question",
+        "since": "2026-11-20T19:39:01Z",
+        "text": "a question to Josh"
+      },
       "worktree_kept": null
     },
     {
