@@ -1,0 +1,5 @@
+made-up sessions: 120, Jira stand-in delay 0.1s per read, job timeout 15.0s
+pass 1: exit 124 after 15.0s | Jira reads 145 | episodes 72 | homes failed 0 | mark saved: False | rehomed: None | (cut off at the timeout)
+pass 2: exit 124 after 15.0s | Jira reads 145 | episodes 120 | homes failed 0 | mark saved: False | rehomed: None | (cut off at the timeout)
+pass 3: exit 124 after 15.0s | Jira reads 147 | episodes 120 | homes failed 0 | mark saved: False | rehomed: None | (cut off at the timeout)
+pass 4: exit 124 after 15.0s | Jira reads 147 | episodes 120 | homes failed 0 | mark saved: False | rehomed: None | (cut off at the timeout)

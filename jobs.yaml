@@ -41,8 +41,15 @@ jobs:
   - id: ledger-record
     run: ledger/record.py
     every: 5m
-    timeout: 10m
-    description: JP-107. Writes sessions, episodes, refs and homes to the ledger from the hook spool, transcript metadata and git. No model call.
+    timeout: 4m
+    description: JP-107. Writes sessions, episodes, refs and homes to the ledger from the hook spool, transcript metadata and git. No model call. JP-181, it stops starting new work after 150 seconds and carries on in the next run, so the 4-minute timeout is only a backstop.
+
+  - id: graph-runner
+    run: graphs/runner/tick_job.py
+    every: 5m
+    timeout: 5m
+    report: true
+    description: JP-117. Watches Jira for tickets that should have a graph run (Ready and labelled ready-to-run) and moves every open run forward one step, each model step in a visible Agent Manager session. No model call of its own. JP-181, it runs straight after ledger-record (whose run it reads) so that nothing slower holds it up and it starts within five minutes of a pass starting. The report is counts, ids, step names and times only.
 
   - id: ledger-summary
     run: ledger/summary.py
@@ -118,13 +125,6 @@ jobs:
     timeout: 5m
     report: true
     description: JP-119. Compares what runs on the laptop with the macbook-automations startup list and laptop/launchd-register.json, and reports any difference. Job labels and counts only; changes nothing.
-
-  - id: graph-runner
-    run: graphs/runner/tick_job.py
-    every: 5m
-    timeout: 5m
-    report: true
-    description: JP-117. Watches Jira for tickets that should have a graph run (Ready and labelled ready-to-run) and moves every open run forward one step, each model step in a visible Agent Manager session. No model call of its own. The report is counts, ids, step names and times only.
 
   - id: jp-117-triage-jp-116
     run: graphs/runner/triage_jp116_job.py

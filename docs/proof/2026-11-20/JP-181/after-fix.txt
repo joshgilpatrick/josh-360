@@ -1,0 +1,15 @@
+$ repro.py --passes 4 --budget 9   (12 tickets: the per-run Jira memory alone is enough)
+made-up sessions: 120 on 12 tickets, Jira stand-in delay 0.1s per read, job timeout 15.0s, budget 9
+pass 1: exit 0 after 2.9s | Jira reads 24 | episodes 120 | homes failed 0 | mark saved: True | rehomed: 2026-11-20 | {"costs": 0, "deferred": 0, "episodes": 120, "homes": 120, "notes": 0, "offers": 0, "refs": 240, "sessions": 120, "skipped": 0}
+pass 2: exit 0 after 0.1s | Jira reads 0 | episodes 120 | homes failed 0 | mark saved: True | rehomed: 2026-11-20 | {"costs": 0, "deferred": 0, "episodes": 0, "homes": 0, "notes": 0, "offers": 0, "refs": 0, "sessions": 0, "skipped": 0}
+pass 3: exit 0 after 0.1s | Jira reads 0 | episodes 120 | homes failed 0 | mark saved: True | rehomed: 2026-11-20 | {"costs": 0, "deferred": 0, "episodes": 0, "homes": 0, "notes": 0, "offers": 0, "refs": 0, "sessions": 0, "skipped": 0}
+pass 4: exit 0 after 0.1s | Jira reads 0 | episodes 120 | homes failed 0 | mark saved: True | rehomed: 2026-11-20 | {"costs": 0, "deferred": 0, "episodes": 0, "homes": 0, "notes": 0, "offers": 0, "refs": 0, "sessions": 0, "skipped": 0}
+
+$ repro.py --tickets 120 --passes 6 --budget 9   (every session its own ticket: the budget carries the work over)
+made-up sessions: 120 on 120 tickets, Jira stand-in delay 0.1s per read, job timeout 15.0s, budget 9
+pass 1: exit 0 after 9.2s | Jira reads 88 | episodes 44 | homes failed 0 | mark saved: True | rehomed: None | {"costs": 0, "deferred": 1, "episodes": 44, "homes": 44, "notes": 0, "offers": 0, "refs": 88, "sessions": 44, "skipped": 0}
+pass 2: exit 0 after 9.2s | Jira reads 88 | episodes 88 | homes failed 0 | mark saved: True | rehomed: None | {"costs": 0, "deferred": 1, "episodes": 44, "homes": 44, "notes": 0, "offers": 0, "refs": 88, "sessions": 44, "skipped": 0}
+pass 3: exit 0 after 9.2s | Jira reads 88 | episodes 120 | homes failed 0 | mark saved: True | rehomed: None | {"costs": 0, "deferred": 1, "episodes": 32, "homes": 32, "notes": 0, "offers": 0, "refs": 64, "sessions": 32, "skipped": 0}
+pass 4: exit 0 after 9.3s | Jira reads 90 | episodes 120 | homes failed 0 | mark saved: True | rehomed: None | {"costs": 0, "deferred": 1, "episodes": 0, "homes": 0, "notes": 0, "offers": 0, "refs": 0, "sessions": 0, "skipped": 0}
+pass 5: exit 0 after 9.3s | Jira reads 90 | episodes 120 | homes failed 0 | mark saved: True | rehomed: None | {"costs": 0, "deferred": 1, "episodes": 0, "homes": 0, "notes": 0, "offers": 0, "refs": 0, "sessions": 0, "skipped": 0}
+pass 6: exit 0 after 3.8s | Jira reads 36 | episodes 120 | homes failed 0 | mark saved: True | rehomed: 2026-11-20 | {"costs": 0, "deferred": 0, "episodes": 0, "homes": 0, "notes": 0, "offers": 0, "refs": 0, "sessions": 0, "skipped": 0}
