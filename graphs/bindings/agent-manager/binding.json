@@ -5,6 +5,10 @@
   "id_fields": ["id", "session_id"],
   "status": {"working": ["working", "starting"], "resting": ["idle", "waiting", "finished"], "gone": ["dead"]},
   "archive": ["archive"],
+  "accepts": {
+    "models": ["default", "opus", "fable", "sonnet", "haiku"],
+    "efforts": ["low", "medium", "high"]
+  },
   "models": {
     "claude-haiku-5-5": "sonnet",
     "claude-sonnet-5-5": "opus",
