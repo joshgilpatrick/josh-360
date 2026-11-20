@@ -41,6 +41,7 @@ CLOCK_DIR = E2E / "clock"
 SANDBOX = ROOT / ".claude" / "skills" / "verify-josh-360" / "scripts" / "sandbox.py"
 PASS_SECONDS = 300                          # the laptop's job runner runs every five minutes
 JOB_PATH = "/usr/bin:/bin:/usr/sbin:/sbin"   # launchd's PATH: no ~/.local/bin, no Homebrew, no stand-in
+SETTLE_PASSES = 1                            # passes run after the run ends: the next tick places its sessions
 QUIET_SECONDS = 120                          # real seconds a pass may wait for the sessions it started to rest
 sys.path.insert(0, str(E2E))
 sys.path.insert(0, str(ROOT / "graphs" / "gates"))
@@ -254,6 +255,13 @@ class Laptop:
         finally:
             conn.close()
 
+    def ticket_sessions(self) -> List[dict]:
+        """The ticket's sessions in Agent Manager: the runner names each `<KEY>(<letter>) - <Step>` (JP-173)."""
+        return [r for r in self.am_sessions() if str(r.get("name") or "").startswith(self.ticket + "(")]
+
+    def jira_status(self) -> Optional[str]:
+        return ((self.jira_issue().get("fields") or {}).get("status") or {}).get("name")
+
     def jira_issue(self) -> dict:
         state = read_json(self.jira / "fake-jira.json") or {}
         return (state.get("issues") or {}).get(self.ticket) or {}
@@ -302,6 +310,7 @@ def drive(laptop: Laptop, doc: dict, passes_log: Path, limit_minutes: float, wal
     began = time.monotonic()
     outcome = {"why": "limit", "passes": 0}
     want_stop = (doc.get("expect") or {}).get("stopped_at")
+    settle = 0
     while True:
         e2e_minutes = laptop.offset() / 60.0
         if e2e_minutes >= limit_minutes:
@@ -320,12 +329,16 @@ def drive(laptop: Laptop, doc: dict, passes_log: Path, limit_minutes: float, wal
         line = {"pass": outcome["passes"], "e2e_minutes": round(laptop.offset() / 60.0, 1),
                 "real_seconds": round(time.monotonic() - began, 1), "run_jobs_exit": done.returncode,
                 "run_jobs": done.stdout.strip().splitlines(), "run_jobs_stderr": done.stderr.strip()[-2000:],
-                "run": run_id, "ended": ended, "stopped": run.get("stopped"), "still_busy": left}
+                "run": run_id, "ended": ended, "stopped": run.get("stopped"), "still_busy": left,
+                "jira_status": laptop.jira_status(), "sessions": [_brief(r) for r in laptop.ticket_sessions()]}
         with open(str(passes_log), "a", encoding="utf-8") as handle:
             handle.write(json.dumps(line, sort_keys=True) + "\n")
         if ended:
             outcome["why"] = "ended"
-            break
+            settle += 1
+            if settle > SETTLE_PASSES:     # the passes after the end file the ticket's sessions, as on the laptop
+                break
+            continue
         if want_stop and (run.get("stopped") or {}).get("step") == want_stop:
             outcome["why"] = "stopped"
             break
@@ -416,19 +429,29 @@ def judge(laptop: Laptop, doc: dict, run_id: Optional[str], outcome: dict, seen:
         check("every role step has one Agent Manager session", ok,
               {"steps": per_attempt, "spawns": len(spawned), "agent_manager_sessions": len(am_rows)})
     if expect.get("sessions_follow_status"):
-        status = ((laptop.jira_issue().get("fields") or {}).get("status") or {}).get("name")
         binding = _binding(laptop)
-        group = binding.ticket_group(status)
         completed = binding.completed_group()
-        mine = sorted((f for f in files if f.get("n")), key=lambda f: f["n"])
-        rows = [am_rows.get((f.get("handle") or {}).get("am_session")) or {} for f in mine]
-        newest = rows[-1] if rows else {}
-        earlier = rows[:-1]
-        ok = bool(rows) and newest.get("group_name") == group and not newest.get("archived") and all(
-            r.get("archived") or r.get("group_name") == completed for r in earlier)
-        check("the newest session sits in the group for the ticket's status and the earlier ones are put away", ok,
-              {"status": status, "want_group": group, "newest": _brief(newest),
-               "earlier": [_brief(r) for r in earlier], "completed_group": completed})
+        passes = _lines(laptop.evidence / "passes.jsonl")
+        live_seen, wrong = 0, []
+        for line in passes:                 # a session at work or at rest sits in the group for the ticket's status then
+            want = binding.ticket_group(line.get("jira_status"))
+            for row in line.get("sessions") or []:
+                if row.get("status") != "dead" and not row.get("archived"):
+                    live_seen += 1
+                    if row.get("group_name") != want:
+                        wrong.append({"pass": line["pass"], "session": row, "want": want})
+        final = [_brief(r) for r in laptop.ticket_sessions()]
+        done = laptop.jira_status() == "Done"
+        put_away = [r for r in final if not (r["archived"] or (r["status"] == "dead" and (
+            r["group_name"] == completed or (done and r is final[-1]))))]
+        tickets = (read_json(laptop.josh / "state" / "runner" / "am-tickets.json") or {}).get("tickets") or {}
+        group = (tickets.get(laptop.ticket) or {}).get("group")
+        want_group = binding.ticket_group(laptop.jira_status())
+        check("the ticket's sessions follow its status: a live one sits in the group for the ticket's status, a "
+              "finished one is killed and filed in completed-steps (or archived)",
+              live_seen > 0 and not wrong and bool(final) and not put_away and group == want_group,
+              {"live_sightings": live_seen, "misplaced": wrong, "not_put_away": put_away, "final": final,
+               "ticket_group": group, "want_ticket_group": want_group, "completed_group": completed})
     if "stopped_at" in expect:
         stopped = run.get("stopped") or {}
         check("the run stopped at the step", stopped.get("step") == expect["stopped_at"] and not ended,
@@ -451,6 +474,12 @@ def _binding(laptop: Laptop):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)                                      # type: ignore[union-attr]
     return module
+
+
+def _lines(path: Path) -> List[dict]:
+    if not path.is_file():
+        return []
+    return [json.loads(x) for x in path.read_text(encoding="utf-8").splitlines() if x.strip()]
 
 
 def _brief(row: dict) -> dict:
