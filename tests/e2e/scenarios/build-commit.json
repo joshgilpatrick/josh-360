@@ -1,0 +1,11 @@
+{
+ "_about": "JP-198: the builder commits the made-up page the spec asks for in the ticket's worktree (a Write, then one Bash git commit, through the step rails), then writes its example result (outcome done).",
+ "kind": "example",
+ "think": 6,
+ "commit": {
+  "files": {
+   "made-up/jp-9116-chores.md": "# Made-up chores\n\n- Water the made-up plants\n- Sort the made-up post\n"
+  },
+  "message": "JP-9116 Add the made-up chores page"
+ }
+}

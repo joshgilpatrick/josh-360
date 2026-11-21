@@ -18,7 +18,9 @@ real Agent Manager drives this script as it would drive Claude Code. It does thr
   On SIGHUP or SIGTERM it fires `SessionEnd` and exits.
 * **What it writes** comes from a scenario (`tests/e2e/scenarios/<name>.json`): `example` (the outcome and outputs the
   scenario names, else the step's example result in the role's instructions, `json result step=<step>` (JP-189), else
-  the first outcome with no outputs), `wrong-shape`, `silent`, `hang`, `question` and `follow-ups`. Which scenario a
+  the first outcome with no outputs), `wrong-shape`, `silent`, `hang`, `question` and `follow-ups`. A scenario's
+  `commit` (`files`, `message`) first writes those files under the session's folder and commits them with one `Bash`
+  call, each through the tool hooks (JP-198). Which scenario a
   step plays is chosen by the plan file, `$JOSH360_STANDIN_PLAN` or `~/.josh360-standin/plan.json`: `{"default": "<scenario>", "steps": {"<step>":
   "<scenario>"}}`; a scenario is a name in `scenarios/` or a path to a JSON file, and a list of them is one per attempt of
   the step, the last playing every later attempt (JP-194). With no plan, `example`. A scenario's
@@ -32,6 +34,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shlex
 import signal
 import subprocess
 import sys
@@ -55,6 +58,8 @@ TASK_FILE = re.compile(r"^Read (\S+) in full before anything else; it is your ta
 WORK = re.compile(r"^Work folder: (\S+)\s*$", re.M)
 PLACEHOLDER = "<work folder>/"
 STOP_PASSES = 3
+GIT_AUTHOR = {"GIT_AUTHOR_NAME": "Claude stand-in", "GIT_AUTHOR_EMAIL": "standin@example.test",
+              "GIT_COMMITTER_NAME": "Claude stand-in", "GIT_COMMITTER_EMAIL": "standin@example.test"}
 HOOK_TIMEOUT = 60
 
 
@@ -394,6 +399,39 @@ class Session:
         self.show("⏺ Write({})".format(path))
         return True
 
+    def bash_tool(self, command: str) -> bool:
+        """A Bash call: PreToolUse (a block runs nothing), the command in the session's folder, then PostToolUse."""
+        tool_input = {"command": command, "description": "Commit the step's work"}
+        use_id = "toolu_" + uuid.uuid4().hex[:20]
+        self.line("assistant", message={"role": "assistant", "model": self.model, "content": [
+            {"type": "tool_use", "id": use_id, "name": "Bash", "input": tool_input}]})
+        blocked, reason = self.hooks.fire("PreToolUse", dict(self.base(), tool_name="Bash", tool_input=tool_input,
+                                                              tool_use_id=use_id), "Bash")
+        if blocked:
+            log("bash-blocked", command=command, reason=reason)
+            self.show("⏺ Bash({}) was blocked by a hook".format(command[:80]))
+            return False
+        env = dict(os.environ, **GIT_AUTHOR)
+        done = subprocess.run(["/bin/sh", "-c", command], cwd=self.cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                              universal_newlines=True, env=env, timeout=HOOK_TIMEOUT)
+        log("bash", command=command, code=done.returncode, output=done.stdout.strip()[-2000:])
+        response = {"stdout": done.stdout, "stderr": "", "interrupted": False}
+        self.line("user", toolUseResult=response, message={"role": "user", "content": [
+            {"type": "tool_result", "tool_use_id": use_id, "content": done.stdout[-2000:]}]})
+        self.hooks.fire("PostToolUse", dict(self.base(), tool_name="Bash", tool_input=tool_input,
+                                            tool_response=response, tool_use_id=use_id), "Bash")
+        self.show("⏺ Bash({})".format(command[:80]))
+        return done.returncode == 0
+
+    def commit(self, plan: dict) -> bool:
+        """The scenario's `commit` (JP-198): write each file under the session's folder with the Write tool, then
+        commit them with one Bash call, as a builder commits its work in the ticket's worktree."""
+        for name, content in sorted((plan.get("files") or {}).items()):
+            if not self.write_tool(str(Path(self.cwd) / name), str(content)):
+                return False
+        message = str(plan.get("message") or "Made-up work from the stand-in")
+        return self.bash_tool("git add -A && git commit -q -m {}".format(shlex.quote(message)))
+
     def wait_forever(self) -> None:
         while not self.ended:
             time.sleep(0.5)
@@ -435,6 +473,8 @@ class Session:
                 return
         planned = result_for(scenario, text, self.id)
         written = False
+        if planned and scenario.get("commit"):
+            self.commit(scenario["commit"])
         if planned:
             for extra_path, content in planned[2]:
                 self.write_tool(extra_path, content)

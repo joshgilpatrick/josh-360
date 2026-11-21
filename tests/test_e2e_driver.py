@@ -24,7 +24,8 @@ from runner_lib import watch  # noqa: E402
 
 CHECKS = {"end", "jira_status", "one_session_per_role_step", "sessions_follow_status", "stopped_at", "within_minutes",
           "runner_log_names", "admitted", "claude_found", "spawns", "cap_used", "step_outcomes",
-          "graph_runner_within_seconds", "ledger_record_busy_seconds"}
+          "graph_runner_within_seconds", "ledger_record_busy_seconds", "jira_path", "pull_request", "nothing_left",
+          "hand_over_within_passes"}
 # JP-190: each failure found on the laptop in the week of 16 November 2026, and the runs that would have caught it.
 LAPTOP_FAILURES = {
     "empty binding.json models map (6b03062)": ["bad-model-map", "triage-happy"],
@@ -73,6 +74,29 @@ class Scenarios(unittest.TestCase):
         played = json.loads(Path(e2e.standin_plan(doc)["steps"][doc["expect"]["stopped_at"]]).read_text())
         for name in doc["expect"]["runner_log_names"]:
             self.assertIn(name, played["outputs"])
+
+    def test_the_development_run_starts_where_its_rule_and_its_gates_admit_it(self):
+        """JP-198: the fixture is one the development start rule picks up, whose Validation section asks for a watch,
+        and the spec the designer writes is one lint-spec passes for the fixture's own scenarios."""
+        sys.path.insert(0, str(ROOT / "graphs" / "gates"))
+        from lib import dev_spec, validation_section
+        doc = e2e.scenario("dev-happy")
+        laptop_rules = json.loads((ROOT / "graphs" / "runner" / "starts.json").read_text())["graphs"]
+        for graph in ("development", "validation"):              # the laptop's own rules, word for word
+            self.assertEqual(doc["starts"]["graphs"][graph], laptop_rules[graph])
+        self.assertEqual(doc["fixture"]["status"], "Ready")
+        self.assertTrue(doc["route_signed"])
+        self.assertTrue(validation_section.needs_watch(doc["fixture"]["description"]))
+        plan = e2e.standin_plan(doc)
+        spec = json.loads(Path(plan["steps"]["design"]).read_text())["companions"]["spec_path"]
+        names = dev_spec.scenario_names(doc["fixture"]["description"])
+        self.assertEqual(names, ["The page lists this week's chores"])     # the Validation scenario is left out
+        self.assertEqual(dev_spec.problems(spec, names), [])
+        build = json.loads(Path(plan["steps"]["build"]).read_text())
+        for check in spec["phases"][0]["checks"]:                           # the builder's commit is what they test
+            self.assertTrue(any(name in check for name in build["commit"]["files"]), check)
+        self.assertEqual(doc["expect"]["jira_path"][0], doc["fixture"]["status"])
+        self.assertEqual(doc["expect"]["jira_path"][-1], doc["expect"]["jira_status"])
 
     def test_an_unknown_scenario_is_a_harness_problem(self):
         with self.assertRaises(e2e.Problem):

@@ -1,0 +1,40 @@
+{
+ "_about": "JP-198: the designer's example result (outcome ready, spec_path <work folder>/spec.yaml), after first writing that spec: one phase whose checks the builder's commit passes, and a row for the fixture's one scenario.",
+ "kind": "example",
+ "example_outcome": "ready",
+ "think": 6,
+ "companions": {
+  "spec_path": {
+   "ticket": "JP-9116",
+   "summary": "A made-up chores page that lists this week's made-up chores",
+   "definition_of_done": [
+    {
+     "id": "DOD-1",
+     "rule": "made-up/jp-9116-chores.md lists two made-up chores due this week."
+    }
+   ],
+   "phases": [
+    {
+     "id": "chores-page",
+     "task": [
+      "Write made-up/jp-9116-chores.md listing two made-up chores due this week."
+     ],
+     "checks": [
+      "test -f made-up/jp-9116-chores.md",
+      "grep -c '^- ' made-up/jp-9116-chores.md"
+     ],
+     "files": [
+      "made-up/jp-9116-chores.md"
+     ]
+    }
+   ],
+   "scenarios": [
+    {
+     "name": "The page lists this week's chores",
+     "tag": "@auto",
+     "proved_by": "chores-page.check.2"
+    }
+   ]
+  }
+ }
+}
