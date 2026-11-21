@@ -1,0 +1,234 @@
+{
+ "about": "JP-198: the fixture JP-9116, Ready with label ready-to-run, signed off by triage and routed to the development graph, with a Validation section saying Needed: yes, goes through the whole development graph on a sandbox laptop: every role step writes its role's example result (the designer a spec, the builder a commit), the gates push the ticket's branch and open, label, merge and clean up its pull request through the stand-in gh against the sandbox's origin.git, the stand-in plays the laptop's PR audit one pass after the label goes on, the run ends finished with the ticket in Deployed, and the next pass starts its validation run (JP-168's hand-over).",
+ "agent_manager": "0.47.1",
+ "checks": [
+  {
+   "check": "a run started for the ticket",
+   "detail": "r-272933415e1e",
+   "ok": true
+  },
+  {
+   "check": "the run ended at its end state",
+   "detail": {
+    "ended": "finished",
+    "want": "finished",
+    "why_the_drive_stopped": "ended"
+   },
+   "ok": true
+  },
+  {
+   "check": "the fake Jira shows the ticket in the status the graph sets",
+   "detail": {
+    "status": "Deployed",
+    "want": "Deployed"
+   },
+   "ok": true
+  },
+  {
+   "check": "every role step has one Agent Manager session",
+   "detail": {
+    "agent_manager_sessions": 5,
+    "other_agent_manager_rows": [],
+    "spawns": 5,
+    "steps": {
+     "build-1": {
+      "am_session": "82711049",
+      "earlier": 0,
+      "in_agent_manager": true,
+      "state": "recorded"
+     },
+     "design-1": {
+      "am_session": "fefec79c",
+      "earlier": 0,
+      "in_agent_manager": true,
+      "state": "recorded"
+     },
+     "harden-1": {
+      "am_session": "44212893",
+      "earlier": 0,
+      "in_agent_manager": true,
+      "state": "recorded"
+     },
+     "review_plan-1": {
+      "am_session": "a368e765",
+      "earlier": 0,
+      "in_agent_manager": true,
+      "state": "recorded"
+     },
+     "write_pr-1": {
+      "am_session": "f3e6063f",
+      "earlier": 0,
+      "in_agent_manager": true,
+      "state": "recorded"
+     }
+    }
+   },
+   "ok": true
+  },
+  {
+   "check": "the ticket's sessions follow its status: a live one sits in the group for the ticket's status, a finished one is killed and filed in completed-steps (or archived)",
+   "detail": {
+    "completed_group": "josh-360/completed-steps",
+    "final": [
+     {
+      "archived": 0,
+      "group_name": "josh-360/completed-steps",
+      "id": "fefec79c",
+      "name": "JP-9116(a) - Design",
+      "status": "dead"
+     },
+     {
+      "archived": 0,
+      "group_name": "josh-360/completed-steps",
+      "id": "44212893",
+      "name": "JP-9116(b) - Harden",
+      "status": "dead"
+     },
+     {
+      "archived": 0,
+      "group_name": "josh-360/completed-steps",
+      "id": "82711049",
+      "name": "JP-9116(c) - Build",
+      "status": "dead"
+     },
+     {
+      "archived": 0,
+      "group_name": "josh-360/completed-steps",
+      "id": "a368e765",
+      "name": "JP-9116(d) - Review Plan",
+      "status": "dead"
+     },
+     {
+      "archived": 0,
+      "group_name": "josh-360/completed-steps",
+      "id": "f3e6063f",
+      "name": "JP-9116(e) - Write Pr",
+      "status": "dead"
+     }
+    ],
+    "live_sightings": 5,
+    "misplaced": [],
+    "not_put_away": [],
+    "ticket_group": "josh-360/tickets/Deployed",
+    "want_ticket_group": "josh-360/tickets/Deployed"
+   },
+   "ok": true
+  },
+  {
+   "check": "every Jira call carried the credentials found the laptop's way (email only in state/jira-email)",
+   "detail": {
+    "calls": 69,
+    "refused_401": []
+   },
+   "ok": true
+  },
+  {
+   "check": "the entry gate admitted the run",
+   "detail": {
+    "refused": [],
+    "run": "r-272933415e1e"
+   },
+   "ok": true
+  },
+  {
+   "check": "Agent Manager found claude in ~/.local/bin under a job's PATH (no JOSH360_CLAUDE_BIN)",
+   "detail": {
+    "not_installed": [],
+    "spawns": 5
+   },
+   "ok": true
+  },
+  {
+   "check": "the ticket went Ready, Design/Planning, In Progress, Code Review, Validation, Deployed in that order, each move one the JP snapshot allows",
+   "detail": {
+    "moves": [
+     "Design/Planning",
+     "In Progress",
+     "Code Review",
+     "Validation",
+     "Deployed"
+    ],
+    "want": [
+     "Ready",
+     "Design/Planning",
+     "In Progress",
+     "Code Review",
+     "Validation",
+     "Deployed"
+    ]
+   },
+   "ok": true
+  },
+  {
+   "check": "the stand-in gh opened 1 pull request(s) and merged 1, from a branch starting JP-9116-",
+   "detail": {
+    "created": [
+     "JP-9116-add-a-made-up-chores-page"
+    ],
+    "merges": 1,
+    "on_main": [
+     "7fa588b703312c409a604b055f9dadb552b80703"
+    ],
+    "prs": [
+     {
+      "head": "JP-9116-add-a-made-up-chores-page",
+      "labels": [
+       "review:ready-for-human"
+      ],
+      "merge_commit": "7fa588b703312c409a604b055f9dadb552b80703",
+      "number": 100,
+      "state": "MERGED"
+     }
+    ]
+   },
+   "ok": true
+  },
+  {
+   "check": "every gh call was one the stand-in knows",
+   "detail": {
+    "calls": 24,
+    "unknown": []
+   },
+   "ok": true
+  },
+  {
+   "check": "no worktree or branch for JP-9116 is left, here or on the stand-in GitHub",
+   "detail": {
+    "folders": [],
+    "local_branches": [],
+    "remote_branches": [],
+    "worktrees": []
+   },
+   "ok": true
+  },
+  {
+   "check": "a validation run for JP-9116 started within 1 pass(es) of the development run ending, and is open",
+   "detail": {
+    "run_ended_in_pass": 7,
+    "validation_run_first_seen_in_pass": 8,
+    "validation_runs": [
+     {
+      "ended": null,
+      "graph": "validation",
+      "run": "r-542151a9ba4c"
+     }
+    ]
+   },
+   "ok": true
+  }
+ ],
+ "commit": "140e3ef6666ffc69f5a38cca27cdf277b6226820",
+ "drive": {
+  "e2e_minutes": 40.0,
+  "passes": 8,
+  "real_seconds": 51.9,
+  "stopped_e2e_minutes": 40.0,
+  "why": "ended"
+ },
+ "evidence": "/tmp/claude-0/1f513719-8b99-5557-a007-46c1a2328e42/scratchpad/proof-old-control",
+ "ok": true,
+ "python": "/root/.local/share/uv/python/cpython-3.9-linux-x86_64-gnu/bin/python3.9",
+ "run": "r-272933415e1e",
+ "sandbox": "/tmp/verify-josh-360/e2e-dev-happy-20261121T010800Z",
+ "scenario": "dev-happy"
+}

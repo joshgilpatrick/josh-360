@@ -1,0 +1,352 @@
+#!/usr/bin/env python3
+"""A stand-in for GitHub's `gh` command (JP-198). Python 3.9, standard library only. It never reaches GitHub.
+
+The development graph's gates (`graphs/gates/lib/dev_github.py`) and the loose-ends reader (`ledger/live.py`) call `gh`
+by name on the job's PATH. On a sandbox laptop (`scripts/e2e.py`) this script is that `gh`: it answers each of their
+calls against the sandbox's bare repositories, the way GitHub would, and plays the laptop's PR audit (action-triage)
+on the pull requests it holds.
+
+Its folder is `$JOSH360_STANDIN_GH` (default `~/.josh360-standin/gh`):
+
+    config.json   {"repos": {"<owner>/<name>": "<bare repo path>"}, "audit": {...}, "checks": [...]}
+    state.json    the pull requests and labels it holds (written by this script)
+    calls.jsonl   one line per call: the arguments, the folder it ran in, the exit code and the first line it said
+
+The audit (`audit` in the config): once `review:needs-agent-audit` has been on a pull request for `after_seconds`
+(default 300, one laptop pass) by the clock this process reads, the next call that touches the pull request finds the
+audit done, as action-triage leaves it: the trigger label gone, `review:ready-for-human` on, a verdict comment from
+`bot` with the audit marker, and each check in `checks` passed. The clock is Python's own, so the e2e clock
+(`tests/e2e/clock/sitecustomize.py`) moves it.
+
+A call it does not know exits 1 with `stand-in gh: unknown call` on stderr, and the log says so: a gate that starts a
+new kind of call shows up in the e2e verdict instead of being answered wrongly.
+"""
+from __future__ import annotations
+
+import fcntl
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+from urllib.parse import unquote
+
+TRIGGER = "review:needs-agent-audit"
+READY = "review:ready-for-human"
+MARKER = "<!-- action-triage-audit:security -->"
+PR_URL = re.compile(r"^https://github\.com/([^/]+/[^/]+)/pull/([0-9]+)/?$")
+AUTHOR = {"GIT_AUTHOR_NAME": "GitHub stand-in", "GIT_AUTHOR_EMAIL": "standin@example.test",
+          "GIT_COMMITTER_NAME": "GitHub stand-in", "GIT_COMMITTER_EMAIL": "standin@example.test"}
+
+
+class Refused(Exception):
+    """What GitHub (or gh) would say, and the exit code."""
+
+    def __init__(self, message: str, code: int = 1):
+        super().__init__(message)
+        self.code = code
+
+
+def folder() -> Path:
+    return Path(os.environ.get("JOSH360_STANDIN_GH") or os.path.join(os.path.expanduser("~"), ".josh360-standin", "gh"))
+
+
+def stamp(moment: float) -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(moment))
+
+
+def read_json(path: Path, default):
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return default
+
+
+def git(repo: str, *args: str) -> str:
+    done = subprocess.run(["git", "--git-dir", repo] + list(args), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                          universal_newlines=True, env=dict(os.environ, **AUTHOR))
+    if done.returncode != 0:
+        raise Refused("git {} failed: {}".format(args[0], (done.stderr or done.stdout).strip()[:200]))
+    return done.stdout.strip()
+
+
+def ref_sha(repo: str, branch: str) -> Optional[str]:
+    done = subprocess.run(["git", "--git-dir", repo, "rev-parse", "--verify", "--quiet", "refs/heads/" + branch],
+                          stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True)
+    return done.stdout.strip() if done.returncode == 0 and done.stdout.strip() else None
+
+
+# -- the state ------------------------------------------------------------------------------------------------------
+
+class GitHub:
+    def __init__(self, base: Path, now: float):
+        self.base, self.now = base, now
+        self.config = read_json(base / "config.json", {})
+        self.state = read_json(base / "state.json", {}) or {}
+        self.state.setdefault("prs", {})
+        self.state.setdefault("labels", {})
+
+    def save(self) -> None:
+        path = self.base / "state.json"
+        tmp = path.with_name("state.json.tmp")
+        tmp.write_text(json.dumps(self.state, indent=1, sort_keys=True), encoding="utf-8")
+        os.replace(str(tmp), str(path))
+
+    def bare(self, repo: str) -> str:
+        path = (self.config.get("repos") or {}).get(repo)
+        if not path:
+            raise Refused("HTTP 404: Not Found (repos/{})".format(repo))
+        return path
+
+    def repo_of_folder(self, cwd: str) -> str:
+        """The repository a checkout's `origin` points at, as `gh` works it out when no --repo is given."""
+        done = subprocess.run(["git", "-C", cwd, "remote", "get-url", "origin"], stdout=subprocess.PIPE,
+                              stderr=subprocess.DEVNULL, universal_newlines=True)
+        url = done.stdout.strip()
+        for repo, path in (self.config.get("repos") or {}).items():
+            if url and (os.path.realpath(url) == os.path.realpath(path) or url.rstrip("/").endswith(repo + ".git")
+                        or url.rstrip("/").endswith(repo)):
+                return repo
+        raise Refused("none of the git remotes configured for this repository point to a known GitHub host")
+
+    def prs(self, repo: str) -> List[dict]:
+        return [pr for pr in self.state["prs"].values() if pr["repo"] == repo]
+
+    def pr(self, repo: str, number: int) -> dict:
+        found = self.state["prs"].get("{}#{}".format(repo, number))
+        if found is None:
+            raise Refused("GraphQL: Could not resolve to a PullRequest with the number of {}.".format(number))
+        self.refresh(found)
+        return found
+
+    def refresh(self, pr: dict) -> None:
+        """What GitHub would show now: an open pull request follows its branch, and a due audit is done."""
+        if pr["state"] == "OPEN":
+            sha = ref_sha(self.bare(pr["repo"]), pr["head"])
+            if sha:
+                pr["head_sha"] = sha
+        audit = self.config.get("audit") or {}
+        queued = pr.get("queued_at")
+        if pr["state"] == "OPEN" and TRIGGER in pr["labels"] and queued is not None and \
+                self.now >= float(queued) + float(audit.get("after_seconds", 300)):
+            done_at = float(queued) + float(audit.get("after_seconds", 300))
+            pr["labels"] = [label for label in pr["labels"] if label != TRIGGER] + [READY]
+            pr["comments"].append({"user": {"login": audit.get("bot", "joshgilpatrick-action-agent[bot]")},
+                                   "body": "{}\n## Audit\n\nNo findings.\n".format(MARKER),
+                                   "created_at": stamp(done_at)})
+            pr["checks"] = [{"name": c.get("name", "suite"), "bucket": c.get("bucket", "pass"), "startedAt": stamp(done_at)}
+                            for c in (self.config.get("checks") or [{"name": "suite"}, {"name": "e2e"}])]
+            pr["audited_at"] = stamp(done_at)
+
+    @staticmethod
+    def row(pr: dict) -> dict:
+        return {"number": pr["number"], "url": pr["url"], "state": pr["state"], "title": pr["title"],
+                "body": pr["body"], "labels": [{"name": n} for n in pr["labels"]], "headRefOid": pr["head_sha"],
+                "headRefName": pr["head"], "baseRefName": pr["base"],
+                "mergeCommit": {"oid": pr["merge_commit"]} if pr.get("merge_commit") else None}
+
+    # -- writes -------------------------------------------------------------------------------------------------
+    def create(self, repo: str, head: str, base: str, title: str, body: str) -> dict:
+        bare = self.bare(repo)
+        sha = ref_sha(bare, head)
+        if sha is None:
+            raise Refused("pull request create failed: GraphQL: Head sha can't be blank, Head ref must be a branch "
+                          "(createPullRequest)")
+        if ref_sha(bare, base) is None:
+            raise Refused("pull request create failed: GraphQL: Base ref must be a branch (createPullRequest)")
+        if any(p["head"] == head and p["state"] == "OPEN" for p in self.prs(repo)):
+            raise Refused('a pull request for branch "{}" into branch "{}" already exists'.format(head, base))
+        number = 1 + max([p["number"] for p in self.prs(repo)] or [self.config.get("first_number", 100) - 1])
+        pr = {"repo": repo, "number": number, "url": "https://github.com/{}/pull/{}".format(repo, number),
+              "state": "OPEN", "title": title, "body": body, "head": head, "base": base, "head_sha": sha,
+              "labels": [], "comments": [], "checks": [], "merge_commit": "", "created_at": stamp(self.now)}
+        self.state["prs"]["{}#{}".format(repo, number)] = pr
+        return pr
+
+    def add_labels(self, pr: dict, names: List[str]) -> None:
+        known = self.state["labels"].setdefault(pr["repo"], [])
+        for name in names:
+            if name not in pr["labels"]:
+                pr["labels"].append(name)
+            if name not in known:
+                known.append(name)
+            if name == TRIGGER:
+                pr["queued_at"] = self.now
+
+    def merge(self, pr: dict, match: Optional[str]) -> None:
+        if pr["state"] != "OPEN":
+            raise Refused("Pull request #{} is not mergeable: it is {}".format(pr["number"], pr["state"].lower()))
+        bare = self.bare(pr["repo"])
+        head, base = ref_sha(bare, pr["head"]), ref_sha(bare, pr["base"])
+        if head is None or base is None:
+            raise Refused("Pull request #{} is not mergeable: its branch is gone".format(pr["number"]))
+        if match and match != head:
+            raise Refused("Head branch was modified. Review and try the merge again.")
+        tree = git(bare, "merge-tree", "--write-tree", base, head).splitlines()[0]
+        commit = git(bare, "commit-tree", tree, "-p", base, "-m", "{} (#{})".format(pr["title"], pr["number"]))
+        git(bare, "update-ref", "refs/heads/" + pr["base"], commit, base)
+        pr.update(state="MERGED", merge_commit=commit, head_sha=head, merged_at=stamp(self.now))
+
+
+# -- the command line -----------------------------------------------------------------------------------------------
+
+def option(args: List[str], name: str) -> Optional[str]:
+    return args[args.index(name) + 1] if name in args and args.index(name) + 1 < len(args) else None
+
+
+def fields_of(row: dict, wanted: Optional[str]) -> dict:
+    return {k: row.get(k) for k in wanted.split(",")} if wanted else row
+
+
+def api(gh: GitHub, args: List[str], stdin: str) -> Tuple[int, str]:
+    method = (option(args, "-X") or "").upper()
+    path = next((a for a in args if a.startswith("repos/")), "")
+    parts = path.split("/")
+    if len(parts) < 3:
+        raise Refused("stand-in gh: unknown call")
+    repo = "/".join(parts[1:3])
+    rest = parts[3:]
+    if not rest and not method:
+        gh.bare(repo)
+        return 0, json.dumps({"full_name": repo, "default_branch": gh.config.get("default_branch", "main")})
+    if rest[:1] == ["issues"] and len(rest) >= 3:
+        pr = gh.pr(repo, int(rest[1]))
+        body = json.loads(stdin) if "--input" in args and stdin.strip() else {}
+        if rest[2] == "comments" and not method and "--input" not in args:
+            return 0, json.dumps(pr["comments"])
+        if rest[2] == "comments" and "--input" in args:
+            pr["comments"].append({"user": {"login": gh.config.get("login", "joshgilpatrick")},
+                                   "body": str(body.get("body") or ""), "created_at": stamp(gh.now)})
+            return 0, json.dumps(pr["comments"][-1])
+        if rest[2] == "labels" and len(rest) == 3 and "--input" in args:
+            gh.add_labels(pr, [str(n) for n in body.get("labels") or []])
+            return 0, json.dumps([{"name": n} for n in pr["labels"]])
+        if rest[2] == "labels" and len(rest) == 4 and method == "DELETE":
+            name = unquote(rest[3])
+            if name not in pr["labels"]:
+                raise Refused("gh: Label does not exist (HTTP 404)")
+            pr["labels"].remove(name)
+            return 0, json.dumps([{"name": n} for n in pr["labels"]])
+    if rest[:3] == ["git", "refs", "heads"] and method == "DELETE":
+        branch = "/".join(rest[3:])
+        bare = gh.bare(repo)
+        if ref_sha(bare, branch) is None:
+            raise Refused("gh: Reference does not exist (HTTP 422)")
+        git(bare, "update-ref", "-d", "refs/heads/" + branch)
+        return 0, ""
+    if rest[:1] == ["actions"] and rest[-1:] == ["runs"]:
+        return 0, json.dumps({"total_count": 0, "workflow_runs": []})
+    raise Refused("stand-in gh: unknown call")
+
+
+def pr_command(gh: GitHub, args: List[str], cwd: str) -> Tuple[int, str]:
+    verb = args[0] if args else ""
+    rest = args[1:]
+    repo = option(rest, "--repo") or option(rest, "-R")
+    positional = rest[0] if rest and not rest[0].startswith("-") else None
+    if positional and PR_URL.match(positional):
+        repo, positional = PR_URL.match(positional).group(1), PR_URL.match(positional).group(2)
+    repo = repo or gh.repo_of_folder(cwd)
+    if verb == "view" and positional:
+        return 0, json.dumps(fields_of(gh.row(gh.pr(repo, int(positional))), option(rest, "--json")))
+    if verb == "list":
+        state = (option(rest, "--state") or "open").upper()
+        head = option(rest, "--head")
+        rows = []
+        for pr in sorted(gh.prs(repo), key=lambda p: -p["number"]):
+            gh.refresh(pr)
+            if (head is None or pr["head"] == head) and (state == "ALL" or pr["state"] == state):
+                rows.append(fields_of(gh.row(pr), option(rest, "--json")))
+        return 0, json.dumps(rows[:int(option(rest, "--limit") or 30)])
+    if verb == "create":
+        body_file = option(rest, "--body-file")
+        body = Path(body_file).read_text(encoding="utf-8") if body_file else (option(rest, "--body") or "")
+        pr = gh.create(repo, option(rest, "--head") or "", option(rest, "--base") or "main",
+                       option(rest, "--title") or "", body)
+        return 0, pr["url"]
+    if verb == "checks" and positional:
+        pr = gh.pr(repo, int(positional))
+        if not pr["checks"]:
+            raise Refused("no checks reported on the '{}' branch".format(pr["head"]))
+        rows = [fields_of(c, option(rest, "--json")) for c in pr["checks"]]
+        return (8 if any(c["bucket"] == "pending" for c in pr["checks"]) else 0), json.dumps(rows)
+    if verb == "merge" and positional:
+        if "--squash" not in rest:
+            raise Refused("stand-in gh: only --squash merges are played")
+        gh.merge(gh.pr(repo, int(positional)), option(rest, "--match-head-commit"))
+        return 0, ""
+    raise Refused("stand-in gh: unknown call")
+
+
+def label_command(gh: GitHub, args: List[str]) -> Tuple[int, str]:
+    repo = option(args, "--repo") or ""
+    gh.bare(repo)
+    known = gh.state["labels"].setdefault(repo, [])
+    if args[:1] == ["list"]:
+        return 0, json.dumps([{"name": n} for n in known])
+    if args[:1] == ["create"] and len(args) > 1:
+        if args[1] in known:
+            raise Refused("label with name \"{}\" already exists; use `--force` to update its color and "
+                          "description".format(args[1]))
+        known.append(args[1])
+        return 0, ""
+    raise Refused("stand-in gh: unknown call")
+
+
+def answer(args: List[str], stdin: str, cwd: str) -> Tuple[int, str]:
+    if args[:1] in (["--version"], ["version"]):
+        return 0, "gh version 2.83.0 (JP-198 stand-in)"
+    if args[:2] == ["auth", "status"]:
+        return 0, "github.com\n  ✓ Logged in to github.com account joshgilpatrick (stand-in)"
+    base = folder()
+    base.mkdir(parents=True, exist_ok=True)
+    with open(str(base / "lock"), "a") as lock:
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+        gh = GitHub(base, time.time())
+        if args[:1] == ["api"]:
+            result = api(gh, args[1:], stdin)
+        elif args[:1] == ["pr"]:
+            result = pr_command(gh, args[1:], cwd)
+        elif args[:1] == ["label"]:
+            result = label_command(gh, args[1:])
+        else:
+            raise Refused("stand-in gh: unknown call")
+        gh.save()
+        return result
+
+
+def log(args: List[str], cwd: str, code: int, said: str) -> None:
+    try:
+        base = folder()
+        base.mkdir(parents=True, exist_ok=True)
+        with open(str(base / "calls.jsonl"), "a", encoding="utf-8") as handle:
+            handle.write(json.dumps({"argv": args, "cwd": cwd, "code": code, "said": said.strip().splitlines()[:1],
+                                     "at": time.time()}, sort_keys=True) + "\n")
+    except OSError:
+        pass
+
+
+def main(args: List[str]) -> int:
+    cwd = os.getcwd()
+    stdin = "" if sys.stdin is None or sys.stdin.isatty() else (sys.stdin.read() if "--input" in args else "")
+    try:
+        code, out = answer(args, stdin, cwd)
+    except Refused as err:
+        log(args, cwd, err.code, str(err))
+        sys.stderr.write(str(err) + "\n")
+        return err.code
+    except (ValueError, KeyError, IndexError) as err:
+        log(args, cwd, 1, "stand-in gh: bad call: {}".format(err))
+        sys.stderr.write("stand-in gh: bad call: {}\n".format(err))
+        return 1
+    log(args, cwd, code, out)
+    if out:
+        sys.stdout.write(out + ("" if out.endswith("\n") else "\n"))
+    return code
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

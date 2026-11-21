@@ -1,0 +1,92 @@
+{
+ "about": "JP-198: the fixture JP-9116, Ready with label ready-to-run, signed off by triage and routed to the development graph, with a Validation section saying Needed: yes, goes through the whole development graph on a sandbox laptop: every role step writes its role's example result (the designer a spec, the builder a commit), the gates push the ticket's branch and open, label, merge and clean up its pull request through the stand-in gh against the sandbox's origin.git, the stand-in plays the laptop's PR audit one pass after the label goes on, the run ends finished with the ticket in Deployed, and the next pass starts its validation run (JP-168's hand-over).",
+ "graph": "development",
+ "ticket": "JP-9116",
+ "fixture": {
+  "status": "Ready",
+  "creator": {
+   "accountId": "acct-josh"
+  },
+  "description": "**Goal:** a made-up chores page lists the chores due this week.\n\n**First step:** read this made-up ticket; nothing in it is real.\n\n**Why:** a fixture for end-to-end runs of the graph runner in the cloud (JP-187). No real ticket text.\n\n**In scope:**\n\n- A page that lists made-up chores\n\n**Not in scope:**\n\n- Anything real\n\n**Acceptance criteria:**\n\n```gherkin\nFeature: The made-up chores page\n\n  @auto\n  Scenario: The page lists this week's chores\n    Given two made-up chores are due this week\n    When the page opens\n    Then it lists both\n```\n\n**Validation:**\n\n- Needed: yes\n- Starts: at Deployed\n- Check every: 1 day\n- Complete when: 7 checks in a row pass\n- Give up after: 21 days\n\n```gherkin\n@validate\nScenario: The made-up chores job runs clean\n  When the watch reads job made-up-chores\n  Then last_exit is 0\n```\n\n**Repository:** josh-360\n\n**Where it runs:** Cloud session.\n\n**Parent or related:** Parent: JP-94.\n\n**Decisions already made:**\n\n- None.\n"
+ },
+ "route_signed": true,
+ "github": {
+  "audit": {
+   "after_seconds": 300
+  },
+  "checks": [
+   {
+    "name": "suite"
+   },
+   {
+    "name": "e2e"
+   }
+  ]
+ },
+ "issues": {
+  "JP-94": {
+   "summary": "A made-up stand-in for the epic",
+   "issuetype": "Epic",
+   "status": "Not Started",
+   "project": {
+    "key": "JP"
+   },
+   "labels": [
+    "josh-360"
+   ]
+  }
+ },
+ "starts": {
+  "per_pass": 1,
+  "graphs": {
+   "development": {
+    "on": true,
+    "jql": "project = JP AND status = Ready AND labels = \"ready-to-run\" AND issuetype in (Story, Bug, Task, Research)",
+    "route": "development",
+    "inputs": {
+     "ticket_type": "issuetype",
+     "system": "route.system",
+     "resume_from": "last_run|none",
+     "phi": "spec.phi_risk|true"
+    }
+   },
+   "validation": {
+    "on": true,
+    "jql": "project = JP AND status = Deployed AND Flagged is EMPTY",
+    "route_record": false,
+    "inputs": {}
+   }
+  }
+ },
+ "plan": {
+  "default": "example",
+  "steps": {
+   "design": "design-spec.json",
+   "build": "build-commit.json"
+  }
+ },
+ "limit_minutes": 120,
+ "expect": {
+  "end": "finished",
+  "jira_status": "Deployed",
+  "jira_path": [
+   "Ready",
+   "Design/Planning",
+   "In Progress",
+   "Code Review",
+   "Validation",
+   "Deployed"
+  ],
+  "one_session_per_role_step": true,
+  "sessions_follow_status": true,
+  "admitted": true,
+  "claude_found": true,
+  "pull_request": {
+   "opened": 1,
+   "merged": 1,
+   "branch_prefix": "JP-9116-"
+  },
+  "nothing_left": true,
+  "hand_over_within_passes": 1
+ }
+}

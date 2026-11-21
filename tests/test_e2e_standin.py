@@ -292,6 +292,46 @@ class StandIn(unittest.TestCase):
         self.play(self.prompt(step="build"))
         self.assertFalse(self.result.exists())
 
+    def git_repo(self):
+        for args in (["init", "-q", "-b", "main"], ["-c", "user.name=T", "-c", "user.email=t@e.t", "commit", "-q",
+                                                    "--allow-empty", "-m", "start"]):
+            subprocess.run(["git"] + args, cwd=str(self.work), check=True, stdout=subprocess.DEVNULL)
+
+    def git_log(self):
+        return subprocess.run(["git", "log", "--format=%s", "--name-only"], cwd=str(self.work), stdout=subprocess.PIPE,
+                              universal_newlines=True, check=True).stdout.split()
+
+    def test_commit_writes_the_files_then_commits_them_with_one_bash_call_before_the_result(self):
+        """JP-198: a builder commits its work in the worktree; open-pr refuses a branch with nothing on it."""
+        self.git_repo()
+        custom = self.tmp / "build.json"
+        custom.write_text(json.dumps({"kind": "example", "outcome": "done",
+                                      "commit": {"files": {"made-up/page.md": "made up\n"}, "message": "JP-901 Made up"}}))
+        self.plan("example", build=str(custom))
+        self.play(self.prompt(step="build", outcomes="done, needs_judgment"))
+        self.assertEqual((self.work / "made-up" / "page.md").read_text(), "made up\n")
+        self.assertEqual(self.git_log()[:3], ["JP-901", "Made", "up"])
+        self.assertIn("made-up/page.md", self.git_log())
+        status = subprocess.run(["git", "status", "--porcelain"], cwd=str(self.work), stdout=subprocess.PIPE,
+                                universal_newlines=True).stdout
+        self.assertEqual(status.strip(), "?? result.json")          # only the result, written after the commit
+        bash = [r for r in self.hooks("user") if r["event"] == "PreToolUse" and r["payload"]["tool_name"] == "Bash"]
+        self.assertEqual(len(bash), 1)
+        self.assertTrue(bash[0]["payload"]["tool_input"]["command"].startswith("git add -A && git commit"))
+        self.assertEqual([r["code"] for r in self.log("bash")], [0])
+        self.assertEqual(json.loads(self.result.read_text())["outcome"], "done")
+
+    def test_a_blocked_commit_runs_nothing(self):
+        self.git_repo()
+        custom = self.tmp / "build.json"
+        custom.write_text(json.dumps({"kind": "example", "outcome": "done", "commit": {"files": {}, "message": "x"}}))
+        self.plan("example", build=str(custom))
+        self.env["BLOCK_PRETOOLUSE"] = "2"
+        self.play(self.prompt(step="build", outcomes="done, needs_judgment"))
+        self.assertEqual(self.git_log(), ["start"])
+        self.assertEqual(len(self.log("bash-blocked")), 1)
+        self.assertEqual(self.log("bash"), [])
+
     def test_wrong_shape(self):
         self.plan("wrong-shape")
         self.play(self.prompt())
@@ -378,7 +418,7 @@ class StandIn(unittest.TestCase):
 
     def test_the_stand_in_parses_as_python_39(self):
         import ast
-        for path in (STANDIN, E2E / "am-record", E2E / "agent_manager.py"):
+        for path in (STANDIN, E2E / "standin" / "gh", E2E / "am-record", E2E / "agent_manager.py"):
             ast.parse(path.read_text(), filename=str(path), feature_version=(3, 9))
 
 

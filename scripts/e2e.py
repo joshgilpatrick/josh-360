@@ -49,7 +49,12 @@ RUNS = E2E / "runs"
 CLOCK_DIR = E2E / "clock"
 SANDBOX = ROOT / ".claude" / "skills" / "verify-josh-360" / "scripts" / "sandbox.py"
 PASS_SECONDS = 300                          # the laptop's job runner runs every five minutes
-JOB_PATH = "/usr/bin:/bin:/usr/sbin:/sbin"   # launchd's PATH: no ~/.local/bin, no Homebrew, no stand-in
+# The job runner's PATH on the laptop is the startup list's (macbook-automations, com.jgilpatrick.josh-360-jobs.plist):
+# /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin. Here the sandbox's own `homebrew/bin` (the stand-in
+# gh, JP-198) takes Homebrew's place; /usr/local/bin is left out because a cloud machine keeps the real gh there. Claude
+# Code is in neither, as on the laptop: only in ~/.local/bin.
+JOB_PATH = "/usr/bin:/bin:/usr/sbin:/sbin"
+GITHUB_REPO = "joshgilpatrick/josh-360"      # the repository the registry's josh-360 system names; the stand-in gh serves it
 SETTLE_PASSES = 1                            # passes run after the run ends: the next tick places its sessions
 QUIET_SECONDS = 120                          # real seconds a pass may wait for the sessions it started to rest
 JIRA_EMAIL = "josh@example.test"             # made up: the laptop keeps the real one in ~/.josh-360/state/jira-email
@@ -163,6 +168,10 @@ class Laptop:
         self.binding_json = self.root / "binding.json"
         self.claude_models = self.root / "claude-models.json"
         self.recorder_jira: Optional[ThreadingHTTPServer] = None
+        self.homebrew = self.root / "homebrew" / "bin"           # stands in for /opt/homebrew/bin: the stand-in gh
+        self.github = self.root / "github"                       # the stand-in gh's folder (JP-198)
+        self.origin = self.root / "origin.git"
+        self.clone = self.home / "Development" / "active" / "josh_360"   # the registry's folder for josh-360
 
     # -- setting up ---------------------------------------------------------------------------------------------
     def setup(self) -> None:
@@ -180,7 +189,50 @@ class Laptop:
         (self.jira / "fake-jira.json").write_text(json.dumps(state), encoding="utf-8")
         write_json(self.starts, self.doc["starts"])
         self.laptop_like()
+        self.github_like()
+        if self.doc.get("route_signed"):
+            self.sign_route()
         self.am.start_manager()
+
+    def github_like(self) -> None:
+        """The laptop's `gh` (JP-198): the stand-in on the job's PATH where Homebrew would be, serving the sandbox's
+        bare `origin.git` as GitHub's joshgilpatrick/josh-360. With `github` in the scenario, the josh-360 clone the
+        registry names is made too, its `origin` that same repository under the path GitHub would give it."""
+        self.homebrew.mkdir(parents=True, exist_ok=True)
+        if not (self.homebrew / "gh").exists():
+            os.symlink(str(E2E / "standin" / "gh"), str(self.homebrew / "gh"))
+        named = self.github / "repos" / (GITHUB_REPO + ".git")   # .../joshgilpatrick/josh-360.git -> origin.git
+        named.parent.mkdir(parents=True, exist_ok=True)
+        if not named.exists():
+            os.symlink(str(self.origin), str(named))
+        settings = self.doc.get("github") or {}
+        write_json(self.github / "config.json", {"repos": {GITHUB_REPO: str(named)},
+                                                  "audit": settings.get("audit") or {"after_seconds": PASS_SECONDS},
+                                                  "checks": settings.get("checks") or [{"name": "suite"},
+                                                                                       {"name": "e2e"}]})
+        if self.doc.get("github") is not None and not self.clone.exists():
+            self.clone.parent.mkdir(parents=True, exist_ok=True)
+            done = subprocess.run(["git", "clone", "--quiet", str(named), str(self.clone)], stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT, universal_newlines=True)
+            if done.returncode != 0:
+                raise Problem("the josh-360 clone could not be made: {}".format(done.stdout.strip()[-300:]))
+
+    def sign_route(self) -> None:
+        """Triage's sign-off, already given: the route record's version is the ticket's own, read the way the entry
+        gate reads it, so a scenario can start a run at Ready without a triage run first."""
+        env = dict(self.env(), JOSH360_JIRA_EMAIL=JIRA_EMAIL)
+        code = ("import sys; sys.path.insert(0, '.'); from lib.jira import Jira; from lib.triage import port; "
+                "print(port.read_ticket(Jira.from_env(), sys.argv[1], subtasks=False).version)")
+        done = subprocess.run([self.python, "-c", code, self.ticket], cwd=str(self.copy / "graphs" / "gates"), env=env,
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, timeout=120)
+        version = done.stdout.strip().splitlines()[-1] if done.returncode == 0 and done.stdout.strip() else ""
+        if not version:
+            raise Problem("the route record could not be signed: {}".format(done.stderr.strip()[-300:]))
+        marker = self.jira / "fake-jira.json"
+        state = json.loads(marker.read_text(encoding="utf-8"))
+        route = state.setdefault("properties", {}).setdefault("{}|josh360.route".format(self.ticket), {})
+        route["version"] = version
+        marker.write_text(json.dumps(state), encoding="utf-8")
 
     def laptop_like(self) -> None:
         """What the laptop has and the earlier harness papered over (JP-190), plus the scenario's own changes."""
@@ -227,7 +279,8 @@ class Laptop:
         for key in ("XDG_CONFIG_HOME", "TMUX_TMPDIR", "JOSH360_AM_BIN", "JOSH360_E2E_REAL_AM", "JOSH360_E2E_AM_LOG",
                     "JOSH360_AM_DB", "JOSH360_STANDIN_LOG", "JOSH360_STANDIN_PLAN"):
             env[key] = am[key]
-        env.update({"PATH": JOB_PATH, "JOSH360_JIRA_FAKE": str(self.jira), "JOSH360_RUNNER_STARTS": str(self.starts),
+        env.update({"PATH": str(self.homebrew) + os.pathsep + JOB_PATH, "JOSH360_STANDIN_GH": str(self.github),
+                    "JOSH360_JIRA_FAKE": str(self.jira), "JOSH360_RUNNER_STARTS": str(self.starts),
                     "JOSH360_NO_NOTIFY": "1", "JOSH360_E2E_CLOCK": str(self.clock), "PYTHONPATH": str(CLOCK_DIR),
                     "LANG": "C.UTF-8", "JOSH360_JIRA_TOKEN": JIRA_TOKEN,
                     "NO_PROXY": "127.0.0.1,localhost", "no_proxy": "127.0.0.1,localhost"})
@@ -267,6 +320,22 @@ class Laptop:
             return [dict(r) for r in conn.execute(sql, args).fetchall()]
         finally:
             conn.close()
+
+    def ticket_runs(self) -> List[dict]:
+        """Every graph run on the ticket, with how it ended (None while it is open)."""
+        rows = self.ledger("SELECT run_id, graph_id FROM graph_runs WHERE ticket_key = ? ORDER BY id", (self.ticket,))
+        return [{"run": r["run_id"], "graph": r["graph_id"], "ended": self.ended(r["run_id"])} for r in rows]
+
+    def gh_calls(self) -> List[dict]:
+        return _lines(self.github / "calls.jsonl")
+
+    def gh_state(self) -> dict:
+        return read_json(self.github / "state.json") or {}
+
+    def git(self, folder: Path, *args: str) -> Optional[str]:
+        done = subprocess.run(["git"] + list(args), cwd=str(folder), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              universal_newlines=True)
+        return done.stdout.strip() if done.returncode == 0 else None
 
     def run_id(self) -> Optional[str]:
         rows = self.ledger("SELECT run_id FROM graph_runs WHERE ticket_key = ? AND graph_id = ? ORDER BY id DESC LIMIT 1",
@@ -455,7 +524,8 @@ def drive(laptop: Laptop, doc: dict, passes_log: Path, limit_minutes: float, wal
                 "real_seconds": round(time.monotonic() - began, 1), "run_jobs_exit": done.returncode,
                 "run_jobs": done.stdout.strip().splitlines(), "run_jobs_stderr": done.stderr.strip()[-2000:],
                 "run": run_id, "ended": ended, "stopped": run.get("stopped"), "still_busy": left,
-                "jira_status": laptop.jira_status(), "sessions": [_brief(r) for r in laptop.ticket_sessions()]}
+                "jira_status": laptop.jira_status(), "sessions": [_brief(r) for r in laptop.ticket_sessions()],
+                "ticket_runs": laptop.ticket_runs()}
         with open(str(passes_log), "a", encoding="utf-8") as handle:
             handle.write(json.dumps(line, sort_keys=True) + "\n")
         if want_passes and outcome["passes"] >= int(want_passes):
@@ -520,6 +590,11 @@ def collect(laptop: Laptop, evidence: Path, run_id: Optional[str]) -> dict:
                       (laptop.am.standin_plan, "standin-plan.json")):
         if src.is_file():
             shutil.copyfile(str(src), str(evidence / "agent-manager" / name))
+    for name in ("calls.jsonl", "state.json", "config.json"):              # the stand-in gh (JP-198)
+        if (laptop.github / name).is_file():
+            target = evidence / "github" / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(str(laptop.github / name), str(target))
     return {"report": report, "am_sessions": sessions, "walker": read_json(evidence / "walker-status.json") or {}}
 
 
@@ -645,7 +720,84 @@ def judge(laptop: Laptop, doc: dict, run_id: Optional[str], outcome: dict, seen:
               {"rows": rows, "stopped": walker.get("stopped")})
     if "graph_runner_within_seconds" in expect:
         checks.extend(_pace(laptop, expect))
+    if "jira_path" in expect:
+        changes = ((read_json(laptop.jira / "fake-jira.json") or {}).get("changelogs") or {}).get(laptop.ticket) or []
+        path = [item.get("toString") for change in changes for item in change.get("items") or []
+                if item.get("field") == "status"]
+        check("the ticket went {} in that order, each move one the JP snapshot allows".format(", ".join(expect["jira_path"])),
+              path == expect["jira_path"][1:] and _first_status(laptop, doc) == expect["jira_path"][0],
+              {"moves": path, "want": expect["jira_path"]})
+    if "pull_request" in expect:
+        checks.extend(_pull_request(laptop, expect["pull_request"]))
+    if expect.get("nothing_left"):
+        checks.append(_nothing_left(laptop))
+    if "hand_over_within_passes" in expect:
+        checks.append(_hand_over(laptop, doc, int(expect["hand_over_within_passes"])))
     return checks
+
+
+def _first_status(laptop: Laptop, doc: dict) -> Optional[str]:
+    return ((doc.get("fixture") or {}).get("status")) or "Ready"
+
+
+def _pull_request(laptop: Laptop, want: dict) -> List[dict]:
+    """JP-198: the stand-in gh's log and state show one pull request opened from the ticket's branch and merged, and
+    every call the gates and the loose-ends reader made was one it knows."""
+    calls = laptop.gh_calls()
+    def ok(*words):
+        return [c for c in calls if c.get("code") == 0 and c.get("argv")[:len(words)] == list(words)]
+
+    created, merged = ok("pr", "create"), ok("pr", "merge")
+    prs = list((laptop.gh_state().get("prs") or {}).values())
+    prefix = want.get("branch_prefix", laptop.ticket + "-")
+    heads = [str(_option(c["argv"], "--head")) for c in created]
+    main = laptop.git(laptop.origin, "rev-parse", "refs/heads/main")
+    landed = [p for p in prs if p.get("state") == "MERGED" and p.get("merge_commit") and main and
+              laptop.git(laptop.origin, "merge-base", "--is-ancestor", p["merge_commit"], main) is not None]
+    unknown = [c for c in calls if "unknown call" in " ".join(c.get("said") or []) or "bad call" in " ".join(
+        c.get("said") or [])]
+    return [{"check": "the stand-in gh opened {} pull request(s) and merged {}, from a branch starting {}".format(
+                 want.get("opened", 1), want.get("merged", 1), prefix),
+             "ok": len(created) == int(want.get("opened", 1)) and len(merged) == int(want.get("merged", 1))
+             and bool(heads) and all(h.startswith(prefix) for h in heads) and len(landed) == int(want.get("merged", 1)),
+             "detail": {"created": heads, "merges": len(merged), "on_main": [p.get("merge_commit") for p in landed],
+                        "prs": [{k: p.get(k) for k in ("number", "head", "state", "labels", "merge_commit")} for p in prs]}},
+            {"check": "every gh call was one the stand-in knows", "ok": bool(calls) and not unknown,
+             "detail": {"calls": len(calls), "unknown": unknown[:5]}}]
+
+
+def _option(argv: List[str], name: str) -> Optional[str]:
+    return argv[argv.index(name) + 1] if name in argv and argv.index(name) + 1 < len(argv) else None
+
+
+def _nothing_left(laptop: Laptop) -> dict:
+    """JP-174 after a merge: no worktree, local branch or remote branch for the ticket is left."""
+    prefix = laptop.ticket + "-"
+    trees = [line[len("worktree "):] for line in (laptop.git(laptop.clone, "worktree", "list", "--porcelain") or
+                                                   "").splitlines() if line.startswith("worktree ")]
+    left_trees = [t for t in trees if Path(t).resolve() != laptop.clone.resolve()]
+    folders = sorted(str(p) for p in (laptop.clone / ".claude" / "worktrees").glob(prefix + "*"))
+    local = (laptop.git(laptop.clone, "branch", "--list", prefix + "*") or "").split()
+    remote = (laptop.git(laptop.origin, "for-each-ref", "--format=%(refname)", "refs/heads/" + prefix + "*") or "").split()
+    readable = laptop.clone.is_dir() and laptop.git(laptop.clone, "rev-parse", "--git-dir") is not None
+    return {"check": "no worktree or branch for {} is left, here or on the stand-in GitHub".format(laptop.ticket),
+            "ok": readable and not left_trees and not folders and not local and not remote,
+            "detail": {"worktrees": left_trees, "folders": folders, "local_branches": local, "remote_branches": remote}}
+
+
+def _hand_over(laptop: Laptop, doc: dict, within: int) -> dict:
+    """JP-168's hand-over: within `within` passes of the run ending, a validation run for the ticket is open."""
+    passes = _lines(laptop.evidence / "passes.jsonl")
+    ended_at = next((p["pass"] for p in passes if p.get("ended")), None)
+    seen_at = next((p["pass"] for p in passes for r in p.get("ticket_runs") or []
+                    if r.get("graph") == "validation"), None)
+    now = [r for r in laptop.ticket_runs() if r["graph"] == "validation"]
+    ok = ended_at is not None and seen_at is not None and seen_at <= ended_at + within and \
+        any(r["ended"] is None for r in now)
+    return {"check": "a validation run for {} started within {} pass(es) of the {} run ending, and is open".format(
+                laptop.ticket, within, doc["graph"]),
+            "ok": ok, "detail": {"run_ended_in_pass": ended_at, "validation_run_first_seen_in_pass": seen_at,
+                                 "validation_runs": now or "none: the missing validation run"}}
 
 
 def _stamps(log: Path) -> List[float]:
