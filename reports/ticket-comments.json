@@ -1,6 +1,6 @@
 {
-  "delivered": 2,
-  "read_failed": 0,
+  "delivered": 0,
+  "read_failed": 1,
   "skipped": 4,
   "status": "ok",
   "system": 0,
