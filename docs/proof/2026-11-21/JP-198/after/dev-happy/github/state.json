@@ -1,0 +1,53 @@
+{
+ "labels": {
+  "joshgilpatrick/josh-360": [
+   "review:needs-agent-audit",
+   "review:audit-in-progress",
+   "review:changes-requested",
+   "review:ready-for-human",
+   "review:audit-blocked"
+  ]
+ },
+ "prs": {
+  "joshgilpatrick/josh-360#100": {
+   "audited_at": "2026-11-21T01:52:52Z",
+   "base": "main",
+   "body": "Adds the chores page the spec asks for, sorted by due date.\n\nEvidence: 3 phase checks run, all passed; 4 files changed.\n\nFixes JP-9001",
+   "checks": [
+    {
+     "bucket": "pass",
+     "name": "suite",
+     "startedAt": "2026-11-21T01:52:52Z"
+    },
+    {
+     "bucket": "pass",
+     "name": "e2e",
+     "startedAt": "2026-11-21T01:52:52Z"
+    }
+   ],
+   "comments": [
+    {
+     "body": "<!-- action-triage-audit:security -->\n## Audit\n\nNo findings.\n",
+     "created_at": "2026-11-21T01:52:52Z",
+     "user": {
+      "login": "joshgilpatrick-action-agent[bot]"
+     }
+    }
+   ],
+   "created_at": "2026-11-21T01:47:51Z",
+   "head": "JP-9116-add-a-made-up-chores-page",
+   "head_sha": "0a6d36eebf530755fc96cf56d54c075ecab5cdf8",
+   "labels": [
+    "review:ready-for-human"
+   ],
+   "merge_commit": "4824863129152125e5c2b322bbc81691a0ef0b80",
+   "merged_at": "2026-11-21T01:52:54Z",
+   "number": 100,
+   "queued_at": 1795225672.4737418,
+   "repo": "joshgilpatrick/josh-360",
+   "state": "MERGED",
+   "title": "JP-9116: JP-9001 Add a made-up chores page",
+   "url": "https://github.com/joshgilpatrick/josh-360/pull/100"
+  }
+ }
+}

@@ -1,0 +1,45 @@
+{
+ "ok": true,
+ "scenarios": {
+  "bad-model-map": {
+   "evidence": "not kept (scratch folder)",
+   "failed": [],
+   "ok": true
+  },
+  "dev-happy": {
+   "evidence": "after/dev-happy",
+   "failed": [],
+   "ok": true
+  },
+  "ledger-record-pace": {
+   "evidence": "not kept (scratch folder)",
+   "failed": [],
+   "ok": true
+  },
+  "permanent-refusal": {
+   "evidence": "not kept (scratch folder)",
+   "failed": [],
+   "ok": true
+  },
+  "triage-happy": {
+   "evidence": "not kept (scratch folder)",
+   "failed": [],
+   "ok": true
+  },
+  "triage-revise": {
+   "evidence": "not kept (scratch folder)",
+   "failed": [],
+   "ok": true
+  },
+  "triage-revise-at-cap": {
+   "evidence": "not kept (scratch folder)",
+   "failed": [],
+   "ok": true
+  },
+  "undeclared-output": {
+   "evidence": "not kept (scratch folder)",
+   "failed": [],
+   "ok": true
+  }
+ }
+}
